@@ -54,7 +54,7 @@ interface PaymentData {
 
 function PaymentsContent() {
   const router = useRouter()
-  const { data: session } = useSession()
+  const { data: session, status: sessionStatus } = useSession()
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<PaymentData | null>(null)
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null)
@@ -78,15 +78,15 @@ function PaymentsContent() {
   }, [status, debouncedSearch])
 
   useEffect(() => {
-    if (session?.status === 'unauthenticated') {
+    if (sessionStatus === 'unauthenticated') {
       router.push('/admin/login')
       return
     }
 
-    if (session?.status === 'authenticated') {
+    if (sessionStatus === 'authenticated') {
       fetchPayments()
     }
-  }, [session, page, status, debouncedSearch])
+  }, [sessionStatus, page, status, debouncedSearch])
 
   const fetchPayments = async () => {
     setLoading(true)
@@ -170,7 +170,7 @@ function PaymentsContent() {
     }
   }
 
-  if (session?.status === 'unauthenticated') {
+  if (sessionStatus === 'unauthenticated') {
     return null
   }
 

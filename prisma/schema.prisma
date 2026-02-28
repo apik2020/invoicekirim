@@ -57,6 +57,7 @@ model User {
   items         Item[]
   subscription  Subscription?
   activityLogs  ActivityLog[]
+  payments      Payment[]
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -296,25 +297,51 @@ model TemplateItem {
 model Payment {
   id                      String    @id @default(cuid())
   userId                  String
+  user                    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   invoiceId               String? // Optional: link to invoice if payment is for specific invoice
 
-  stripePaymentId         String    @unique
+  // Stripe payment fields
+  stripePaymentId         String?   @unique
   stripePaymentIntentId   String?   @unique // Payment intent untuk refund
 
+  // Midtrans/Local payment fields
+  midtransOrderId         String?   @unique // Midtrans order ID
+  midtransTransactionId   String?   // Midtrans transaction ID
+  paymentMethod           String?   // 'STRIPE', 'BANK_TRANSFER', 'VA', 'QRIS', 'EWALLET'
+  paymentGateway          String?   // 'STRIPE', 'MIDTRANS'
+
+  // VA (Virtual Account) fields
+  vaNumber                String?   // Virtual account number
+  vaBank                  String?   // Bank name (BCA, BNI, BRI, Mandiri, etc)
+
+  // QRIS fields
+  qrisUrl                 String?   // QRIS QR code URL
+
+  // E-Wallet fields
+  ewalletType             String?   // GOPAY, OVO, DANA, SHOPEEPAY
+
+  // Payment details
   amount                  Float
   currency                String    @default("IDR")
   description             String?   // Deskripsi pembayaran
+  metadata                Json?     // Additional payment metadata (refund info, etc)
 
   status                  PaymentStatus
+
+  // Expiry for pending payments
+  expiredAt               DateTime?
 
   // Receipt fields
   receiptUrl              String?   // Cloudinary URL for receipt PDF
   receiptNumber           String?   @unique // Format: RCP-YYYYMMDD-XXXX
 
   createdAt               DateTime   @default(now())
+  updatedAt               DateTime   @updatedAt
 
   @@index([userId])
   @@index([stripePaymentIntentId]) // untuk lookup refund
+  @@index([midtransOrderId]) // untuk lookup midtrans order
+  @@index([status])
   @@map("payments")
 }
 
@@ -352,6 +379,12 @@ enum ActivityAction {
   CANCELED
   REMINDED
   VIEWED
+  PAYMENT_REFUNDED
+  PAYMENT_STATUS_CHANGED
+  PAYMENT_DELETED
+  MANUAL_PAYMENT_CREATED
+  REMINDER_SENT
+  OVERDUE_NOTICE_SENT
 }
 
 enum PaymentStatus {

@@ -177,7 +177,8 @@ export async function POST(req: NextRequest) {
         action: 'MANUAL_PAYMENT_CREATED',
         entityType: 'PAYMENT',
         entityId: payment.id,
-        details: `Admin created manual payment of ${amount} ${currency || 'IDR'} for user ${user.email}`,
+        title: 'Manual Payment Created',
+        description: `Admin created manual payment of ${amount} ${currency || 'IDR'} for user ${user.email}`,
       },
     })
 

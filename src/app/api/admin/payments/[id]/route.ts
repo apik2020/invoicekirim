@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic'
 // GET /api/admin/payments/[id] - Get payment details
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verify admin access
@@ -18,8 +18,10 @@ export async function GET(
       return admin
     }
 
+    const { id } = await params
+
     const payment = await prisma.payment.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         user: {
           select: {
@@ -40,7 +42,7 @@ export async function GET(
     const activityLogs = await prisma.activityLog.findMany({
       where: {
         entityType: 'PAYMENT',
-        entityId: params.id,
+        entityId: id,
       },
       orderBy: { createdAt: 'desc' },
       take: 20,
@@ -62,7 +64,7 @@ export async function GET(
 // PATCH /api/admin/payments/[id] - Update payment status or process refund
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verify admin access
@@ -71,13 +73,18 @@ export async function PATCH(
       return admin
     }
 
+    const { id } = await params
     const body = await req.json()
     const { action, status, refundAmount, refundReason } = body
 
     const payment = await prisma.payment.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
-        user: true,
+        user: {
+          include: {
+            subscription: true,
+          },
+        },
       },
     })
 
@@ -108,11 +115,11 @@ export async function PATCH(
 
         // Update payment status
         const updatedPayment = await prisma.payment.update({
-          where: { id: params.id },
+          where: { id },
           data: {
             status: 'REFUNDED',
             metadata: {
-              ...payment.metadata,
+              ...payment.metadata as any,
               refundId: refund.id,
               refundedBy: admin.email,
               refundedAt: new Date().toISOString(),
@@ -128,14 +135,15 @@ export async function PATCH(
             action: 'PAYMENT_REFUNDED',
             entityType: 'PAYMENT',
             entityId: payment.id,
-            details: `Refunded ${refundAmount || payment.amount} ${payment.currency}. Reason: ${refundReason || 'Admin refund'}`,
+            title: 'Payment Refunded',
+            description: `Refunded ${refundAmount || payment.amount} ${payment.currency}. Reason: ${refundReason || 'Admin refund'}`,
           },
         })
 
         // If user has subscription, handle subscription cancellation if needed
-        if (payment.user?.subscriptionId) {
+        if (payment.user?.subscription?.stripeSubscriptionId) {
           await prisma.subscription.update({
-            where: { stripeSubscriptionId: payment.user.subscriptionId },
+            where: { stripeSubscriptionId: payment.user.subscription.stripeSubscriptionId! },
             data: {
               status: 'CANCELED',
             },
@@ -158,7 +166,7 @@ export async function PATCH(
     // Handle status update
     if (status) {
       const updatedPayment = await prisma.payment.update({
-        where: { id: params.id },
+        where: { id },
         data: { status },
       })
 
@@ -169,7 +177,8 @@ export async function PATCH(
           action: 'PAYMENT_STATUS_CHANGED',
           entityType: 'PAYMENT',
           entityId: payment.id,
-          details: `Changed payment status from ${payment.status} to ${status}`,
+          title: 'Payment Status Changed',
+          description: `Changed payment status from ${payment.status} to ${status}`,
         },
       })
 
@@ -189,7 +198,7 @@ export async function PATCH(
 // DELETE /api/admin/payments/[id] - Delete payment (use with caution)
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verify admin access
@@ -198,8 +207,10 @@ export async function DELETE(
       return admin
     }
 
+    const { id } = await params
+
     const payment = await prisma.payment.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (!payment) {
@@ -216,7 +227,7 @@ export async function DELETE(
 
     // Delete the payment
     await prisma.payment.delete({
-      where: { id: params.id },
+      where: { id },
     })
 
     // Log the deletion
@@ -225,8 +236,9 @@ export async function DELETE(
         userId: admin.id,
         action: 'PAYMENT_DELETED',
         entityType: 'PAYMENT',
-        entityId: params.id,
-        details: `Deleted payment ${payment.receiptNumber || payment.id}`,
+        entityId: id,
+        title: 'Payment Deleted',
+        description: `Deleted payment ${payment.receiptNumber || payment.id}`,
       },
     })
 
