@@ -15,10 +15,29 @@ export async function GET(req: NextRequest) {
     })
 
     if (!subscription) {
+      // Check if user exists first
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { id: true },
+      })
+
+      if (!user) {
+        // User doesn't exist in database (might be OAuth only session)
+        // Return default free subscription without creating DB record
+        return NextResponse.json({
+          id: 'default',
+          userId: session.user.id,
+          planType: 'FREE',
+          status: 'FREE',
+          invoiceLimit: 10,
+          invoiceCount: 0,
+        })
+      }
+
       // Create default subscription
       const newSubscription = await prisma.subscription.create({
         data: {
-          userId: session.user.id,
+          userId: user.id,
           status: 'FREE',
           planType: 'FREE',
         },

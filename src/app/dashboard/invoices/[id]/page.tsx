@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect, use, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
+import { useReactToPrint } from 'react-to-print'
 import {
   FileText,
   Edit,
@@ -65,8 +66,15 @@ export default function InvoiceDetailPage({
   const [deleting, setDeleting] = useState(false)
   const [updating, setUpdating] = useState(false)
   const [sendingReminder, setSendingReminder] = useState(false)
+  const [sendingEmail, setSendingEmail] = useState(false)
   const [generatingPDF, setGeneratingPDF] = useState(false)
   const [copied, setCopied] = useState(false)
+  const printRef = useRef<HTMLDivElement>(null)
+
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: invoice ? `Invoice-${invoice.invoiceNumber}` : 'Invoice',
+  })
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -156,10 +164,6 @@ Terima kasih!`
 
     const encoded = encodeURIComponent(message)
     window.open(`https://wa.me/?text=${encoded}`, '_blank')
-  }
-
-  const handlePrint = () => {
-    window.print()
   }
 
   const handleDownloadPDF = async () => {
@@ -378,6 +382,33 @@ Terima kasih!`
     }
   }
 
+  const handleSendEmail = async () => {
+    if (!invoice) return
+
+    setSendingEmail(true)
+    try {
+      const res = await fetch(`/api/invoices/${invoice.id}/send`, {
+        method: 'POST',
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Gagal mengirim invoice')
+      }
+
+      const data = await res.json()
+
+      // Refresh invoice data to get updated status
+      await fetchInvoice()
+
+      alert(data.message || 'Invoice berhasil dikirim ke ' + invoice.clientEmail)
+    } catch (error: any) {
+      alert(error.message)
+    } finally {
+      setSendingEmail(false)
+    }
+  }
+
   const handleShareLink = async () => {
     if (!invoice?.accessToken) return
 
@@ -403,11 +434,11 @@ Terima kasih!`
 
   const getStatusBadge = (status: Invoice['status']) => {
     const styles = {
-      DRAFT: 'bg-gray-100 text-slate-light-700',
+      DRAFT: 'bg-gray-100 text-gray-700',
       SENT: 'bg-teal-100 text-teal-700',
       PAID: 'bg-green-light-100 text-teal-light-700',
       OVERDUE: 'bg-red-100 text-red-700',
-      CANCELED: 'bg-gray-100 text-slate-light-700 line-through',
+      CANCELED: 'bg-gray-100 text-gray-700 line-through',
     }
 
     const labels = {
@@ -431,10 +462,10 @@ Terima kasih!`
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray flex items-center justify-center">
+      <div className="min-h-screen bg-fresh-bg flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-dark animate-spin mx-auto mb-4" />
-          <p className="text-slate">Memuat invoice...</p>
+          <Loader2 className="w-12 h-12 text-gray-900 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Memuat invoice...</p>
         </div>
       </div>
     )
@@ -442,15 +473,15 @@ Terima kasih!`
 
   if (!invoice) {
     return (
-      <div className="min-h-screen bg-gray flex items-center justify-center">
+      <div className="min-h-screen bg-fresh-bg flex items-center justify-center">
         <div className="text-center">
-          <FileText className="w-16 h-16 text-slate mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-dark mb-2">
+          <FileText className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
             Invoice tidak ditemukan
           </h2>
           <Link
             href="/dashboard/invoices"
-            className="text-dark font-bold hover:underline"
+            className="text-gray-900 font-bold hover:underline"
           >
             Kembali ke daftar invoice
           </Link>
@@ -460,7 +491,7 @@ Terima kasih!`
   }
 
   return (
-    <div className="min-h-screen bg-gray print:bg-white">
+    <div className="min-h-screen bg-fresh-bg print:bg-white">
       {/* Header */}
       <DashboardHeader
         title="Detail Invoice"
@@ -471,21 +502,21 @@ Terima kasih!`
             <button
               onClick={handleDownloadPDF}
               disabled={generatingPDF}
-              className="p-2.5 text-slate rounded-xl btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-2.5 text-gray-600 rounded-xl btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
               title="Download PDF"
             >
               {generatingPDF ? <Loader2 size={20} className="animate-spin" /> : <Download size={20} />}
             </button>
             <button
               onClick={handlePrint}
-              className="p-2.5 text-slate rounded-xl btn-secondary"
+              className="p-2.5 text-gray-600 rounded-xl btn-secondary"
               title="Print"
             >
               <Printer size={20} />
             </button>
             <button
               onClick={handleShareLink}
-              className="p-2.5 text-slate rounded-xl btn-secondary relative"
+              className="p-2.5 text-gray-600 rounded-xl btn-secondary relative"
               title="Share Link"
             >
               {copied ? <Check size={20} className="text-teal-light" /> : <Share2 size={20} />}
@@ -493,7 +524,7 @@ Terima kasih!`
             {invoice.status === 'DRAFT' && (
               <Link
                 href={`/dashboard/invoices/${invoice.id}/edit`}
-                className="p-2.5 text-slate rounded-xl btn-secondary"
+                className="p-2.5 text-gray-600 rounded-xl btn-secondary"
                 title="Edit"
               >
                 <Edit size={20} />
@@ -522,16 +553,24 @@ Terima kasih!`
             {invoice.status === 'DRAFT' && (
               <div className="flex flex-wrap gap-3">
                 <button
-                  onClick={() => handleStatusUpdate('SENT')}
-                  disabled={updating}
+                  onClick={handleSendEmail}
+                  disabled={sendingEmail}
                   className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {updating ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                  {sendingEmail ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                  {sendingEmail ? 'Mengirim...' : 'Kirim Invoice'}
+                </button>
+                <button
+                  onClick={() => handleStatusUpdate('SENT')}
+                  disabled={updating}
+                  className="flex items-center gap-2 px-6 py-3 text-gray-600 font-bold rounded-xl btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {updating ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
                   {updating ? 'Memproses...' : 'Tandai Terkirim'}
                 </button>
                 <Link
                   href={`/dashboard/invoices/${invoice.id}/edit`}
-                  className="flex items-center gap-2 px-6 py-3 text-slate font-bold rounded-xl btn-secondary"
+                  className="flex items-center gap-2 px-6 py-3 text-gray-600 font-bold rounded-xl btn-secondary"
                 >
                   <Edit size={18} />
                   Edit
@@ -541,6 +580,14 @@ Terima kasih!`
 
             {invoice.status === 'SENT' && (
               <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={handleSendEmail}
+                  disabled={sendingEmail}
+                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {sendingEmail ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                  {sendingEmail ? 'Mengirim...' : 'Kirim Ulang'}
+                </button>
                 <button
                   onClick={() => handleStatusUpdate('PAID')}
                   disabled={updating}
@@ -552,7 +599,7 @@ Terima kasih!`
                 <button
                   onClick={handleSendReminder}
                   disabled={sendingReminder}
-                  className="flex items-center gap-2 px-6 py-3 text-teal-light font-bold rounded-xl border-2 border-slate hover:bg-gray transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-6 py-3 text-teal-light font-bold rounded-xl border-2 border-orange-200 hover:bg-gray transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {sendingReminder ? <Loader2 size={18} className="animate-spin" /> : <Bell size={18} />}
                   {sendingReminder ? 'Mengirim...' : 'Kirim Reminder'}
@@ -583,7 +630,7 @@ Terima kasih!`
                 <button
                   onClick={handleSendReminder}
                   disabled={sendingReminder}
-                  className="flex items-center gap-2 px-6 py-3 text-teal-light font-bold rounded-xl border-2 border-slate hover:bg-gray transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-6 py-3 text-teal-light font-bold rounded-xl border-2 border-orange-200 hover:bg-gray transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {sendingReminder ? <Loader2 size={18} className="animate-spin" /> : <Bell size={18} />}
                   {sendingReminder ? 'Mengirim...' : 'Kirim Reminder'}
@@ -611,19 +658,19 @@ Terima kasih!`
           </div>
 
           {/* Invoice Card */}
-          <div id="invoice-card" className="bg-white p-8 md:p-10 rounded-3xl shadow-lg">
+          <div ref={printRef} id="invoice-card" className="bg-white p-8 md:p-10 rounded-3xl shadow-lg">
             {/* Header */}
-            <div className="flex justify-between items-start mb-8 pb-8 border-b border-slate">
+            <div className="flex justify-between items-start mb-8 pb-8 border-b border-orange-200">
               <div>
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-12 h-12 rounded-xl bg-charcoal flex items-center justify-center">
                     <FileText className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h1 className="font-bold text-xl text-dark">
+                    <h1 className="font-bold text-xl text-gray-900">
                       {invoice.companyName}
                     </h1>
-                    <p className="text-sm text-slate">{invoice.companyEmail}</p>
+                    <p className="text-sm text-gray-600">{invoice.companyEmail}</p>
                   </div>
                 </div>
               </div>
@@ -632,46 +679,46 @@ Terima kasih!`
 
             {/* Invoice Title */}
             <div className="mb-8">
-              <h2 className="text-3xl font-extrabold text-dark tracking-tight mb-2">
+              <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight mb-2">
                 INVOICE
               </h2>
-              <p className="text-slate font-mono">{invoice.invoiceNumber}</p>
+              <p className="text-gray-600 font-mono">{invoice.invoiceNumber}</p>
             </div>
 
             {/* Bill To */}
             <div className="mb-8">
-              <h3 className="font-bold text-dark mb-4 text-sm uppercase tracking-wide text-slate">
+              <h3 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wide text-gray-600">
                 Kepada:
               </h3>
               <div className="bg-gray rounded-xl p-6">
-                <p className="font-bold text-dark text-lg mb-2">
+                <p className="font-bold text-gray-900 text-lg mb-2">
                   {invoice.clientName}
                 </p>
-                <p className="text-slate">{invoice.clientEmail}</p>
+                <p className="text-gray-600">{invoice.clientEmail}</p>
                 {invoice.clientPhone && (
-                  <p className="text-slate">{invoice.clientPhone}</p>
+                  <p className="text-gray-600">{invoice.clientPhone}</p>
                 )}
                 {invoice.clientAddress && (
-                  <p className="text-slate whitespace-pre-line">{invoice.clientAddress}</p>
+                  <p className="text-gray-600 whitespace-pre-line">{invoice.clientAddress}</p>
                 )}
               </div>
             </div>
 
             {/* From Section */}
             <div className="mb-8">
-              <h3 className="font-bold text-dark mb-4 text-sm uppercase tracking-wide text-slate">
+              <h3 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wide text-gray-600">
                 Dari:
               </h3>
               <div className="bg-gray rounded-xl p-6">
-                <p className="font-bold text-dark text-lg mb-1">
+                <p className="font-bold text-gray-900 text-lg mb-1">
                   {invoice.companyName}
                 </p>
-                <p className="text-slate">{invoice.companyEmail}</p>
+                <p className="text-gray-600">{invoice.companyEmail}</p>
                 {invoice.companyPhone && (
-                  <p className="text-slate">{invoice.companyPhone}</p>
+                  <p className="text-gray-600">{invoice.companyPhone}</p>
                 )}
                 {invoice.companyAddress && (
-                  <p className="text-slate whitespace-pre-line">{invoice.companyAddress}</p>
+                  <p className="text-gray-600 whitespace-pre-line">{invoice.companyAddress}</p>
                 )}
               </div>
             </div>
@@ -679,15 +726,15 @@ Terima kasih!`
             {/* Invoice Info */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-8">
               <div>
-                <span className="text-slate text-sm">Tanggal</span>
-                <p className="font-semibold text-dark mt-1">
+                <span className="text-gray-600 text-sm">Tanggal</span>
+                <p className="font-semibold text-gray-900 mt-1">
                   {formatDate(invoice.date)}
                 </p>
               </div>
               {invoice.dueDate && (
                 <div>
-                  <span className="text-slate text-sm">Jatuh Tempo</span>
-                  <p className="font-semibold text-dark mt-1">
+                  <span className="text-gray-600 text-sm">Jatuh Tempo</span>
+                  <p className="font-semibold text-gray-900 mt-1">
                     {formatDate(invoice.dueDate)}
                   </p>
                 </div>
@@ -696,40 +743,40 @@ Terima kasih!`
 
             {/* Items Table */}
             <div className="mb-8">
-              <h3 className="font-bold text-dark mb-4 text-sm uppercase tracking-wide text-slate">
+              <h3 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wide text-gray-600">
                 Item Invoice
               </h3>
-              <div className="overflow-x-auto rounded-xl border border-slate">
+              <div className="overflow-x-auto rounded-xl border border-orange-200">
                 <table className="w-full">
                   <thead>
                     <tr className="bg-gray">
-                      <th className="text-left py-4 px-6 font-bold text-dark">
+                      <th className="text-left py-4 px-6 font-bold text-gray-900">
                         Deskripsi
                       </th>
-                      <th className="text-center py-4 px-6 font-bold text-dark">
+                      <th className="text-center py-4 px-6 font-bold text-gray-900">
                         Qty
                       </th>
-                      <th className="text-right py-4 px-6 font-bold text-dark">
+                      <th className="text-right py-4 px-6 font-bold text-gray-900">
                         Harga
                       </th>
-                      <th className="text-right py-4 px-6 font-bold text-dark">
+                      <th className="text-right py-4 px-6 font-bold text-gray-900">
                         Total
                       </th>
                     </tr>
                   </thead>
                   <tbody>
                     {invoice.items.map((item) => (
-                      <tr key={item.id} className="border-b border-slate">
-                        <td className="py-4 px-6 text-dark">
+                      <tr key={item.id} className="border-b border-orange-200">
+                        <td className="py-4 px-6 text-gray-900">
                           {item.description || '-'}
                         </td>
-                        <td className="py-4 px-6 text-center text-dark">
+                        <td className="py-4 px-6 text-center text-gray-900">
                           {item.quantity}
                         </td>
-                        <td className="py-4 px-6 text-right text-dark">
+                        <td className="py-4 px-6 text-right text-gray-900">
                           {formatCurrency(item.price)}
                         </td>
-                        <td className="py-4 px-6 text-right font-semibold text-dark">
+                        <td className="py-4 px-6 text-right font-semibold text-gray-900">
                           {formatCurrency(item.quantity * item.price)}
                         </td>
                       </tr>
@@ -742,19 +789,19 @@ Terima kasih!`
             {/* Totals */}
             <div className="flex justify-end mb-8">
               <div className="w-full md:w-80">
-                <div className="flex justify-between py-3 text-slate">
+                <div className="flex justify-between py-3 text-gray-600">
                   <span>Subtotal</span>
                   <span className="font-semibold">
                     {formatCurrency(invoice.subtotal)}
                   </span>
                 </div>
-                <div className="flex justify-between py-3 text-slate">
+                <div className="flex justify-between py-3 text-gray-600">
                   <span>Pajak ({invoice.taxRate}%)</span>
                   <span className="font-semibold">
                     {formatCurrency(invoice.taxAmount)}
                   </span>
                 </div>
-                <div className="flex justify-between py-4 border-t-2 border-slate text-2xl font-extrabold text-dark mt-4">
+                <div className="flex justify-between py-4 border-t-2 border-orange-200 text-2xl font-extrabold text-gray-900 mt-4">
                   <span>Total</span>
                   <span>{formatCurrency(invoice.total)}</span>
                 </div>
@@ -763,17 +810,17 @@ Terima kasih!`
 
             {/* Notes */}
             {invoice.notes && (
-              <div className="border-t border-slate pt-8">
-                <h3 className="font-bold text-dark mb-3 text-sm uppercase tracking-wide text-slate">
+              <div className="border-t border-orange-200 pt-8">
+                <h3 className="font-bold text-gray-900 mb-3 text-sm uppercase tracking-wide text-gray-600">
                   Catatan
                 </h3>
-                <p className="text-slate whitespace-pre-line">{invoice.notes}</p>
+                <p className="text-gray-600 whitespace-pre-line">{invoice.notes}</p>
               </div>
             )}
 
             {/* Footer */}
-            <div className="mt-8 pt-6 border-t border-slate text-center">
-              <p className="text-sm text-slate">
+            <div className="mt-8 pt-6 border-t border-orange-200 text-center">
+              <p className="text-sm text-gray-600">
                 Generated by InvoiceKirim - Invoice Generator untuk Freelancer Indonesia
               </p>
             </div>
@@ -784,16 +831,24 @@ Terima kasih!`
             {invoice.status === 'DRAFT' && (
               <>
                 <button
-                  onClick={() => handleStatusUpdate('SENT')}
-                  disabled={updating}
+                  onClick={handleSendEmail}
+                  disabled={sendingEmail}
                   className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {updating ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                  {sendingEmail ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                  {sendingEmail ? 'Mengirim...' : 'Kirim Invoice'}
+                </button>
+                <button
+                  onClick={() => handleStatusUpdate('SENT')}
+                  disabled={updating}
+                  className="flex items-center gap-2 px-6 py-3 text-gray-600 font-bold rounded-xl btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {updating ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
                   {updating ? 'Memproses...' : 'Tandai Terkirim'}
                 </button>
                 <Link
                   href={`/dashboard/invoices/${invoice.id}/edit`}
-                  className="flex items-center gap-2 px-6 py-3 text-slate font-bold rounded-xl btn-secondary"
+                  className="flex items-center gap-2 px-6 py-3 text-gray-600 font-bold rounded-xl btn-secondary"
                 >
                   <Edit size={18} />
                   Edit
@@ -802,6 +857,14 @@ Terima kasih!`
             )}
             {invoice.status === 'SENT' && (
               <>
+                <button
+                  onClick={handleSendEmail}
+                  disabled={sendingEmail}
+                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {sendingEmail ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                  {sendingEmail ? 'Mengirim...' : 'Kirim Ulang'}
+                </button>
                 <button
                   onClick={() => handleStatusUpdate('PAID')}
                   disabled={updating}
@@ -813,7 +876,7 @@ Terima kasih!`
                 <button
                   onClick={handleSendReminder}
                   disabled={sendingReminder}
-                  className="flex items-center gap-2 px-6 py-3 text-teal-light font-bold rounded-xl border-2 border-slate hover:bg-gray transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-6 py-3 text-teal-light font-bold rounded-xl border-2 border-orange-200 hover:bg-gray transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {sendingReminder ? <Loader2 size={18} className="animate-spin" /> : <Bell size={18} />}
                   {sendingReminder ? 'Mengirim...' : 'Kirim Reminder'}
@@ -843,7 +906,7 @@ Terima kasih!`
                 <button
                   onClick={handleSendReminder}
                   disabled={sendingReminder}
-                  className="flex items-center gap-2 px-6 py-3 text-teal-light font-bold rounded-xl border-2 border-slate hover:bg-gray transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-6 py-3 text-teal-light font-bold rounded-xl border-2 border-orange-200 hover:bg-gray transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {sendingReminder ? <Loader2 size={18} className="animate-spin" /> : <Bell size={18} />}
                   {sendingReminder ? 'Mengirim...' : 'Kirim Reminder'}

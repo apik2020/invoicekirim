@@ -15,9 +15,10 @@ export default async function proxy(req: NextRequest) {
   const isClientAPI = pathname.startsWith('/api/client')
   const isProtectedAPI = pathname.startsWith('/api/invoices') || pathname.startsWith('/api/templates')
 
-  // Redirect authenticated users away from auth pages
-  if (isAuthPage && isAuth) {
-    return NextResponse.redirect(new URL('/dashboard', req.url))
+  // Allow access to auth pages regardless of authentication status
+  // Users should be able to view login/register pages even if logged in
+  if (isAuthPage) {
+    return NextResponse.next()
   }
 
   // Client portal and client API are public - no authentication needed

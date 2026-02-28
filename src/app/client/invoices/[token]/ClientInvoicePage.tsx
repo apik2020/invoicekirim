@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'next/navigation'
+import { useReactToPrint } from 'react-to-print'
 import { FileText, Download, Printer, Loader2, CreditCard, CheckCircle } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
 
@@ -44,6 +45,12 @@ export default function ClientInvoicePage({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [generatingPDF, setGeneratingPDF] = useState(false)
+  const printRef = useRef<HTMLDivElement>(null)
+
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: invoice ? `Invoice-${invoice.invoiceNumber}` : 'Invoice',
+  })
 
   useEffect(() => {
     const fetchInvoice = async () => {
@@ -242,16 +249,12 @@ export default function ClientInvoicePage({
     }
   }
 
-  const handlePrint = () => {
-    window.print()
-  }
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray flex items-center justify-center p-4">
+      <div className="min-h-screen bg-fresh-bg flex items-center justify-center p-4">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-dark animate-spin mx-auto mb-4" />
-          <p className="text-slate">Memuat invoice...</p>
+          <Loader2 className="w-12 h-12 text-gray-900 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Memuat invoice...</p>
         </div>
       </div>
     )
@@ -259,16 +262,16 @@ export default function ClientInvoicePage({
 
   if (error || !invoice) {
     return (
-      <div className="min-h-screen bg-gray flex items-center justify-center p-4">
+      <div className="min-h-screen bg-fresh-bg flex items-center justify-center p-4">
         <div className="text-center bg-white p-8 rounded-2xl shadow-lg max-w-md">
-          <FileText className="w-16 h-16 text-slate mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-dark mb-2">
+          <FileText className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
             Invoice Tidak Ditemukan
           </h2>
-          <p className="text-slate mb-6">
+          <p className="text-gray-600 mb-6">
             {error || 'Invoice tidak ditemukan atau link sudah tidak valid.'}
           </p>
-          <p className="text-sm text-slate">
+          <p className="text-sm text-gray-600">
             Silakan hubungi pengirim invoice untuk mendapatkan link yang valid.
           </p>
         </div>
@@ -278,11 +281,11 @@ export default function ClientInvoicePage({
 
   const getStatusBadge = (status: string) => {
     const styles: Record<string, string> = {
-      DRAFT: 'bg-gray-100 text-slate-light-700',
+      DRAFT: 'bg-gray-100 text-gray-600-light-700',
       SENT: 'bg-teal-100 text-teal-700',
       PAID: 'bg-green-light-100 text-teal-light-700',
       OVERDUE: 'bg-red-100 text-red-700',
-      CANCELED: 'bg-gray-100 text-slate-light-700 line-through',
+      CANCELED: 'bg-gray-100 text-gray-600-light-700 line-through',
     }
 
     const labels: Record<string, string> = {
@@ -307,9 +310,9 @@ export default function ClientInvoicePage({
   const isPaid = invoice.status === 'PAID'
 
   return (
-    <div className="min-h-screen bg-gray">
+    <div className="min-h-screen bg-fresh-bg">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-slate sticky top-0 z-50">
+      <header className="bg-white/80 backdrop-blur-sm border-b border-orange-200 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -317,8 +320,8 @@ export default function ClientInvoicePage({
                 <FileText className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="font-bold text-dark text-lg">InvoiceKirim</h1>
-                <p className="text-xs text-slate">Client Portal</p>
+                <h1 className="font-bold text-gray-900 text-lg">InvoiceKirim</h1>
+                <p className="text-xs text-gray-600">Client Portal</p>
               </div>
             </div>
 
@@ -326,7 +329,7 @@ export default function ClientInvoicePage({
               <button
                 onClick={handleDownloadPDF}
                 disabled={generatingPDF}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate rounded-xl btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 rounded-xl btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {generatingPDF ? (
                   <Loader2 size={16} className="animate-spin" />
@@ -337,7 +340,7 @@ export default function ClientInvoicePage({
               </button>
               <button
                 onClick={handlePrint}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate rounded-xl btn-secondary"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 rounded-xl btn-secondary"
               >
                 <Printer size={16} />
                 <span className="hidden sm:inline">Print</span>
@@ -377,19 +380,19 @@ export default function ClientInvoicePage({
           ) : null}
 
           {/* Invoice Card */}
-          <div id="invoice-card" className="bg-white p-8 md:p-12 rounded-3xl shadow-lg">
+          <div ref={printRef} id="invoice-card" className="bg-white p-8 md:p-12 rounded-3xl shadow-lg">
             {/* Invoice Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start mb-10 pb-8 border-b border-slate">
+            <div className="flex flex-col md:flex-row justify-between items-start mb-10 pb-8 border-b border-orange-200">
               <div>
                 <div className="flex items-center gap-3 mb-5">
                   <div className="w-14 h-14 rounded-xl bg-charcoal flex items-center justify-center">
                     <FileText className="w-7 h-7 text-white" />
                   </div>
                   <div>
-                    <h1 className="font-bold text-2xl text-dark tracking-tight">
+                    <h1 className="font-bold text-2xl text-gray-900 tracking-tight">
                       {invoice.companyName}
                     </h1>
-                    <p className="text-sm text-slate">{invoice.companyEmail}</p>
+                    <p className="text-sm text-gray-600">{invoice.companyEmail}</p>
                   </div>
                 </div>
               </div>
@@ -400,27 +403,27 @@ export default function ClientInvoicePage({
 
             {/* Invoice Title */}
             <div className="mb-10">
-              <h2 className="text-4xl font-extrabold text-dark tracking-tight mb-2">
+              <h2 className="text-4xl font-extrabold text-gray-900 tracking-tight mb-2">
                 INVOICE
               </h2>
-              <p className="text-slate font-mono">{invoice.invoiceNumber}</p>
+              <p className="text-gray-600 font-mono">{invoice.invoiceNumber}</p>
             </div>
 
             {/* Bill To */}
             <div className="mb-10">
-              <h3 className="font-bold text-dark mb-4 text-sm uppercase tracking-wide text-slate">
+              <h3 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wide text-gray-600">
                 Kepada:
               </h3>
               <div className="bg-gray rounded-xl p-6">
-                <p className="font-bold text-dark text-xl mb-2">
+                <p className="font-bold text-gray-900 text-xl mb-2">
                   {invoice.clientName}
                 </p>
-                <p className="text-slate">{invoice.clientEmail}</p>
+                <p className="text-gray-600">{invoice.clientEmail}</p>
                 {invoice.clientPhone && (
-                  <p className="text-slate">{invoice.clientPhone}</p>
+                  <p className="text-gray-600">{invoice.clientPhone}</p>
                 )}
                 {invoice.clientAddress && (
-                  <p className="text-slate">{invoice.clientAddress}</p>
+                  <p className="text-gray-600">{invoice.clientAddress}</p>
                 )}
               </div>
             </div>
@@ -428,15 +431,15 @@ export default function ClientInvoicePage({
             {/* Invoice Info */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-10">
               <div>
-                <span className="text-slate text-sm">Tanggal</span>
-                <p className="font-semibold text-dark mt-1">
+                <span className="text-gray-600 text-sm">Tanggal</span>
+                <p className="font-semibold text-gray-900 mt-1">
                   {formatDate(invoice.date)}
                 </p>
               </div>
               {invoice.dueDate && (
                 <div>
-                  <span className="text-slate text-sm">Jatuh Tempo</span>
-                  <p className="font-semibold text-dark mt-1">
+                  <span className="text-gray-600 text-sm">Jatuh Tempo</span>
+                  <p className="font-semibold text-gray-900 mt-1">
                     {formatDate(invoice.dueDate)}
                   </p>
                 </div>
@@ -445,40 +448,40 @@ export default function ClientInvoicePage({
 
             {/* Items Table */}
             <div className="mb-10">
-              <h3 className="font-bold text-dark mb-4 text-sm uppercase tracking-wide text-slate">
+              <h3 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wide text-gray-600">
                 Item Invoice
               </h3>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b-2 border-slate">
-                      <th className="text-left py-4 font-bold text-dark">
+                    <tr className="border-b-2 border-orange-200">
+                      <th className="text-left py-4 font-bold text-gray-900">
                         Deskripsi
                       </th>
-                      <th className="text-center py-4 font-bold text-dark">
+                      <th className="text-center py-4 font-bold text-gray-900">
                         Qty
                       </th>
-                      <th className="text-right py-4 font-bold text-dark">
+                      <th className="text-right py-4 font-bold text-gray-900">
                         Harga
                       </th>
-                      <th className="text-right py-4 font-bold text-dark">
+                      <th className="text-right py-4 font-bold text-gray-900">
                         Total
                       </th>
                     </tr>
                   </thead>
                   <tbody>
                     {invoice.items.map((item) => (
-                      <tr key={item.id} className="border-b border-slate">
-                        <td className="py-4 text-dark">
+                      <tr key={item.id} className="border-b border-orange-200">
+                        <td className="py-4 text-gray-900">
                           {item.description || '-'}
                         </td>
-                        <td className="py-4 text-center text-dark">
+                        <td className="py-4 text-center text-gray-900">
                           {item.quantity}
                         </td>
-                        <td className="py-4 text-right text-dark">
+                        <td className="py-4 text-right text-gray-900">
                           {formatCurrency(item.price)}
                         </td>
-                        <td className="py-4 text-right font-semibold text-dark">
+                        <td className="py-4 text-right font-semibold text-gray-900">
                           {formatCurrency(item.quantity * item.price)}
                         </td>
                       </tr>
@@ -491,19 +494,19 @@ export default function ClientInvoicePage({
             {/* Totals */}
             <div className="flex justify-end mb-10">
               <div className="w-full md:w-80">
-                <div className="flex justify-between py-3 text-slate">
+                <div className="flex justify-between py-3 text-gray-600">
                   <span>Subtotal</span>
                   <span className="font-semibold">
                     {formatCurrency(invoice.subtotal)}
                   </span>
                 </div>
-                <div className="flex justify-between py-3 text-slate">
+                <div className="flex justify-between py-3 text-gray-600">
                   <span>Pajak ({invoice.taxRate}%)</span>
                   <span className="font-semibold">
                     {formatCurrency(invoice.taxAmount)}
                   </span>
                 </div>
-                <div className="flex justify-between py-4 border-t-2 border-slate text-2xl font-extrabold text-dark mt-4">
+                <div className="flex justify-between py-4 border-t-2 border-orange-200 text-2xl font-extrabold text-gray-900 mt-4">
                   <span>Total</span>
                   <span>{formatCurrency(invoice.total)}</span>
                 </div>
@@ -512,11 +515,11 @@ export default function ClientInvoicePage({
 
             {/* Notes */}
             {invoice.notes && (
-              <div className="border-t border-slate pt-8">
-                <h3 className="font-bold text-dark mb-3 text-sm uppercase tracking-wide text-slate">
+              <div className="border-t border-orange-200 pt-8">
+                <h3 className="font-bold text-gray-900 mb-3 text-sm uppercase tracking-wide text-gray-600">
                   Catatan
                 </h3>
-                <p className="text-slate whitespace-pre-line">
+                <p className="text-gray-600 whitespace-pre-line">
                   {invoice.notes}
                 </p>
               </div>
@@ -524,23 +527,23 @@ export default function ClientInvoicePage({
 
             {/* Payment Info */}
             {!isPaid && (
-              <div className="mt-10 p-6 rounded-xl bg-gray border-2 border-slate">
+              <div className="mt-10 p-6 rounded-xl bg-gray border-2 border-orange-200">
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-charcoal flex items-center justify-center flex-shrink-0">
                     <CreditCard className="w-6 h-6 text-white" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-bold text-dark mb-2">
+                    <h3 className="font-bold text-gray-900 mb-2">
                       Informasi Pembayaran
                     </h3>
-                    <p className="text-slate text-sm mb-4">
+                    <p className="text-gray-600 text-sm mb-4">
                       Silakan hubungi {invoice.companyName} untuk informasi pembayaran.
                     </p>
                     <div className="flex flex-wrap gap-2 text-sm">
                       {invoice.companyEmail && (
                         <a
                           href={`mailto:${invoice.companyEmail}?subject=Pembayaran%20Invoice%20${invoice.invoiceNumber}`}
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-xl font-medium text-dark hover:bg-gray transition-colors shadow-sm"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-xl font-medium text-gray-900 hover:bg-gray transition-colors shadow-sm"
                         >
                           📧 Email
                         </a>
@@ -548,7 +551,7 @@ export default function ClientInvoicePage({
                       {invoice.companyPhone && (
                         <a
                           href={`tel:${invoice.companyPhone}`}
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-xl font-medium text-dark hover:bg-gray transition-colors shadow-sm"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-xl font-medium text-gray-900 hover:bg-gray transition-colors shadow-sm"
                         >
                           📞 {invoice.companyPhone}
                         </a>
@@ -560,19 +563,19 @@ export default function ClientInvoicePage({
             )}
 
             {/* Footer */}
-            <div className="mt-12 pt-8 border-t border-slate text-center">
-              <p className="text-sm text-slate">
+            <div className="mt-12 pt-8 border-t border-orange-200 text-center">
+              <p className="text-sm text-gray-600">
                 Invoice dibuat dengan{' '}
                 <a
                   href="https://invoicekirim.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-dark font-medium hover:underline"
+                  className="text-gray-900 font-medium hover:underline"
                 >
                   InvoiceKirim
                 </a>
               </p>
-              <p className="text-xs text-slate mt-2">
+              <p className="text-xs text-gray-600 mt-2">
                 &copy; {new Date().getFullYear()} InvoiceKirim. All rights reserved.
               </p>
             </div>

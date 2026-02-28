@@ -10,8 +10,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-ubuntu);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -24,21 +23,21 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-ubuntu), sans-serif;
 }
 
-/* Custom Components */
+/* Custom Components - Freshly Squeezed Theme */
 @layer components {
   .btn-primary {
-    @apply bg-gray-900 text-white rounded-xl font-semibold hover:bg-gray-800 transition-all;
+    @apply bg-orange-500 text-white rounded-xl font-semibold hover:bg-orange-600 transition-all shadow-lg shadow-orange-200;
   }
 
   .btn-secondary {
-    @apply bg-white text-gray-900 border-2 border-gray-200 rounded-xl font-semibold hover:bg-gray-50 hover:border-gray-300 transition-all;
+    @apply bg-white text-orange-600 border-2 border-orange-200 rounded-xl font-semibold hover:bg-orange-50 hover:border-orange-300 transition-all;
   }
 
   .card {
-    @apply bg-white rounded-2xl shadow-lg border border-gray-100;
+    @apply bg-white rounded-2xl shadow-lg border border-orange-100;
   }
 
   .card-hover {
@@ -49,39 +48,153 @@ body {
     @apply inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold;
   }
 
-  .badge-blue {
-    @apply bg-sky-100 text-sky-700;
+  .badge-orange {
+    @apply bg-orange-100 text-orange-700;
+  }
+
+  .badge-yellow {
+    @apply bg-yellow-100 text-yellow-700;
+  }
+
+  .badge-lemon {
+    @apply bg-lemon-100 text-lemon-700;
+  }
+
+  .badge-lime {
+    @apply bg-lime-100 text-lime-700;
+  }
+
+  .badge-pink {
+    @apply bg-pink-100 text-pink-700;
   }
 
   .icon-box {
     @apply w-14 h-14 rounded-2xl flex items-center justify-center;
   }
 
-  .icon-box-blue {
-    @apply bg-sky-100;
+  .icon-box-orange {
+    @apply bg-orange-100;
   }
 
-  .icon-box-sky {
-    @apply bg-sky-50;
+  .icon-box-yellow {
+    @apply bg-yellow-100;
   }
 
-  .icon-box-navy {
-    @apply bg-gray-100;
+  .icon-box-lemon {
+    @apply bg-lemon-100;
+  }
+
+  .icon-box-lime {
+    @apply bg-lime-100;
+  }
+
+  .icon-box-pink {
+    @apply bg-pink-100;
   }
 
   .checkmark {
-    @apply w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0;
+    @apply w-5 h-5 rounded-full bg-lime-500 flex items-center justify-center flex-shrink-0;
   }
 
-  .gradient-indigo {
-    @apply bg-gradient-to-br from-indigo-600 to-purple-700;
+  .gradient-fresh {
+    @apply bg-gradient-to-br from-orange-400 via-lemon-400 to-lime-400;
+  }
+
+  .gradient-sunset {
+    @apply bg-gradient-to-br from-orange-500 to-pink-500;
+  }
+
+  .gradient-citrus {
+    @apply bg-gradient-to-br from-lemon-400 to-lime-500;
   }
 
   .pricing-card {
-    @apply bg-white rounded-2xl shadow-lg border-2 border-gray-100 p-8;
+    @apply bg-white rounded-2xl shadow-lg border-2 border-orange-100 p-8;
   }
 
   .pricing-card-featured {
-    @apply bg-white rounded-2xl shadow-2xl border-2 border-indigo-500 p-8;
+    @apply bg-white rounded-2xl shadow-2xl border-2 border-orange-400 p-8 pt-12 relative;
+  }
+
+  /* Form Inputs with better contrast */
+  .input {
+    @apply w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-black placeholder-gray-500 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200 transition-all;
+  }
+
+  .input-label {
+    @apply block text-sm font-bold text-black mb-2;
+  }
+
+  .select {
+    @apply w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-black focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200 transition-all;
+  }
+
+  .textarea {
+    @apply w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-black placeholder-gray-500 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200 transition-all resize-none;
+  }
+}
+
+/* Print Styles - Ubuntu Font */
+@media print {
+  @page {
+    margin: 1cm;
+    size: A4;
+  }
+
+  * {
+    font-family: var(--font-ubuntu), 'Ubuntu', sans-serif !important;
+  }
+
+  body {
+    font-family: var(--font-ubuntu), 'Ubuntu', sans-serif !important;
+    background: white !important;
+    color: black !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide non-printable elements */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Ensure printable content is visible */
+  #invoice-preview,
+  #invoice-card {
+    display: block !important;
+    background: white !important;
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Preserve colors in print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* Remove shadows and rounded corners for cleaner print */
+  .shadow-lg,
+  .shadow-xl,
+  .shadow-2xl {
+    box-shadow: none !important;
+  }
+
+  /* Page break handling */
+  .page-break-before {
+    page-break-before: always;
+  }
+
+  .page-break-after {
+    page-break-after: always;
+  }
+
+  .avoid-page-break {
+    page-break-inside: avoid;
   }
 }

@@ -1,9 +1,14 @@
-import { Resend } from 'resend'
+// Initialize Resend (conditionally imported to avoid build errors)
+let resend: any = null
 
-// Initialize Resend
-const resend = process.env.RESEND_API_KEY
-  ? new Resend(process.env.RESEND_API_KEY)
-  : null
+try {
+  if (process.env.RESEND_API_KEY) {
+    const Resend = require('resend')
+    resend = new Resend(process.env.RESEND_API_KEY)
+  }
+} catch (error) {
+  // Resend package not installed, will use dev mode
+}
 
 // Email templates
 export const emailTemplates = {

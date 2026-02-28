@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
 }
 
 // For development with direct connection
@@ -12,6 +13,19 @@ datasource db {
 //   provider = "postgresql"
 //   url      = env("DIRECT_URL")
 // }
+
+// Admin & Authentication (Separate from users)
+model Admin {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  password      String    @db.Text // Required for credentials provider
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("admins")
+}
 
 // User & Authentication
 model User {
@@ -22,11 +36,27 @@ model User {
   image         String?
   password      String? // For credentials provider
 
+  // Company Info (Default for new invoices)
+  companyName     String?
+  companyEmail    String?
+  companyPhone    String?
+  companyAddress  String?   @db.Text
+
+  // SMTP Configuration (for sending invoices)
+  smtpHost        String?
+  smtpPort        String?   @default("587")
+  smtpSecure      Boolean?  @default(false)
+  smtpUser        String?
+  smtpPass        String?   @db.Text
+
   accounts      Account[]
   sessions      Session[]
   invoices      Invoice[]
+  clients       Client[]
   templates     InvoiceTemplate[]
+  items         Item[]
   subscription  Subscription?
+  activityLogs  ActivityLog[]
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -108,11 +138,60 @@ enum PlanType {
   PRO
 }
 
+// Item/Product Catalog (Reusable items for invoices)
+model Item {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name          String
+  description   String?
+  sku           String?   @unique // Stock Keeping Code
+
+  unit          String    @default("pcs") // satuan: pcs, kg, jam, dll
+
+  price         Float
+  taxRate       Float     @default(11)
+
+  // Category for grouping
+  category      String?
+
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@index([userId])
+  @@index([sku])
+  @@map("items")
+}
+
+// Client Management
+model Client {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name          String
+  email         String
+  phone         String?
+  address       String?   @db.Text
+  company       String?
+
+  invoices      Invoice[]
+
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@index([userId])
+  @@map("clients")
+}
+
 // Invoice
 model Invoice {
   id              String    @id @default(cuid())
   userId          String
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clientId        String?   // Optional link to saved client
+  client          Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
 
   // Invoice Details
   invoiceNumber   String    @unique
@@ -215,20 +294,64 @@ model TemplateItem {
 
 // Payment History
 model Payment {
-  id              String    @id @default(cuid())
-  userId          String
-  invoiceId       String? // Optional: link to invoice if payment is for specific invoice
+  id                      String    @id @default(cuid())
+  userId                  String
+  invoiceId               String? // Optional: link to invoice if payment is for specific invoice
 
-  stripePaymentId String    @unique
-  amount          Float
-  currency        String    @default("IDR")
+  stripePaymentId         String    @unique
+  stripePaymentIntentId   String?   @unique // Payment intent untuk refund
 
-  status          PaymentStatus
+  amount                  Float
+  currency                String    @default("IDR")
+  description             String?   // Deskripsi pembayaran
 
-  createdAt       DateTime   @default(now())
+  status                  PaymentStatus
+
+  // Receipt fields
+  receiptUrl              String?   // Cloudinary URL for receipt PDF
+  receiptNumber           String?   @unique // Format: RCP-YYYYMMDD-XXXX
+
+  createdAt               DateTime   @default(now())
 
   @@index([userId])
+  @@index([stripePaymentIntentId]) // untuk lookup refund
   @@map("payments")
+}
+
+// Activity Logs - Track semua user actions
+model ActivityLog {
+  id          String         @id @default(cuid())
+  userId      String
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Action details
+  action      ActivityAction
+  entityType  String         // "Invoice", "Client", "Item", "Template", dll
+  entityId    String         // ID dari entity yang terpengaruh
+  metadata    Json?          // Additional context (changes, details, dll)
+
+  // Display info (snapshot untuk referensi jika entity dihapus)
+  title       String         // Human-readable description
+  description String?        // Optional details
+
+  createdAt   DateTime       @default(now())
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("activity_logs")
+}
+
+enum ActivityAction {
+  CREATED
+  UPDATED
+  DELETED
+  SENT
+  PAID
+  OVERDUE
+  CANCELED
+  REMINDED
+  VIEWED
 }
 
 enum PaymentStatus {
@@ -236,4 +359,18 @@ enum PaymentStatus {
   COMPLETED
   FAILED
   REFUNDED
+}
+
+// Email Templates for system emails
+model EmailTemplate {
+  id          String   @id @default(cuid())
+  name        String   @unique // "INVOICE_SENT", "PAYMENT_REMINDER", etc
+  subject     String
+  body        String   @db.Text // HTML body with variables
+  variables   Json?    // {clientName, invoiceNumber, dueDate, etc}
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("email_templates")
 }

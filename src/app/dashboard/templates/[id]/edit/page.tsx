@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { FileText, Save, Plus, Trash2, Loader2 } from 'lucide-react'
@@ -20,7 +20,7 @@ interface TemplateItem {
 export default function EditTemplatePage() {
   const router = useRouter()
   const params = useParams()
-  const { id } = use(params as Promise<{ id: string }>)
+  const { id } = params as { id: string }
   const sessionResult = useSession()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -147,10 +147,10 @@ export default function EditTemplatePage() {
 
   if (!mounted || loading || !sessionResult || sessionResult.status === 'loading') {
     return (
-      <div className="min-h-screen bg-gray flex items-center justify-center">
+      <div className="min-h-screen bg-fresh-bg flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-16 h-16 text-dark animate-spin mx-auto mb-4" />
-          <p className="text-slate">Memuat template...</p>
+          <Loader2 className="w-16 h-16 text-gray-900 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Memuat template...</p>
         </div>
       </div>
     )
@@ -162,15 +162,15 @@ export default function EditTemplatePage() {
 
   if (notFound) {
     return (
-      <div className="min-h-screen bg-gray flex items-center justify-center">
+      <div className="min-h-screen bg-fresh-bg flex items-center justify-center">
         <div className="card p-16 text-center max-w-md">
           <div className="w-24 h-24 rounded-2xl icon-box flex items-center justify-center mx-auto mb-6">
-            <FileText className="w-12 h-12 text-slate" />
+            <FileText className="w-12 h-12 text-gray-600" />
           </div>
-          <h3 className="text-2xl font-bold text-dark mb-3">
+          <h3 className="text-2xl font-bold text-gray-900 mb-3">
             Template Tidak Ditemukan
           </h3>
-          <p className="text-slate mb-8">
+          <p className="text-gray-600 mb-8">
             Template yang Anda cari tidak ada atau telah dihapus
           </p>
           <button
@@ -185,7 +185,7 @@ export default function EditTemplatePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray">
+    <div className="min-h-screen bg-fresh-bg">
       <DashboardHeader
         title="Edit Template"
         showBackButton={true}
@@ -197,43 +197,43 @@ export default function EditTemplatePage() {
         <form onSubmit={handleSubmit} className="max-w-4xl mx-auto space-y-8">
           {/* Template Info */}
           <div className="card p-8">
-            <h2 className="text-lg font-bold text-dark mb-6">Informasi Template</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-6">Informasi Template</h2>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-bold text-dark mb-2">
+                <label className="block text-sm font-bold text-gray-900 mb-2">
                   Nama Template *
                 </label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl bg-gray border border-slate focus:border-dark focus:outline-none transition-colors"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
                   placeholder="Contoh: Jasa Web Design"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-dark mb-2">
+                <label className="block text-sm font-bold text-gray-900 mb-2">
                   Deskripsi
                 </label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl bg-gray border border-slate focus:border-dark focus:outline-none transition-colors"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
                   rows={2}
                   placeholder="Deskripsi singkat tentang template ini..."
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-dark mb-2">
+                <label className="block text-sm font-bold text-gray-900 mb-2">
                   Tarif Pajak Default (%)
                 </label>
                 <input
                   type="number"
                   value={formData.taxRate}
                   onChange={(e) => setFormData({ ...formData, taxRate: parseFloat(e.target.value) })}
-                  className="w-full px-4 py-3 rounded-xl bg-gray border border-slate focus:border-dark focus:outline-none transition-colors"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
                   min="0"
                   max="100"
                   step="0.01"
@@ -246,7 +246,7 @@ export default function EditTemplatePage() {
           {/* Items */}
           <div className="card p-8">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-bold text-dark">Item Template</h2>
+              <h2 className="text-lg font-bold text-gray-900">Item Template</h2>
               <button
                 type="button"
                 onClick={addItem}
@@ -259,9 +259,9 @@ export default function EditTemplatePage() {
 
             <div className="space-y-4">
               {items.map((item, index) => (
-                <div key={item.id} className="p-6 rounded-xl bg-gray border border-slate space-y-4">
+                <div key={item.id} className="p-6 rounded-xl bg-gray border border-orange-200 space-y-4">
                   <div className="flex justify-between items-start">
-                    <span className="font-bold text-dark">Item #{index + 1}</span>
+                    <span className="font-bold text-gray-900">Item #{index + 1}</span>
                     {items.length > 1 && (
                       <button
                         type="button"
@@ -275,40 +275,40 @@ export default function EditTemplatePage() {
 
                   <div className="grid md:grid-cols-4 gap-4">
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-bold text-dark mb-2">
+                      <label className="block text-sm font-bold text-gray-900 mb-2">
                         Deskripsi *
                       </label>
                       <input
                         type="text"
                         value={item.description}
                         onChange={(e) => updateItem(item.id, 'description', e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl bg-white border border-slate focus:border-dark focus:outline-none transition-colors"
+                        className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
                         placeholder="Jasa/Barang"
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-bold text-dark mb-2">
+                      <label className="block text-sm font-bold text-gray-900 mb-2">
                         Jumlah *
                       </label>
                       <input
                         type="number"
                         value={item.quantity || 1}
                         onChange={(e) => updateItem(item.id, 'quantity', parseInt(e.target.value) || 1)}
-                        className="w-full px-4 py-3 rounded-xl bg-white border border-slate focus:border-dark focus:outline-none transition-colors"
+                        className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
                         min="1"
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-bold text-dark mb-2">
+                      <label className="block text-sm font-bold text-gray-900 mb-2">
                         Harga (Rp) *
                       </label>
                       <input
                         type="number"
                         value={item.price || 0}
                         onChange={(e) => updateItem(item.id, 'price', parseFloat(e.target.value) || 0)}
-                        className="w-full px-4 py-3 rounded-xl bg-white border border-slate focus:border-dark focus:outline-none transition-colors"
+                        className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
                         min="0"
                         step="0.01"
                         required
@@ -322,11 +322,11 @@ export default function EditTemplatePage() {
 
           {/* Notes */}
           <div className="card p-8">
-            <h2 className="text-lg font-bold text-dark mb-4">Catatan Default</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-4">Catatan Default</h2>
             <textarea
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              className="w-full px-4 py-3 rounded-xl bg-gray border border-slate focus:border-dark focus:outline-none transition-colors"
+              className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
               rows={3}
               placeholder="Catatan default yang akan muncul di invoice..."
             />
@@ -335,15 +335,15 @@ export default function EditTemplatePage() {
           {/* Totals & Submit */}
           <div className="card p-8">
             <div className="space-y-3 mb-8">
-              <div className="flex justify-between text-slate">
+              <div className="flex justify-between text-gray-600">
                 <span>Subtotal</span>
                 <span className="font-semibold">{formatCurrency(subtotal)}</span>
               </div>
-              <div className="flex justify-between text-slate">
+              <div className="flex justify-between text-gray-600">
                 <span>Pajak ({formData.taxRate}%)</span>
                 <span className="font-semibold">{formatCurrency(taxAmount)}</span>
               </div>
-              <div className="flex justify-between py-4 border-t-2 border-dark text-2xl font-extrabold text-dark">
+              <div className="flex justify-between py-4 border-t-2 border-orange-300 text-2xl font-extrabold text-gray-900">
                 <span>Total</span>
                 <span>{formatCurrency(total)}</span>
               </div>

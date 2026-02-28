@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { invoiceUpdateSchema } from '@/lib/validations/invoice'
+import { logInvoiceUpdated, logInvoiceDeleted } from '@/lib/activity-log'
 
 export async function GET(
   req: NextRequest,
@@ -80,6 +81,16 @@ export async function PUT(
 
     const { items, invoiceNumber, ...data } = validation.data
 
+    // Track changes
+    const changes: string[] = []
+    if (data.clientName && data.clientName !== existingInvoice.clientName) changes.push('Nama klien')
+    if (data.clientEmail && data.clientEmail !== existingInvoice.clientEmail) changes.push('Email klien')
+    if (invoiceNumber && invoiceNumber !== existingInvoice.invoiceNumber) changes.push('Nomor invoice')
+    if (data.dueDate !== undefined && new Date(data.dueDate).toISOString() !== new Date(existingInvoice.dueDate || 0).toISOString()) changes.push('Jatuh tempo')
+    if (data.taxRate !== undefined && data.taxRate !== existingInvoice.taxRate) changes.push('Tarif pajak')
+    if (data.notes !== undefined && data.notes !== existingInvoice.notes) changes.push('Catatan')
+    if (items && items.length > 0) changes.push('Item invoice')
+
     // Calculate totals if items are provided
     let subtotal = existingInvoice.subtotal
     let taxAmount = existingInvoice.taxAmount
@@ -138,6 +149,11 @@ export async function PUT(
       include: { items: true },
     })
 
+    // Log activity
+    if (changes.length > 0) {
+      await logInvoiceUpdated(session.user.id, existingInvoice.invoiceNumber, changes)
+    }
+
     return NextResponse.json(invoice)
   } catch (error) {
     console.error('Update invoice error:', error)
@@ -190,6 +206,9 @@ export async function DELETE(
     await prisma.invoice.delete({
       where: { id },
     })
+
+    // Log activity
+    await logInvoiceDeleted(session.user.id, invoice.invoiceNumber)
 
     return NextResponse.json({ message: 'Invoice berhasil dihapus' })
   } catch (error) {

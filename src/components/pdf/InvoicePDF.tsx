@@ -260,8 +260,10 @@ export const InvoicePDF = ({ invoice }: InvoicePDFProps) => (
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.logoContainer}>
-          {/* Logo placeholder - you can replace with actual logo */}
-          <View style={[styles.logo, { backgroundColor: '#0891b2' }]} />
+          {/* Logo [iK] */}
+          <View style={[styles.logo, { backgroundColor: '#f97316', alignItems: 'center', justifyContent: 'center' }]}>
+            <Text style={{ color: '#ffffff', fontWeight: 'bold', fontSize: 12 }}>[iK]</Text>
+          </View>
           <View>
             <Text style={styles.companyName}>InvoiceKirim</Text>
             <Text style={styles.companyTagline}>Platform Invoice untuk Freelancer</Text>

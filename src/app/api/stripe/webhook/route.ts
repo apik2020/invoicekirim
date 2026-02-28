@@ -3,6 +3,7 @@ import { headers } from 'next/headers'
 import { stripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
 import { checkRateLimit, getClientIp, webhookRateLimit } from '@/lib/rate-limit'
+import { createReceipt } from '@/lib/receipt-generator'
 
 export async function POST(req: NextRequest) {
   try {
@@ -110,11 +111,29 @@ export async function POST(req: NextRequest) {
 
         // Update subscription status if payment succeeded
         if (invoice.subscription) {
-          await prisma.subscription.update({
+          const subscription = await prisma.subscription.update({
             where: { stripeSubscriptionId: invoice.subscription },
             data: {
               status: 'ACTIVE',
             },
+          })
+
+          // Create payment record
+          const payment = await prisma.payment.create({
+            data: {
+              userId: subscription.userId,
+              stripePaymentId: invoice.payment_intent || invoice.id,
+              stripePaymentIntentId: invoice.payment_intent || null,
+              amount: invoice.amount_paid / 100, // Convert from cents
+              currency: invoice.currency.toUpperCase(),
+              description: `InvoiceKirim Pro Subscription - ${new Date().toLocaleDateString('id-ID')}`,
+              status: 'COMPLETED',
+            },
+          })
+
+          // Generate receipt asynchronously (don't block webhook response)
+          createReceipt(payment.id).catch((error) => {
+            console.error('Failed to generate receipt:', error)
           })
         }
         break

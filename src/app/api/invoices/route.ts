@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { invoiceSchema } from '@/lib/validations/invoice'
 import { generateInvoiceNumber } from '@/lib/utils'
 import { checkRateLimit, apiRateLimit } from '@/lib/rate-limit'
+import { logInvoiceCreated } from '@/lib/activity-log'
 
 export async function GET(req: NextRequest) {
   try {
@@ -170,6 +171,9 @@ export async function POST(req: NextRequest) {
       },
       include: { items: true },
     })
+
+    // Log activity
+    await logInvoiceCreated(session.user.id, invoiceNumber, total)
 
     return NextResponse.json(
       invoice,

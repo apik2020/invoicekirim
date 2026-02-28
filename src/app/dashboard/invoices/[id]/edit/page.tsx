@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, use } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { FileText, Save, Plus, Trash2, Loader2 } from 'lucide-react'
@@ -36,7 +36,7 @@ interface InvoiceData {
 export default function EditInvoicePage() {
   const router = useRouter()
   const params = useParams()
-  const { id } = use(params as Promise<{ id: string }>)
+  const { id } = params as { id: string }
   const sessionResult = useSession()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -191,10 +191,10 @@ export default function EditInvoicePage() {
 
   if (!mounted || loading || !sessionResult || sessionResult.status === 'loading') {
     return (
-      <div className="min-h-screen bg-gray flex items-center justify-center">
+      <div className="min-h-screen bg-fresh-bg flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-16 h-16 text-dark animate-spin mx-auto mb-4" />
-          <p className="text-slate">Memuat invoice...</p>
+          <Loader2 className="w-16 h-16 text-gray-900 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Memuat invoice...</p>
         </div>
       </div>
     )
@@ -206,15 +206,15 @@ export default function EditInvoicePage() {
 
   if (notFound) {
     return (
-      <div className="min-h-screen bg-gray flex items-center justify-center">
+      <div className="min-h-screen bg-fresh-bg flex items-center justify-center">
         <div className="card p-16 text-center max-w-md">
           <div className="w-24 h-24 rounded-2xl icon-box flex items-center justify-center mx-auto mb-6">
-            <FileText className="w-12 h-12 text-slate" />
+            <FileText className="w-12 h-12 text-gray-600" />
           </div>
-          <h3 className="text-2xl font-bold text-dark mb-3">
+          <h3 className="text-2xl font-bold text-gray-900 mb-3">
             Invoice Tidak Ditemukan
           </h3>
-          <p className="text-slate mb-8">
+          <p className="text-gray-600 mb-8">
             Invoice yang Anda cari tidak ada atau telah dihapus
           </p>
           <button
@@ -229,7 +229,7 @@ export default function EditInvoicePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray">
+    <div className="min-h-screen bg-fresh-bg">
       {/* Header */}
       <DashboardHeader
         title="Edit Invoice"
@@ -242,54 +242,54 @@ export default function EditInvoicePage() {
         <form onSubmit={handleSubmit} className="max-w-4xl mx-auto space-y-8">
           {/* Invoice Info */}
           <div className="card p-8">
-            <h2 className="text-lg font-bold text-dark mb-6">Informasi Invoice</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-6">Informasi Invoice</h2>
 
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-bold text-dark mb-2">
+                <label className="block text-sm font-bold text-gray-900 mb-2">
                   Nomor Invoice *
                 </label>
                 <input
                   type="text"
                   value={formData.invoiceNumber}
                   onChange={(e) => setFormData({ ...formData, invoiceNumber: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl bg-gray border border-slate focus:border-dark focus:outline-none transition-colors"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
                   placeholder="INV-001"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-dark mb-2">
+                <label className="block text-sm font-bold text-gray-900 mb-2">
                   Tanggal *
                 </label>
                 <input
                   type="date"
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl bg-gray border border-slate focus:border-dark focus:outline-none transition-colors"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 focus:border-orange-500 focus:outline-none transition-colors"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-dark mb-2">
+                <label className="block text-sm font-bold text-gray-900 mb-2">
                   Jatuh Tempo
                 </label>
                 <input
                   type="date"
                   value={formData.dueDate}
                   onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl bg-gray border border-slate focus:border-dark focus:outline-none transition-colors"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 focus:border-orange-500 focus:outline-none transition-colors"
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-dark mb-2">
+                <label className="block text-sm font-bold text-gray-900 mb-2">
                   Tarif Pajak (%)
                 </label>
                 <input
                   type="number"
                   value={formData.taxRate}
                   onChange={(e) => setFormData({ ...formData, taxRate: parseFloat(e.target.value) })}
-                  className="w-full px-4 py-3 rounded-xl bg-gray border border-slate focus:border-dark focus:outline-none transition-colors"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
                   min="0"
                   max="100"
                   step="0.01"
@@ -301,55 +301,55 @@ export default function EditInvoicePage() {
 
           {/* Dari (Company Info) */}
           <div className="card p-8">
-            <h2 className="text-lg font-bold text-dark mb-6">Dari (Info Perusahaan)</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-6">Dari (Info Perusahaan)</h2>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-bold text-dark mb-2">
+                <label className="block text-sm font-bold text-gray-900 mb-2">
                   Nama Perusahaan *
                 </label>
                 <input
                   type="text"
                   value={formData.companyName}
                   onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl bg-gray border border-slate focus:border-dark focus:outline-none transition-colors"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
                   placeholder="Nama perusahaan Anda"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-dark mb-2">
+                <label className="block text-sm font-bold text-gray-900 mb-2">
                   Email *
                 </label>
                 <input
                   type="email"
                   value={formData.companyEmail}
                   onChange={(e) => setFormData({ ...formData, companyEmail: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl bg-gray border border-slate focus:border-dark focus:outline-none transition-colors"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
                   placeholder="email@perusahaan.com"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-dark mb-2">
+                <label className="block text-sm font-bold text-gray-900 mb-2">
                   Telepon
                 </label>
                 <input
                   type="tel"
                   value={formData.companyPhone}
                   onChange={(e) => setFormData({ ...formData, companyPhone: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl bg-gray border border-slate focus:border-dark focus:outline-none transition-colors"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
                   placeholder="+62 812-3456-7890"
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-dark mb-2">
+                <label className="block text-sm font-bold text-gray-900 mb-2">
                   Alamat
                 </label>
                 <textarea
                   value={formData.companyAddress}
                   onChange={(e) => setFormData({ ...formData, companyAddress: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl bg-gray border border-slate focus:border-dark focus:outline-none transition-colors"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
                   rows={2}
                   placeholder="Alamat lengkap"
                 />
@@ -359,55 +359,55 @@ export default function EditInvoicePage() {
 
           {/* Kepada (Client Info) */}
           <div className="card p-8">
-            <h2 className="text-lg font-bold text-dark mb-6">Kepada (Info Klien)</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-6">Kepada (Info Klien)</h2>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-bold text-dark mb-2">
+                <label className="block text-sm font-bold text-gray-900 mb-2">
                   Nama Klien *
                 </label>
                 <input
                   type="text"
                   value={formData.clientName}
                   onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl bg-gray border border-slate focus:border-dark focus:outline-none transition-colors"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
                   placeholder="Nama klien"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-dark mb-2">
+                <label className="block text-sm font-bold text-gray-900 mb-2">
                   Email Klien *
                 </label>
                 <input
                   type="email"
                   value={formData.clientEmail}
                   onChange={(e) => setFormData({ ...formData, clientEmail: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl bg-gray border border-slate focus:border-dark focus:outline-none transition-colors"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
                   placeholder="client@email.com"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-dark mb-2">
+                <label className="block text-sm font-bold text-gray-900 mb-2">
                   Telepon
                 </label>
                 <input
                   type="tel"
                   value={formData.clientPhone}
                   onChange={(e) => setFormData({ ...formData, clientPhone: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl bg-gray border border-slate focus:border-dark focus:outline-none transition-colors"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
                   placeholder="+62 812-3456-7890"
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-dark mb-2">
+                <label className="block text-sm font-bold text-gray-900 mb-2">
                   Alamat
                 </label>
                 <textarea
                   value={formData.clientAddress}
                   onChange={(e) => setFormData({ ...formData, clientAddress: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl bg-gray border border-slate focus:border-dark focus:outline-none transition-colors"
+                  className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
                   rows={2}
                   placeholder="Alamat klien"
                 />
@@ -418,7 +418,7 @@ export default function EditInvoicePage() {
           {/* Items */}
           <div className="card p-8">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-bold text-dark">Item Invoice</h2>
+              <h2 className="text-lg font-bold text-gray-900">Item Invoice</h2>
               <button
                 type="button"
                 onClick={addItem}
@@ -431,9 +431,9 @@ export default function EditInvoicePage() {
 
             <div className="space-y-4">
               {items.map((item, index) => (
-                <div key={item.id} className="p-6 rounded-xl bg-gray border border-slate space-y-4">
+                <div key={item.id} className="p-6 rounded-xl bg-gray border border-orange-200 space-y-4">
                   <div className="flex justify-between items-start">
-                    <span className="font-bold text-dark">Item #{index + 1}</span>
+                    <span className="font-bold text-gray-900">Item #{index + 1}</span>
                     {items.length > 1 && (
                       <button
                         type="button"
@@ -447,40 +447,40 @@ export default function EditInvoicePage() {
 
                   <div className="grid md:grid-cols-3 gap-4">
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-bold text-dark mb-2">
+                      <label className="block text-sm font-bold text-gray-900 mb-2">
                         Deskripsi *
                       </label>
                       <input
                         type="text"
                         value={item.description}
                         onChange={(e) => updateItem(item.id, 'description', e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl bg-white border border-slate focus:border-dark focus:outline-none transition-colors"
+                        className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
                         placeholder="Jasa/Barang"
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-bold text-dark mb-2">
+                      <label className="block text-sm font-bold text-gray-900 mb-2">
                         Jumlah *
                       </label>
                       <input
                         type="number"
                         value={item.quantity || 1}
                         onChange={(e) => updateItem(item.id, 'quantity', parseInt(e.target.value) || 1)}
-                        className="w-full px-4 py-3 rounded-xl bg-white border border-slate focus:border-dark focus:outline-none transition-colors"
+                        className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
                         min="1"
                         required
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-bold text-dark mb-2">
+                      <label className="block text-sm font-bold text-gray-900 mb-2">
                         Harga (Rp) *
                       </label>
                       <input
                         type="number"
                         value={item.price || 0}
                         onChange={(e) => updateItem(item.id, 'price', parseFloat(e.target.value) || 0)}
-                        className="w-full px-4 py-3 rounded-xl bg-white border border-slate focus:border-dark focus:outline-none transition-colors"
+                        className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
                         min="0"
                         step="0.01"
                         required
@@ -488,7 +488,7 @@ export default function EditInvoicePage() {
                     </div>
                   </div>
 
-                  <div className="text-right font-bold text-dark">
+                  <div className="text-right font-bold text-gray-900">
                     {formatCurrency(item.quantity * item.price)}
                   </div>
                 </div>
@@ -498,11 +498,11 @@ export default function EditInvoicePage() {
 
           {/* Notes */}
           <div className="card p-8">
-            <h2 className="text-lg font-bold text-dark mb-4">Catatan</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-4">Catatan</h2>
             <textarea
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              className="w-full px-4 py-3 rounded-xl bg-gray border border-slate focus:border-dark focus:outline-none transition-colors"
+              className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
               rows={3}
               placeholder="Catatan tambahan untuk invoice..."
             />
@@ -511,15 +511,15 @@ export default function EditInvoicePage() {
           {/* Totals & Submit */}
           <div className="card p-8">
             <div className="space-y-3 mb-8">
-              <div className="flex justify-between text-slate">
+              <div className="flex justify-between text-gray-600">
                 <span>Subtotal</span>
                 <span className="font-semibold">{formatCurrency(subtotal)}</span>
               </div>
-              <div className="flex justify-between text-slate">
+              <div className="flex justify-between text-gray-600">
                 <span>Pajak ({formData.taxRate}%)</span>
                 <span className="font-semibold">{formatCurrency(taxAmount)}</span>
               </div>
-              <div className="flex justify-between py-4 border-t-2 border-dark text-2xl font-extrabold text-dark">
+              <div className="flex justify-between py-4 border-t-2 border-orange-300 text-2xl font-extrabold text-gray-900">
                 <span>Total</span>
                 <span>{formatCurrency(total)}</span>
               </div>

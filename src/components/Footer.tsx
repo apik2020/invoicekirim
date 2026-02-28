@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { FileText } from 'lucide-react'
 
 export default function Footer() {
   const currentYear = new Date().getFullYear()
@@ -11,8 +10,8 @@ export default function Footer() {
           {/* Logo & Tagline */}
           <div className="md:col-span-2">
             <Link href="/" className="flex items-center gap-3 mb-6 group">
-              <div className="w-12 h-12 rounded-2xl neu-button flex items-center justify-center group-hover:-translate-y-0.5 transition-all duration-300">
-                <FileText className="w-6 h-6 text-arctic-blue" />
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-500 to-lime-500 flex items-center justify-center group-hover:-translate-y-0.5 transition-all duration-300 shadow-lg shadow-orange-200">
+                <span className="font-bold text-white text-base tracking-tight">[iK]</span>
               </div>
               <span className="font-display text-2xl font-bold text-slate tracking-tight">InvoiceKirim</span>
             </Link>

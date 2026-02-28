@@ -90,10 +90,10 @@ export default function TemplatesPage() {
 
   if (!mounted || loading || status === 'loading') {
     return (
-      <div className="min-h-screen bg-gray flex items-center justify-center">
+      <div className="min-h-screen bg-fresh-bg flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-16 h-16 text-dark animate-spin mx-auto mb-4" />
-          <p className="text-slate">Memuat template...</p>
+          <Loader2 className="w-16 h-16 text-gray-900 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Memuat template...</p>
         </div>
       </div>
     )
@@ -109,42 +109,43 @@ export default function TemplatesPage() {
   )
 
   return (
-    <div className="min-h-screen bg-gray">
+    <div className="min-h-screen bg-fresh-bg">
       <DashboardHeader
         title="Template Invoice"
         showBackButton={true}
-        actions={
-          <Link
-            href="/dashboard/templates/create"
-            className="flex items-center gap-2 px-5 py-2.5 text-white font-bold rounded-xl btn-primary"
-          >
-            <Plus size={18} />
-            Buat Template
-          </Link>
-        }
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <div className="mb-8">
-          <h1 className="font-bold text-3xl md:text-4xl text-dark mb-2 tracking-tight">
-            Template Invoice
-          </h1>
-          <p className="text-slate">
-            Simpol dan gunakan ulang invoice yang sering Anda buat
-          </p>
-        </div>
+        {/* Header with Search and Action Button */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Template Invoice</h1>
+            <p className="text-gray-600">
+              Simpan dan gunakan ulang invoice yang sering Anda buat
+            </p>
+          </div>
 
-        {/* Search */}
-        <div className="card p-6 mb-8">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari template..."
-              className="w-full pl-12 pr-4 py-3 rounded-xl bg-gray border border-slate focus:border-dark focus:outline-none transition-colors"
-            />
+          <div className="flex items-center gap-4">
+            {/* Search */}
+            <div className="relative flex-1 sm:flex-initial">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Cari template..."
+                className="w-full sm:w-64 pl-12 pr-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+              />
+            </div>
+
+            {/* Add Template Button */}
+            <Link
+              href="/dashboard/templates/create"
+              className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl bg-gradient-to-r from-orange-400 to-pink-500 hover:from-orange-500 hover:to-pink-600 transition-all shadow-lg shadow-orange-500/30"
+            >
+              <Plus size={18} />
+              <span>Buat Template</span>
+            </Link>
           </div>
         </div>
 
@@ -152,12 +153,12 @@ export default function TemplatesPage() {
         {filteredTemplates.length === 0 ? (
           <div className="card p-16 text-center">
             <div className="w-24 h-24 rounded-2xl icon-box mx-auto mb-6">
-              <FileText className="w-12 h-12 text-slate" />
+              <FileText className="w-12 h-12 text-gray-600" />
             </div>
-            <h3 className="text-2xl font-bold text-dark mb-3">
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">
               {searchQuery ? 'Tidak ada template ditemukan' : 'Belum ada template'}
             </h3>
-            <p className="text-slate mb-8">
+            <p className="text-gray-600 mb-8">
               {searchQuery
                 ? 'Coba kata kunci lain'
                 : 'Buat template pertamamu untuk mempercepat pembuatan invoice'
@@ -180,11 +181,11 @@ export default function TemplatesPage() {
                 {/* Header */}
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex-1">
-                    <h3 className="font-bold text-lg text-dark mb-1">
+                    <h3 className="font-bold text-lg text-gray-900 mb-1">
                       {template.name}
                     </h3>
                     {template.description && (
-                      <p className="text-sm text-slate line-clamp-2">
+                      <p className="text-sm text-gray-600 line-clamp-2">
                         {template.description}
                       </p>
                     )}
@@ -193,22 +194,22 @@ export default function TemplatesPage() {
 
                 {/* Items Preview */}
                 <div className="mb-4">
-                  <p className="text-sm font-bold text-dark mb-2">
+                  <p className="text-sm font-bold text-gray-900 mb-2">
                     Item ({template.items.length})
                   </p>
                   <div className="space-y-1">
                     {template.items.slice(0, 3).map((item) => (
                       <div key={item.id} className="flex justify-between text-sm">
-                        <span className="text-slate truncate flex-1">
+                        <span className="text-gray-600 truncate flex-1">
                           {item.description}
                         </span>
-                        <span className="text-dark font-medium ml-2">
+                        <span className="text-gray-900 font-medium ml-2">
                           {formatCurrency(item.price)}
                         </span>
                       </div>
                     ))}
                     {template.items.length > 3 && (
-                      <p className="text-sm text-slate">
+                      <p className="text-sm text-gray-600">
                         +{template.items.length - 3} item lainnya
                       </p>
                     )}
@@ -218,16 +219,16 @@ export default function TemplatesPage() {
                 {/* Total Preview */}
                 <div className="mb-4 p-3 rounded-xl bg-gray">
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate">Subtotal</span>
-                    <span className="font-bold text-dark">
+                    <span className="text-gray-600">Subtotal</span>
+                    <span className="font-bold text-gray-900">
                       {formatCurrency(
                         template.items.reduce((sum, item) => sum + item.quantity * item.price, 0)
                       )}
                     </span>
                   </div>
                   <div className="flex justify-between text-sm mt-1">
-                    <span className="text-slate">Pajak ({template.taxRate}%)</span>
-                    <span className="font-bold text-dark">
+                    <span className="text-gray-600">Pajak ({template.taxRate}%)</span>
+                    <span className="font-bold text-gray-900">
                       {formatCurrency(
                         template.items.reduce((sum, item) => sum + item.quantity * item.price, 0) *
                         (template.taxRate / 100)
@@ -247,7 +248,7 @@ export default function TemplatesPage() {
                   </button>
                   <Link
                     href={`/dashboard/templates/${template.id}/edit`}
-                    className="p-2 text-slate rounded-xl hover:bg-gray transition-colors"
+                    className="p-2 text-gray-600 rounded-xl hover:bg-gray transition-colors"
                     title="Edit"
                   >
                     <Edit size={18} />
