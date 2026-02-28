@@ -2,9 +2,10 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { FileText, Menu, X } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 import { useState } from 'react'
 import DarkModeToggle from './DarkModeToggle'
+import { Logo } from './Logo'
 
 export default function Header() {
   const pathname = usePathname()
@@ -15,17 +16,7 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <nav className="flex items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 via-pink-500 to-lemon-500 flex items-center justify-center shadow-lg shadow-orange-200 group-hover:-translate-y-0.5 transition-all duration-300 relative overflow-hidden">
-              <span className="text-lg font-black text-white tracking-tight">[iK]</span>
-              <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            </div>
-            <div className="flex items-center">
-              <span className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent">
-                InvoiceKirim
-              </span>
-            </div>
-          </Link>
+          <Logo size="lg" />
 
           {/* Desktop Nav Links */}
           <div className="hidden md:flex items-center gap-8">

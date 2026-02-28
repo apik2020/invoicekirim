@@ -99,7 +99,7 @@ export default function Home() {
                 <div className="flex items-center justify-between mb-6 pb-4 border-b border-orange-100">
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-lemon-500 flex items-center justify-center shadow-lg shadow-orange-200">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-200">
                         <span className="font-bold text-white text-sm tracking-tight">[iK]</span>
                       </div>
                       <span className="font-bold text-gray-900 text-lg">InvoiceKirim</span>
@@ -367,12 +367,9 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div className="md:col-span-2">
-              <Link href="/" className="flex items-center gap-2 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-lemon-400 flex items-center justify-center">
-                  <span className="font-bold text-white text-sm tracking-tight">[iK]</span>
-                </div>
-                <span className="text-xl font-bold">InvoiceKirim</span>
-              </Link>
+              <div className="mb-4">
+                <Logo size="sm" textClassName="!text-white" />
+              </div>
               <p className="text-orange-100 max-w-sm leading-relaxed">
                 Platform invoice profesional untuk freelancer dan bisnis Indonesia.
                 Buat invoice profesional dalam hitungan detik.

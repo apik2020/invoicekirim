@@ -437,7 +437,7 @@ Terima kasih!`
             <div className="flex justify-between items-start mb-10 pb-8 border-b border-slate">
               <div>
                 <div className="flex items-center gap-3 mb-5">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-lime-500 flex items-center justify-center shadow-lg">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg">
                     <span className="font-bold text-white text-lg tracking-tight">[iK]</span>
                   </div>
                   <span className="font-bold text-2xl text-gray-900 tracking-tight">InvoiceKirim</span>

@@ -33,7 +33,7 @@ export function Logo({
       {/* Logo Icon [iK] */}
       <div
         className={cn(
-          'rounded-xl bg-gradient-to-br from-orange-500 to-lime-500 flex items-center justify-center shadow-lg shadow-orange-200',
+          'rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-200',
           sizeClasses[size],
           className
         )}
@@ -96,7 +96,7 @@ export function AdminLogo({
       {/* Logo Icon [iK] */}
       <div
         className={cn(
-          'rounded-xl bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center shadow-lg shadow-orange-500/30',
+          'rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-500/30',
           sizeClasses[size],
           className
         )}

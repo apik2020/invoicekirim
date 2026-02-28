@@ -74,7 +74,7 @@ export default function RegisterPage() {
         <div className="w-full max-w-md">
           {/* Logo/Icon */}
           <div className="text-center mb-10">
-            <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-orange-500 to-lemon-500 flex items-center justify-center mx-auto mb-6 animate-float shadow-xl shadow-orange-200">
+            <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center mx-auto mb-6 animate-float shadow-xl shadow-orange-200">
               <span className="font-bold text-white text-3xl tracking-tight">[iK]</span>
             </div>
             <h1 className="text-4xl font-bold text-gray-900 mb-3 tracking-tight">
