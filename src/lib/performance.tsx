@@ -1,4 +1,5 @@
 import React from 'react'
+import { logger } from './logger'
 
 /**
  * Performance monitoring utilities
@@ -16,12 +17,11 @@ export async function measurePerformance<T>(
     return await fn()
   } finally {
     const duration = performance.now() - start
-    console.log(`[Performance] ${name}: ${duration.toFixed(2)}ms`)
+    logger.dev('Performance', `${name}: ${duration.toFixed(2)}ms`)
 
-    // Log to analytics in production
-    if (process.env.NODE_ENV === 'production' && duration > 1000) {
-      // Slow operation - log for monitoring
-      console.warn(`[Performance Warning] ${name} took ${duration.toFixed(2)}ms`)
+    // Log slow operations as warnings
+    if (duration > 1000) {
+      logger.warn(`[Performance Warning] ${name} took ${duration.toFixed(2)}ms`)
     }
   }
 }
@@ -32,12 +32,10 @@ export async function measurePerformance<T>(
 export function reportWebVitals(metric: any) {
   const { name, value, id } = metric
 
-  // Log to console in development
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`[Web Vitals] ${name}:`, value)
-  }
+  // Log in development only
+  logger.dev('Web Vitals', `${name}:`, value)
 
-  // Send to analytics in production
+  // Send to analytics in production (if configured)
   if (process.env.NODE_ENV === 'production') {
     // Example: Send to your analytics service
     // fetch('/api/analytics/web-vitals', {

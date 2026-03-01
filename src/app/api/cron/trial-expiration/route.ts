@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 // Cron job to handle trial expiration
 // Should be called daily by Vercel Cron or external scheduler
@@ -60,7 +61,7 @@ export async function GET(req: NextRequest) {
       })
 
       // TODO: Send email notification about trial expiration
-      console.log(`Trial expired for user: ${subscription.user.email}`)
+      logger.dev('Cron', `Trial expired for user: ${subscription.user.email}`)
 
       expiredCount++
     }
@@ -97,7 +98,7 @@ export async function GET(req: NextRequest) {
       })
 
       // TODO: Send email reminder about trial expiring
-      console.log(`Trial reminder for user: ${subscription.user.email}`)
+      logger.dev('Cron', `Trial reminder for user: ${subscription.user.email}`)
 
       reminderCount++
     }
@@ -127,7 +128,7 @@ export async function GET(req: NextRequest) {
 
     for (const subscription of trialsExpiringIn3Days) {
       // TODO: Send 3-day warning email
-      console.log(`3-day trial warning for user: ${subscription.user.email}`)
+      logger.dev('Cron', `3-day trial warning for user: ${subscription.user.email}`)
       reminderCount++
     }
 
@@ -138,7 +139,7 @@ export async function GET(req: NextRequest) {
       timestamp: now.toISOString(),
     })
   } catch (error) {
-    console.error('Trial expiration cron error:', error)
+    logger.error('Trial expiration cron error:', error)
     return NextResponse.json(
       { error: 'Failed to process trial expirations' },
       { status: 500 }

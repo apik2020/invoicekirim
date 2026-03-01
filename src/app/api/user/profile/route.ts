@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { logger } from '@/lib/logger'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -12,7 +13,7 @@ export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
-    console.log('Profile API - Session:', session?.user?.email, 'ID:', session?.user?.id)
+    logger.dev('Profile', 'Session:', session?.user?.email, 'ID:', session?.user?.id)
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -35,7 +36,7 @@ export async function GET(req: NextRequest) {
       },
     })
 
-    console.log('Profile API - User found:', !!user)
+    logger.dev('Profile', 'User found:', !!user)
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
@@ -43,7 +44,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(user)
   } catch (error) {
-    console.error('Get profile error:', error)
+    logger.error('Get profile error:', error)
     return NextResponse.json(
       { error: 'Failed to fetch profile' },
       { status: 500 }

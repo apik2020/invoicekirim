@@ -310,9 +310,12 @@ export async function sendEmail({
   html: string
 }) {
   if (!resend) {
-    console.log('⚠️  Resend not configured. Skipping email send.')
-    console.log('To:', to)
-    console.log('Subject:', subject)
+    // Only log in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log('⚠️  Resend not configured. Skipping email send.')
+      console.log('To:', to)
+      console.log('Subject:', subject)
+    }
     // Return success for development when Resend is not configured
     return { success: true, data: { id: 'dev-mode-skipped' } }
   }

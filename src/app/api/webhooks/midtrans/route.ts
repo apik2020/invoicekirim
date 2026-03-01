@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyNotificationSignature, getTransactionStatus } from '@/lib/midtrans'
 import { createReceipt } from '@/lib/receipt-generator'
+import { logger } from '@/lib/logger'
 
 export async function POST(req: NextRequest) {
   try {
@@ -106,7 +107,7 @@ export async function POST(req: NextRequest) {
           },
         })
 
-        console.log('Payment successful for order:', order_id)
+        logger.dev('Midtrans', 'Payment successful for order:', order_id)
       }
     } else if (transaction_status === 'pending') {
       // Payment pending
@@ -119,7 +120,7 @@ export async function POST(req: NextRequest) {
         },
       })
 
-      console.log('Payment pending for order:', order_id)
+      logger.dev('Midtrans', 'Payment pending for order:', order_id)
     } else if (transaction_status === 'deny' || transaction_status === 'cancel') {
       // Payment denied or cancelled
       await prisma.payment.update({
@@ -129,7 +130,7 @@ export async function POST(req: NextRequest) {
         },
       })
 
-      console.log('Payment failed for order:', order_id)
+      logger.dev('Midtrans', 'Payment failed for order:', order_id)
     } else if (transaction_status === 'expire') {
       // Payment expired
       await prisma.payment.update({
@@ -139,12 +140,12 @@ export async function POST(req: NextRequest) {
         },
       })
 
-      console.log('Payment expired for order:', order_id)
+      logger.dev('Midtrans', 'Payment expired for order:', order_id)
     }
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Webhook processing error:', error)
+    logger.error('Webhook processing error:', error)
     return NextResponse.json(
       { error: 'Webhook processing failed' },
       { status: 500 }

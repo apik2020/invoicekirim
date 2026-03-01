@@ -6,6 +6,7 @@ import bcrypt from 'bcryptjs'
 import { prisma } from './prisma'
 import { checkLoginAttempts, recordFailedAttempt, clearLoginAttempts } from './login-attempts'
 import { env } from './env'
+import { logger } from './logger'
 
 // Helper to check if user is admin
 async function isAdminEmail(email: string): Promise<boolean> {
@@ -36,10 +37,10 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        console.log('🔐 Login attempt:', credentials?.email)
+        logger.dev('Auth', 'Login attempt:', credentials?.email)
 
         if (!credentials?.email || !credentials?.password) {
-          console.log('❌ Missing email or password')
+          logger.dev('Auth', 'Missing email or password')
           throw new Error('Email dan password harus diisi')
         }
 
@@ -57,7 +58,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         // Check Admin table first
-        console.log('🔍 Checking Admin table for:', credentials.email)
+        logger.dev('Auth', 'Checking Admin table for:', credentials.email)
         const admin = await prisma.admin.findUnique({
           where: { email: credentials.email },
           select: {
@@ -68,7 +69,7 @@ export const authOptions: NextAuthOptions = {
           },
         })
 
-        console.log('📋 Admin found:', !!admin)
+        logger.dev('Auth', 'Admin found:', !!admin)
 
         if (admin && admin.password) {
           const isPasswordValid = await bcrypt.compare(
@@ -76,11 +77,11 @@ export const authOptions: NextAuthOptions = {
             admin.password
           )
 
-          console.log('🔑 Admin password valid:', isPasswordValid)
+          logger.dev('Auth', 'Admin password valid:', isPasswordValid)
 
           if (isPasswordValid) {
             await clearLoginAttempts(credentials.email)
-            console.log('✅ Admin login successful')
+            logger.dev('Auth', 'Admin login successful')
             return {
               id: admin.id,
               email: admin.email,
@@ -90,7 +91,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         // Check User table
-        console.log('🔍 Checking User table for:', credentials.email)
+        logger.dev('Auth', 'Checking User table for:', credentials.email)
         let user
         try {
           user = await prisma.user.findUnique({
@@ -104,11 +105,11 @@ export const authOptions: NextAuthOptions = {
             },
           })
         } catch (error) {
-          console.error('❌ Database error:', error)
+          logger.error('Database error:', error)
           throw new Error('Database error')
         }
 
-        console.log('📋 User found:', !!user, 'Has password:', !!user?.password)
+        logger.dev('Auth', 'User found:', !!user, 'Has password:', !!user?.password)
 
         // Get subscription separately to avoid potential errors
         let subscription = null
@@ -118,14 +119,14 @@ export const authOptions: NextAuthOptions = {
               where: { userId: user.id },
             })
           } catch (error) {
-            console.error('❌ Subscription query error:', error)
+            logger.error('Subscription query error:', error)
             // Continue without subscription
           }
         }
 
         // Record failed attempt if user not found or no password
         if (!user || !user.password) {
-          console.log('❌ User not found or no password')
+          logger.dev('Auth', 'User not found or no password')
           const failedAttempt = await recordFailedAttempt(credentials.email)
           if (failedAttempt.lockoutUntil) {
             const remaining = Math.ceil((failedAttempt.lockoutUntil.getTime() - Date.now()) / 1000)
@@ -150,11 +151,11 @@ export const authOptions: NextAuthOptions = {
           user.password
         )
 
-        console.log('🔑 User password valid:', isPasswordValid)
+        logger.dev('Auth', 'User password valid:', isPasswordValid)
 
         // Record failed attempt if password is invalid
         if (!isPasswordValid) {
-          console.log('❌ Invalid password')
+          logger.dev('Auth', 'Invalid password')
           const failedAttempt = await recordFailedAttempt(credentials.email)
           if (failedAttempt.lockoutUntil) {
             const remaining = Math.ceil((failedAttempt.lockoutUntil.getTime() - Date.now()) / 1000)
@@ -188,12 +189,12 @@ export const authOptions: NextAuthOptions = {
               },
             })
           } catch (error) {
-            console.error('❌ Failed to create subscription:', error)
+            logger.error('Failed to create subscription:', error)
             // Continue anyway
           }
         }
 
-        console.log('✅ User login successful')
+        logger.dev('Auth', 'User login successful')
         return {
           id: user.id,
           email: user.email,
