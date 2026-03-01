@@ -5,6 +5,7 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
 import { prisma } from './prisma'
 import { checkLoginAttempts, recordFailedAttempt, clearLoginAttempts } from './login-attempts'
+import { env } from './env'
 
 // Helper to check if user is admin
 async function isAdminEmail(email: string): Promise<boolean> {
@@ -22,10 +23,12 @@ async function isAdminEmail(email: string): Promise<boolean> {
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID || '',
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-    }),
+    ...(env.googleClientId && env.googleClientSecret ? [
+      GoogleProvider({
+        clientId: env.googleClientId,
+        clientSecret: env.googleClientSecret,
+      })
+    ] : []),
     CredentialsProvider({
       name: 'credentials',
       credentials: {
