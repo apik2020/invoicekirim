@@ -64,12 +64,17 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    // Create free subscription
+    // Create trial subscription (7 days PRO trial)
+    const now = new Date()
+    const trialEndsAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000) // 7 days from now
+
     await prisma.subscription.create({
       data: {
         userId: user.id,
-        status: 'FREE',
-        planType: 'FREE',
+        status: 'TRIALING',
+        planType: 'PRO',
+        trialStartsAt: now,
+        trialEndsAt: trialEndsAt,
       },
     })
 
