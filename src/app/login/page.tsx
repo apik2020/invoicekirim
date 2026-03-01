@@ -6,6 +6,7 @@ import { signIn } from 'next-auth/react'
 import Link from 'next/link'
 import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react'
 import { Logo } from '@/components/Logo'
+import { AlertBox } from '@/components/Toast'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -80,9 +81,9 @@ export default function LoginPage() {
           {/* Form Card */}
           <div className="card p-10">
             {error && (
-              <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200">
-                <p className="text-sm text-red-600">{error}</p>
-              </div>
+              <AlertBox type="error" title="Login Gagal" className="mb-6">
+                {error}
+              </AlertBox>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Crown, X, Check, AlertCircle, Loader2, Sparkles } from 'lucide-react'
 import { formatDate, formatCurrency } from '@/lib/utils'
+import { AlertBox } from '@/components/Toast'
 
 interface Subscription {
   id: string
@@ -236,12 +237,9 @@ export function SubscriptionManager({
 
         {isTrial ? (
           <div className="space-y-3">
-            <div className="p-4 bg-orange-50 rounded-xl border border-orange-200">
-              <p className="text-sm text-orange-800">
-                <span className="font-semibold">Trial PRO Aktif!</span>{' '}
-                Nikmati semua fitur premium selama {subscription?.trialDaysLeft || 7} hari lagi.
-              </p>
-            </div>
+            <AlertBox type="warning" title="Trial PRO Aktif!">
+              Nikmati semua fitur premium selama {subscription?.trialDaysLeft || 7} hari lagi.
+            </AlertBox>
             <button
               onClick={handleUpgrade}
               className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-pink-500 text-white hover:from-orange-600 hover:to-pink-600 transition-colors font-medium shadow-lg shadow-orange-200"
@@ -281,8 +279,8 @@ export function SubscriptionManager({
               </>
             )}
             {isCanceled && (
-              <div className="p-4 bg-yellow-50 rounded-xl border border-yellow-200">
-                <p className="text-sm text-yellow-800">
+              <AlertBox type="warning" title="Langganan Akan Berakhir">
+                <p>
                   Langganan Anda akan berakhir pada{' '}
                   <span className="font-semibold">
                     {subscription?.stripeCurrentPeriodEnd
@@ -291,7 +289,7 @@ export function SubscriptionManager({
                   </span>
                   . Setelah itu, akun Anda akan kembali ke plan FREE.
                 </p>
-              </div>
+              </AlertBox>
             )}
           </div>
         ) : (
@@ -333,21 +331,13 @@ export function SubscriptionManager({
 
       {/* Message */}
       {message && (
-        <div
-          className={`p-4 rounded-xl border ${
-            message.type === 'success'
-              ? 'bg-lime-50 border-lime-200 text-lime-800'
-              : 'bg-pink-50 border-pink-200 text-pink-800'
-          }`}
+        <AlertBox
+          type={message.type === 'success' ? 'success' : 'error'}
+          title={message.type === 'success' ? 'Berhasil' : 'Gagal'}
+          onDismiss={() => setMessage(null)}
         >
-          <p className="text-sm">{message.text}</p>
-          <button
-            onClick={() => setMessage(null)}
-            className="mt-2 text-sm underline"
-          >
-            Tutup
-          </button>
-        </div>
+          {message.text}
+        </AlertBox>
       )}
     </div>
   )

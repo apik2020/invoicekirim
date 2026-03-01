@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Mail, Lock, User, ArrowRight, Eye, EyeOff, Crown, Sparkles, Check } from 'lucide-react'
 import { Logo } from '@/components/Logo'
+import { AlertBox } from '@/components/Toast'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -89,9 +90,9 @@ export default function RegisterPage() {
           {/* Form Card */}
           <div className="card p-10">
             {error && (
-              <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200">
-                <p className="text-sm text-red-600">{error}</p>
-              </div>
+              <AlertBox type="error" title="Registrasi Gagal" className="mb-6">
+                {error}
+              </AlertBox>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-5">
@@ -245,12 +246,12 @@ export default function RegisterPage() {
                   </button>
                 </div>
                 {formData.plan === 'trial' && (
-                  <div className="mt-3 p-3 rounded-lg bg-orange-50 border border-orange-200 flex items-start gap-2">
-                    <Sparkles className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
-                    <p className="text-xs text-orange-700">
-                      Nikmati semua fitur PRO selama 7 hari tanpa kartu kredit. Setelah trial, pilih untuk upgrade atau gunakan paket FREE.
+                  <AlertBox type="info" className="mt-3">
+                    <p className="flex items-start gap-2">
+                      <Sparkles className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                      <span>Nikmati semua fitur PRO selama 7 hari tanpa kartu kredit. Setelah trial, pilih untuk upgrade atau gunakan paket FREE.</span>
                     </p>
-                  </div>
+                  </AlertBox>
                 )}
               </div>
 
