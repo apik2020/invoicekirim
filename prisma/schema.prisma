@@ -118,9 +118,15 @@ model Subscription {
   status                  SubscriptionStatus @default(FREE)
   planType                PlanType           @default(FREE)
 
+  // Trial period
+  trialStartsAt           DateTime?  // When trial started
+  trialEndsAt             DateTime?  // When trial ends
+  trialSentReminder       Boolean    @default(false)  // Whether reminder was sent
+
   createdAt               DateTime   @default(now())
   updatedAt               DateTime   @updatedAt
 
+  @@index([trialEndsAt])
   @@map("subscriptions")
 }
 

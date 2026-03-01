@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
-import { CreditCard, FileText, Crown } from 'lucide-react'
+import { CreditCard, FileText, Crown, Clock, AlertTriangle } from 'lucide-react'
 import DashboardHeader from '@/components/DashboardHeader'
 import { SubscriptionManager } from '@/components/billing/SubscriptionManager'
 import { PaymentHistory } from '@/components/billing/PaymentHistory'
@@ -14,6 +14,9 @@ interface Subscription {
   planType: string
   stripeCurrentPeriodEnd: string | null
   stripeCustomerId: string | null
+  trialEndsAt?: string | null
+  isTrial?: boolean
+  trialDaysLeft?: number
 }
 
 export default function BillingPage() {
@@ -41,7 +44,7 @@ export default function BillingPage() {
       const data = await res.json()
 
       if (res.ok) {
-        setSubscription(data.subscription)
+        setSubscription(data)
       }
     } catch (error) {
       console.error('Error fetching subscription:', error)
@@ -62,6 +65,9 @@ export default function BillingPage() {
     return null
   }
 
+  const isTrial = subscription?.isTrial || subscription?.status === 'TRIALING'
+  const trialDaysLeft = subscription?.trialDaysLeft || 0
+
   return (
     <div className="min-h-screen bg-fresh-bg">
       <DashboardHeader title="Billing" showBackButton={true} backHref="/dashboard" />
@@ -73,33 +79,92 @@ export default function BillingPage() {
           <p className="text-gray-600">Kelola langganan dan lihat riwayat pembayaran</p>
         </div>
 
+        {/* Trial Banner */}
+        {isTrial && (
+          <div className={`mb-8 p-4 rounded-xl flex items-center gap-4 ${
+            trialDaysLeft <= 1
+              ? 'bg-red-50 border border-red-200'
+              : trialDaysLeft <= 3
+                ? 'bg-yellow-50 border border-yellow-200'
+                : 'bg-orange-50 border border-orange-200'
+          }`}>
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+              trialDaysLeft <= 1
+                ? 'bg-red-100'
+                : trialDaysLeft <= 3
+                  ? 'bg-yellow-100'
+                  : 'bg-orange-100'
+            }`}>
+              {trialDaysLeft <= 1 ? (
+                <AlertTriangle className="w-6 h-6 text-red-600" />
+              ) : (
+                <Clock className="w-6 h-6 text-orange-600" />
+              )}
+            </div>
+            <div className="flex-1">
+              <h3 className={`font-bold ${
+                trialDaysLeft <= 1 ? 'text-red-800' : 'text-gray-900'
+              }`}>
+                {trialDaysLeft <= 1
+                  ? 'Trial Anda akan berakhir hari ini!'
+                  : `Trial PRO: ${trialDaysLeft} hari tersisa`}
+              </h3>
+              <p className={`text-sm ${
+                trialDaysLeft <= 1 ? 'text-red-700' : 'text-gray-600'
+              }`}>
+                {trialDaysLeft <= 1
+                  ? 'Upgrade sekarang untuk tetap menikmati fitur PRO'
+                  : 'Nikmati semua fitur PRO selama masa trial'}
+              </p>
+            </div>
+            <a
+              href="/checkout"
+              className="px-4 py-2 bg-gradient-to-r from-orange-500 to-pink-500 text-white font-bold rounded-xl hover:from-orange-600 hover:to-pink-600 transition-all"
+            >
+              Upgrade PRO
+            </a>
+          </div>
+        )}
+
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="card p-6">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center">
-                <Crown className="w-6 h-6 text-orange-600" />
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                isTrial ? 'bg-gradient-to-br from-orange-500 to-pink-500' : 'bg-orange-100'
+              }`}>
+                <Crown className={`w-6 h-6 ${isTrial ? 'text-white' : 'text-orange-600'}`} />
               </div>
               <div>
                 <p className="text-sm text-gray-600">Plan Saat Ini</p>
-                <p className="text-xl font-bold text-gray-900">
-                  {subscription?.planType === 'PRO' ? 'PRO' : 'FREE'}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-xl font-bold text-gray-900">
+                    {subscription?.planType === 'PRO' ? 'PRO' : 'FREE'}
+                  </p>
+                  {isTrial && (
+                    <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-orange-100 text-orange-700">
+                      TRIAL
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
 
           <div className="card p-6">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-lime-100 flex items-center justify-center">
-                <FileText className="w-6 h-6 text-lime-600" />
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                isTrial ? 'bg-orange-100' : 'bg-lime-100'
+              }`}>
+                <FileText className={`w-6 h-6 ${isTrial ? 'text-orange-600' : 'text-lime-600'}`} />
               </div>
               <div>
                 <p className="text-sm text-gray-600">Status</p>
                 <p className="text-xl font-bold text-gray-900">
+                  {isTrial && 'Trial'}
                   {subscription?.status === 'ACTIVE' && 'Aktif'}
                   {subscription?.status === 'CANCELED' && 'Akan Berakhir'}
-                  {subscription?.status === 'FREE' && 'Gratis'}
+                  {!isTrial && subscription?.status === 'FREE' && 'Gratis'}
                 </p>
               </div>
             </div>
@@ -111,15 +176,23 @@ export default function BillingPage() {
                 <CreditCard className="w-6 h-6 text-pink-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">Perpanjangan</p>
+                <p className="text-sm text-gray-600">
+                  {isTrial ? 'Trial Berakhir' : 'Perpanjangan'}
+                </p>
                 <p className="text-sm font-semibold text-gray-900">
-                  {subscription?.stripeCurrentPeriodEnd
-                    ? new Date(subscription.stripeCurrentPeriodEnd).toLocaleDateString('id-ID', {
+                  {isTrial && subscription?.trialEndsAt
+                    ? new Date(subscription.trialEndsAt).toLocaleDateString('id-ID', {
                         day: 'numeric',
                         month: 'short',
                         year: 'numeric',
                       })
-                    : '-'}
+                    : subscription?.stripeCurrentPeriodEnd
+                      ? new Date(subscription.stripeCurrentPeriodEnd).toLocaleDateString('id-ID', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                        })
+                      : '-'}
                 </p>
               </div>
             </div>
