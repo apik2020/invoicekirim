@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Crown, X, Check, AlertCircle, Loader2 } from 'lucide-react'
+import { Crown, X, Check, AlertCircle, Loader2, Sparkles } from 'lucide-react'
 import { formatDate, formatCurrency } from '@/lib/utils'
 
 interface Subscription {
@@ -10,6 +10,9 @@ interface Subscription {
   planType: string
   stripeCurrentPeriodEnd: string | null
   stripeCustomerId: string | null
+  isTrial?: boolean
+  trialDaysLeft?: number
+  trialEndsAt?: string | null
 }
 
 interface SubscriptionManagerProps {
@@ -24,11 +27,50 @@ export function SubscriptionManager({
   const [loading, setLoading] = useState(false)
   const [canceling, setCanceling] = useState(false)
   const [downgrading, setDowngrading] = useState(false)
+  const [startingTrial, setStartingTrial] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   const isPro = subscription?.planType === 'PRO'
-  const isActive = subscription?.status === 'ACTIVE'
+  const isTrial = subscription?.isTrial || subscription?.status === 'TRIALING'
+  const isActive = subscription?.status === 'ACTIVE' || isTrial
   const isCanceled = subscription?.status === 'CANCELED'
+  const isFree = subscription?.status === 'FREE' && subscription?.planType === 'FREE'
+
+  const handleStartTrial = async () => {
+    if (!confirm('Mulai trial PRO 7 hari gratis? Setelah trial berakhir, Anda dapat memilih untuk upgrade ke PRO atau kembali ke FREE.')) {
+      return
+    }
+
+    try {
+      setStartingTrial(true)
+      const res = await fetch('/api/subscription/start-trial', {
+        method: 'POST',
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        setMessage({
+          type: 'success',
+          text: 'Trial PRO 7 hari telah dimulai! Nikmati semua fitur premium.',
+        })
+        onSubscriptionChange?.()
+      } else {
+        setMessage({
+          type: 'error',
+          text: data.error || 'Gagal memulai trial',
+        })
+      }
+    } catch (error) {
+      console.error('Error starting trial:', error)
+      setMessage({
+        type: 'error',
+        text: 'Terjadi kesalahan saat memulai trial',
+      })
+    } finally {
+      setStartingTrial(false)
+    }
+  }
 
   const handleCancelSubscription = async () => {
     if (!confirm('Apakah Anda yakin ingin membatalkan langganan? Akses PRO akan tetap aktif hingga akhir periode berlangganan.')) {
@@ -192,7 +234,23 @@ export function SubscriptionManager({
       <div className="card p-6">
         <h3 className="text-lg font-bold text-gray-900 mb-4">Kelola Langganan</h3>
 
-        {isPro ? (
+        {isTrial ? (
+          <div className="space-y-3">
+            <div className="p-4 bg-orange-50 rounded-xl border border-orange-200">
+              <p className="text-sm text-orange-800">
+                <span className="font-semibold">Trial PRO Aktif!</span>{' '}
+                Nikmati semua fitur premium selama {subscription?.trialDaysLeft || 7} hari lagi.
+              </p>
+            </div>
+            <button
+              onClick={handleUpgrade}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-pink-500 text-white hover:from-orange-600 hover:to-pink-600 transition-colors font-medium shadow-lg shadow-orange-200"
+            >
+              <Crown className="w-4 h-4" />
+              Upgrade ke PRO Sekarang
+            </button>
+          </div>
+        ) : isPro ? (
           <div className="space-y-3">
             {isActive && !isCanceled && (
               <>
@@ -237,13 +295,39 @@ export function SubscriptionManager({
             )}
           </div>
         ) : (
-          <button
-            onClick={handleUpgrade}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-pink-500 text-white hover:from-orange-600 hover:to-pink-600 transition-colors font-medium shadow-lg shadow-orange-200"
-          >
-            <Crown className="w-4 h-4" />
-            Upgrade ke PRO
-          </button>
+          <div className="space-y-3">
+            {/* Start Free Trial Button */}
+            <button
+              onClick={handleStartTrial}
+              disabled={startingTrial}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-pink-500 text-white hover:from-orange-600 hover:to-pink-600 transition-colors font-medium shadow-lg shadow-orange-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {startingTrial ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4" />
+              )}
+              Mulai Trial PRO 7 Hari Gratis
+            </button>
+            <p className="text-center text-sm text-gray-500">
+              Tidak perlu kartu kredit
+            </p>
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-white text-gray-500">atau</span>
+              </div>
+            </div>
+            <button
+              onClick={handleUpgrade}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 border-orange-200 text-orange-600 hover:bg-orange-50 transition-colors font-medium"
+            >
+              <Crown className="w-4 h-4" />
+              Upgrade Langsung ke PRO
+            </button>
+          </div>
         )}
       </div>
 
