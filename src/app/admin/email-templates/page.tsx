@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSession, signOut } from 'next-auth/react'
-import { Mail, Plus, Loader2, LogOut, Edit, Trash2, Eye, ToggleLeft, ToggleRight } from 'lucide-react'
+import { Mail, Plus, Loader2, LogOut, Edit, Trash2, ToggleLeft, ToggleRight, Users, DollarSign, Activity } from 'lucide-react'
 import { EmailTemplateEditor } from '@/components/admin/EmailTemplateEditor'
+import { AdminLogo } from '@/components/Logo'
 
 interface EmailTemplate {
   id: string
@@ -27,21 +27,28 @@ const TEMPLATE_NAMES: Record<string, string> = {
 
 export default function AdminEmailTemplatesPage() {
   const router = useRouter()
-  const { data: session, status } = useSession()
   const [loading, setLoading] = useState(true)
   const [templates, setTemplates] = useState<EmailTemplate[]>([])
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState(false)
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
+    checkAdminSession()
+  }, [])
+
+  const checkAdminSession = async () => {
+    try {
+      const res = await fetch('/api/admin/me')
+      if (res.ok) {
+        fetchTemplates()
+      } else {
+        router.push('/admin/login')
+      }
+    } catch (error) {
+      console.error('Error checking admin session:', error)
       router.push('/admin/login')
     }
-    if (status === 'authenticated') {
-      setLoading(false)
-      fetchTemplates()
-    }
-  }, [status, router])
+  }
 
   const fetchTemplates = async () => {
     try {
@@ -94,7 +101,7 @@ export default function AdminEmailTemplatesPage() {
     }
   }
 
-  if (status === 'loading' || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-fresh-bg flex items-center justify-center">
         <div className="text-center">
@@ -105,14 +112,9 @@ export default function AdminEmailTemplatesPage() {
     )
   }
 
-  if (status === 'unauthenticated') {
-    return null
-  }
-
   if (selectedTemplateId !== null || isCreating) {
     return (
       <div className="min-h-screen bg-fresh-bg">
-
         {/* Header */}
         <div className="bg-white border-b border-orange-100 sticky top-0 z-50">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -158,30 +160,52 @@ export default function AdminEmailTemplatesPage() {
 
   return (
     <div className="min-h-screen bg-fresh-bg">
-
       {/* Header */}
       <div className="bg-white border-b border-orange-100 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Admin - Email Templates</h1>
-              <p className="text-gray-600 text-sm">Kelola template email sistem</p>
-            </div>
-            <div className="flex items-center gap-4">
+            <AdminLogo size="lg" linkToHome={false} />
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => router.push('/admin')}
-                className="px-4 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 rounded-xl border border-orange-200 text-gray-700 hover:bg-orange-50 font-medium"
               >
                 Dashboard
               </button>
               <button
-                onClick={() => router.push('/admin/payments')}
-                className="px-4 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+                onClick={() => router.push('/admin/users')}
+                className="px-4 py-2 rounded-xl border border-orange-200 text-gray-700 hover:bg-orange-50 font-medium flex items-center gap-2"
               >
+                <Users className="w-4 h-4" />
+                Users
+              </button>
+              <button
+                onClick={() => router.push('/admin/payments')}
+                className="px-4 py-2 rounded-xl border border-orange-200 text-gray-700 hover:bg-orange-50 font-medium flex items-center gap-2"
+              >
+                <DollarSign className="w-4 h-4" />
                 Payments
               </button>
               <button
-                onClick={() => signOut({ callbackUrl: '/admin/login' })}
+                onClick={() => router.push('/admin/email-templates')}
+                className="px-4 py-2 rounded-xl bg-orange-500 text-white font-medium flex items-center gap-2"
+              >
+                <Mail className="w-4 h-4" />
+                Email Templates
+              </button>
+              <button
+                onClick={() => router.push('/admin/activity-logs')}
+                className="px-4 py-2 rounded-xl border border-orange-200 text-gray-700 hover:bg-orange-50 font-medium flex items-center gap-2"
+              >
+                <Activity className="w-4 h-4" />
+                Activity Logs
+              </button>
+              <button
+                onClick={async () => {
+                  await fetch('/api/admin/logout', { method: 'POST' })
+                  router.push('/admin/login')
+                  router.refresh()
+                }}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition-colors font-medium"
               >
                 <LogOut className="w-4 h-4" />

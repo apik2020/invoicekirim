@@ -2,24 +2,24 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSession, signOut } from 'next-auth/react'
 import {
   CreditCard,
   Search,
-  Filter,
   Download,
   RefreshCw,
   DollarSign,
   CheckCircle,
   XCircle,
   Clock,
-  ArrowUpDown,
   Loader2,
   LogOut,
-  Eye,
   AlertCircle,
+  Users,
+  Mail,
+  Activity,
 } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
+import { AdminLogo } from '@/components/Logo'
 
 interface Payment {
   id: string
@@ -54,7 +54,6 @@ interface PaymentData {
 
 function PaymentsContent() {
   const router = useRouter()
-  const { data: session, status: sessionStatus } = useSession()
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<PaymentData | null>(null)
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null)
@@ -65,6 +64,10 @@ function PaymentsContent() {
   const [status, setStatus] = useState('')
   const [page, setPage] = useState(1)
   const [debouncedSearch, setDebouncedSearch] = useState('')
+
+  useEffect(() => {
+    checkAdminSession()
+  }, [])
 
   // Debounce search
   useEffect(() => {
@@ -77,16 +80,26 @@ function PaymentsContent() {
     setPage(1)
   }, [status, debouncedSearch])
 
+  // Fetch payments when filters change
   useEffect(() => {
-    if (sessionStatus === 'unauthenticated') {
-      router.push('/admin/login')
-      return
-    }
-
-    if (sessionStatus === 'authenticated') {
+    if (!loading) {
       fetchPayments()
     }
-  }, [sessionStatus, page, status, debouncedSearch])
+  }, [page, status, debouncedSearch])
+
+  const checkAdminSession = async () => {
+    try {
+      const res = await fetch('/api/admin/me')
+      if (res.ok) {
+        fetchPayments()
+      } else {
+        router.push('/admin/login')
+      }
+    } catch (error) {
+      console.error('Error checking admin session:', error)
+      router.push('/admin/login')
+    }
+  }
 
   const fetchPayments = async () => {
     setLoading(true)
@@ -170,29 +183,54 @@ function PaymentsContent() {
     }
   }
 
-  if (sessionStatus === 'unauthenticated') {
-    return null
-  }
-
   return (
     <div className="min-h-screen bg-fresh-bg">
       {/* Header */}
       <div className="bg-white border-b border-orange-100 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Admin - Payments</h1>
-              <p className="text-gray-600 text-sm">Manage & monitor all payments</p>
-            </div>
-            <div className="flex items-center gap-4">
+            <AdminLogo size="lg" linkToHome={false} />
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => router.push('/admin')}
-                className="px-4 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 rounded-xl border border-orange-200 text-gray-700 hover:bg-orange-50 font-medium"
               >
                 Dashboard
               </button>
               <button
-                onClick={() => signOut({ callbackUrl: '/admin/login' })}
+                onClick={() => router.push('/admin/users')}
+                className="px-4 py-2 rounded-xl border border-orange-200 text-gray-700 hover:bg-orange-50 font-medium flex items-center gap-2"
+              >
+                <Users className="w-4 h-4" />
+                Users
+              </button>
+              <button
+                onClick={() => router.push('/admin/payments')}
+                className="px-4 py-2 rounded-xl bg-orange-500 text-white font-medium flex items-center gap-2"
+              >
+                <DollarSign className="w-4 h-4" />
+                Payments
+              </button>
+              <button
+                onClick={() => router.push('/admin/email-templates')}
+                className="px-4 py-2 rounded-xl border border-orange-200 text-gray-700 hover:bg-orange-50 font-medium flex items-center gap-2"
+              >
+                <Mail className="w-4 h-4" />
+                Email Templates
+              </button>
+              <button
+                onClick={() => router.push('/admin/activity-logs')}
+                className="px-4 py-2 rounded-xl border border-orange-200 text-gray-700 hover:bg-orange-50 font-medium flex items-center gap-2"
+              >
+                <Activity className="w-4 h-4" />
+                Activity Logs
+              </button>
+              <button
+                onClick={async () => {
+                  await fetch('/api/admin/logout', { method: 'POST' })
+                  router.push('/admin/login')
+                  router.refresh()
+                }}
                 className="flex items-center gap-2 px-4 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition-colors font-medium"
               >
                 <LogOut className="w-4 h-4" />
@@ -204,6 +242,12 @@ function PaymentsContent() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        {/* Page Header */}
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Daftar Pembayaran</h2>
+          <p className="text-gray-600">Kelola dan pantau semua pembayaran</p>
+        </div>
+
         {/* Summary Cards */}
         {data && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
