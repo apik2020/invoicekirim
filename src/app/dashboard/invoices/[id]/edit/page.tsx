@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
-import { FileText, Save, Plus, Trash2, Loader2 } from 'lucide-react'
+import { FileText, Save, Plus, Trash2, Loader2, Package, X } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import DashboardHeader from '@/components/DashboardHeader'
 
@@ -15,6 +15,16 @@ interface InvoiceItem {
   description: string
   quantity: number
   price: number
+}
+
+interface CatalogItem {
+  id: string
+  name: string
+  description: string | null
+  price: number
+  unit: string
+  sku: string | null
+  category: string | null
 }
 
 interface InvoiceData {
@@ -42,6 +52,10 @@ export default function EditInvoicePage() {
   const [saving, setSaving] = useState(false)
   const [notFound, setNotFound] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [catalogItems, setCatalogItems] = useState<CatalogItem[]>([])
+  const [showCatalogModal, setShowCatalogModal] = useState(false)
+  const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(null)
+  const [catalogSearch, setCatalogSearch] = useState('')
 
   const [formData, setFormData] = useState<InvoiceData>({
     invoiceNumber: '',
@@ -72,8 +86,21 @@ export default function EditInvoicePage() {
       router.push('/login')
     } else if (sessionResult.status === 'authenticated' && id) {
       fetchInvoice()
+      fetchCatalogItems()
     }
   }, [sessionResult, id, router])
+
+  const fetchCatalogItems = async () => {
+    try {
+      const res = await fetch('/api/items')
+      if (res.ok) {
+        const data = await res.json()
+        setCatalogItems(data || [])
+      }
+    } catch (error) {
+      console.error('Error fetching catalog items:', error)
+    }
+  }
 
   const fetchInvoice = async () => {
     try {
@@ -86,10 +113,17 @@ export default function EditInvoicePage() {
       }
 
       const data = await res.json()
-      setInvoiceStatus(data.invoice.status)
+
+      // Check for error response
+      if (data.error) {
+        setNotFound(true)
+        return
+      }
+
+      setInvoiceStatus(data.status)
 
       // Check if invoice can be edited
-      if (data.invoice.status === 'PAID') {
+      if (data.status === 'PAID') {
         alert('Invoice yang sudah lunas tidak dapat diubah')
         router.push(`/dashboard/invoices/${id}`)
         return
@@ -97,24 +131,24 @@ export default function EditInvoicePage() {
 
       // Populate form data
       setFormData({
-        invoiceNumber: data.invoice.invoiceNumber,
-        date: new Date(data.invoice.date).toISOString().split('T')[0],
-        dueDate: data.invoice.dueDate ? new Date(data.invoice.dueDate).toISOString().split('T')[0] : '',
-        companyName: data.invoice.companyName || '',
-        companyEmail: data.invoice.companyEmail || '',
-        companyPhone: data.invoice.companyPhone || '',
-        companyAddress: data.invoice.companyAddress || '',
-        clientName: data.invoice.clientName,
-        clientEmail: data.invoice.clientEmail,
-        clientPhone: data.invoice.clientPhone || '',
-        clientAddress: data.invoice.clientAddress || '',
-        notes: data.invoice.notes || '',
-        taxRate: data.invoice.taxRate || 11,
+        invoiceNumber: data.invoiceNumber,
+        date: new Date(data.date).toISOString().split('T')[0],
+        dueDate: data.dueDate ? new Date(data.dueDate).toISOString().split('T')[0] : '',
+        companyName: data.companyName || '',
+        companyEmail: data.companyEmail || '',
+        companyPhone: data.companyPhone || '',
+        companyAddress: data.companyAddress || '',
+        clientName: data.clientName,
+        clientEmail: data.clientEmail,
+        clientPhone: data.clientPhone || '',
+        clientAddress: data.clientAddress || '',
+        notes: data.notes || '',
+        taxRate: data.taxRate || 11,
       })
 
       // Populate items
-      if (data.invoice.items && data.invoice.items.length > 0) {
-        setItems(data.invoice.items.map((item: any) => ({
+      if (data.items && data.items.length > 0) {
+        setItems(data.items.map((item: any) => ({
           id: item.id,
           description: item.description,
           quantity: item.quantity,
@@ -178,6 +212,48 @@ export default function EditInvoicePage() {
       setItems(items.filter((item) => item.id !== id))
     }
   }
+
+  const deleteAndReplaceItem = (index: number) => {
+    setSelectedItemIndex(index)
+    setShowCatalogModal(true)
+  }
+
+  const selectCatalogItem = (catalogItem: CatalogItem) => {
+    if (selectedItemIndex !== null) {
+      const newItems = [...items]
+      newItems[selectedItemIndex] = {
+        id: Date.now().toString(),
+        description: catalogItem.name + (catalogItem.description ? ` - ${catalogItem.description}` : ''),
+        quantity: 1,
+        price: catalogItem.price,
+      }
+      setItems(newItems)
+    }
+    setShowCatalogModal(false)
+    setSelectedItemIndex(null)
+    setCatalogSearch('')
+  }
+
+  const addCatalogItemAsNew = (catalogItem: CatalogItem) => {
+    setItems([
+      ...items,
+      {
+        id: Date.now().toString(),
+        description: catalogItem.name + (catalogItem.description ? ` - ${catalogItem.description}` : ''),
+        quantity: 1,
+        price: catalogItem.price,
+      }
+    ])
+    setShowCatalogModal(false)
+    setSelectedItemIndex(null)
+    setCatalogSearch('')
+  }
+
+  const filteredCatalogItems = catalogItems.filter((item) =>
+    item.name.toLowerCase().includes(catalogSearch.toLowerCase()) ||
+    (item.description?.toLowerCase().includes(catalogSearch.toLowerCase()) ?? false) ||
+    (item.sku?.toLowerCase().includes(catalogSearch.toLowerCase()) ?? false)
+  )
 
   const updateItem = (id: string, field: string, value: any) => {
     setItems(items.map((item) =>
@@ -419,14 +495,29 @@ export default function EditInvoicePage() {
           <div className="card p-8">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-lg font-bold text-gray-900">Item Invoice</h2>
-              <button
-                type="button"
-                onClick={addItem}
-                className="flex items-center gap-2 px-4 py-2 text-white font-bold text-sm rounded-xl btn-primary"
-              >
-                <Plus size={16} />
-                Tambah Item
-              </button>
+              <div className="flex items-center gap-3">
+                {catalogItems.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedItemIndex(null)
+                      setShowCatalogModal(true)
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 text-gray-600 font-bold text-sm rounded-xl border border-orange-200 hover:bg-orange-50 transition-colors"
+                  >
+                    <Package size={16} />
+                    Dari Katalog
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={addItem}
+                  className="flex items-center gap-2 px-4 py-2 text-white font-bold text-sm rounded-xl btn-primary"
+                >
+                  <Plus size={16} />
+                  Tambah Item
+                </button>
+              </div>
             </div>
 
             <div className="space-y-4">
@@ -434,15 +525,28 @@ export default function EditInvoicePage() {
                 <div key={item.id} className="p-6 rounded-xl bg-gray border border-orange-200 space-y-4">
                   <div className="flex justify-between items-start">
                     <span className="font-bold text-gray-900">Item #{index + 1}</span>
-                    {items.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeItem(item.id)}
-                        className="p-2 text-teal-light rounded-xl hover:bg-gray transition-colors"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {catalogItems.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => deleteAndReplaceItem(index)}
+                          className="p-2 text-orange-600 rounded-xl hover:bg-orange-100 transition-colors"
+                          title="Ganti dari Katalog"
+                        >
+                          <Package size={16} />
+                        </button>
+                      )}
+                      {items.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeItem(item.id)}
+                          className="p-2 text-red-500 rounded-xl hover:bg-red-50 transition-colors"
+                          title="Hapus Item"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   <div className="grid md:grid-cols-3 gap-4">
@@ -535,6 +639,107 @@ export default function EditInvoicePage() {
             </button>
           </div>
         </form>
+
+        {/* Catalog Modal */}
+        {showCatalogModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden">
+              {/* Modal Header */}
+              <div className="p-6 border-b border-orange-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-bold text-gray-900">Pilih dari Katalog</h3>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCatalogModal(false)
+                      setSelectedItemIndex(null)
+                      setCatalogSearch('')
+                    }}
+                    className="p-2 text-gray-500 hover:text-gray-700 rounded-xl hover:bg-gray-100 transition-colors"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+
+                {/* Search */}
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={catalogSearch}
+                    onChange={(e) => setCatalogSearch(e.target.value)}
+                    placeholder="Cari item..."
+                    className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              {/* Catalog Items List */}
+              <div className="p-6 overflow-y-auto max-h-[60vh]">
+                {filteredCatalogItems.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-600">
+                      {catalogSearch ? 'Tidak ada item ditemukan' : 'Belum ada item di katalog'}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {filteredCatalogItems.map((item) => (
+                      <div
+                        key={item.id}
+                        className="p-4 rounded-xl border border-orange-200 hover:border-orange-400 hover:bg-orange-50 transition-all cursor-pointer"
+                        onClick={() => {
+                          if (selectedItemIndex !== null) {
+                            selectCatalogItem(item)
+                          } else {
+                            addCatalogItemAsNew(item)
+                          }
+                        }}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="font-bold text-gray-900">{item.name}</h4>
+                              {item.sku && (
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                                  {item.sku}
+                                </span>
+                              )}
+                            </div>
+                            {item.description && (
+                              <p className="text-sm text-gray-600 mb-1">{item.description}</p>
+                            )}
+                            <div className="flex items-center gap-3 text-sm text-gray-500">
+                              {item.category && (
+                                <span className="px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">
+                                  {item.category}
+                                </span>
+                              )}
+                              <span>Unit: {item.unit}</span>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <span className="font-bold text-gray-900">{formatCurrency(item.price)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-4 border-t border-orange-200 bg-gray-50">
+                <p className="text-sm text-gray-600 text-center">
+                  {selectedItemIndex !== null
+                    ? 'Klik item untuk mengganti item yang dipilih'
+                    : 'Klik item untuk menambahkan ke invoice'}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

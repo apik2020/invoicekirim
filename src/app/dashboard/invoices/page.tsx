@@ -178,15 +178,16 @@ export default function InvoicesPage() {
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        {/* Header with Filters and Action Button */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
-          <div>
+        {/* Header */}
+        <div className="mb-8">
+          <div className="mb-4">
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Invoice Saya</h1>
             <p className="text-gray-600">
               Kelola semua invoice bisnismu di satu tempat
             </p>
           </div>
 
+          {/* Search, Filters and Action Button */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             {/* Search */}
             <div className="relative">
@@ -201,7 +202,7 @@ export default function InvoicesPage() {
             </div>
 
             {/* Status Filter */}
-            <div className="w-full">
+            <div className="w-full sm:w-auto">
               <StatusFilter
                 currentFilter={statusFilter}
                 onFilterChange={setStatusFilter}

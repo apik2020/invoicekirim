@@ -545,9 +545,18 @@ Terima kasih!`
       {/* Invoice Content */}
       <div className="container mx-auto px-4 py-10">
         <div className="max-w-4xl mx-auto">
-          {/* Status & Actions */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-            {getStatusBadge(invoice.status)}
+          {/* Header */}
+          <div className="mb-8">
+            <div className="mb-4">
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">Detail Invoice</h1>
+              <p className="text-gray-600">
+                Lihat dan kelola detail invoice {invoice.invoiceNumber}
+              </p>
+            </div>
+
+            {/* Status & Actions */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+              {getStatusBadge(invoice.status)}
 
             {/* Action Buttons by Status */}
             {invoice.status === 'DRAFT' && (
@@ -655,6 +664,7 @@ Terima kasih!`
                 </p>
               </div>
             )}
+            </div>
           </div>
 
           {/* Invoice Card */}

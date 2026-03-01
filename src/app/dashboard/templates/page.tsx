@@ -116,16 +116,17 @@ export default function TemplatesPage() {
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        {/* Header with Search and Action Button */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-          <div>
+        {/* Header */}
+        <div className="mb-8">
+          <div className="mb-4">
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Template Invoice</h1>
             <p className="text-gray-600">
               Simpan dan gunakan ulang invoice yang sering Anda buat
             </p>
           </div>
 
-          <div className="flex items-center gap-4">
+          {/* Search and Action Button */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             {/* Search */}
             <div className="relative flex-1 sm:flex-initial">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -141,7 +142,7 @@ export default function TemplatesPage() {
             {/* Add Template Button */}
             <Link
               href="/dashboard/templates/create"
-              className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl bg-gradient-to-r from-orange-400 to-pink-500 hover:from-orange-500 hover:to-pink-600 transition-all shadow-lg shadow-orange-500/30"
+              className="flex items-center justify-center gap-2 px-6 py-3 text-white font-bold rounded-xl bg-gradient-to-r from-orange-400 to-pink-500 hover:from-orange-500 hover:to-pink-600 transition-all shadow-lg shadow-orange-500/30"
             >
               <Plus size={18} />
               <span>Buat Template</span>
