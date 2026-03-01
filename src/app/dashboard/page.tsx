@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { FileText, Plus, Users, Package, Loader2 } from 'lucide-react'
+import { FileText, Plus, Users, Package, Loader2, Crown, Sparkles, Clock, X } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import Link from 'next/link'
 import DashboardHeader from '@/components/DashboardHeader'
@@ -16,12 +16,23 @@ import { DashboardStatusSummary } from '@/components/dashboard/DashboardStatusSu
 import { useAutoLogout } from '@/hooks/useAutoLogout'
 import { SessionTimeoutModal } from '@/components/SessionTimeoutModal'
 
+interface Subscription {
+  id: string
+  status: string
+  planType: string
+  isTrial?: boolean
+  trialDaysLeft?: number
+  trialEndsAt?: string | null
+}
+
 export default function DashboardPage() {
   const router = useRouter()
   const { data: session, status } = useSession()
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
+  const [subscription, setSubscription] = useState<Subscription | null>(null)
+  const [showUpgradeBanner, setShowUpgradeBanner] = useState(true)
 
   // Auto logout after 1 minute of inactivity (for testing)
   const { showWarning, timeRemaining, stayLoggedIn, logout } = useAutoLogout({
@@ -38,8 +49,21 @@ export default function DashboardPage() {
 
     if (status === 'authenticated' && session?.user) {
       fetchDashboardData()
+      fetchSubscription()
     }
   }, [status, session, router])
+
+  const fetchSubscription = async () => {
+    try {
+      const res = await fetch('/api/subscription')
+      if (res.ok) {
+        const subData = await res.json()
+        setSubscription(subData)
+      }
+    } catch (error) {
+      console.error('Error fetching subscription:', error)
+    }
+  }
 
   const fetchDashboardData = async () => {
     try {
@@ -115,7 +139,13 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-fresh-bg">
       <DashboardHeader title="Dashboard" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <DashboardContent session={session} data={data} />
+        <DashboardContent
+          session={session}
+          data={data}
+          subscription={subscription}
+          showUpgradeBanner={showUpgradeBanner}
+          setShowUpgradeBanner={setShowUpgradeBanner}
+        />
       </div>
 
       {/* Session Timeout Warning Modal */}
@@ -129,9 +159,107 @@ export default function DashboardPage() {
   )
 }
 
-function DashboardContent({ session, data }: { session: any; data: any }) {
+function DashboardContent({
+  session,
+  data,
+  subscription,
+  showUpgradeBanner,
+  setShowUpgradeBanner,
+}: {
+  session: any
+  data: any
+  subscription: Subscription | null
+  showUpgradeBanner: boolean
+  setShowUpgradeBanner: (show: boolean) => void
+}) {
+  const isFree = subscription?.status === 'FREE' && subscription?.planType === 'FREE'
+  const isTrial = subscription?.isTrial || subscription?.status === 'TRIALING'
+  const trialDaysLeft = subscription?.trialDaysLeft || 0
+
   return (
     <div className="space-y-10">
+      {/* Upgrade Banner for FREE users */}
+      {isFree && showUpgradeBanner && (
+        <div className="relative bg-gradient-to-r from-orange-500 via-pink-500 to-purple-500 rounded-2xl p-6 text-white shadow-lg">
+          <button
+            onClick={() => setShowUpgradeBanner(false)}
+            className="absolute top-4 right-4 p-1 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+            <div className="w-14 h-14 rounded-xl bg-white/20 flex items-center justify-center">
+              <Crown className="w-8 h-8 text-white" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl font-bold mb-1">Upgrade ke PRO!</h3>
+              <p className="text-white/90 text-sm">
+                Dapatkan fitur unlimited invoice, template premium, analytics, dan banyak lagi.
+                Mulai trial 7 hari gratis tanpa kartu kredit.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <Link
+                href="/dashboard/billing"
+                className="px-5 py-2.5 bg-white text-orange-600 font-bold rounded-xl hover:bg-orange-50 transition-colors"
+              >
+                Mulai Trial Gratis
+              </Link>
+              <Link
+                href="/pricing"
+                className="px-5 py-2.5 bg-white/20 text-white font-bold rounded-xl hover:bg-white/30 transition-colors"
+              >
+                Lihat Harga
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Trial Banner for TRIALING users */}
+      {isTrial && (
+        <div className={`rounded-2xl p-4 flex items-center gap-4 ${
+          trialDaysLeft <= 1
+            ? 'bg-red-50 border border-red-200'
+            : trialDaysLeft <= 3
+              ? 'bg-yellow-50 border border-yellow-200'
+              : 'bg-orange-50 border border-orange-200'
+        }`}>
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+            trialDaysLeft <= 1 ? 'bg-red-100' : 'bg-orange-100'
+          }`}>
+            {trialDaysLeft <= 1 ? (
+              <Clock className="w-6 h-6 text-red-600" />
+            ) : (
+              <Sparkles className="w-6 h-6 text-orange-600" />
+            )}
+          </div>
+          <div className="flex-1">
+            <h3 className={`font-bold ${
+              trialDaysLeft <= 1 ? 'text-red-800' : 'text-gray-900'
+            }`}>
+              {trialDaysLeft <= 1
+                ? 'Trial berakhir hari ini!'
+                : `Trial PRO: ${trialDaysLeft} hari tersisa`}
+            </h3>
+            <p className={`text-sm ${
+              trialDaysLeft <= 1 ? 'text-red-700' : 'text-gray-600'
+            }`}>
+              {trialDaysLeft <= 1
+                ? 'Upgrade sekarang agar tidak kehilangan akses PRO'
+                : 'Nikmati semua fitur premium selama masa trial'}
+            </p>
+          </div>
+          <Link
+            href="/dashboard/billing"
+            className="px-4 py-2 bg-gradient-to-r from-orange-500 to-pink-500 text-white font-bold rounded-xl hover:from-orange-600 hover:to-pink-600 transition-all whitespace-nowrap"
+          >
+            Upgrade PRO
+          </Link>
+        </div>
+      )}
+
       {/* Welcome Section */}
       <div>
         <h1 className="font-bold text-3xl md:text-4xl text-gray-900 mb-2 tracking-tight">
