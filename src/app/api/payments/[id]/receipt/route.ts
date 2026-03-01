@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic'
 // Get receipt info
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -19,9 +19,10 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const payment = await prisma.payment.findFirst({
       where: {
-        id: params.id,
+        id,
         userId: session.user.id,
       },
     })
@@ -32,18 +33,18 @@ export async function GET(
 
     if (!payment.receiptNumber) {
       // Generate receipt if it doesn't exist
-      const updatedPayment = await createReceipt(params.id)
+      const updatedPayment = await createReceipt(id)
       return NextResponse.json({
         receiptNumber: updatedPayment.receiptNumber,
         receiptUrl: updatedPayment.receiptUrl,
-        downloadUrl: `/api/payments/${params.id}/receipt/download`,
+        downloadUrl: `/api/payments/${id}/receipt/download`,
       })
     }
 
     return NextResponse.json({
       receiptNumber: payment.receiptNumber,
       receiptUrl: payment.receiptUrl,
-      downloadUrl: `/api/payments/${params.id}/receipt/download`,
+      downloadUrl: `/api/payments/${id}/receipt/download`,
     })
   } catch (error) {
     console.error('Error fetching receipt:', error)
@@ -57,7 +58,7 @@ export async function GET(
 // Generate/download receipt PDF
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -66,9 +67,10 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const { id } = await params
     const payment = await prisma.payment.findFirst({
       where: {
-        id: params.id,
+        id,
         userId: session.user.id,
       },
     })
@@ -78,7 +80,7 @@ export async function POST(
     }
 
     // Generate or update receipt
-    const updatedPayment = await createReceipt(params.id)
+    const updatedPayment = await createReceipt(id)
 
     return NextResponse.json({
       message: 'Receipt generated successfully',

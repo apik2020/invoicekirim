@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Mail, Lock, User, ArrowRight, Eye, EyeOff } from 'lucide-react'
+import { Mail, Lock, User, ArrowRight, Eye, EyeOff, Crown, Sparkles, Check } from 'lucide-react'
 import { Logo } from '@/components/Logo'
 
 export default function RegisterPage() {
@@ -15,6 +15,7 @@ export default function RegisterPage() {
     email: '',
     password: '',
     confirmPassword: '',
+    plan: 'trial', // 'free' or 'trial'
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
@@ -186,6 +187,71 @@ export default function RegisterPage() {
                     {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
+              </div>
+
+              {/* Plan Selection */}
+              <div>
+                <label className="block text-sm font-bold text-gray-900 mb-3">
+                  Pilih Paket
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  {/* FREE Plan */}
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, plan: 'free' })}
+                    className={`relative p-4 rounded-xl border-2 text-left transition-all ${
+                      formData.plan === 'free'
+                        ? 'border-gray-400 bg-gray-50'
+                        : 'border-gray-200 bg-white hover:border-gray-300'
+                    }`}
+                  >
+                    {formData.plan === 'free' && (
+                      <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-gray-500 flex items-center justify-center">
+                        <Check className="w-3 h-3 text-white" />
+                      </div>
+                    )}
+                    <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center mb-3">
+                      <User className="w-5 h-5 text-gray-600" />
+                    </div>
+                    <h3 className="font-bold text-gray-900 mb-1">FREE</h3>
+                    <p className="text-xs text-gray-500">10 invoice/bulan</p>
+                    <p className="text-xs text-gray-500">Fitur dasar</p>
+                  </button>
+
+                  {/* Trial PRO Plan */}
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, plan: 'trial' })}
+                    className={`relative p-4 rounded-xl border-2 text-left transition-all ${
+                      formData.plan === 'trial'
+                        ? 'border-orange-500 bg-orange-50'
+                        : 'border-gray-200 bg-white hover:border-orange-300'
+                    }`}
+                  >
+                    <div className="absolute -top-2 -right-2 px-2 py-0.5 rounded-full bg-gradient-to-r from-orange-500 to-pink-500 text-white text-xs font-bold">
+                      POPULER
+                    </div>
+                    {formData.plan === 'trial' && (
+                      <div className="absolute top-2 left-2 w-5 h-5 rounded-full bg-orange-500 flex items-center justify-center">
+                        <Check className="w-3 h-3 text-white" />
+                      </div>
+                    )}
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-pink-500 flex items-center justify-center mb-3">
+                      <Crown className="w-5 h-5 text-white" />
+                    </div>
+                    <h3 className="font-bold text-gray-900 mb-1">Trial PRO</h3>
+                    <p className="text-xs text-gray-500">7 hari gratis</p>
+                    <p className="text-xs text-gray-500">Semua fitur premium</p>
+                  </button>
+                </div>
+                {formData.plan === 'trial' && (
+                  <div className="mt-3 p-3 rounded-lg bg-orange-50 border border-orange-200 flex items-start gap-2">
+                    <Sparkles className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                    <p className="text-xs text-orange-700">
+                      Nikmati semua fitur PRO selama 7 hari tanpa kartu kredit. Setelah trial, pilih untuk upgrade atau gunakan paket FREE.
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Submit Button */}

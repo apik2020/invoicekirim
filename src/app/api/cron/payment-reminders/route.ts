@@ -85,6 +85,7 @@ export async function GET(req: NextRequest) {
     // Process payment reminders
     for (const invoice of invoicesDueSoon) {
       try {
+        if (!invoice.dueDate) continue
         const daysUntilDue = differenceInDays(new Date(invoice.dueDate), today)
 
         // Only send if due in 3 days or less (avoid duplicate on the same day)
@@ -106,7 +107,7 @@ export async function GET(req: NextRequest) {
         if (existingReminder) continue
 
         // Send reminder email
-        const invoiceUrl = `${process.env.NEXT_PUBLIC_APP_URL}/invoice/${invoice.token}`
+        const invoiceUrl = `${process.env.NEXT_PUBLIC_APP_URL}/invoice/${invoice.accessToken}`
 
         await sendPaymentReminder({
           to: invoice.clientEmail,
@@ -126,7 +127,8 @@ export async function GET(req: NextRequest) {
             action: 'REMINDER_SENT',
             entityType: 'INVOICE',
             entityId: invoice.id,
-            details: `Payment reminder sent for invoice ${invoice.invoiceNumber}`,
+            title: 'Payment Reminder Sent',
+            description: `Payment reminder sent for invoice ${invoice.invoiceNumber}`,
           },
         })
 
@@ -143,6 +145,7 @@ export async function GET(req: NextRequest) {
     // Process overdue notices
     for (const invoice of overdueInvoices) {
       try {
+        if (!invoice.dueDate) continue
         const daysOverdue = Math.abs(differenceInDays(today, new Date(invoice.dueDate)))
 
         // Update invoice status to OVERDUE if not already
@@ -170,7 +173,7 @@ export async function GET(req: NextRequest) {
         if (existingNotice) continue
 
         // Send overdue notice email
-        const invoiceUrl = `${process.env.NEXT_PUBLIC_APP_URL}/invoice/${invoice.token}`
+        const invoiceUrl = `${process.env.NEXT_PUBLIC_APP_URL}/invoice/${invoice.accessToken}`
 
         await sendInvoiceOverdue({
           to: invoice.clientEmail,
@@ -190,7 +193,8 @@ export async function GET(req: NextRequest) {
             action: 'OVERDUE_NOTICE_SENT',
             entityType: 'INVOICE',
             entityId: invoice.id,
-            details: `Overdue notice sent for invoice ${invoice.invoiceNumber} (${daysOverdue} days overdue)`,
+            title: 'Overdue Notice Sent',
+            description: `Overdue notice sent for invoice ${invoice.invoiceNumber} (${daysOverdue} days overdue)`,
           },
         })
 

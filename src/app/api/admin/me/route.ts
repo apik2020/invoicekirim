@@ -4,7 +4,7 @@ import { requireAdminAuth } from '@/lib/admin-session'
 export async function GET(req: NextRequest) {
   const result = await requireAdminAuth()
 
-  if (result.error) {
+  if (result.error || !result.admin) {
     return NextResponse.json(
       { error: 'Unauthorized' },
       { status: 401 }

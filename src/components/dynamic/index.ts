@@ -7,7 +7,7 @@ import { lazy } from 'react'
 
 // Admin components - load only when accessing admin routes
 export const AdminAnalytics = lazy(() =>
-  import('@/app/admin/page').then(m => ({ default: m.AdminDashboard }))
+  import('@/app/admin/page').then(m => ({ default: m.default }))
 )
 
 export const AdminUsers = lazy(() =>
@@ -33,19 +33,14 @@ export const ReceiptPDF = lazy(() =>
 
 // Modal components - load only when opened
 export const UserDetailModal = lazy(() =>
-  import('@/components/admin/UserDetailModal').then(m => ({ default: m.default }))
+  import('@/components/admin/UserDetailModal').then(m => ({ default: m.UserDetailModal }))
 )
 
 export const EmailTemplateEditor = lazy(() =>
-  import('@/components/admin/EmailTemplateEditor').then(m => ({ default: m.default }))
+  import('@/components/admin/EmailTemplateEditor').then(m => ({ default: m.EmailTemplateEditor }))
 )
 
 // Billing components - load only on billing pages
 export const BillingPage = lazy(() =>
   import('@/app/dashboard/billing/page').then(m => ({ default: m.default }))
-)
-
-// Charts and analytics visualizations
-export const AnalyticsChart = lazy(() =>
-  import('@/components/dashboard/AnalyticsChart').then(m => ({ default: m.default }))
 )

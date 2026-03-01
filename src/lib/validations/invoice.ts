@@ -44,6 +44,7 @@ export const registerSchema = z.object({
   email: z.string().email('Email tidak valid'),
   password: z.string().min(6, 'Password minimal 6 karakter'),
   confirmPassword: z.string(),
+  plan: z.enum(['free', 'trial']).optional().default('trial'),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Password tidak cocok',
   path: ['confirmPassword'],

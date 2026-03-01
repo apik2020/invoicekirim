@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { name, email, password } = validation.data
+    const { name, email, password, plan = 'trial' } = validation.data
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -64,19 +64,31 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    // Create trial subscription (7 days PRO trial)
-    const now = new Date()
-    const trialEndsAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000) // 7 days from now
+    // Create subscription based on selected plan
+    if (plan === 'trial') {
+      // Create trial subscription (7 days PRO trial)
+      const now = new Date()
+      const trialEndsAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000) // 7 days from now
 
-    await prisma.subscription.create({
-      data: {
-        userId: user.id,
-        status: 'TRIALING',
-        planType: 'PRO',
-        trialStartsAt: now,
-        trialEndsAt: trialEndsAt,
-      },
-    })
+      await prisma.subscription.create({
+        data: {
+          userId: user.id,
+          status: 'TRIALING',
+          planType: 'PRO',
+          trialStartsAt: now,
+          trialEndsAt: trialEndsAt,
+        },
+      })
+    } else {
+      // Create FREE subscription
+      await prisma.subscription.create({
+        data: {
+          userId: user.id,
+          status: 'FREE',
+          planType: 'FREE',
+        },
+      })
+    }
 
     return NextResponse.json(
       { message: 'Registrasi berhasil', userId: user.id },

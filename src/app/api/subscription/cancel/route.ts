@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       message: 'Subscription will be canceled at period end',
-      cancelAt: new Date(stripeSubscription.current_period_end * 1000),
+      cancelAt: new Date((stripeSubscription as any).current_period_end * 1000),
     })
   } catch (error) {
     console.error('Error canceling subscription:', error)

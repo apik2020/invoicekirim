@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 // Get single email template
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verify admin access - NO development mode bypass for security
@@ -17,8 +17,9 @@ export async function GET(
       return admin
     }
 
+    const { id } = await params
     const template = await prisma.emailTemplate.findUnique({
-      where: { id: params.id },
+      where: { id },
     })
 
     if (!template) {
@@ -38,7 +39,7 @@ export async function GET(
 // Update email template
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verify admin access - NO development mode bypass for security
@@ -47,11 +48,12 @@ export async function PATCH(
       return admin
     }
 
+    const { id } = await params
     const body = await req.json()
     const { subject, body: templateBody, variables, isActive } = body
 
     const template = await prisma.emailTemplate.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...(subject !== undefined && { subject }),
         ...(templateBody !== undefined && { body: templateBody }),
@@ -73,7 +75,7 @@ export async function PATCH(
 // Delete email template
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verify admin access - NO development mode bypass for security
@@ -82,8 +84,9 @@ export async function DELETE(
       return admin
     }
 
+    const { id } = await params
     await prisma.emailTemplate.delete({
-      where: { id: params.id },
+      where: { id },
     })
 
     return NextResponse.json({ message: 'Template deleted successfully' })

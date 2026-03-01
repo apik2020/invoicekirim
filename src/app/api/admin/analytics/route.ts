@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
     // Verify admin session (separate from user session)
     const result = await requireAdminAuth()
     if (result.error) {
-      return result.error
+      return NextResponse.json({ error: result.error }, { status: 401 })
     }
 
     const url = new URL(req.url)

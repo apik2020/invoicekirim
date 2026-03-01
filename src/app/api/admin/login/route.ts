@@ -23,7 +23,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Create admin session
-    await createAdminSession(admin)
+    await createAdminSession({
+      id: admin.id,
+      email: admin.email,
+      name: admin.name || admin.email,
+    })
 
     return NextResponse.json({
       success: true,

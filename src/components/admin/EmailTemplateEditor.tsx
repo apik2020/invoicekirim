@@ -203,7 +203,7 @@ export function EmailTemplateEditor({ templateId, onClose, onSave }: EmailTempla
 
   const getTemplateVariables = () => {
     if (!template) return []
-    return DEFAULT_VARIABLES[template.name] || []
+    return DEFAULT_VARIABLES[template.name as keyof typeof DEFAULT_VARIABLES] || []
   }
 
   const getPreviewHTML = () => {

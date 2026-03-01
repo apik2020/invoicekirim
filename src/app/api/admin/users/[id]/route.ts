@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 // Get single user with details
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verify admin access - NO development mode bypass for security
@@ -17,8 +17,9 @@ export async function GET(
       return admin
     }
 
+    const { id } = await params
     const user = await prisma.user.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         subscription: true,
         invoices: {
@@ -42,14 +43,14 @@ export async function GET(
 
     // Get user's payments
     const payments = await prisma.payment.findMany({
-      where: { userId: params.id },
+      where: { userId: id },
       orderBy: { createdAt: 'desc' },
       take: 20,
     })
 
     // Get user's activity logs
     const activityLogs = await prisma.activityLog.findMany({
-      where: { userId: params.id },
+      where: { userId: id },
       orderBy: { createdAt: 'desc' },
       take: 50,
     })
@@ -71,7 +72,7 @@ export async function GET(
 // Update user
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verify admin access - NO development mode bypass for security
@@ -80,11 +81,12 @@ export async function PATCH(
       return admin
     }
 
+    const { id } = await params
     const body = await req.json()
     const { name, email, companyName, companyEmail, companyPhone, companyAddress } = body
 
     const user = await prisma.user.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         name,
         email,
@@ -111,7 +113,7 @@ export async function PATCH(
 // Delete user
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verify admin access - NO development mode bypass for security
@@ -120,8 +122,9 @@ export async function DELETE(
       return admin
     }
 
+    const { id } = await params
     await prisma.user.delete({
-      where: { id: params.id },
+      where: { id },
     })
 
     return NextResponse.json({ message: 'User deleted successfully' })
