@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyAdmin } from '@/lib/admin-auth'
+import { requireAdminAuth } from '@/lib/admin-session'
 import { prisma } from '@/lib/prisma'
 import { stripe } from '@/lib/stripe'
 
@@ -13,9 +13,9 @@ export async function GET(
 ) {
   try {
     // Verify admin access
-    const admin = await verifyAdmin()
-    if (admin instanceof NextResponse) {
-      return admin
+    const result = await requireAdminAuth()
+    if (result.error || !result.admin) {
+      return NextResponse.json({ error: result.error || 'Unauthorized' }, { status: 401 })
     }
 
     const { id } = await params
@@ -68,9 +68,9 @@ export async function PATCH(
 ) {
   try {
     // Verify admin access
-    const admin = await verifyAdmin()
-    if (admin instanceof NextResponse) {
-      return admin
+    const result = await requireAdminAuth()
+    if (result.error || !result.admin) {
+      return NextResponse.json({ error: result.error || 'Unauthorized' }, { status: 401 })
     }
 
     const { id } = await params

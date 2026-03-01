@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyAdmin } from '@/lib/admin-auth'
+import { requireAdminAuth } from '@/lib/admin-session'
 import { prisma } from '@/lib/prisma'
 
 // Force dynamic rendering
@@ -7,10 +7,10 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(req: NextRequest) {
   try {
-    // Verify admin access - NO development mode bypass for security
-    const admin = await verifyAdmin()
-    if (admin instanceof NextResponse) {
-      return admin
+    // Verify admin access
+    const result = await requireAdminAuth()
+    if (result.error || !result.admin) {
+      return NextResponse.json({ error: result.error || 'Unauthorized' }, { status: 401 })
     }
 
     const url = new URL(req.url)
