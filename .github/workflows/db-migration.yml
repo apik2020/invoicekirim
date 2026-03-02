@@ -1,0 +1,85 @@
+name: Database Migration
+
+on:
+  workflow_dispatch:
+    inputs:
+      migration_name:
+        description: 'Name for the migration (optional)'
+        required: false
+        type: string
+      action:
+        description: 'Migration action'
+        required: true
+        default: 'migrate'
+        type: choice
+        options:
+          - migrate
+          - create
+          - reset
+          - seed
+
+env:
+  NODE_VERSION: '20'
+
+jobs:
+  migrate:
+    name: Run Database Migration
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Prisma CLI
+        run: npm install prisma --save-dev
+
+      - name: Create migration
+        if: github.event.inputs.action == 'create'
+        run: |
+          if [ -n "${{ github.event.inputs.migration_name }}" ]; then
+            npx prisma migrate dev --name ${{ github.event.inputs.migration_name }} --create-only
+          else
+            npx prisma migrate dev --create-only
+          fi
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Run migrations
+        if: github.event.inputs.action == 'migrate'
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Seed database
+        if: github.event.inputs.action == 'seed'
+        run: npm run db:seed
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Reset database (DESTRUCTIVE)
+        if: github.event.inputs.action == 'reset'
+        run: npx prisma migrate reset --force
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Commit migration files
+        if: github.event.inputs.action == 'create'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add prisma/migrations
+          git diff --quiet && git diff --staged --quiet || git commit -m "chore: add database migration"
+          git push

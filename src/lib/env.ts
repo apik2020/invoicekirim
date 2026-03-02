@@ -114,6 +114,35 @@ const ENV_VARS: EnvVar[] = [
     required: false,
     description: 'Midtrans client key',
   },
+
+  // Sentry (optional - Error tracking and monitoring)
+  {
+    name: 'NEXT_PUBLIC_SENTRY_DSN',
+    required: false,
+    description: 'Sentry DSN for error tracking (https://...@o....ingest.sentry.io/...)',
+  },
+  {
+    name: 'SENTRY_AUTH_TOKEN',
+    required: false,
+    description: 'Sentry auth token for source map uploads',
+  },
+  {
+    name: 'SENTRY_ORG',
+    required: false,
+    description: 'Sentry organization slug',
+  },
+  {
+    name: 'SENTRY_PROJECT',
+    required: false,
+    description: 'Sentry project slug',
+  },
+
+  // CORS (optional - Cross-origin resource sharing)
+  {
+    name: 'ALLOWED_ORIGINS',
+    required: false,
+    description: 'Comma-separated list of allowed origins for CORS',
+  },
 ]
 
 interface EnvValidationResult {
@@ -263,7 +292,8 @@ export function logEnvValidation(result: EnvValidationResult): void {
 }
 
 // Run validation on import in non-test environments
-if (process.env.NODE_ENV !== 'test') {
+// Skip during build to avoid issues with environment variable access
+if (process.env.NODE_ENV !== 'test' && process.env.NEXT_PHASE !== 'phase-production-build') {
   const result = validateEnv()
   if (!result.valid) {
     logEnvValidation(result)
@@ -311,6 +341,15 @@ export const env = {
   midtransServerKey: process.env.MIDTRANS_SERVER_KEY,
   midtransClientKey: process.env.MIDTRANS_CLIENT_KEY,
   midtransIsProduction: process.env.MIDTRANS_IS_PRODUCTION === 'true',
+
+  // Sentry
+  sentryDsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  sentryAuthToken: process.env.SENTRY_AUTH_TOKEN,
+  sentryOrg: process.env.SENTRY_ORG,
+  sentryProject: process.env.SENTRY_PROJECT,
+
+  // CORS
+  allowedOrigins: process.env.ALLOWED_ORIGINS,
 
   // Environment
   nodeEnv: process.env.NODE_ENV,
