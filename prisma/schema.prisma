@@ -49,6 +49,9 @@ model User {
   smtpUser        String?
   smtpPass        String?   @db.Text
 
+  // Current active team (for multi-team users)
+  activeTeamId    String?
+
   accounts      Account[]
   sessions      Session[]
   invoices      Invoice[]
@@ -58,6 +61,11 @@ model User {
   subscription  Subscription?
   activityLogs  ActivityLog[]
   payments      Payment[]
+
+  // Team relations
+  ownedTeams    Team[]         @relation("TeamOwner")
+  teamMemberships TeamMember[]
+  apiKeys       ApiKey[]
 
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -151,6 +159,10 @@ model Item {
   userId        String
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // Team support (optional)
+  teamId        String?
+  team          Team?     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
   name          String
   description   String?
   sku           String?   @unique // Stock Keeping Code
@@ -167,6 +179,7 @@ model Item {
   updatedAt     DateTime   @updatedAt
 
   @@index([userId])
+  @@index([teamId])
   @@index([sku])
   @@map("items")
 }
@@ -176,6 +189,10 @@ model Client {
   id            String    @id @default(cuid())
   userId        String
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Team support (optional - for team clients)
+  teamId        String?
+  team          Team?     @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   name          String
   email         String
@@ -189,6 +206,7 @@ model Client {
   updatedAt     DateTime   @updatedAt
 
   @@index([userId])
+  @@index([teamId])
   @@map("clients")
 }
 
@@ -199,6 +217,10 @@ model Invoice {
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   clientId        String?   // Optional link to saved client
   client          Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
+
+  // Team support (optional - for team invoices)
+  teamId          String?
+  team            Team?     @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   // Invoice Details
   invoiceNumber   String    @unique
@@ -240,6 +262,7 @@ model Invoice {
   items           InvoiceItem[]
 
   @@index([userId])
+  @@index([teamId])
   @@index([status])
   @@index([accessToken])
   @@map("invoices")
@@ -271,6 +294,10 @@ model InvoiceTemplate {
   userId          String
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  // Team support (optional)
+  teamId          String?
+  team            Team?     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
   name            String
   description     String?
 
@@ -284,6 +311,7 @@ model InvoiceTemplate {
   items           TemplateItem[]
 
   @@index([userId])
+  @@index([teamId])
   @@map("invoice_templates")
 }
 
@@ -398,6 +426,270 @@ enum PaymentStatus {
   COMPLETED
   FAILED
   REFUNDED
+}
+
+// ============================================
+// TEAM/MULTI-USER SUPPORT
+// ============================================
+
+// Team/Organization model
+model Team {
+  id            String    @id @default(cuid())
+  name          String
+  slug          String    @unique // URL-friendly identifier
+  description   String?
+
+  // Owner
+  ownerId       String
+  owner         User      @relation("TeamOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  // Plan & Billing
+  planType      PlanType  @default(FREE)
+  stripeCustomerId      String?   @unique
+  stripeSubscriptionId  String?   @unique
+  stripePriceId         String?
+  stripeCurrentPeriodEnd DateTime?
+
+  // Settings
+  settings      Json?     // Team-specific settings
+
+  // Relations
+  members       TeamMember[]
+  invitations   TeamInvitation[]
+  apiKeys       ApiKey[]
+  webhooks      Webhook[]
+  branding      Branding?
+  invoices      Invoice[]
+  clients       Client[]
+  templates     InvoiceTemplate[]
+  items         Item[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([ownerId])
+  @@index([slug])
+  @@map("teams")
+}
+
+// Team membership with roles
+model TeamMember {
+  id          String      @id @default(cuid())
+  teamId      String
+  team        Team        @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  role        TeamRole    @default(MEMBER)
+  permissions Json?       // Additional granular permissions
+
+  // Invitation tracking
+  invitedBy   String?     // User ID who invited
+  joinedAt    DateTime    @default(now())
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@unique([teamId, userId])
+  @@index([teamId])
+  @@index([userId])
+  @@map("team_members")
+}
+
+enum TeamRole {
+  OWNER       // Full access, can delete team
+  ADMIN       // Can manage members, billing, settings
+  MEMBER      // Can create/edit invoices, clients
+  VIEWER      // Read-only access
+}
+
+// Team invitation
+model TeamInvitation {
+  id          String            @id @default(cuid())
+  teamId      String
+  team        Team              @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  email       String            // Invited email
+  role        TeamRole          @default(MEMBER)
+
+  token       String            @unique // Secure token for acceptance
+  invitedBy   String            // User ID
+
+  status      InvitationStatus  @default(PENDING)
+  expiresAt   DateTime
+
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([teamId])
+  @@index([email])
+  @@index([token])
+  @@map("team_invitations")
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
+}
+
+// ============================================
+// API ACCESS & DOCUMENTATION
+// ============================================
+
+// API Key for programmatic access
+model ApiKey {
+  id            String        @id @default(cuid())
+
+  // Owner (can be user or team)
+  userId        String?
+  user          User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  teamId        String?
+  team          Team?         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  // Key details
+  name          String        // User-defined name
+  key           String        @unique // Hashed API key
+  prefix        String        // First 8 chars for identification (e.g., "ik_live_abc")
+
+  // Permissions
+  scopes        Json?         // ["invoices:read", "invoices:write", "clients:read", etc.]
+  permissions   Json?         // Granular permissions
+
+  // Rate limiting
+  rateLimit     Int           @default(1000) // Requests per hour
+  rateLimitUsed Int           @default(0)
+
+  // Status
+  isActive      Boolean       @default(true)
+  lastUsedAt    DateTime?
+  expiresAt     DateTime?
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([teamId])
+  @@index([key])
+  @@map("api_keys")
+}
+
+// Webhook configuration
+model Webhook {
+  id            String        @id @default(cuid())
+
+  // Owner
+  teamId        String
+  team          Team          @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  // Webhook details
+  name          String
+  url           String
+  secret        String        // For signature verification
+
+  // Events to trigger
+  events        Json          // ["invoice.created", "invoice.paid", "payment.received", etc.]
+
+  // Status
+  isActive      Boolean       @default(true)
+  lastTriggered DateTime?
+  failureCount  Int           @default(0)
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([teamId])
+  @@map("webhooks")
+}
+
+// ============================================
+// WHITE-LABEL / CUSTOMIZATION
+// ============================================
+
+// Branding customization
+model Branding {
+  id            String        @id @default(cuid())
+
+  // Owner
+  teamId        String        @unique
+  team          Team          @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  // Logo & Colors
+  logoUrl       String?       // Company logo URL
+  primaryColor  String        @default("#F97316")  // Orange
+  secondaryColor String?      @default("#FFFFFF")
+  accentColor   String?
+
+  // Invoice customization
+  invoicePrefix String?       @default("INV")
+  receiptPrefix String?       @default("RCP")
+  showLogo      Boolean       @default(true)
+  showColors    Boolean       @default(true)
+
+  // Email customization
+  emailFromName String?       // Display name for emails
+  emailReplyTo  String?       // Reply-to email
+
+  // Custom domain
+  customDomain  String?       @unique
+  domainVerified Boolean      @default(false)
+
+  // Font settings
+  fontFamily    String?       @default("inter")
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@map("branding")
+}
+
+// ============================================
+// ADVANCED ANALYTICS
+// ============================================
+
+// Analytics snapshot (daily aggregations)
+model AnalyticsSnapshot {
+  id            String        @id @default(cuid())
+
+  // Owner (user or team)
+  teamId        String?
+  userId        String?
+
+  // Date
+  date          DateTime      // The date this snapshot is for
+
+  // Revenue metrics
+  revenue       Float         @default(0)
+  revenueYtd    Float         @default(0)  // Year-to-date
+
+  // Invoice metrics
+  invoicesCreated Int         @default(0)
+  invoicesSent    Int         @default(0)
+  invoicesPaid    Int         @default(0)
+  invoicesOverdue Int         @default(0)
+
+  // Client metrics
+  newClients     Int          @default(0)
+  activeClients  Int          @default(0)
+
+  // Payment metrics
+  paymentsReceived Int        @default(0)
+  paymentsAmount   Float      @default(0)
+  paymentsFailed   Int        @default(0)
+
+  // Conversion metrics
+  conversionRate  Float       @default(0)  // invoices sent to paid
+
+  // Period type for aggregation
+  periodType      String      @default("daily") // daily, weekly, monthly
+
+  createdAt       DateTime    @default(now())
+
+  @@unique([teamId, userId, date, periodType])
+  @@index([teamId, date])
+  @@index([userId, date])
+  @@map("analytics_snapshots")
 }
 
 // Email Templates for system emails
