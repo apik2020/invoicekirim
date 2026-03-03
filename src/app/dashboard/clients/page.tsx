@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import DashboardHeader from '@/components/DashboardHeader'
+import { MessageBox } from '@/components/ui/MessageBox'
+import { useMessageBox } from '@/hooks/useMessageBox'
 import {
   Users,
   Plus,
@@ -35,6 +37,7 @@ export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
+  const messageBox = useMessageBox()
 
   // Modal states
   const [showModal, setShowModal] = useState(false)
@@ -47,7 +50,6 @@ export default function ClientsPage() {
     company: '',
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   useEffect(() => {
     fetchClients()
@@ -83,7 +85,6 @@ export default function ClientsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
-    setMessage(null)
 
     try {
       const url = editingClient
@@ -101,21 +102,33 @@ export default function ClientsPage() {
       const data = await res.json()
 
       if (res.ok) {
-        setMessage({
-          type: 'success',
-          text: editingClient ? 'Klien berhasil diperbarui!' : 'Klien berhasil ditambahkan!',
-        })
         fetchClients()
+        handleCloseModal()
 
-        // Close modal after a short delay
-        setTimeout(() => {
-          handleCloseModal()
-        }, 1500)
+        // Show success message
+        if (editingClient) {
+          messageBox.showSuccess({
+            title: 'Klien Diperbarui!',
+            message: `Data klien ${formData.name} berhasil diperbarui.`,
+          })
+        } else {
+          messageBox.showClientCreated(formData.name, formData.email)
+        }
       } else {
-        setMessage({ type: 'error', text: data.error || 'Gagal menyimpan klien' })
+        messageBox.showWarning({
+          title: 'Gagal Menyimpan',
+          message: data.error || 'Gagal menyimpan klien. Silakan coba lagi.',
+          confirmText: 'Mengerti',
+          onConfirm: () => messageBox.close(),
+        })
       }
     } catch (error) {
-      setMessage({ type: 'error', text: 'Terjadi kesalahan' })
+      messageBox.showWarning({
+        title: 'Terjadi Kesalahan',
+        message: 'Terjadi kesalahan saat menyimpan data. Silakan coba lagi.',
+        confirmText: 'Mengerti',
+        onConfirm: () => messageBox.close(),
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -133,33 +146,48 @@ export default function ClientsPage() {
     setShowModal(true)
   }
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Hapus klien "${name}"?`)) {
-      return
-    }
+  const handleDelete = async (client: Client) => {
+    messageBox.showDelete({
+      title: 'Hapus Klien?',
+      message: (
+        <div className="space-y-2">
+          <p>
+            Anda akan menghapus klien <span className="font-semibold text-gray-900">{client.name}</span>
+          </p>
+          <p className="text-xs text-gray-500">
+            Data klien yang dihapus tidak dapat dikembalikan.
+          </p>
+        </div>
+      ),
+      confirmText: 'Ya, Hapus',
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/clients/${client.id}`, {
+            method: 'DELETE',
+          })
 
-    try {
-      const res = await fetch(`/api/clients/${id}`, {
-        method: 'DELETE',
-      })
+          const data = await res.json()
 
-      const data = await res.json()
-
-      if (res.ok) {
-        setMessage({
-          type: 'success',
-          text: 'Klien berhasil dihapus!',
-        })
-        fetchClients()
-        setTimeout(() => setMessage(null), 3000)
-      } else {
-        setMessage({ type: 'error', text: data.error || 'Gagal menghapus klien' })
-        setTimeout(() => setMessage(null), 3000)
-      }
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Terjadi kesalahan' })
-      setTimeout(() => setMessage(null), 3000)
-    }
+          if (res.ok) {
+            fetchClients()
+          } else {
+            messageBox.showWarning({
+              title: 'Gagal Menghapus',
+              message: data.error || 'Gagal menghapus klien.',
+              confirmText: 'Mengerti',
+              onConfirm: () => messageBox.close(),
+            })
+          }
+        } catch (error) {
+          messageBox.showWarning({
+            title: 'Terjadi Kesalahan',
+            message: 'Terjadi kesalahan saat menghapus klien.',
+            confirmText: 'Mengerti',
+            onConfirm: () => messageBox.close(),
+          })
+        }
+      },
+    })
   }
 
   const handleOpenModal = () => {
@@ -171,7 +199,6 @@ export default function ClientsPage() {
       address: '',
       company: '',
     })
-    setMessage(null)
     setShowModal(true)
   }
 
@@ -185,7 +212,6 @@ export default function ClientsPage() {
       address: '',
       company: '',
     })
-    setMessage(null)
   }
 
   const filteredClients = clients.filter(
@@ -215,24 +241,6 @@ export default function ClientsPage() {
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        {/* Message Alert */}
-        {message && (
-          <div
-            className={`mb-6 p-4 rounded-xl flex items-center gap-3 ${
-              message.type === 'success'
-                ? 'bg-lime-50 border border-lime-200 text-lime-800'
-                : 'bg-red-50 border border-red-200 text-red-800'
-            }`}
-          >
-            {message.type === 'success' ? (
-              <Check className="w-5 h-5 flex-shrink-0" />
-            ) : (
-              <X className="w-5 h-5 flex-shrink-0" />
-            )}
-            <span className="font-medium">{message.text}</span>
-          </div>
-        )}
-
         {/* Header */}
         <div className="mb-8">
           <div className="mb-4">
@@ -343,7 +351,7 @@ export default function ClientsPage() {
                             <Pencil className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleDelete(client.id, client.name)}
+                            onClick={() => handleDelete(client)}
                             className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                             title="Hapus"
                           >
@@ -373,23 +381,6 @@ export default function ClientsPage() {
 
             {/* Modal Body */}
             <div className="px-8 py-6">
-              {message && (
-                <div
-                  className={`mb-6 p-4 rounded-xl flex items-center gap-3 ${
-                    message.type === 'success'
-                      ? 'bg-lime-50 border border-lime-200 text-lime-800'
-                      : 'bg-red-50 border border-red-200 text-red-800'
-                  }`}
-                >
-                  {message.type === 'success' ? (
-                    <Check className="w-5 h-5 flex-shrink-0" />
-                  ) : (
-                    <X className="w-5 h-5 flex-shrink-0" />
-                  )}
-                  <span className="font-medium text-sm">{message.text}</span>
-                </div>
-              )}
-
               <form onSubmit={handleSubmit} className="space-y-5">
                 {/* Name */}
                 <div>
@@ -503,6 +494,20 @@ export default function ClientsPage() {
           </div>
         </div>
       )}
+
+      {/* MessageBox for notifications */}
+      <MessageBox
+        open={messageBox.state.open}
+        onClose={messageBox.close}
+        title={messageBox.state.title}
+        message={messageBox.state.message}
+        variant={messageBox.state.variant}
+        confirmText={messageBox.state.confirmText}
+        cancelText={messageBox.state.cancelText}
+        onConfirm={messageBox.state.onConfirm}
+        onCancel={messageBox.state.onCancel}
+        loading={messageBox.state.loading}
+      />
     </div>
   )
 }
