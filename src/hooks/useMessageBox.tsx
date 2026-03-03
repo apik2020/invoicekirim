@@ -58,6 +58,7 @@ interface UseMessageBoxReturn {
   showInvoiceSent: (invoiceNumber: string, clientName: string, clientEmail: string) => void
   showPaymentReceived: (amount: string, invoiceNumber: string, method: string) => void
   showInvoiceCreated: (invoiceNumber: string, amount: string, clientName: string) => void
+  showInvoiceUpdated: (invoiceNumber: string, changes?: string[]) => void
   showSettingsSaved: (type?: string) => void
   showProfileUpdated: (fields?: string[]) => void
   showTeamMemberInvited: (email: string, role: string, name?: string) => void
@@ -313,6 +314,47 @@ export function useMessageBox(): UseMessageBoxReturn {
               <span className="font-bold text-orange-600">{amount}</span>
             </div>
           </div>
+        </div>
+      ),
+      variant: 'success',
+      confirmText: 'Selesai',
+      cancelText: '',
+      onConfirm: close,
+      loading: false,
+    })
+  }, [close])
+
+  const showInvoiceUpdated = useCallback((invoiceNumber: string, changes?: string[]) => {
+    setState({
+      open: true,
+      title: 'Invoice Diperbarui!',
+      message: (
+        <div className="space-y-4">
+          <div className="flex items-center justify-center">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
+              <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+          </div>
+          <p className="text-gray-600 text-center">
+            Invoice <span className="font-semibold text-gray-900">#{invoiceNumber}</span> berhasil diperbarui.
+          </p>
+          {changes && changes.length > 0 && (
+            <div className="bg-blue-50 rounded-xl p-4">
+              <p className="text-xs text-blue-600 font-medium mb-2">Perubahan:</p>
+              <ul className="text-xs text-blue-700 space-y-1">
+                {changes.map((change, i) => (
+                  <li key={i} className="flex items-center gap-2">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    {change}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       ),
       variant: 'success',
@@ -818,6 +860,7 @@ export function useMessageBox(): UseMessageBoxReturn {
     showInvoiceSent,
     showPaymentReceived,
     showInvoiceCreated,
+    showInvoiceUpdated,
     showSettingsSaved,
     showProfileUpdated,
     showTeamMemberInvited,

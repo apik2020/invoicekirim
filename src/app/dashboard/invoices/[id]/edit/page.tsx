@@ -6,9 +6,8 @@ import { useSession } from 'next-auth/react'
 import { FileText, Save, Plus, Trash2, Loader2, Package, X } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import DashboardHeader from '@/components/DashboardHeader'
-
-// Force dynamic rendering
-export const dynamic = 'force-dynamic'
+import { MessageBox } from '@/components/ui/MessageBox'
+import { useMessageBox } from '@/hooks/useMessageBox'
 
 interface InvoiceItem {
   id: string
@@ -56,6 +55,7 @@ export default function EditInvoicePage() {
   const [showCatalogModal, setShowCatalogModal] = useState(false)
   const [selectedItemIndex, setSelectedItemIndex] = useState<number | null>(null)
   const [catalogSearch, setCatalogSearch] = useState('')
+  const messageBox = useMessageBox()
 
   const [formData, setFormData] = useState<InvoiceData>({
     invoiceNumber: '',
@@ -124,8 +124,15 @@ export default function EditInvoicePage() {
 
       // Check if invoice can be edited
       if (data.status === 'PAID') {
-        alert('Invoice yang sudah lunas tidak dapat diubah')
-        router.push(`/dashboard/invoices/${id}`)
+        messageBox.showWarning({
+          title: 'Tidak Dapat Mengubah Invoice',
+          message: 'Invoice yang sudah lunas tidak dapat diubah.',
+          confirmText: 'Kembali',
+          onConfirm: () => {
+            messageBox.close()
+            router.push(`/dashboard/invoices/${id}`)
+          },
+        })
         return
       }
 
@@ -167,12 +174,22 @@ export default function EditInvoicePage() {
 
     // Validation
     if (!formData.companyName || !formData.clientName || !formData.clientEmail) {
-      alert('Mohon lengkapi field yang wajib diisi')
+      messageBox.showWarning({
+        title: 'Data Belum Lengkap',
+        message: 'Mohon lengkapi field yang wajib diisi: Nama Perusahaan, Nama Klien, dan Email Klien.',
+        confirmText: 'Mengerti',
+        onConfirm: () => messageBox.close(),
+      })
       return
     }
 
     if (items.some((item) => !item.description || item.price < 0)) {
-      alert('Mohon lengkapi semua item dengan benar')
+      messageBox.showWarning({
+        title: 'Item Belum Lengkap',
+        message: 'Mohon lengkapi semua item dengan deskripsi dan harga yang valid.',
+        confirmText: 'Mengerti',
+        onConfirm: () => messageBox.close(),
+      })
       return
     }
 
@@ -192,9 +209,20 @@ export default function EditInvoicePage() {
         throw new Error(data.error || 'Gagal mengupdate invoice')
       }
 
-      router.push(`/dashboard/invoices/${id}`)
+      // Show success message before redirecting
+      messageBox.showInvoiceUpdated(formData.invoiceNumber)
+
+      // Redirect after a short delay
+      setTimeout(() => {
+        router.push(`/dashboard/invoices/${id}`)
+      }, 1500)
     } catch (error: any) {
-      alert(error.message)
+      messageBox.showWarning({
+        title: 'Gagal Menyimpan Perubahan',
+        message: error.message,
+        confirmText: 'Mengerti',
+        onConfirm: () => messageBox.close(),
+      })
     } finally {
       setSaving(false)
     }
@@ -741,6 +769,20 @@ export default function EditInvoicePage() {
           </div>
         )}
       </div>
+
+      {/* MessageBox for notifications */}
+      <MessageBox
+        open={messageBox.state.open}
+        onClose={messageBox.close}
+        title={messageBox.state.title}
+        message={messageBox.state.message}
+        variant={messageBox.state.variant}
+        confirmText={messageBox.state.confirmText}
+        cancelText={messageBox.state.cancelText}
+        onConfirm={messageBox.state.onConfirm}
+        onCancel={messageBox.state.onCancel}
+        loading={messageBox.state.loading}
+      />
     </div>
   )
 }
