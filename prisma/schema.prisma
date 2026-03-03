@@ -254,6 +254,8 @@ model Invoice {
   // Status
   status          InvoiceStatus @default(DRAFT)
   paidAt          DateTime?
+  paymentMethod   String?       // Method of payment (TRANSFER, CASH, EWALLET, QRIS, OTHER)
+  paymentNotes    String?       @db.Text // Optional notes about the payment
 
   // Timestamps
   createdAt       DateTime   @default(now())

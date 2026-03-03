@@ -16,7 +16,7 @@ export async function PATCH(
     }
 
     const { id } = await params
-    const { status } = await req.json()
+    const { status, paymentMethod, paymentDate, paymentNotes } = await req.json()
 
     if (!['DRAFT', 'SENT', 'PAID', 'OVERDUE', 'CANCELED'].includes(status)) {
       return NextResponse.json({ error: 'Status tidak valid' }, { status: 400 })
@@ -41,8 +41,16 @@ export async function PATCH(
       where: { id },
       data: {
         status,
-        ...(status === 'PAID' && { paidAt: new Date() }),
-        ...(status !== 'PAID' && { paidAt: null }),
+        ...(status === 'PAID' && {
+          paidAt: paymentDate ? new Date(paymentDate) : new Date(),
+          paymentMethod: paymentMethod || null,
+          paymentNotes: paymentNotes || null,
+        }),
+        ...(status !== 'PAID' && {
+          paidAt: null,
+          paymentMethod: null,
+          paymentNotes: null,
+        }),
       },
       include: { items: true },
     })

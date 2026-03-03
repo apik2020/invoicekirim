@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
-import { FileText, Save, Plus, Trash2, Loader2, Users, ChevronDown, Package, UserPlus, X, Check, PackagePlus, Tag } from 'lucide-react'
+import { Save, Plus, Trash2, Loader2, Users, ChevronDown, Package, UserPlus, X, Check, PackagePlus } from 'lucide-react'
 import { generateInvoiceNumber } from '@/lib/utils'
 import { formatCurrency } from '@/lib/utils'
 import DashboardHeader from '@/components/DashboardHeader'

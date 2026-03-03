@@ -55,6 +55,8 @@ interface Invoice {
   total: number
   status: 'DRAFT' | 'SENT' | 'PAID' | 'OVERDUE' | 'CANCELED'
   paidAt: string | null
+  paymentMethod: string | null
+  paymentNotes: string | null
   createdAt: string
   updatedAt: string
 }
@@ -1052,10 +1054,20 @@ Terima kasih!`
 
             {invoice.status === 'PAID' && invoice.paidAt && (
               <div className="w-full">
-                <div className="text-center p-4 rounded-xl bg-green-light-50 border border-green-200 mb-3">
-                  <p className="font-bold text-teal-light-700">
+                <div className="p-4 rounded-xl bg-green-light-50 border border-green-200 mb-3">
+                  <p className="font-bold text-teal-light-700 text-center">
                     Invoice ini telah dibayar pada {formatDate(invoice.paidAt)}
                   </p>
+                  {invoice.paymentMethod && (
+                    <p className="text-sm text-teal-light-600 text-center mt-1">
+                      Metode: {getPaymentMethodLabel(invoice.paymentMethod)}
+                    </p>
+                  )}
+                  {invoice.paymentNotes && (
+                    <p className="text-sm text-gray-600 text-center mt-1">
+                      {invoice.paymentNotes}
+                    </p>
+                  )}
                 </div>
                 <button
                   onClick={handleWhatsAppWithPDF}
@@ -1352,10 +1364,20 @@ Terima kasih!`
             )}
             {invoice.status === 'PAID' && invoice.paidAt && (
               <div className="w-full">
-                <div className="text-center p-4 rounded-xl bg-green-light-50 border border-green-200 mb-3">
-                  <p className="font-bold text-teal-light-700">
+                <div className="p-4 rounded-xl bg-green-light-50 border border-green-200 mb-3">
+                  <p className="font-bold text-teal-light-700 text-center">
                     Invoice ini telah dibayar pada {formatDate(invoice.paidAt)}
                   </p>
+                  {invoice.paymentMethod && (
+                    <p className="text-sm text-teal-light-600 text-center mt-1">
+                      Metode: {getPaymentMethodLabel(invoice.paymentMethod)}
+                    </p>
+                  )}
+                  {invoice.paymentNotes && (
+                    <p className="text-sm text-gray-600 text-center mt-1">
+                      {invoice.paymentNotes}
+                    </p>
+                  )}
                 </div>
                 <button
                   onClick={handleWhatsAppWithPDF}
