@@ -17,6 +17,9 @@ import {
   Bell,
   Share2,
   MessageCircle,
+  DollarSign,
+  Calendar,
+  X,
 } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import DashboardHeader from '@/components/DashboardHeader'
@@ -75,6 +78,15 @@ export default function InvoiceDetailPage({
   const [copied, setCopied] = useState(false)
   const printRef = useRef<HTMLDivElement>(null)
   const messageBox = useMessageBox()
+
+  // Payment confirmation modal state
+  const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [paymentData, setPaymentData] = useState({
+    paymentMethod: 'TRANSFER',
+    paymentDate: new Date().toISOString().split('T')[0],
+    paymentNotes: '',
+  })
+  const [processingPayment, setProcessingPayment] = useState(false)
 
   const handlePrint = useReactToPrint({
     contentRef: printRef,
@@ -141,6 +153,75 @@ export default function InvoiceDetailPage({
     } finally {
       setUpdating(false)
     }
+  }
+
+  // Payment confirmation handlers
+  const handleOpenPaymentModal = () => {
+    setPaymentData({
+      paymentMethod: 'TRANSFER',
+      paymentDate: new Date().toISOString().split('T')[0],
+      paymentNotes: '',
+    })
+    setShowPaymentModal(true)
+  }
+
+  const handleClosePaymentModal = () => {
+    setShowPaymentModal(false)
+    setPaymentData({
+      paymentMethod: 'TRANSFER',
+      paymentDate: new Date().toISOString().split('T')[0],
+      paymentNotes: '',
+    })
+  }
+
+  const handleConfirmPayment = async () => {
+    if (!invoice) return
+
+    setProcessingPayment(true)
+    try {
+      const res = await fetch(`/api/invoices/${invoice.id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'PAID',
+          paymentMethod: paymentData.paymentMethod,
+          paymentDate: paymentData.paymentDate,
+          paymentNotes: paymentData.paymentNotes,
+        }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Gagal mengubah status pembayaran')
+      }
+
+      // Refresh invoice data
+      await fetchInvoice()
+
+      // Close modal and show success
+      handleClosePaymentModal()
+      messageBox.showPaymentReceived(formatCurrency(invoice.total), invoice.invoiceNumber, getPaymentMethodLabel(paymentData.paymentMethod))
+    } catch (error: any) {
+      messageBox.showWarning({
+        title: 'Gagal Mengkonfirmasi Pembayaran',
+        message: error.message,
+        confirmText: 'Mengerti',
+        onConfirm: () => messageBox.close(),
+      })
+    } finally {
+      setProcessingPayment(false)
+    }
+  }
+
+  const getPaymentMethodLabel = (method: string) => {
+    const labels: Record<string, string> = {
+      TRANSFER: 'Transfer Bank',
+      CASH: 'Tunai',
+      EWALLET: 'E-Wallet',
+      QRIS: 'QRIS',
+      OTHER: 'Lainnya',
+    }
+    return labels[method] || method
   }
 
   const handleDelete = async () => {
@@ -910,12 +991,11 @@ Terima kasih!`
                   {sendingEmail ? 'Mengirim...' : 'Kirim Ulang'}
                 </button>
                 <button
-                  onClick={() => handleStatusUpdate('PAID')}
-                  disabled={updating}
-                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl bg-green-light-500 hover:bg-green-light-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleOpenPaymentModal}
+                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl bg-green-light-500 hover:bg-green-light-600 transition-colors"
                 >
-                  {updating ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
-                  {updating ? 'Memproses...' : 'Tandai Lunas'}
+                  <DollarSign size={18} />
+                  Tandai Lunas
                 </button>
                 <button
                   onClick={handleSendReminder}
@@ -942,12 +1022,11 @@ Terima kasih!`
             {invoice.status === 'OVERDUE' && (
               <div className="flex flex-wrap gap-3">
                 <button
-                  onClick={() => handleStatusUpdate('PAID')}
-                  disabled={updating}
-                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl bg-green-light-500 hover:bg-green-light-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleOpenPaymentModal}
+                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl bg-green-light-500 hover:bg-green-light-600 transition-colors"
                 >
-                  {updating ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
-                  {updating ? 'Memproses...' : 'Tandai Lunas'}
+                  <DollarSign size={18} />
+                  Tandai Lunas
                 </button>
                 <button
                   onClick={handleSendReminder}
@@ -1214,12 +1293,11 @@ Terima kasih!`
                   {sendingEmail ? 'Mengirim...' : 'Kirim Ulang'}
                 </button>
                 <button
-                  onClick={() => handleStatusUpdate('PAID')}
-                  disabled={updating}
-                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl bg-green-light-500 hover:bg-green-light-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleOpenPaymentModal}
+                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl bg-green-light-500 hover:bg-green-light-600 transition-colors"
                 >
-                  {updating ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
-                  {updating ? 'Memproses...' : 'Tandai Lunas'}
+                  <DollarSign size={18} />
+                  Tandai Lunas
                 </button>
                 <button
                   onClick={handleSendReminder}
@@ -1245,12 +1323,11 @@ Terima kasih!`
             {invoice.status === 'OVERDUE' && (
               <>
                 <button
-                  onClick={() => handleStatusUpdate('PAID')}
-                  disabled={updating}
-                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl bg-green-light-500 hover:bg-green-light-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleOpenPaymentModal}
+                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl bg-green-light-500 hover:bg-green-light-600 transition-colors"
                 >
-                  {updating ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
-                  {updating ? 'Memproses...' : 'Tandai Lunas'}
+                  <DollarSign size={18} />
+                  Tandai Lunas
                 </button>
                 <button
                   onClick={handleSendReminder}
@@ -1296,6 +1373,109 @@ Terima kasih!`
           </div>
         </div>
       </div>
+
+      {/* Payment Confirmation Modal */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            {/* Modal Header */}
+            <div className="px-6 py-5 border-b border-gray-200 rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Konfirmasi Pembayaran</h2>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Invoice #{invoice?.invoiceNumber} - {invoice ? formatCurrency(invoice.total) : ''}
+                  </p>
+                </div>
+                <button
+                  onClick={handleClosePaymentModal}
+                  className="p-2 text-gray-400 hover:text-gray-600 rounded-xl hover:bg-gray-100 transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4">
+              {/* Payment Method */}
+              <div>
+                <label className="block text-sm font-bold text-gray-900 mb-2">
+                  Metode Pembayaran
+                </label>
+                <select
+                  value={paymentData.paymentMethod}
+                  onChange={(e) => setPaymentData({ ...paymentData, paymentMethod: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 focus:border-orange-500 focus:outline-none transition-colors"
+                >
+                  <option value="TRANSFER">Transfer Bank</option>
+                  <option value="CASH">Tunai</option>
+                  <option value="EWALLET">E-Wallet (GoPay, OVO, Dana)</option>
+                  <option value="QRIS">QRIS</option>
+                  <option value="OTHER">Lainnya</option>
+                </select>
+              </div>
+
+              {/* Payment Date */}
+              <div>
+                <label className="block text-sm font-bold text-gray-900 mb-2">
+                  Tanggal Pembayaran
+                </label>
+                <div className="relative">
+                  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="date"
+                    value={paymentData.paymentDate}
+                    onChange={(e) => setPaymentData({ ...paymentData, paymentDate: e.target.value })}
+                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-orange-200 text-gray-900 focus:border-orange-500 focus:outline-none transition-colors"
+                  />
+                </div>
+              </div>
+
+              {/* Payment Notes */}
+              <div>
+                <label className="block text-sm font-bold text-gray-900 mb-2">
+                  Catatan Pembayaran (Opsional)
+                </label>
+                <textarea
+                  value={paymentData.paymentNotes}
+                  onChange={(e) => setPaymentData({ ...paymentData, paymentNotes: e.target.value })}
+                  rows={2}
+                  className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors resize-none"
+                  placeholder="Contoh: Transfer dari BCA ke Mandiri"
+                />
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-gray-200 flex gap-3">
+              <button
+                onClick={handleClosePaymentModal}
+                className="flex-1 px-4 py-3 text-gray-700 font-bold rounded-xl border border-gray-300 hover:bg-gray-50 transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleConfirmPayment}
+                disabled={processingPayment}
+                className="flex-1 px-4 py-3 text-white font-bold rounded-xl bg-green-light-500 hover:bg-green-light-600 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {processingPayment ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    <span>Memproses...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check size={18} />
+                    <span>Konfirmasi Lunas</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MessageBox for notifications */}
       <MessageBox
