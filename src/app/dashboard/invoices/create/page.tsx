@@ -7,6 +7,8 @@ import { FileText, Save, Plus, Trash2, Loader2, Users, ChevronDown, Package } fr
 import { generateInvoiceNumber } from '@/lib/utils'
 import { formatCurrency } from '@/lib/utils'
 import DashboardHeader from '@/components/DashboardHeader'
+import { MessageBox } from '@/components/ui/MessageBox'
+import { useMessageBox } from '@/hooks/useMessageBox'
 
 // Helper functions untuk currency input
 const formatCurrencyInput = (value: string): string => {
@@ -23,9 +25,6 @@ const parseCurrencyInput = (value: string): number => {
   const numbers = value.replace(/\D/g, '')
   return numbers ? parseInt(numbers) : 0
 }
-
-// Force dynamic rendering for this page
-export const dynamic = 'force-dynamic'
 
 interface InvoiceItem {
   id: string
@@ -46,6 +45,7 @@ function NewInvoicePageContent() {
   const [selectedClientId, setSelectedClientId] = useState('')
   const [catalogItems, setCatalogItems] = useState<any[]>([])
   const [showItemCatalog, setShowItemCatalog] = useState(false)
+  const messageBox = useMessageBox()
 
   const templateId = searchParams.get('template')
 
@@ -222,7 +222,12 @@ function NewInvoicePageContent() {
       }
     } catch (error) {
       console.error('Error loading template:', error)
-      alert('Gagal memuat template')
+      messageBox.showWarning({
+        title: 'Gagal Memuat Template',
+        message: 'Template tidak dapat dimuat. Silakan coba lagi atau buat invoice manual.',
+        confirmText: 'Mengerti',
+        onConfirm: () => messageBox.close(),
+      })
     } finally {
       setLoadingTemplate(false)
     }
@@ -252,12 +257,22 @@ function NewInvoicePageContent() {
 
     // Validation
     if (!formData.companyName || !formData.clientName || !formData.clientEmail) {
-      alert('Mohon lengkapi field yang wajib diisi')
+      messageBox.showWarning({
+        title: 'Data Belum Lengkap',
+        message: 'Mohon lengkapi field yang wajib diisi: Nama Perusahaan, Nama Klien, dan Email Klien.',
+        confirmText: 'Mengerti',
+        onConfirm: () => messageBox.close(),
+      })
       return
     }
 
     if (items.some((item) => !item.description || item.price < 0)) {
-      alert('Mohon lengkapi semua item dengan benar')
+      messageBox.showWarning({
+        title: 'Item Belum Lengkap',
+        message: 'Mohon lengkapi semua item dengan deskripsi dan harga yang valid.',
+        confirmText: 'Mengerti',
+        onConfirm: () => messageBox.close(),
+      })
       return
     }
 
@@ -278,9 +293,25 @@ function NewInvoicePageContent() {
       }
 
       const data = await res.json()
-      router.push(`/dashboard/invoices/${data.id}`)
+
+      // Show success message before redirecting
+      messageBox.showInvoiceCreated(
+        formData.invoiceNumber,
+        formatCurrency(total),
+        formData.clientName
+      )
+
+      // Redirect after a short delay to show the message
+      setTimeout(() => {
+        router.push(`/dashboard/invoices/${data.id}`)
+      }, 1500)
     } catch (error: any) {
-      alert(error.message)
+      messageBox.showWarning({
+        title: 'Gagal Membuat Invoice',
+        message: error.message,
+        confirmText: 'Mengerti',
+        onConfirm: () => messageBox.close(),
+      })
     } finally {
       setSaving(false)
     }
@@ -711,6 +742,20 @@ function NewInvoicePageContent() {
           </div>
         </form>
       </div>
+
+      {/* MessageBox for notifications */}
+      <MessageBox
+        open={messageBox.state.open}
+        onClose={messageBox.close}
+        title={messageBox.state.title}
+        message={messageBox.state.message}
+        variant={messageBox.state.variant}
+        confirmText={messageBox.state.confirmText}
+        cancelText={messageBox.state.cancelText}
+        onConfirm={messageBox.state.onConfirm}
+        onCancel={messageBox.state.onCancel}
+        loading={messageBox.state.loading}
+      />
     </div>
   )
 }
