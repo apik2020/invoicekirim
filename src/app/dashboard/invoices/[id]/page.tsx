@@ -16,9 +16,12 @@ import {
   Printer,
   Bell,
   Share2,
+  MessageCircle,
 } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import DashboardHeader from '@/components/DashboardHeader'
+import { MessageBox } from '@/components/ui/MessageBox'
+import { useMessageBox } from '@/hooks/useMessageBox'
 
 interface InvoiceItem {
   id: string
@@ -68,8 +71,10 @@ export default function InvoiceDetailPage({
   const [sendingReminder, setSendingReminder] = useState(false)
   const [sendingEmail, setSendingEmail] = useState(false)
   const [generatingPDF, setGeneratingPDF] = useState(false)
+  const [sendingWhatsApp, setSendingWhatsApp] = useState(false)
   const [copied, setCopied] = useState(false)
   const printRef = useRef<HTMLDivElement>(null)
+  const messageBox = useMessageBox()
 
   const handlePrint = useReactToPrint({
     contentRef: printRef,
@@ -116,8 +121,23 @@ export default function InvoiceDetailPage({
 
       // Refresh invoice data
       await fetchInvoice()
+
+      // Show success message based on status
+      if (newStatus === 'PAID') {
+        messageBox.showPaymentReceived(formatCurrency(invoice.total), invoice.invoiceNumber, 'Manual')
+      } else if (newStatus === 'SENT') {
+        messageBox.showSuccess({
+          title: 'Status Diperbarui!',
+          message: `Invoice #${invoice.invoiceNumber} telah ditandai sebagai terkirim.`,
+        })
+      }
     } catch (error: any) {
-      alert(error.message)
+      messageBox.showWarning({
+        title: 'Gagal Mengubah Status',
+        message: error.message,
+        confirmText: 'Mengerti',
+        onConfirm: () => messageBox.close(),
+      })
     } finally {
       setUpdating(false)
     }
@@ -125,29 +145,53 @@ export default function InvoiceDetailPage({
 
   const handleDelete = async () => {
     if (!invoice) return
-    if (!confirm('Apakah Anda yakin ingin menghapus invoice ini?')) return
     if (invoice.status === 'PAID') {
-      alert('Tidak dapat menghapus invoice yang sudah lunas')
+      messageBox.showWarning({
+        title: 'Tidak Dapat Menghapus',
+        message: 'Invoice yang sudah lunas tidak dapat dihapus.',
+        confirmText: 'Mengerti',
+        onConfirm: () => messageBox.close(),
+      })
       return
     }
 
-    setDeleting(true)
-    try {
-      const res = await fetch(`/api/invoices/${invoice.id}`, {
-        method: 'DELETE',
-      })
+    messageBox.showDelete({
+      title: 'Hapus Invoice?',
+      message: (
+        <div className="space-y-2">
+          <p>
+            Anda akan menghapus invoice <span className="font-semibold text-gray-900">#{invoice.invoiceNumber}</span>
+          </p>
+          <p className="text-xs text-gray-500">
+            Tindakan ini tidak dapat dibatalkan. Data invoice akan dihapus permanen.
+          </p>
+        </div>
+      ),
+      onConfirm: async () => {
+        setDeleting(true)
+        try {
+          const res = await fetch(`/api/invoices/${invoice.id}`, {
+            method: 'DELETE',
+          })
 
-      if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Gagal menghapus invoice')
-      }
+          if (!res.ok) {
+            const data = await res.json()
+            throw new Error(data.error || 'Gagal menghapus invoice')
+          }
 
-      router.push('/dashboard/invoices')
-    } catch (error: any) {
-      alert(error.message)
-    } finally {
-      setDeleting(false)
-    }
+          router.push('/dashboard/invoices')
+        } catch (error: any) {
+          messageBox.showWarning({
+            title: 'Gagal Menghapus',
+            message: error.message,
+            confirmText: 'Mengerti',
+            onConfirm: () => messageBox.close(),
+          })
+        } finally {
+          setDeleting(false)
+        }
+      },
+    })
   }
 
   const handleWhatsApp = () => {
@@ -162,6 +206,253 @@ Total: ${formatCurrency(invoice.total)}
 
 Terima kasih!`
 
+    const encoded = encodeURIComponent(message)
+    window.open(`https://wa.me/?text=${encoded}`, '_blank')
+  }
+
+  // Generate PDF as Blob for sharing
+  const generatePDFBlob = async (): Promise<Blob | null> => {
+    if (!invoice) return null
+
+    try {
+      const html2canvas = await import('html2canvas')
+      const { jsPDF } = await import('jspdf')
+
+      // Build simple HTML string
+      const buildInvoiceHTML = () => {
+        const items = invoice.items.map(item => `
+          <tr style="border-bottom: 1px solid #E2E8F0;">
+            <td style="padding: 16px 8px; color: #333333;">${item.description || '-'}</td>
+            <td style="padding: 16px 8px; text-align: center; color: #333333;">${item.quantity}</td>
+            <td style="padding: 16px 8px; text-align: right; color: #333333;">${formatCurrency(item.price)}</td>
+            <td style="padding: 16px 8px; text-align: right; color: #333333; font-weight: 600;">${formatCurrency(item.quantity * item.price)}</td>
+          </tr>
+        `).join('')
+
+        return `
+          <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 800px; margin: 0 auto; padding: 48px; background: #FFFFFF; color: #333333;">
+            <!-- Header -->
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 40px; padding-bottom: 32px; border-bottom: 2px solid #E2E8F0;">
+              <div>
+                <h1 style="font-size: 24px; font-weight: bold; color: #333333; margin: 0 0 8px 0;">${invoice.companyName}</h1>
+                <p style="font-size: 14px; color: #333333; margin: 0;">${invoice.companyEmail}</p>
+                ${invoice.companyPhone ? `<p style="font-size: 14px; color: #333333; margin: 0;">${invoice.companyPhone}</p>` : ''}
+                ${invoice.companyAddress ? `<p style="font-size: 14px; color: #333333; margin: 0;">${invoice.companyAddress}</p>` : ''}
+              </div>
+              <div style="text-align: right;">
+                <p style="font-size: 12px; color: #333333; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">Invoice</p>
+                <p style="font-size: 20px; font-weight: bold; color: #333333; margin: 8px 0 0 0;">${invoice.invoiceNumber}</p>
+              </div>
+            </div>
+
+            <!-- Bill To -->
+            <div style="margin-bottom: 40px;">
+              <h3 style="font-size: 12px; color: #333333; margin: 0 0 16px 0; text-transform: uppercase; letter-spacing: 0.5px; font-weight: bold;">Kepada:</h3>
+              <div style="background: #F5F5F5; padding: 24px; border-radius: 12px;">
+                <p style="font-size: 18px; font-weight: bold; color: #333333; margin: 0 0 8px 0;">${invoice.clientName}</p>
+                <p style="font-size: 14px; color: #333333; margin: 0;">${invoice.clientEmail}</p>
+                ${invoice.clientPhone ? `<p style="font-size: 14px; color: #333333; margin: 0;">${invoice.clientPhone}</p>` : ''}
+                ${invoice.clientAddress ? `<p style="font-size: 14px; color: #333333; margin: 0;">${invoice.clientAddress}</p>` : ''}
+              </div>
+            </div>
+
+            <!-- Dates -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 40px;">
+              <div>
+                <p style="font-size: 12px; color: #333333; margin: 0 0 4px 0;">Tanggal</p>
+                <p style="font-size: 14px; font-weight: 600; color: #333333; margin: 0;">${formatDate(invoice.date)}</p>
+              </div>
+              ${invoice.dueDate ? `
+              <div>
+                <p style="font-size: 12px; color: #333333; margin: 0 0 4px 0;">Jatuh Tempo</p>
+                <p style="font-size: 14px; font-weight: 600; color: #333333; margin: 0;">${formatDate(invoice.dueDate)}</p>
+              </div>
+              ` : ''}
+            </div>
+
+            <!-- Items Table -->
+            <div style="margin-bottom: 40px;">
+              <h3 style="font-size: 12px; color: #333333; margin: 0 0 16px 0; text-transform: uppercase; letter-spacing: 0.5px; font-weight: bold;">Item Invoice</h3>
+              <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                  <tr style="border-bottom: 2px solid #E2E8F0;">
+                    <th style="padding: 16px 8px; text-align: left; font-weight: bold; color: #333333; font-size: 14px;">Deskripsi</th>
+                    <th style="padding: 16px 8px; text-align: center; font-weight: bold; color: #333333; font-size: 14px;">Qty</th>
+                    <th style="padding: 16px 8px; text-align: right; font-weight: bold; color: #333333; font-size: 14px;">Harga</th>
+                    <th style="padding: 16px 8px; text-align: right; font-weight: bold; color: #333333; font-size: 14px;">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${items}
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Totals -->
+            <div style="display: flex; justify-content: flex-end;">
+              <div style="width: 100%; max-width: 320px;">
+                <div style="display: flex; justify-content: space-between; padding: 12px 0; color: #333333;">
+                  <span>Subtotal</span>
+                  <span style="font-weight: 600;">${formatCurrency(invoice.subtotal)}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 12px 0; color: #333333;">
+                  <span>Pajak (${invoice.taxRate}%)</span>
+                  <span style="font-weight: 600;">${formatCurrency(invoice.taxAmount)}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding: 16px 0; border-top: 2px solid #E2E8F0; margin-top: 16px; font-size: 24px; font-weight: bold; color: #00D4C5;">
+                  <span>Total</span>
+                  <span>${formatCurrency(invoice.total)}</span>
+                </div>
+              </div>
+            </div>
+
+            ${invoice.notes ? `
+            <!-- Notes -->
+            <div style="margin-top: 40px; padding-top: 32px; border-top: 1px solid #E2E8F0;">
+              <h3 style="font-size: 12px; color: #333333; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.5px; font-weight: bold;">Catatan</h3>
+              <p style="font-size: 14px; color: #333333; margin: 0; white-space: pre-line;">${invoice.notes}</p>
+            </div>
+            ` : ''}
+
+            <!-- Footer -->
+            <div style="margin-top: 48px; padding-top: 32px; border-top: 1px solid #E2E8F0; text-align: center;">
+              <p style="font-size: 12px; color: #333333; margin: 0;">
+                Invoice dibuat dengan <a href="https://invoicekirim.com" style="color: #00D4C5; text-decoration: none; font-weight: 600;">InvoiceKirim</a>
+              </p>
+            </div>
+          </div>
+        `
+      }
+
+      // Create a hidden div with our HTML
+      const container = document.createElement('div')
+      container.style.position = 'absolute'
+      container.style.left = '-9999px'
+      container.style.width = '800px'
+      container.innerHTML = buildInvoiceHTML()
+      document.body.appendChild(container)
+
+      // Wait for rendering
+      await new Promise(resolve => setTimeout(resolve, 100))
+
+      // Capture with html2canvas
+      const canvas = await html2canvas.default(container, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        allowTaint: true,
+      })
+
+      // Remove container
+      document.body.removeChild(container)
+
+      const imgData = canvas.toDataURL('image/png', 1.0)
+      const pdf = new jsPDF('p', 'mm', 'a4')
+
+      const imgWidth = 210 // A4 width in mm
+      const pageHeight = 297 // A4 height in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width
+      let heightLeft = imgHeight
+      let position = 0
+
+      // Add first page
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+      heightLeft -= pageHeight
+
+      // Add additional pages if needed
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight
+        pdf.addPage()
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+        heightLeft -= pageHeight
+      }
+
+      // Return as blob
+      const pdfBlob = pdf.output('blob')
+      return pdfBlob
+    } catch (error) {
+      console.error('Error generating PDF blob:', error)
+      return null
+    }
+  }
+
+  // Handle WhatsApp with PDF attachment
+  const handleWhatsAppWithPDF = async () => {
+    if (!invoice) return
+
+    setSendingWhatsApp(true)
+
+    try {
+      // Generate PDF
+      const pdfBlob = await generatePDFBlob()
+
+      if (!pdfBlob) {
+        // Fallback to simple WhatsApp message if PDF generation fails
+        const message = `Berikut terlampir invoice ${invoice.invoiceNumber} dari ${invoice.companyName}
+
+Total: ${formatCurrency(invoice.total)}
+
+Terima kasih!`
+
+        const encoded = encodeURIComponent(message)
+        window.open(`https://wa.me/?text=${encoded}`, '_blank')
+        return
+      }
+
+      // Create file from blob
+      const file = new File([pdfBlob], `invoice-${invoice.invoiceNumber}.pdf`, { type: 'application/pdf' })
+
+      // Prepare the message
+      const message = `Berikut terlampir invoice ${invoice.invoiceNumber} dari ${invoice.companyName}
+
+Total: ${formatCurrency(invoice.total)}
+${invoice.dueDate ? `Jatuh Tempo: ${formatDate(invoice.dueDate)}` : ''}
+
+Terima kasih!`
+
+      // Check if Web Share API is available (mainly mobile)
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            title: `Invoice ${invoice.invoiceNumber}`,
+            text: message,
+            files: [file],
+          })
+        } catch (shareError) {
+          // User cancelled or share failed, fallback
+          console.log('Share cancelled or failed, downloading instead')
+          downloadPDFBlob(pdfBlob)
+          openWhatsAppWithMessage(message)
+        }
+      } else {
+        // Desktop fallback: download PDF and open WhatsApp
+        downloadPDFBlob(pdfBlob)
+        openWhatsAppWithMessage(message)
+      }
+    } catch (error) {
+      console.error('WhatsApp share error:', error)
+      // Fallback to simple message
+      handleWhatsApp()
+    } finally {
+      setSendingWhatsApp(false)
+    }
+  }
+
+  // Helper to download PDF blob
+  const downloadPDFBlob = (blob: Blob) => {
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `invoice-${invoice?.invoiceNumber || 'download'}.pdf`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  // Helper to open WhatsApp with message
+  const openWhatsAppWithMessage = (message: string) => {
     const encoded = encodeURIComponent(message)
     window.open(`https://wa.me/?text=${encoded}`, '_blank')
   }
@@ -374,9 +665,14 @@ Terima kasih!`
         throw new Error(data.error || 'Gagal mengirim reminder')
       }
 
-      alert('Payment reminder berhasil dikirim ke ' + invoice.clientEmail)
+      messageBox.showEmailSent(invoice.clientEmail, 'reminder')
     } catch (error: any) {
-      alert(error.message)
+      messageBox.showWarning({
+        title: 'Gagal Mengirim Reminder',
+        message: error.message,
+        confirmText: 'Mengerti',
+        onConfirm: () => messageBox.close(),
+      })
     } finally {
       setSendingReminder(false)
     }
@@ -401,9 +697,14 @@ Terima kasih!`
       // Refresh invoice data to get updated status
       await fetchInvoice()
 
-      alert(data.message || 'Invoice berhasil dikirim ke ' + invoice.clientEmail)
+      messageBox.showInvoiceSent(invoice.invoiceNumber, invoice.clientName, invoice.clientEmail)
     } catch (error: any) {
-      alert(error.message)
+      messageBox.showWarning({
+        title: 'Gagal Mengirim Invoice',
+        message: error.message,
+        confirmText: 'Mengerti',
+        onConfirm: () => messageBox.close(),
+      })
     } finally {
       setSendingEmail(false)
     }
@@ -577,6 +878,17 @@ Terima kasih!`
                   {updating ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
                   {updating ? 'Memproses...' : 'Tandai Terkirim'}
                 </button>
+                <button
+                  onClick={handleWhatsAppWithPDF}
+                  disabled={sendingWhatsApp}
+                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    background: 'linear-gradient(145deg, #25D366, #128C7E)',
+                  }}
+                >
+                  {sendingWhatsApp ? <Loader2 size={18} className="animate-spin" /> : <MessageCircle size={18} />}
+                  {sendingWhatsApp ? 'Memproses...' : 'WhatsApp + PDF'}
+                </button>
                 <Link
                   href={`/dashboard/invoices/${invoice.id}/edit`}
                   className="flex items-center gap-2 px-6 py-3 text-gray-600 font-bold rounded-xl btn-secondary"
@@ -614,14 +926,15 @@ Terima kasih!`
                   {sendingReminder ? 'Mengirim...' : 'Kirim Reminder'}
                 </button>
                 <button
-                  onClick={handleWhatsApp}
-                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl transition-colors"
+                  onClick={handleWhatsAppWithPDF}
+                  disabled={sendingWhatsApp}
+                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
                     background: 'linear-gradient(145deg, #25D366, #128C7E)',
                   }}
                 >
-                  <Send size={18} />
-                  WhatsApp
+                  {sendingWhatsApp ? <Loader2 size={18} className="animate-spin" /> : <MessageCircle size={18} />}
+                  {sendingWhatsApp ? 'Memproses...' : 'WhatsApp + PDF'}
                 </button>
               </div>
             )}
@@ -645,23 +958,37 @@ Terima kasih!`
                   {sendingReminder ? 'Mengirim...' : 'Kirim Reminder'}
                 </button>
                 <button
-                  onClick={handleWhatsApp}
-                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl transition-colors"
+                  onClick={handleWhatsAppWithPDF}
+                  disabled={sendingWhatsApp}
+                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
                     background: 'linear-gradient(145deg, #25D366, #128C7E)',
                   }}
                 >
-                  <Send size={18} />
-                  WhatsApp
+                  {sendingWhatsApp ? <Loader2 size={18} className="animate-spin" /> : <MessageCircle size={18} />}
+                  {sendingWhatsApp ? 'Memproses...' : 'WhatsApp + PDF'}
                 </button>
               </div>
             )}
 
             {invoice.status === 'PAID' && invoice.paidAt && (
-              <div className="w-full text-center p-4 rounded-xl bg-green-light-50 border border-green-200">
-                <p className="font-bold text-teal-light-700">
-                  Invoice ini telah dibayar pada {formatDate(invoice.paidAt)}
-                </p>
+              <div className="w-full">
+                <div className="text-center p-4 rounded-xl bg-green-light-50 border border-green-200 mb-3">
+                  <p className="font-bold text-teal-light-700">
+                    Invoice ini telah dibayar pada {formatDate(invoice.paidAt)}
+                  </p>
+                </div>
+                <button
+                  onClick={handleWhatsAppWithPDF}
+                  disabled={sendingWhatsApp}
+                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full justify-center"
+                  style={{
+                    background: 'linear-gradient(145deg, #25D366, #128C7E)',
+                  }}
+                >
+                  {sendingWhatsApp ? <Loader2 size={18} className="animate-spin" /> : <MessageCircle size={18} />}
+                  {sendingWhatsApp ? 'Memproses...' : 'Kirim via WhatsApp'}
+                </button>
               </div>
             )}
             </div>
@@ -856,6 +1183,17 @@ Terima kasih!`
                   {updating ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
                   {updating ? 'Memproses...' : 'Tandai Terkirim'}
                 </button>
+                <button
+                  onClick={handleWhatsAppWithPDF}
+                  disabled={sendingWhatsApp}
+                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    background: 'linear-gradient(145deg, #25D366, #128C7E)',
+                  }}
+                >
+                  {sendingWhatsApp ? <Loader2 size={18} className="animate-spin" /> : <MessageCircle size={18} />}
+                  {sendingWhatsApp ? 'Memproses...' : 'WhatsApp + PDF'}
+                </button>
                 <Link
                   href={`/dashboard/invoices/${invoice.id}/edit`}
                   className="flex items-center gap-2 px-6 py-3 text-gray-600 font-bold rounded-xl btn-secondary"
@@ -892,14 +1230,15 @@ Terima kasih!`
                   {sendingReminder ? 'Mengirim...' : 'Kirim Reminder'}
                 </button>
                 <button
-                  onClick={handleWhatsApp}
-                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl transition-colors"
+                  onClick={handleWhatsAppWithPDF}
+                  disabled={sendingWhatsApp}
+                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
                     background: 'linear-gradient(145deg, #25D366, #128C7E)',
                   }}
                 >
-                  <Send size={18} />
-                  WhatsApp
+                  {sendingWhatsApp ? <Loader2 size={18} className="animate-spin" /> : <MessageCircle size={18} />}
+                  {sendingWhatsApp ? 'Memproses...' : 'WhatsApp + PDF'}
                 </button>
               </>
             )}
@@ -922,27 +1261,58 @@ Terima kasih!`
                   {sendingReminder ? 'Mengirim...' : 'Kirim Reminder'}
                 </button>
                 <button
-                  onClick={handleWhatsApp}
-                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl transition-colors"
+                  onClick={handleWhatsAppWithPDF}
+                  disabled={sendingWhatsApp}
+                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
                     background: 'linear-gradient(145deg, #25D366, #128C7E)',
                   }}
                 >
-                  <Send size={18} />
-                  WhatsApp
+                  {sendingWhatsApp ? <Loader2 size={18} className="animate-spin" /> : <MessageCircle size={18} />}
+                  {sendingWhatsApp ? 'Memproses...' : 'WhatsApp + PDF'}
                 </button>
               </>
             )}
             {invoice.status === 'PAID' && invoice.paidAt && (
-              <div className="w-full text-center p-4 rounded-xl bg-green-light-50 border border-green-200">
-                <p className="font-bold text-teal-light-700">
-                  Invoice ini telah dibayar pada {formatDate(invoice.paidAt)}
-                </p>
+              <div className="w-full">
+                <div className="text-center p-4 rounded-xl bg-green-light-50 border border-green-200 mb-3">
+                  <p className="font-bold text-teal-light-700">
+                    Invoice ini telah dibayar pada {formatDate(invoice.paidAt)}
+                  </p>
+                </div>
+                <button
+                  onClick={handleWhatsAppWithPDF}
+                  disabled={sendingWhatsApp}
+                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full justify-center"
+                  style={{
+                    background: 'linear-gradient(145deg, #25D366, #128C7E)',
+                  }}
+                >
+                  {sendingWhatsApp ? <Loader2 size={18} className="animate-spin" /> : <MessageCircle size={18} />}
+                  {sendingWhatsApp ? 'Memproses...' : 'Kirim via WhatsApp'}
+                </button>
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {/* MessageBox for notifications */}
+      <MessageBox
+        open={messageBox.state.open}
+        onClose={messageBox.close}
+        title={messageBox.state.title}
+        message={messageBox.state.message}
+        variant={messageBox.state.variant}
+        confirmText={messageBox.state.confirmText}
+        cancelText={messageBox.state.cancelText}
+        onConfirm={messageBox.state.onConfirm}
+        onCancel={messageBox.state.onCancel}
+        loading={messageBox.state.loading}
+        icon={messageBox.state.icon}
+      >
+        {messageBox.state.children}
+      </MessageBox>
     </div>
   )
 }
