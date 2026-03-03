@@ -6,9 +6,8 @@ import { useSession } from 'next-auth/react'
 import { FileText, Save, Plus, Trash2, Loader2 } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import DashboardHeader from '@/components/DashboardHeader'
-
-// Force dynamic rendering
-export const dynamic = 'force-dynamic'
+import { MessageBox } from '@/components/ui/MessageBox'
+import { useMessageBox } from '@/hooks/useMessageBox'
 
 interface TemplateItem {
   id: string
@@ -26,6 +25,7 @@ export default function EditTemplatePage() {
   const [saving, setSaving] = useState(false)
   const [notFound, setNotFound] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const messageBox = useMessageBox()
 
   const [formData, setFormData] = useState({
     name: '',
@@ -89,12 +89,22 @@ export default function EditTemplatePage() {
 
     // Validation
     if (!formData.name) {
-      alert('Mohon isi nama template')
+      messageBox.showWarning({
+        title: 'Nama Template Diperlukan',
+        message: 'Mohon isi nama template untuk melanjutkan.',
+        confirmText: 'Mengerti',
+        onConfirm: () => messageBox.close(),
+      })
       return
     }
 
     if (items.some((item) => !item.description || item.price < 0)) {
-      alert('Mohon lengkapi semua item dengan benar')
+      messageBox.showWarning({
+        title: 'Item Belum Lengkap',
+        message: 'Mohon lengkapi semua item dengan deskripsi dan harga yang valid.',
+        confirmText: 'Mengerti',
+        onConfirm: () => messageBox.close(),
+      })
       return
     }
 
@@ -114,9 +124,18 @@ export default function EditTemplatePage() {
         throw new Error(data.error || 'Gagal mengupdate template')
       }
 
-      router.push('/dashboard/templates')
+      messageBox.showTemplateSaved(formData.name, true)
+
+      setTimeout(() => {
+        router.push('/dashboard/templates')
+      }, 1500)
     } catch (error: any) {
-      alert(error.message)
+      messageBox.showWarning({
+        title: 'Gagal Menyimpan Perubahan',
+        message: error.message,
+        confirmText: 'Mengerti',
+        onConfirm: () => messageBox.close(),
+      })
     } finally {
       setSaving(false)
     }
@@ -360,6 +379,20 @@ export default function EditTemplatePage() {
           </div>
         </form>
       </div>
+
+      {/* MessageBox for notifications */}
+      <MessageBox
+        open={messageBox.state.open}
+        onClose={messageBox.close}
+        title={messageBox.state.title}
+        message={messageBox.state.message}
+        variant={messageBox.state.variant}
+        confirmText={messageBox.state.confirmText}
+        cancelText={messageBox.state.cancelText}
+        onConfirm={messageBox.state.onConfirm}
+        onCancel={messageBox.state.onCancel}
+        loading={messageBox.state.loading}
+      />
     </div>
   )
 }

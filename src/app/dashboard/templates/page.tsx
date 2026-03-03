@@ -7,9 +7,8 @@ import { useSession } from 'next-auth/react'
 import { FileText, Plus, Search, Edit, Trash2, Loader2, Copy } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import DashboardHeader from '@/components/DashboardHeader'
-
-// Force dynamic rendering
-export const dynamic = 'force-dynamic'
+import { MessageBox } from '@/components/ui/MessageBox'
+import { useMessageBox } from '@/hooks/useMessageBox'
 
 interface TemplateItem {
   id: string
@@ -37,6 +36,7 @@ export default function TemplatesPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
+  const messageBox = useMessageBox()
 
   useEffect(() => {
     setMounted(true)
@@ -62,26 +62,45 @@ export default function TemplatesPage() {
     }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus template ini?')) return
+  const handleDelete = async (template: Template) => {
+    messageBox.showDelete({
+      title: 'Hapus Template?',
+      message: (
+        <div className="space-y-2">
+          <p>
+            Anda akan menghapus template <span className="font-semibold text-gray-900">{template.name}</span>
+          </p>
+          <p className="text-xs text-gray-500">
+            Template yang dihapus tidak dapat dikembalikan.
+          </p>
+        </div>
+      ),
+      confirmText: 'Ya, Hapus',
+      onConfirm: async () => {
+        setDeletingId(template.id)
+        try {
+          const res = await fetch(`/api/templates/${template.id}`, {
+            method: 'DELETE',
+          })
 
-    setDeletingId(id)
-    try {
-      const res = await fetch(`/api/templates/${id}`, {
-        method: 'DELETE',
-      })
+          if (!res.ok) {
+            const data = await res.json()
+            throw new Error(data.error || 'Gagal menghapus template')
+          }
 
-      if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Gagal menghapus template')
-      }
-
-      setTemplates(templates.filter((t) => t.id !== id))
-    } catch (error: any) {
-      alert(error.message)
-    } finally {
-      setDeletingId(null)
-    }
+          setTemplates(templates.filter((t) => t.id !== template.id))
+        } catch (error: any) {
+          messageBox.showWarning({
+            title: 'Gagal Menghapus Template',
+            message: error.message,
+            confirmText: 'Mengerti',
+            onConfirm: () => messageBox.close(),
+          })
+        } finally {
+          setDeletingId(null)
+        }
+      },
+    })
   }
 
   const handleUseTemplate = async (id: string) => {
@@ -255,7 +274,7 @@ export default function TemplatesPage() {
                     <Edit size={18} />
                   </Link>
                   <button
-                    onClick={() => handleDelete(template.id)}
+                    onClick={() => handleDelete(template)}
                     disabled={deletingId === template.id}
                     className="p-2 text-teal-light rounded-xl hover:bg-gray transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Hapus"
@@ -272,6 +291,20 @@ export default function TemplatesPage() {
           </div>
         )}
       </div>
+
+      {/* MessageBox for notifications */}
+      <MessageBox
+        open={messageBox.state.open}
+        onClose={messageBox.close}
+        title={messageBox.state.title}
+        message={messageBox.state.message}
+        variant={messageBox.state.variant}
+        confirmText={messageBox.state.confirmText}
+        cancelText={messageBox.state.cancelText}
+        onConfirm={messageBox.state.onConfirm}
+        onCancel={messageBox.state.onCancel}
+        loading={messageBox.state.loading}
+      />
     </div>
   )
 }
