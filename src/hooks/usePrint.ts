@@ -5,8 +5,8 @@ import { useReactToPrint } from 'react-to-print'
 
 interface UsePrintOptions {
   documentTitle?: string
-  onBeforePrint?: () => void
-  onAfterPrint?: () => void
+  onBeforePrint?: () => Promise<void> | void
+  onAfterPrint?: () => Promise<void> | void
 }
 
 export function usePrint(options: UsePrintOptions = {}) {
@@ -15,8 +15,16 @@ export function usePrint(options: UsePrintOptions = {}) {
   const handlePrint = useReactToPrint({
     contentRef,
     documentTitle: options.documentTitle || 'InvoiceKirim',
-    onBeforePrint: options.onBeforePrint,
-    onAfterPrint: options.onAfterPrint,
+    onBeforePrint: async () => {
+      if (options.onBeforePrint) {
+        await options.onBeforePrint()
+      }
+    },
+    onAfterPrint: async () => {
+      if (options.onAfterPrint) {
+        await options.onAfterPrint()
+      }
+    },
   })
 
   return {

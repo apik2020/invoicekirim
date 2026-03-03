@@ -9,9 +9,6 @@ import { formatCurrency, formatDate } from '@/lib/utils'
 import DashboardHeader from '@/components/DashboardHeader'
 import { StatusFilter } from '@/components/dashboard/StatusFilter'
 
-// Force dynamic rendering
-export const dynamic = 'force-dynamic'
-
 interface InvoiceItem {
   id: string
   description: string

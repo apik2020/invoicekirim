@@ -1,5 +1,5 @@
 import { LucideIcon } from 'lucide-react'
-import React from 'react'
+import React, { ReactNode } from 'react'
 
 interface EmptyStateProps {
   icon?: LucideIcon | ReactNode
@@ -23,8 +23,8 @@ export function EmptyState({
   const renderIcon = () => {
     if (!icon) return null
 
-    // Check if it's a LucideIcon component
-    if (typeof icon === 'function' && 'displayName' in icon) {
+    // Check if it's a LucideIcon component (function with displayName)
+    if (typeof icon === 'function') {
       const Icon = icon as LucideIcon
       return (
         <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center mb-4">
@@ -34,7 +34,7 @@ export function EmptyState({
     }
 
     // Otherwise render as ReactNode
-    return <div className="mb-4">{icon}</div>
+    return <div className="mb-4">{icon as ReactNode}</div>
   }
 
   const renderAction = () => {

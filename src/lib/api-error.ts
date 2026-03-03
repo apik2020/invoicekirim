@@ -32,9 +32,6 @@ export class ForbiddenError extends ApiError {
   }
 }
 
-// Export for api-handler
-export { ForbiddenError }
-
 export class NotFoundError extends ApiError {
   constructor(message: string = 'Not Found') {
     super(message, 404, 'NOT_FOUND')

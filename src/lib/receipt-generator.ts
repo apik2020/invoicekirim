@@ -1,18 +1,4 @@
-import { pdf } from '@react-pdf/renderer'
 import { prisma } from './prisma'
-import { ReceiptPDF } from '@/components/pdf/ReceiptPDF'
-
-interface ReceiptData {
-  receiptNumber: string
-  date: Date
-  amount: number
-  currency: string
-  paymentMethod: string
-  description: string
-  customerName: string
-  customerEmail: string
-  invoiceNumber?: string
-}
 
 // Generate unique receipt number
 export async function generateReceiptNumber(): Promise<string> {
@@ -43,31 +29,7 @@ export async function generateReceiptNumber(): Promise<string> {
   return `RCP-${dateStr}-${sequence.toString().padStart(4, '0')}`
 }
 
-// Generate receipt PDF using @react-pdf/renderer
-export async function generateReceiptPDF(data: ReceiptData): Promise<Buffer> {
-  try {
-    // Create the PDF document
-    const doc = <ReceiptPDF {...data} />
-
-    // Generate PDF as a buffer
-    const pdfBuffer = await pdf(doc).toBuffer()
-
-    return pdfBuffer
-  } catch (error) {
-    console.error('Error generating receipt PDF:', error)
-    throw new Error('Failed to generate receipt PDF')
-  }
-}
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0,
-  }).format(amount)
-}
-
-// Create receipt record and generate PDF
+// Create receipt record
 export async function createReceipt(paymentId: string) {
   const payment = await prisma.payment.findUnique({
     where: { id: paymentId },

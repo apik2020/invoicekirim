@@ -108,7 +108,7 @@ export async function PATCH(
           amount: refundAmount ? Math.round(refundAmount * 100) : undefined, // Stripe uses cents
           reason: 'requested_by_customer',
           metadata: {
-            refunded_by: admin.email,
+            refunded_by: result.admin!.email,
             refund_reason: refundReason || 'Admin refund',
           },
         })
@@ -121,7 +121,7 @@ export async function PATCH(
             metadata: {
               ...payment.metadata as any,
               refundId: refund.id,
-              refundedBy: admin.email,
+              refundedBy: result.admin!.email,
               refundedAt: new Date().toISOString(),
               refundReason,
             },
@@ -131,7 +131,7 @@ export async function PATCH(
         // Log the refund
         await prisma.activityLog.create({
           data: {
-            userId: admin.id,
+            userId: result.admin!.id,
             action: 'PAYMENT_REFUNDED',
             entityType: 'PAYMENT',
             entityId: payment.id,
@@ -173,7 +173,7 @@ export async function PATCH(
       // Log the status change
       await prisma.activityLog.create({
         data: {
-          userId: admin.id,
+          userId: result.admin!.id,
           action: 'PAYMENT_STATUS_CHANGED',
           entityType: 'PAYMENT',
           entityId: payment.id,
@@ -202,9 +202,9 @@ export async function DELETE(
 ) {
   try {
     // Verify admin access
-    const admin = await verifyAdmin()
-    if (admin instanceof NextResponse) {
-      return admin
+    const result = await requireAdminAuth()
+    if (result.error || !result.admin) {
+      return NextResponse.json({ error: result.error || 'Unauthorized' }, { status: 401 })
     }
 
     const { id } = await params
@@ -233,7 +233,7 @@ export async function DELETE(
     // Log the deletion
     await prisma.activityLog.create({
       data: {
-        userId: admin.id,
+        userId: result.admin!.id,
         action: 'PAYMENT_DELETED',
         entityType: 'PAYMENT',
         entityId: id,

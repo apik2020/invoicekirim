@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { handleApiError, UnauthorizedError } from './api-error'
+import { handleApiError, UnauthorizedError, ForbiddenError } from './api-error'
 
 type Handler = (req: NextRequest, context?: any) => Promise<NextResponse>
 
@@ -39,10 +39,10 @@ export function withApiHandler(
         // Admin check
         if (config.requireAdmin) {
           const { prisma } = await import('@/lib/prisma')
-          const isAdmin = await prisma.admin.findUnique({
+          const isAdmin = session.user.email ? await prisma.admin.findUnique({
             where: { email: session.user.email },
             select: { id: true },
-          })
+          }) : null
 
           if (!isAdmin && process.env.NODE_ENV !== 'development') {
             throw new ForbiddenError('Anda tidak memiliki akses ke halaman ini')
@@ -53,19 +53,26 @@ export function withApiHandler(
       // Call the actual handler
       return await handler(req, context)
     } catch (error) {
-      return handleApiError(error)
+      const response = handleApiError(error)
+      // Convert Response to NextResponse
+      return new NextResponse(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+      })
     }
   }
 }
 
 /**
  * HTTP Method helpers
+ * Note: Renamed to avoid conflicts with Next.js route handler exports
  */
-export const GET = (handler: Handler, config?: RouteConfig) => withApiHandler(handler, config)
-export const POST = (handler: Handler, config?: RouteConfig) => withApiHandler(handler, config)
-export const PUT = (handler: Handler, config?: RouteConfig) => withApiHandler(handler, config)
-export const PATCH = (handler: Handler, config?: RouteConfig) => withApiHandler(handler, config)
-export const DELETE = (handler: Handler, config?: RouteConfig) => withApiHandler(handler, config)
+export const createGetHandler = (handler: Handler, config?: RouteConfig) => withApiHandler(handler, config)
+export const createPostHandler = (handler: Handler, config?: RouteConfig) => withApiHandler(handler, config)
+export const createPutHandler = (handler: Handler, config?: RouteConfig) => withApiHandler(handler, config)
+export const createPatchHandler = (handler: Handler, config?: RouteConfig) => withApiHandler(handler, config)
+export const createDeleteHandler = (handler: Handler, config?: RouteConfig) => withApiHandler(handler, config)
 
 /**
  * Typed response helpers

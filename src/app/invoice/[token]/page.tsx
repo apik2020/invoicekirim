@@ -2,6 +2,10 @@ import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { InvoicePrintView } from '@/components/InvoicePrintView'
 
+// Disable static generation for this page
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 interface PageProps {
   params: Promise<{ token: string }>
 }

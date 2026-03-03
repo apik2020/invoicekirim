@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminAuth } from '@/lib/admin-session'
 import { prisma } from '@/lib/prisma'
-import { CACHE_DURATIONS, getCacheHeaders } from '@/lib/cache'
+import { getCacheHeaders } from '@/lib/cache'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
-export const revalidate = CACHE_DURATIONS.SHORT
+export const revalidate = 30 // 30 seconds
 
 export async function GET(req: NextRequest) {
   try {
@@ -92,9 +92,9 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     // Verify admin access - NO development mode bypass for security
-    const admin = await verifyAdmin()
-    if (admin instanceof NextResponse) {
-      return admin
+    const result = await requireAdminAuth()
+    if (result.error || !result.admin) {
+      return NextResponse.json({ error: result.error || 'Unauthorized' }, { status: 401 })
     }
 
     const body = await req.json()

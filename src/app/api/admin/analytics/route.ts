@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminAuth } from '@/lib/admin-session'
 import { prisma } from '@/lib/prisma'
-import { CACHE_DURATIONS } from '@/lib/cache'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
-export const revalidate = CACHE_DURATIONS.SHORT
+export const revalidate = 30 // 30 seconds
 export const fetchCache = 'force-no-store'
 
 export async function GET(req: NextRequest) {

@@ -49,15 +49,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
-  logoBadge: {
-    width: 50,
-    height: 50,
-    borderRadius: 10,
-    backgroundColor: '#f97316',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 15,
-  },
   paidBadge: {
     backgroundColor: '#10b981',
     paddingHorizontal: 16,

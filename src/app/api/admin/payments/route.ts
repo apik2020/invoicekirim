@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminAuth } from '@/lib/admin-session'
 import { prisma } from '@/lib/prisma'
-import { CACHE_DURATIONS } from '@/lib/cache'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
-export const revalidate = CACHE_DURATIONS.SHORT
+export const revalidate = 30 // 30 seconds
 
 // GET /api/admin/payments - List all payments with filters
 export async function GET(req: NextRequest) {
@@ -113,9 +112,9 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     // Verify admin access
-    const admin = await verifyAdmin()
-    if (admin instanceof NextResponse) {
-      return admin
+    const result = await requireAdminAuth()
+    if (result.error || !result.admin) {
+      return NextResponse.json({ error: result.error || 'Unauthorized' }, { status: 401 })
     }
 
     const body = await req.json()
@@ -173,7 +172,7 @@ export async function POST(req: NextRequest) {
     // Log the activity
     await prisma.activityLog.create({
       data: {
-        userId: admin.id, // Admin who created it
+        userId: result.admin!.id, // Admin who created it
         action: 'MANUAL_PAYMENT_CREATED',
         entityType: 'PAYMENT',
         entityId: payment.id,

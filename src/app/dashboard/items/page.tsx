@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import DashboardHeader from '@/components/DashboardHeader'
+import { MessageBox } from '@/components/ui/MessageBox'
+import { useMessageBox } from '@/hooks/useMessageBox'
 import {
   Package,
   Plus,
@@ -52,6 +54,7 @@ export default function ItemsPage() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('')
+  const messageBox = useMessageBox()
 
   // Get unique categories
   const categories = Array.from(
@@ -71,7 +74,6 @@ export default function ItemsPage() {
     category: '',
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   useEffect(() => {
     fetchItems()
@@ -94,7 +96,6 @@ export default function ItemsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
-    setMessage(null)
 
     try {
       const url = editingItem
@@ -116,21 +117,29 @@ export default function ItemsPage() {
       const data = await res.json()
 
       if (res.ok) {
-        setMessage({
-          type: 'success',
-          text: editingItem ? 'Item berhasil diperbarui!' : 'Item berhasil ditambahkan!',
-        })
         fetchItems()
+        handleCloseModal()
 
-        // Close modal after a short delay
-        setTimeout(() => {
-          handleCloseModal()
-        }, 1500)
+        // Show success message
+        messageBox.showSuccess({
+          title: editingItem ? 'Item Diperbarui!' : 'Item Ditambahkan!',
+          message: `${formData.name} berhasil ${editingItem ? 'diperbarui' : 'ditambahkan'} ke katalog.`,
+        })
       } else {
-        setMessage({ type: 'error', text: data.error || 'Gagal menyimpan item' })
+        messageBox.showWarning({
+          title: 'Gagal Menyimpan',
+          message: data.error || 'Gagal menyimpan item. Silakan coba lagi.',
+          confirmText: 'Mengerti',
+          onConfirm: () => messageBox.close(),
+        })
       }
     } catch (error) {
-      setMessage({ type: 'error', text: 'Terjadi kesalahan' })
+      messageBox.showWarning({
+        title: 'Terjadi Kesalahan',
+        message: 'Terjadi kesalahan saat menyimpan item.',
+        confirmText: 'Mengerti',
+        onConfirm: () => messageBox.close(),
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -150,33 +159,48 @@ export default function ItemsPage() {
     setShowModal(true)
   }
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Hapus item "${name}"?`)) {
-      return
-    }
+  const handleDelete = async (item: Item) => {
+    messageBox.showDelete({
+      title: 'Hapus Item?',
+      message: (
+        <div className="space-y-2">
+          <p>
+            Anda akan menghapus item <span className="font-semibold text-gray-900">{item.name}</span>
+          </p>
+          <p className="text-xs text-gray-500">
+            Item yang dihapus tidak dapat dikembalikan.
+          </p>
+        </div>
+      ),
+      confirmText: 'Ya, Hapus',
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/items/${item.id}`, {
+            method: 'DELETE',
+          })
 
-    try {
-      const res = await fetch(`/api/items/${id}`, {
-        method: 'DELETE',
-      })
+          const data = await res.json()
 
-      const data = await res.json()
-
-      if (res.ok) {
-        setMessage({
-          type: 'success',
-          text: 'Item berhasil dihapus!',
-        })
-        fetchItems()
-        setTimeout(() => setMessage(null), 3000)
-      } else {
-        setMessage({ type: 'error', text: data.error || 'Gagal menghapus item' })
-        setTimeout(() => setMessage(null), 3000)
-      }
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Terjadi kesalahan' })
-      setTimeout(() => setMessage(null), 3000)
-    }
+          if (res.ok) {
+            fetchItems()
+          } else {
+            messageBox.showWarning({
+              title: 'Gagal Menghapus',
+              message: data.error || 'Gagal menghapus item.',
+              confirmText: 'Mengerti',
+              onConfirm: () => messageBox.close(),
+            })
+          }
+        } catch (error) {
+          messageBox.showWarning({
+            title: 'Terjadi Kesalahan',
+            message: 'Terjadi kesalahan saat menghapus item.',
+            confirmText: 'Mengerti',
+            onConfirm: () => messageBox.close(),
+          })
+        }
+      },
+    })
   }
 
   const handleOpenModal = () => {
