@@ -203,7 +203,7 @@ export default function ItemsPage() {
     })
   }
 
-  const handleOpenModal = () => {
+   const handleOpenModal = () => {
     setEditingItem(null)
     setFormData({
       name: '',
@@ -214,7 +214,6 @@ export default function ItemsPage() {
       taxRate: '11',
       category: '',
     })
-    setMessage(null)
     setShowModal(true)
   }
 
@@ -230,7 +229,6 @@ export default function ItemsPage() {
       taxRate: '11',
       category: '',
     })
-    setMessage(null)
   }
 
   const filteredItems = items.filter(
@@ -262,24 +260,6 @@ export default function ItemsPage() {
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        {/* Message Alert */}
-        {message && (
-          <div
-            className={`mb-6 p-4 rounded-xl flex items-center gap-3 ${
-              message.type === 'success'
-                ? 'bg-lime-50 border border-lime-200 text-lime-800'
-                : 'bg-red-50 border border-red-200 text-red-800'
-            }`}
-          >
-            {message.type === 'success' ? (
-              <Check className="w-5 h-5 flex-shrink-0" />
-            ) : (
-              <X className="w-5 h-5 flex-shrink-0" />
-            )}
-            <span className="font-medium">{message.text}</span>
-          </div>
-        )}
-
         {/* Header */}
         <div className="mb-8">
           <div className="mb-4">
@@ -426,7 +406,7 @@ export default function ItemsPage() {
                             <Pencil className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleDelete(item.id, item.name)}
+                            onClick={() => handleDelete(item)}
                             className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                             title="Hapus"
                           >
@@ -456,23 +436,6 @@ export default function ItemsPage() {
 
             {/* Modal Body */}
             <div className="px-8 py-6">
-              {message && (
-                <div
-                  className={`mb-6 p-4 rounded-xl flex items-center gap-3 ${
-                    message.type === 'success'
-                      ? 'bg-lime-50 border border-lime-200 text-lime-800'
-                      : 'bg-red-50 border border-red-200 text-red-800'
-                  }`}
-                >
-                  {message.type === 'success' ? (
-                    <Check className="w-5 h-5 flex-shrink-0" />
-                  ) : (
-                    <X className="w-5 h-5 flex-shrink-0" />
-                  )}
-                  <span className="font-medium text-sm">{message.text}</span>
-                </div>
-              )}
-
               <form onSubmit={handleSubmit} className="space-y-5">
                 {/* Name */}
                 <div>
@@ -634,6 +597,20 @@ export default function ItemsPage() {
           </div>
         </div>
       )}
+
+      {/* MessageBox for notifications */}
+      <MessageBox
+        open={messageBox.state.open}
+        onClose={messageBox.close}
+        title={messageBox.state.title}
+        message={messageBox.state.message}
+        variant={messageBox.state.variant}
+        confirmText={messageBox.state.confirmText}
+        cancelText={messageBox.state.cancelText}
+        onConfirm={messageBox.state.onConfirm}
+        onCancel={messageBox.state.onCancel}
+        loading={messageBox.state.loading}
+      />
     </div>
   )
 }

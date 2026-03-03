@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
-import { FileText, Save, Plus, Trash2, Loader2, Package, X } from 'lucide-react'
+import { FileText, Save, Plus, Trash2, Loader2, Package, X, UserPlus, Check, Users, ChevronDown, PackagePlus } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import DashboardHeader from '@/components/DashboardHeader'
 import { MessageBox } from '@/components/ui/MessageBox'
@@ -57,6 +57,31 @@ export default function EditInvoicePage() {
   const [catalogSearch, setCatalogSearch] = useState('')
   const messageBox = useMessageBox()
 
+  // Client state
+  const [clients, setClients] = useState<any[]>([])
+  const [selectedClientId, setSelectedClientId] = useState('')
+  const [showClientModal, setShowClientModal] = useState(false)
+  const [newClientData, setNewClientData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    company: '',
+    address: '',
+  })
+  const [isCreatingClient, setIsCreatingClient] = useState(false)
+
+  // Item modal state
+  const [showItemModal, setShowItemModal] = useState(false)
+  const [newItemData, setNewItemData] = useState({
+    name: '',
+    description: '',
+    sku: '',
+    unit: 'pcs',
+    price: '',
+    category: '',
+  })
+  const [isCreatingItem, setIsCreatingItem] = useState(false)
+
   const [formData, setFormData] = useState<InvoiceData>({
     invoiceNumber: '',
     date: new Date().toISOString().split('T')[0],
@@ -87,6 +112,7 @@ export default function EditInvoicePage() {
     } else if (sessionResult.status === 'authenticated' && id) {
       fetchInvoice()
       fetchCatalogItems()
+      fetchClients()
     }
   }, [sessionResult, id, router])
 
@@ -99,6 +125,18 @@ export default function EditInvoicePage() {
       }
     } catch (error) {
       console.error('Error fetching catalog items:', error)
+    }
+  }
+
+  const fetchClients = async () => {
+    try {
+      const res = await fetch('/api/clients')
+      if (res.ok) {
+        const data = await res.json()
+        setClients(data || [])
+      }
+    } catch (error) {
+      console.error('Error fetching clients:', error)
     }
   }
 
@@ -283,6 +321,205 @@ export default function EditInvoicePage() {
     (item.sku?.toLowerCase().includes(catalogSearch.toLowerCase()) ?? false)
   )
 
+  // Client handling functions
+  const handleClientSelect = (clientId: string) => {
+    setSelectedClientId(clientId)
+    const selectedClient = clients.find(c => c.id === clientId)
+
+    if (selectedClient) {
+      setFormData({
+        ...formData,
+        clientName: selectedClient.name,
+        clientEmail: selectedClient.email,
+        clientPhone: selectedClient.phone || '',
+        clientAddress: selectedClient.address || '',
+      })
+    } else {
+      // Clear client info if "Manually" is selected or cleared
+      setFormData({
+        ...formData,
+        clientName: '',
+        clientEmail: '',
+        clientPhone: '',
+        clientAddress: '',
+      })
+    }
+  }
+
+  const handleOpenClientModal = () => {
+    setNewClientData({
+      name: formData.clientName || '',
+      email: formData.clientEmail || '',
+      phone: formData.clientPhone || '',
+      company: '',
+      address: formData.clientAddress || '',
+    })
+    setShowClientModal(true)
+  }
+
+  const handleCloseClientModal = () => {
+    setShowClientModal(false)
+    setNewClientData({
+      name: '',
+      email: '',
+      phone: '',
+      company: '',
+      address: '',
+    })
+  }
+
+  const handleCreateClient = async () => {
+    // Validate required fields
+    if (!newClientData.name || !newClientData.email) {
+      messageBox.showWarning({
+        title: 'Data Belum Lengkap',
+        message: 'Nama klien dan email wajib diisi.',
+        confirmText: 'Mengerti',
+        onConfirm: () => messageBox.close(),
+      })
+      return
+    }
+
+    setIsCreatingClient(true)
+    try {
+      const res = await fetch('/api/clients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newClientData),
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        // Refresh clients list
+        await fetchClients()
+
+        // Auto-select the newly created client
+        setSelectedClientId(data.id)
+        setFormData({
+          ...formData,
+          clientName: data.name,
+          clientEmail: data.email,
+          clientPhone: data.phone || '',
+          clientAddress: data.address || '',
+        })
+
+        // Close modal and show success
+        handleCloseClientModal()
+        messageBox.showClientCreated(data.name, data.email)
+      } else {
+        messageBox.showWarning({
+          title: 'Gagal Membuat Klien',
+          message: data.error || 'Gagal membuat klien baru. Silakan coba lagi.',
+          confirmText: 'Mengerti',
+          onConfirm: () => messageBox.close(),
+        })
+      }
+    } catch (error) {
+      messageBox.showWarning({
+        title: 'Terjadi Kesalahan',
+        message: 'Terjadi kesalahan saat membuat klien baru.',
+        confirmText: 'Mengerti',
+        onConfirm: () => messageBox.close(),
+      })
+    } finally {
+      setIsCreatingClient(false)
+    }
+  }
+
+  // Item handling functions
+  const handleOpenItemModal = () => {
+    setNewItemData({
+      name: '',
+      description: '',
+      sku: '',
+      unit: 'pcs',
+      price: '',
+      category: '',
+    })
+    setShowItemModal(true)
+  }
+
+  const handleCloseItemModal = () => {
+    setShowItemModal(false)
+    setNewItemData({
+      name: '',
+      description: '',
+      sku: '',
+      unit: 'pcs',
+      price: '',
+      category: '',
+    })
+  }
+
+  const handleCreateItem = async () => {
+    // Validate required fields
+    if (!newItemData.name || !newItemData.price) {
+      messageBox.showWarning({
+        title: 'Data Belum Lengkap',
+        message: 'Nama item dan harga wajib diisi.',
+        confirmText: 'Mengerti',
+        onConfirm: () => messageBox.close(),
+      })
+      return
+    }
+
+    // Parse price from formatted string
+    const priceValue = parseInt(newItemData.price.replace(/\D/g, '')) || 0
+
+    setIsCreatingItem(true)
+    try {
+      const res = await fetch('/api/items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...newItemData,
+          price: priceValue,
+          taxRate: formData.taxRate,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        // Refresh catalog items list
+        await fetchCatalogItems()
+
+        // Add the new item to invoice items
+        const newItem = {
+          id: Date.now().toString(),
+          description: data.name,
+          quantity: 1,
+          price: data.price,
+        }
+        setItems([...items, newItem])
+
+        // Close modal and show success
+        handleCloseItemModal()
+        messageBox.showSuccess({
+          title: 'Item Ditambahkan!',
+          message: `${data.name} berhasil ditambahkan ke katalog dan invoice.`,
+        })
+      } else {
+        messageBox.showWarning({
+          title: 'Gagal Membuat Item',
+          message: data.error || 'Gagal membuat item baru. Silakan coba lagi.',
+          confirmText: 'Mengerti',
+          onConfirm: () => messageBox.close(),
+        })
+      }
+    } catch (error) {
+      messageBox.showWarning({
+        title: 'Terjadi Kesalahan',
+        message: 'Terjadi kesalahan saat membuat item baru.',
+        confirmText: 'Mengerti',
+        onConfirm: () => messageBox.close(),
+      })
+    } finally {
+      setIsCreatingItem(false)
+    }
+  }
+
   const updateItem = (id: string, field: string, value: any) => {
     setItems(items.map((item) =>
       item.id === id ? { ...item, [field]: value } : item
@@ -465,6 +702,58 @@ export default function EditInvoicePage() {
           <div className="card p-8">
             <h2 className="text-lg font-bold text-gray-900 mb-6">Kepada (Info Klien)</h2>
 
+            {/* Client Selector */}
+            <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-xl">
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-bold text-gray-900">
+                  Pilih dari Klien Tersimpan
+                </label>
+                <button
+                  type="button"
+                  onClick={handleOpenClientModal}
+                  className="flex items-center gap-1.5 text-sm font-bold text-orange-600 hover:text-orange-700 transition-colors"
+                >
+                  <UserPlus size={16} />
+                  Tambah Klien Baru
+                </button>
+              </div>
+              {clients.length > 0 ? (
+                <>
+                  <div className="relative">
+                    <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <select
+                      value={selectedClientId}
+                      onChange={(e) => handleClientSelect(e.target.value)}
+                      className="w-full pl-12 pr-10 py-3 rounded-xl border border-orange-200 text-gray-900 focus:border-orange-500 focus:outline-none appearance-none cursor-pointer transition-colors"
+                    >
+                      <option value="">-- Pilih Klien (Opsional) --</option>
+                      {clients.map((client) => (
+                        <option key={client.id} value={client.id}>
+                          {client.name} {client.company && `(${client.company})`}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                  </div>
+                  <p className="text-sm text-gray-600 mt-2">
+                    Pilih klien untuk auto-fill data klien, atau isi manual di bawah
+                  </p>
+                </>
+              ) : (
+                <div className="py-4 text-center">
+                  <p className="text-gray-600 mb-3">Belum ada klien tersimpan</p>
+                  <button
+                    type="button"
+                    onClick={handleOpenClientModal}
+                    className="inline-flex items-center gap-2 px-4 py-2 text-white font-bold text-sm rounded-xl bg-gradient-to-r from-orange-400 to-pink-500 hover:from-orange-500 hover:to-pink-600 transition-all"
+                  >
+                    <UserPlus size={16} />
+                    Tambah Klien Pertama
+                  </button>
+                </div>
+              )}
+            </div>
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-2">
@@ -520,111 +809,132 @@ export default function EditInvoicePage() {
           </div>
 
           {/* Items */}
-          <div className="card p-8">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-bold text-gray-900">Item Invoice</h2>
-              <div className="flex items-center gap-3">
-                {catalogItems.length > 0 && (
+          <div className="card overflow-hidden">
+            <div className="p-6 border-b border-orange-200">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <h2 className="text-lg font-bold text-gray-900">Item Invoice</h2>
+                <div className="flex flex-wrap gap-2">
+                  {catalogItems.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedItemIndex(null)
+                        setShowCatalogModal(true)
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 text-gray-700 font-bold text-sm rounded-xl border border-orange-200 bg-orange-50 hover:bg-orange-100 transition-colors"
+                    >
+                      <Package size={16} />
+                      Dari Katalog
+                    </button>
+                  )}
                   <button
                     type="button"
-                    onClick={() => {
-                      setSelectedItemIndex(null)
-                      setShowCatalogModal(true)
-                    }}
-                    className="flex items-center gap-2 px-4 py-2 text-gray-600 font-bold text-sm rounded-xl border border-orange-200 hover:bg-orange-50 transition-colors"
+                    onClick={handleOpenItemModal}
+                    className="flex items-center gap-2 px-4 py-2 text-orange-600 font-bold text-sm rounded-xl border border-orange-300 hover:bg-orange-50 transition-colors"
                   >
-                    <Package size={16} />
-                    Dari Katalog
+                    <PackagePlus size={16} />
+                    Tambah Item Baru
                   </button>
-                )}
-                <button
-                  type="button"
-                  onClick={addItem}
-                  className="flex items-center gap-2 px-4 py-2 text-white font-bold text-sm rounded-xl btn-primary"
-                >
-                  <Plus size={16} />
-                  Tambah Item
-                </button>
+                  <button
+                    type="button"
+                    onClick={addItem}
+                    className="flex items-center gap-2 px-4 py-2 text-white font-bold text-sm rounded-xl btn-primary"
+                  >
+                    <Plus size={16} />
+                    Tambah Baris
+                  </button>
+                </div>
               </div>
             </div>
 
-            <div className="space-y-4">
-              {items.map((item, index) => (
-                <div key={item.id} className="p-6 rounded-xl bg-gray border border-orange-200 space-y-4">
-                  <div className="flex justify-between items-start">
-                    <span className="font-bold text-gray-900">Item #{index + 1}</span>
-                    <div className="flex items-center gap-2">
-                      {catalogItems.length > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => deleteAndReplaceItem(index)}
-                          className="p-2 text-orange-600 rounded-xl hover:bg-orange-100 transition-colors"
-                          title="Ganti dari Katalog"
-                        >
-                          <Package size={16} />
-                        </button>
-                      )}
-                      {items.length > 1 && (
+            {/* Items Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-orange-200">
+                    <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 w-12">#</th>
+                    <th className="text-left py-4 px-6 text-sm font-bold text-gray-700">Deskripsi *</th>
+                    <th className="text-center py-4 px-4 text-sm font-bold text-gray-700 w-24">Qty *</th>
+                    <th className="text-right py-4 px-4 text-sm font-bold text-gray-700 w-40">Harga *</th>
+                    <th className="text-right py-4 px-4 text-sm font-bold text-gray-700 w-36">Subtotal</th>
+                    <th className="text-center py-4 px-4 text-sm font-bold text-gray-700 w-16">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((item, index) => (
+                    <tr key={item.id} className="border-b border-orange-100 hover:bg-orange-50/30 transition-colors">
+                      <td className="py-4 px-6">
+                        <span className="font-bold text-gray-500">{index + 1}</span>
+                      </td>
+                      <td className="py-4 px-6">
+                        <input
+                          type="text"
+                          value={item.description}
+                          onChange={(e) => updateItem(item.id, 'description', e.target.value)}
+                          className="w-full px-3 py-2 rounded-lg border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors text-sm"
+                          placeholder="Deskripsi item/jasa"
+                          required
+                        />
+                      </td>
+                      <td className="py-4 px-4">
+                        <input
+                          type="number"
+                          value={item.quantity || 1}
+                          onChange={(e) => updateItem(item.id, 'quantity', parseInt(e.target.value) || 1)}
+                          className="w-full px-3 py-2 rounded-lg border border-orange-200 text-gray-900 text-center focus:border-orange-500 focus:outline-none transition-colors text-sm"
+                          min="1"
+                          required
+                        />
+                      </td>
+                      <td className="py-4 px-4">
+                        <input
+                          type="number"
+                          value={item.price || 0}
+                          onChange={(e) => updateItem(item.id, 'price', parseFloat(e.target.value) || 0)}
+                          className="w-full px-3 py-2 rounded-lg border border-orange-200 text-gray-900 text-right focus:border-orange-500 focus:outline-none transition-colors text-sm"
+                          min="0"
+                          step="0.01"
+                          required
+                        />
+                      </td>
+                      <td className="py-4 px-4 text-right">
+                        <span className="font-bold text-gray-900">
+                          {formatCurrency(item.quantity * item.price)}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 text-center">
                         <button
                           type="button"
                           onClick={() => removeItem(item.id)}
-                          className="p-2 text-red-500 rounded-xl hover:bg-red-50 transition-colors"
-                          title="Hapus Item"
+                          disabled={items.length === 1}
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                          title="Hapus item"
                         >
                           <Trash2 size={16} />
                         </button>
-                      )}
-                    </div>
-                  </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-                  <div className="grid md:grid-cols-3 gap-4">
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-bold text-gray-900 mb-2">
-                        Deskripsi *
-                      </label>
-                      <input
-                        type="text"
-                        value={item.description}
-                        onChange={(e) => updateItem(item.id, 'description', e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
-                        placeholder="Jasa/Barang"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-gray-900 mb-2">
-                        Jumlah *
-                      </label>
-                      <input
-                        type="number"
-                        value={item.quantity || 1}
-                        onChange={(e) => updateItem(item.id, 'quantity', parseInt(e.target.value) || 1)}
-                        className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
-                        min="1"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-gray-900 mb-2">
-                        Harga (Rp) *
-                      </label>
-                      <input
-                        type="number"
-                        value={item.price || 0}
-                        onChange={(e) => updateItem(item.id, 'price', parseFloat(e.target.value) || 0)}
-                        className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
-                        min="0"
-                        step="0.01"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="text-right font-bold text-gray-900">
-                    {formatCurrency(item.quantity * item.price)}
-                  </div>
+            {/* Subtotal, Tax, Total */}
+            <div className="p-6 bg-gray-50 border-t border-orange-200">
+              <div className="max-w-sm ml-auto space-y-3">
+                <div className="flex justify-between text-gray-600">
+                  <span>Subtotal</span>
+                  <span className="font-semibold">{formatCurrency(subtotal)}</span>
                 </div>
-              ))}
+                <div className="flex justify-between text-gray-600">
+                  <span>Pajak ({formData.taxRate}%)</span>
+                  <span className="font-semibold">{formatCurrency(taxAmount)}</span>
+                </div>
+                <div className="flex justify-between pt-3 border-t border-orange-300 text-xl font-bold text-gray-900">
+                  <span>Total</span>
+                  <span>{formatCurrency(total)}</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -640,23 +950,8 @@ export default function EditInvoicePage() {
             />
           </div>
 
-          {/* Totals & Submit */}
+          {/* Submit */}
           <div className="card p-8">
-            <div className="space-y-3 mb-8">
-              <div className="flex justify-between text-gray-600">
-                <span>Subtotal</span>
-                <span className="font-semibold">{formatCurrency(subtotal)}</span>
-              </div>
-              <div className="flex justify-between text-gray-600">
-                <span>Pajak ({formData.taxRate}%)</span>
-                <span className="font-semibold">{formatCurrency(taxAmount)}</span>
-              </div>
-              <div className="flex justify-between py-4 border-t-2 border-orange-300 text-2xl font-extrabold text-gray-900">
-                <span>Total</span>
-                <span>{formatCurrency(total)}</span>
-              </div>
-            </div>
-
             <button
               type="submit"
               disabled={saving}
@@ -765,6 +1060,291 @@ export default function EditInvoicePage() {
                     : 'Klik item untuk menambahkan ke invoice'}
                 </p>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Add New Client Modal */}
+        {showClientModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+              {/* Modal Header */}
+              <div className="sticky top-0 bg-white border-b border-gray-200 px-8 py-6 rounded-t-2xl z-10">
+                <h2 className="text-2xl font-bold text-gray-900">Tambah Klien Baru</h2>
+                <p className="text-sm text-gray-600 mt-1">Klien baru akan disimpan dan dapat digunakan untuk invoice berikutnya</p>
+              </div>
+
+              {/* Modal Body */}
+              <div className="px-8 py-6">
+                <form onSubmit={(e) => { e.preventDefault(); handleCreateClient(); }} className="space-y-5">
+                  {/* Name */}
+                  <div>
+                    <label className="block text-sm font-bold text-gray-900 mb-2">
+                      Nama Klien *
+                    </label>
+                    <input
+                      type="text"
+                      value={newClientData.name}
+                      onChange={(e) => setNewClientData({ ...newClientData, name: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+                      placeholder="Nama lengkap klien"
+                      required
+                    />
+                  </div>
+
+                  {/* Company */}
+                  <div>
+                    <label className="block text-sm font-bold text-gray-900 mb-2">
+                      Perusahaan
+                    </label>
+                    <input
+                      type="text"
+                      value={newClientData.company}
+                      onChange={(e) => setNewClientData({ ...newClientData, company: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+                      placeholder="Nama perusahaan klien"
+                    />
+                  </div>
+
+                  {/* Email */}
+                  <div>
+                    <label className="block text-sm font-bold text-gray-900 mb-2">
+                      Email *
+                    </label>
+                    <input
+                      type="email"
+                      value={newClientData.email}
+                      onChange={(e) => setNewClientData({ ...newClientData, email: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+                      placeholder="email@klien.com"
+                      required
+                    />
+                  </div>
+
+                  {/* Phone */}
+                  <div>
+                    <label className="block text-sm font-bold text-gray-900 mb-2">
+                      Telepon
+                    </label>
+                    <input
+                      type="tel"
+                      value={newClientData.phone}
+                      onChange={(e) => setNewClientData({ ...newClientData, phone: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+                      placeholder="+62 812 3456 7890"
+                    />
+                  </div>
+
+                  {/* Address */}
+                  <div>
+                    <label className="block text-sm font-bold text-gray-900 mb-2">
+                      Alamat
+                    </label>
+                    <textarea
+                      value={newClientData.address}
+                      onChange={(e) => setNewClientData({ ...newClientData, address: e.target.value })}
+                      rows={3}
+                      className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors resize-none"
+                      placeholder="Alamat lengkap klien"
+                    />
+                  </div>
+
+                  {/* Buttons */}
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={handleCloseClientModal}
+                      className="flex-1 px-6 py-3 text-gray-700 font-bold rounded-xl border border-gray-300 hover:bg-gray-50 transition-colors"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isCreatingClient}
+                      className="flex-1 px-6 py-3 text-white font-bold rounded-xl bg-gradient-to-r from-orange-400 to-pink-500 hover:from-orange-500 hover:to-pink-600 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-orange-500/30"
+                    >
+                      {isCreatingClient ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          <span>Menyimpan...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Check className="w-5 h-5" />
+                          <span>Simpan Klien</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              {/* Modal Close Button */}
+              <button
+                onClick={handleCloseClientModal}
+                className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Add New Item Modal */}
+        {showItemModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+              {/* Modal Header */}
+              <div className="sticky top-0 bg-white border-b border-gray-200 px-8 py-6 rounded-t-2xl z-10">
+                <h2 className="text-2xl font-bold text-gray-900">Tambah Item Baru</h2>
+                <p className="text-sm text-gray-600 mt-1">Item baru akan disimpan ke katalog dan ditambahkan ke invoice</p>
+              </div>
+
+              {/* Modal Body */}
+              <div className="px-8 py-6">
+                <form onSubmit={(e) => { e.preventDefault(); handleCreateItem(); }} className="space-y-5">
+                  {/* Name */}
+                  <div>
+                    <label className="block text-sm font-bold text-gray-900 mb-2">
+                      Nama Item *
+                    </label>
+                    <input
+                      type="text"
+                      value={newItemData.name}
+                      onChange={(e) => setNewItemData({ ...newItemData, name: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+                      placeholder="Nama produk/jasa"
+                      required
+                    />
+                  </div>
+
+                  {/* Description */}
+                  <div>
+                    <label className="block text-sm font-bold text-gray-900 mb-2">
+                      Deskripsi
+                    </label>
+                    <textarea
+                      value={newItemData.description}
+                      onChange={(e) => setNewItemData({ ...newItemData, description: e.target.value })}
+                      rows={2}
+                      className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors resize-none"
+                      placeholder="Deskripsi singkat item"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* SKU */}
+                    <div>
+                      <label className="block text-sm font-bold text-gray-900 mb-2">
+                        SKU
+                      </label>
+                      <input
+                        type="text"
+                        value={newItemData.sku}
+                        onChange={(e) => setNewItemData({ ...newItemData, sku: e.target.value })}
+                        className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+                        placeholder="Kode barang"
+                      />
+                    </div>
+
+                    {/* Unit */}
+                    <div>
+                      <label className="block text-sm font-bold text-gray-900 mb-2">
+                        Satuan *
+                      </label>
+                      <select
+                        value={newItemData.unit}
+                        onChange={(e) => setNewItemData({ ...newItemData, unit: e.target.value })}
+                        className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 focus:border-orange-500 focus:outline-none transition-colors"
+                        required
+                      >
+                        <option value="pcs">Pcs</option>
+                        <option value="kg">Kg</option>
+                        <option value="gram">Gram</option>
+                        <option value="meter">Meter</option>
+                        <option value="jam">Jam</option>
+                        <option value="hari">Hari</option>
+                        <option value="bulan">Bulan</option>
+                        <option value="unit">Unit</option>
+                        <option value="set">Set</option>
+                        <option value="box">Box</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Category */}
+                  <div>
+                    <label className="block text-sm font-bold text-gray-900 mb-2">
+                      Kategori
+                    </label>
+                    <input
+                      type="text"
+                      value={newItemData.category}
+                      onChange={(e) => setNewItemData({ ...newItemData, category: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+                      placeholder="Contoh: Jasa, Produk, dll"
+                    />
+                  </div>
+
+                  {/* Price */}
+                  <div>
+                    <label className="block text-sm font-bold text-gray-900 mb-2">
+                      Harga *
+                    </label>
+                    <input
+                      type="text"
+                      value={newItemData.price}
+                      onChange={(e) => {
+                        const numbers = e.target.value.replace(/\D/g, '')
+                        if (numbers) {
+                          setNewItemData({ ...newItemData, price: 'Rp ' + parseInt(numbers).toLocaleString('id-ID') })
+                        } else {
+                          setNewItemData({ ...newItemData, price: '' })
+                        }
+                      }}
+                      className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+                      placeholder="Rp 0"
+                      required
+                    />
+                  </div>
+
+                  {/* Buttons */}
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={handleCloseItemModal}
+                      className="flex-1 px-6 py-3 text-gray-700 font-bold rounded-xl border border-gray-300 hover:bg-gray-50 transition-colors"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isCreatingItem}
+                      className="flex-1 px-6 py-3 text-white font-bold rounded-xl bg-gradient-to-r from-orange-400 to-pink-500 hover:from-orange-500 hover:to-pink-600 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-orange-500/30"
+                    >
+                      {isCreatingItem ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          <span>Menyimpan...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Check className="w-5 h-5" />
+                          <span>Simpan Item</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              {/* Modal Close Button */}
+              <button
+                onClick={handleCloseItemModal}
+                className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
             </div>
           </div>
         )}
