@@ -15,7 +15,27 @@ import {
   CreditCard,
   Shield,
   Clock,
-  Loader2
+  Loader2,
+  Mail,
+  Send,
+  DollarSign,
+  Settings,
+  User,
+  Users,
+  UserPlus,
+  Key,
+  Webhook,
+  Palette,
+  Lock,
+  FilePlus,
+  Download,
+  Copy,
+  Sparkles,
+  PartyPopper,
+  Rocket,
+  CheckCheck,
+  BadgeCheck,
+  Receipt
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -743,6 +763,1104 @@ export function SessionTimeoutDialog({
       onConfirm={onExtend}
       icon={<Clock className="w-8 h-8 text-white" />}
     />
+  )
+}
+
+// ============================================
+// SUCCESS DIALOGS - Untuk Proses Berhasil
+// ============================================
+
+// Base Success Dialog dengan animasi
+interface SuccessDialogBaseProps {
+  open: boolean
+  onClose: () => void
+  title?: string
+  message: string | React.ReactNode
+  buttonText?: string
+  icon?: React.ReactNode
+  iconBgClass?: string
+  children?: React.ReactNode
+}
+
+function SuccessDialogBase({
+  open,
+  onClose,
+  title = 'Berhasil!',
+  message,
+  buttonText = 'Selesai',
+  icon,
+  iconBgClass,
+  children,
+}: SuccessDialogBaseProps) {
+  const [showConfetti, setShowConfetti] = useState(false)
+
+  useEffect(() => {
+    if (open) {
+      setShowConfetti(true)
+      const timer = setTimeout(() => setShowConfetti(false), 1500)
+      return () => clearTimeout(timer)
+    }
+  }, [open])
+
+  return (
+    <MessageBox
+      open={open}
+      onClose={onClose}
+      title={title}
+      message={message}
+      variant="success"
+      confirmText={buttonText}
+      cancelText=""
+      showCloseButton={false}
+      icon={icon}
+      className={iconBgClass}
+    >
+      {children}
+      {/* Confetti Animation */}
+      {showConfetti && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {[...Array(20)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-2 h-2 rounded-full animate-ping"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                backgroundColor: ['#10B981', '#3B82F6', '#F59E0B', '#EC4899', '#8B5CF6'][i % 5],
+                animationDelay: `${Math.random() * 0.5}s`,
+                animationDuration: '1s',
+              }}
+            />
+          ))}
+        </div>
+      )}
+    </MessageBox>
+  )
+}
+
+// 1. Email Terkirim
+export function EmailSentDialog({
+  open,
+  onClose,
+  recipientEmail,
+  emailType = 'email',
+}: {
+  open: boolean
+  onClose: () => void
+  recipientEmail: string
+  emailType?: 'email' | 'reminder' | 'notification'
+}) {
+  const titles = {
+    email: 'Email Terkirim!',
+    reminder: 'Pengingat Terkirim!',
+    notification: 'Notifikasi Terkirim!',
+  }
+
+  return (
+    <MessageBox
+      open={open}
+      onClose={onClose}
+      title={titles[emailType]}
+      message={
+        <div className="space-y-3">
+          <div className="flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+              <Mail className="w-6 h-6 text-green-600" />
+            </div>
+          </div>
+          <p className="text-gray-600">
+            Berhasil dikirim ke:
+          </p>
+          <p className="font-semibold text-gray-900 bg-gray-50 px-4 py-2 rounded-lg inline-block">
+            {recipientEmail}
+          </p>
+        </div>
+      }
+      variant="success"
+      confirmText="Selesai"
+      cancelText=""
+      showCloseButton={false}
+      icon={<Send className="w-8 h-8 text-white" />}
+    />
+  )
+}
+
+// 2. Invoice Terkirim
+export function InvoiceSentDialog({
+  open,
+  onClose,
+  invoiceNumber,
+  clientName,
+  clientEmail,
+  onViewInvoice,
+}: {
+  open: boolean
+  onClose: () => void
+  invoiceNumber: string
+  clientName: string
+  clientEmail: string
+  onViewInvoice?: () => void
+}) {
+  return (
+    <MessageBox
+      open={open}
+      onClose={onClose}
+      title="Invoice Berhasil Dikirim!"
+      message={
+        <div className="space-y-4">
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-500">Nomor Invoice</span>
+              <span className="font-bold text-gray-900">#{invoiceNumber}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-500">Klien</span>
+              <span className="font-semibold text-gray-900">{clientName}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-500">Email</span>
+              <span className="text-sm text-gray-700">{clientEmail}</span>
+            </div>
+          </div>
+          <div className="flex items-center justify-center gap-2 text-green-600">
+            <CheckCheck className="w-5 h-5" />
+            <span className="text-sm font-medium">Email terkirim ke klien</span>
+          </div>
+        </div>
+      }
+      variant="success"
+      confirmText="Selesai"
+      cancelText=""
+      showCloseButton={false}
+      icon={<FileText className="w-8 h-8 text-white" />}
+    >
+      {onViewInvoice && (
+        <button
+          onClick={onViewInvoice}
+          className="w-full mt-2 px-4 py-2 text-sm text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
+        >
+          Lihat Invoice →
+        </button>
+      )}
+    </MessageBox>
+  )
+}
+
+// 3. Pembayaran Diterima
+export function PaymentReceivedDialog({
+  open,
+  onClose,
+  amount,
+  invoiceNumber,
+  paymentMethod,
+  receiptNumber,
+  onViewReceipt,
+}: {
+  open: boolean
+  onClose: () => void
+  amount: string
+  invoiceNumber: string
+  paymentMethod: string
+  receiptNumber?: string
+  onViewReceipt?: () => void
+}) {
+  return (
+    <MessageBox
+      open={open}
+      onClose={onClose}
+      title="Pembayaran Diterima!"
+      message={
+        <div className="space-y-4">
+          <div className="text-center">
+            <div className="text-3xl font-bold text-green-600 mb-1">
+              {amount}
+            </div>
+            <p className="text-sm text-gray-500">
+              dari Invoice #{invoiceNumber}
+            </p>
+          </div>
+          <div className="bg-gray-50 rounded-xl p-4 space-y-2 text-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-500">Metode Pembayaran</span>
+              <span className="font-medium text-gray-900">{paymentMethod}</span>
+            </div>
+            {receiptNumber && (
+              <div className="flex items-center justify-between">
+                <span className="text-gray-500">No. Receipt</span>
+                <span className="font-medium text-gray-900">#{receiptNumber}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      }
+      variant="success"
+      confirmText="Selesai"
+      cancelText=""
+      showCloseButton={false}
+      icon={<DollarSign className="w-8 h-8 text-white" />}
+    >
+      {onViewReceipt && (
+        <button
+          onClick={onViewReceipt}
+          className="w-full mt-3 px-4 py-2.5 bg-green-50 text-green-600 hover:bg-green-100 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+        >
+          <Receipt className="w-4 h-4" />
+          Lihat Receipt
+        </button>
+      )}
+    </MessageBox>
+  )
+}
+
+// 4. Invoice Dibuat
+export function InvoiceCreatedDialog({
+  open,
+  onClose,
+  invoiceNumber,
+  totalAmount,
+  clientName,
+  onSend,
+  onView,
+}: {
+  open: boolean
+  onClose: () => void
+  invoiceNumber: string
+  totalAmount: string
+  clientName: string
+  onSend?: () => void
+  onView?: () => void
+}) {
+  return (
+    <MessageBox
+      open={open}
+      onClose={onClose}
+      title="Invoice Berhasil Dibuat!"
+      message={
+        <div className="space-y-4">
+          <div className="flex items-center justify-center gap-3">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-pink-500 flex items-center justify-center shadow-lg">
+              <FilePlus className="w-7 h-7 text-white" />
+            </div>
+          </div>
+          <div className="bg-gradient-to-r from-orange-50 to-pink-50 rounded-xl p-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-500">Invoice</span>
+              <span className="font-bold text-gray-900">#{invoiceNumber}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-500">Klien</span>
+              <span className="font-semibold text-gray-900">{clientName}</span>
+            </div>
+            <div className="flex items-center justify-between pt-2 border-t border-orange-100">
+              <span className="text-sm text-gray-500">Total</span>
+              <span className="font-bold text-orange-600">{totalAmount}</span>
+            </div>
+          </div>
+        </div>
+      }
+      variant="success"
+      confirmText="Selesai"
+      cancelText=""
+      showCloseButton={false}
+    >
+      <div className="flex gap-2 mt-4">
+        {onView && (
+          <button
+            onClick={onView}
+            className="flex-1 px-4 py-2.5 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-xl text-sm font-semibold transition-colors"
+          >
+            Lihat Invoice
+          </button>
+        )}
+        {onSend && (
+          <button
+            onClick={onSend}
+            className="flex-1 px-4 py-2.5 bg-gradient-to-r from-orange-500 to-pink-500 text-white hover:from-orange-600 hover:to-pink-600 rounded-xl text-sm font-semibold transition-all flex items-center justify-center gap-2"
+          >
+            <Send className="w-4 h-4" />
+            Kirim Sekarang
+          </button>
+        )}
+      </div>
+    </MessageBox>
+  )
+}
+
+// 5. Invoice Diperbarui
+export function InvoiceUpdatedDialog({
+  open,
+  onClose,
+  invoiceNumber,
+  changes,
+}: {
+  open: boolean
+  onClose: () => void
+  invoiceNumber: string
+  changes?: string[]
+}) {
+  return (
+    <MessageBox
+      open={open}
+      onClose={onClose}
+      title="Invoice Diperbarui!"
+      message={
+        <div className="space-y-3">
+          <p className="text-gray-600">
+            Invoice <span className="font-semibold text-gray-900">#{invoiceNumber}</span> berhasil diperbarui.
+          </p>
+          {changes && changes.length > 0 && (
+            <div className="bg-blue-50 rounded-lg p-3">
+              <p className="text-xs text-blue-600 font-medium mb-2">Perubahan:</p>
+              <ul className="text-xs text-blue-700 space-y-1">
+                {changes.map((change, i) => (
+                  <li key={i} className="flex items-center gap-2">
+                    <CheckCircle className="w-3 h-3" />
+                    {change}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      }
+      variant="success"
+      confirmText="Selesai"
+      cancelText=""
+      showCloseButton={false}
+    />
+  )
+}
+
+// 6. Pengaturan Disimpan
+export function SettingsSavedDialog({
+  open,
+  onClose,
+  settingsType = 'pengaturan',
+}: {
+  open: boolean
+  onClose: () => void
+  settingsType?: string
+}) {
+  return (
+    <MessageBox
+      open={open}
+      onClose={onClose}
+      title="Pengaturan Disimpan!"
+      message={
+        <div className="space-y-3">
+          <div className="flex items-center justify-center">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shadow-lg shadow-green-200">
+              <Settings className="w-8 h-8 text-white" />
+            </div>
+          </div>
+          <p className="text-gray-600">
+            {settingsType.charAt(0).toUpperCase() + settingsType.slice(1)} berhasil disimpan dan akan diterapkan segera.
+          </p>
+        </div>
+      }
+      variant="success"
+      confirmText="Selesai"
+      cancelText=""
+      showCloseButton={false}
+    />
+  )
+}
+
+// 7. Profil Diperbarui
+export function ProfileUpdatedDialog({
+  open,
+  onClose,
+  updatedFields,
+}: {
+  open: boolean
+  onClose: () => void
+  updatedFields?: string[]
+}) {
+  return (
+    <MessageBox
+      open={open}
+      onClose={onClose}
+      title="Profil Diperbarui!"
+      message={
+        <div className="space-y-3">
+          <div className="flex items-center justify-center gap-3">
+            <div className="relative">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center shadow-lg">
+                <User className="w-8 h-8 text-white" />
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center shadow">
+                <CheckCircle className="w-4 h-4 text-white" />
+              </div>
+            </div>
+          </div>
+          {updatedFields && updatedFields.length > 0 && (
+            <div className="flex flex-wrap justify-center gap-2">
+              {updatedFields.map((field, i) => (
+                <span key={i} className="px-2 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-medium">
+                  {field}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      }
+      variant="success"
+      confirmText="Selesai"
+      cancelText=""
+      showCloseButton={false}
+    />
+  )
+}
+
+// 8. Anggota Tim Diundang
+export function TeamMemberInvitedDialog({
+  open,
+  onClose,
+  memberEmail,
+  role,
+  memberName,
+}: {
+  open: boolean
+  onClose: () => void
+  memberEmail: string
+  role: string
+  memberName?: string
+}) {
+  return (
+    <MessageBox
+      open={open}
+      onClose={onClose}
+      title="Undangan Terkirim!"
+      message={
+        <div className="space-y-4">
+          <div className="flex items-center justify-center">
+            <div className="relative">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-200">
+                <Users className="w-7 h-7 text-white" />
+              </div>
+              <div className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center shadow animate-bounce">
+                <CheckCircle className="w-4 h-4 text-white" />
+              </div>
+            </div>
+          </div>
+          <div className="bg-purple-50 rounded-xl p-4 space-y-2">
+            {memberName && (
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-500">Nama</span>
+                <span className="font-semibold text-gray-900">{memberName}</span>
+              </div>
+            )}
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-500">Email</span>
+              <span className="font-medium text-gray-900">{memberEmail}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-500">Peran</span>
+              <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs font-medium capitalize">
+                {role}
+              </span>
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 text-center">
+            Undangan akan dikirim ke email tersebut. Anggota dapat bergabung setelah menerima undangan.
+          </p>
+        </div>
+      }
+      variant="success"
+      confirmText="Selesai"
+      cancelText=""
+      showCloseButton={false}
+    />
+  )
+}
+
+// 9. API Key Dibuat
+export function ApiKeyCreatedDialog({
+  open,
+  onClose,
+  keyName,
+  apiKey,
+  onCopy,
+}: {
+  open: boolean
+  onClose: () => void
+  keyName: string
+  apiKey: string
+  onCopy?: () => void
+}) {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(apiKey)
+    setCopied(true)
+    onCopy?.()
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <MessageBox
+      open={open}
+      onClose={onClose}
+      title="API Key Dibuat!"
+      message={
+        <div className="space-y-4">
+          <div className="flex items-center justify-center">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-200">
+              <Key className="w-7 h-7 text-white" />
+            </div>
+          </div>
+          <div className="bg-amber-50 rounded-xl p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-500">Nama Key</span>
+              <span className="font-semibold text-gray-900">{keyName}</span>
+            </div>
+            <div className="space-y-2">
+              <span className="text-sm text-gray-500">API Key</span>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 px-3 py-2 bg-gray-900 text-green-400 rounded-lg text-xs font-mono overflow-x-auto">
+                  {apiKey}
+                </code>
+                <button
+                  onClick={handleCopy}
+                  className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  {copied ? (
+                    <CheckCheck className="w-4 h-4 text-green-600" />
+                  ) : (
+                    <Copy className="w-4 h-4 text-gray-600" />
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-start gap-2 p-3 bg-red-50 rounded-lg">
+            <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
+            <p className="text-xs text-red-600">
+              Simpan API key ini dengan aman. Key hanya akan ditampilkan sekali ini saja.
+            </p>
+          </div>
+        </div>
+      }
+      variant="success"
+      confirmText="Saya Sudah Menyimpan"
+      cancelText=""
+      showCloseButton={false}
+    />
+  )
+}
+
+// 10. Webhook Dibuat
+export function WebhookCreatedDialog({
+  open,
+  onClose,
+  webhookName,
+  webhookUrl,
+  events,
+}: {
+  open: boolean
+  onClose: () => void
+  webhookName: string
+  webhookUrl: string
+  events: string[]
+}) {
+  return (
+    <MessageBox
+      open={open}
+      onClose={onClose}
+      title="Webhook Dibuat!"
+      message={
+        <div className="space-y-4">
+          <div className="flex items-center justify-center">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-200">
+              <Webhook className="w-7 h-7 text-white" />
+            </div>
+          </div>
+          <div className="bg-cyan-50 rounded-xl p-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-500">Nama</span>
+              <span className="font-semibold text-gray-900">{webhookName}</span>
+            </div>
+            <div className="space-y-1">
+              <span className="text-sm text-gray-500">URL</span>
+              <code className="block px-3 py-2 bg-white rounded-lg text-xs text-gray-700 break-all">
+                {webhookUrl}
+              </code>
+            </div>
+          </div>
+          <div className="space-y-2">
+            <span className="text-sm text-gray-500">Events:</span>
+            <div className="flex flex-wrap gap-1">
+              {events.map((event, i) => (
+                <span key={i} className="px-2 py-0.5 bg-cyan-100 text-cyan-700 rounded text-xs">
+                  {event}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      }
+      variant="success"
+      confirmText="Selesai"
+      cancelText=""
+      showCloseButton={false}
+    />
+  )
+}
+
+// 11. Branding Diperbarui
+export function BrandingUpdatedDialog({
+  open,
+  onClose,
+  previewUrl,
+}: {
+  open: boolean
+  onClose: () => void
+  previewUrl?: string
+}) {
+  return (
+    <MessageBox
+      open={open}
+      onClose={onClose}
+      title="Branding Diperbarui!"
+      message={
+        <div className="space-y-4">
+          <div className="flex items-center justify-center">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center shadow-lg shadow-pink-200">
+              <Palette className="w-7 h-7 text-white" />
+            </div>
+          </div>
+          <p className="text-gray-600 text-center">
+            Tampilan brand Anda telah diperbarui. Perubahan akan terlihat pada invoice dan halaman publik.
+          </p>
+          {previewUrl && (
+            <a
+              href={previewUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block text-center text-sm text-pink-600 hover:text-pink-700"
+            >
+              Lihat Preview →
+            </a>
+          )}
+        </div>
+      }
+      variant="success"
+      confirmText="Selesai"
+      cancelText=""
+      showCloseButton={false}
+    />
+  )
+}
+
+// 12. Password Berhasil Diubah
+export function PasswordChangedDialog({
+  open,
+  onClose,
+}: {
+  open: boolean
+  onClose: () => void
+}) {
+  return (
+    <MessageBox
+      open={open}
+      onClose={onClose}
+      title="Password Diubah!"
+      message={
+        <div className="space-y-4">
+          <div className="flex items-center justify-center">
+            <div className="relative">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shadow-lg">
+                <Lock className="w-8 h-8 text-white" />
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
+                <CheckCircle className="w-5 h-5 text-white" />
+              </div>
+            </div>
+          </div>
+          <div className="bg-green-50 rounded-xl p-4 text-center">
+            <p className="text-sm text-green-700">
+              Password akun Anda telah berhasil diubah.
+            </p>
+            <p className="text-xs text-green-600 mt-2">
+              Gunakan password baru untuk login berikutnya.
+            </p>
+          </div>
+        </div>
+      }
+      variant="success"
+      confirmText="Selesai"
+      cancelText=""
+      showCloseButton={false}
+    />
+  )
+}
+
+// 13. Template Dibuat/Diperbarui
+export function TemplateSavedDialog({
+  open,
+  onClose,
+  templateName,
+  isUpdate = false,
+}: {
+  open: boolean
+  onClose: () => void
+  templateName: string
+  isUpdate?: boolean
+}) {
+  return (
+    <MessageBox
+      open={open}
+      onClose={onClose}
+      title={isUpdate ? 'Template Diperbarui!' : 'Template Dibuat!'}
+      message={
+        <div className="space-y-4">
+          <div className="flex items-center justify-center">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-200">
+              <Sparkles className="w-7 h-7 text-white" />
+            </div>
+          </div>
+          <div className="bg-violet-50 rounded-xl p-4 text-center">
+            <p className="font-semibold text-violet-900">{templateName}</p>
+            <p className="text-sm text-violet-600 mt-1">
+              {isUpdate
+                ? 'Template berhasil diperbarui dan siap digunakan.'
+                : 'Template baru telah dibuat dan siap digunakan.'}
+            </p>
+          </div>
+        </div>
+      }
+      variant="success"
+      confirmText="Selesai"
+      cancelText=""
+      showCloseButton={false}
+    />
+  )
+}
+
+// 14. Klien Dibuat
+export function ClientCreatedDialog({
+  open,
+  onClose,
+  clientName,
+  clientEmail,
+  onCreateInvoice,
+}: {
+  open: boolean
+  onClose: () => void
+  clientName: string
+  clientEmail: string
+  onCreateInvoice?: () => void
+}) {
+  return (
+    <MessageBox
+      open={open}
+      onClose={onClose}
+      title="Klien Ditambahkan!"
+      message={
+        <div className="space-y-4">
+          <div className="flex items-center justify-center">
+            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center shadow-lg">
+              <User className="w-7 h-7 text-white" />
+            </div>
+          </div>
+          <div className="bg-teal-50 rounded-xl p-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-500">Nama</span>
+              <span className="font-semibold text-gray-900">{clientName}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-500">Email</span>
+              <span className="text-sm text-gray-700">{clientEmail}</span>
+            </div>
+          </div>
+        </div>
+      }
+      variant="success"
+      confirmText="Selesai"
+      cancelText=""
+      showCloseButton={false}
+    >
+      {onCreateInvoice && (
+        <button
+          onClick={onCreateInvoice}
+          className="w-full mt-3 px-4 py-2.5 bg-teal-500 text-white hover:bg-teal-600 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+        >
+          <FilePlus className="w-4 h-4" />
+          Buat Invoice untuk Klien Ini
+        </button>
+      )}
+    </MessageBox>
+  )
+}
+
+// 15. Dokumen Diunduh
+export function DocumentDownloadedDialog({
+  open,
+  onClose,
+  documentType,
+  documentName,
+}: {
+  open: boolean
+  onClose: () => void
+  documentType: 'invoice' | 'receipt' | 'report' | 'export'
+  documentName: string
+}) {
+  const typeConfig = {
+    invoice: { icon: FileText, color: 'from-orange-500 to-pink-500', label: 'Invoice' },
+    receipt: { icon: Receipt, color: 'from-green-500 to-emerald-500', label: 'Receipt' },
+    report: { icon: FileText, color: 'from-blue-500 to-indigo-500', label: 'Laporan' },
+    export: { icon: Download, color: 'from-purple-500 to-violet-500', label: 'Export' },
+  }
+
+  const config = typeConfig[documentType]
+  const Icon = config.icon
+
+  return (
+    <MessageBox
+      open={open}
+      onClose={onClose}
+      title="Download Dimulai!"
+      message={
+        <div className="space-y-4">
+          <div className="flex items-center justify-center">
+            <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${config.color} flex items-center justify-center shadow-lg`}>
+              <Download className="w-7 h-7 text-white" />
+            </div>
+          </div>
+          <div className="bg-gray-50 rounded-xl p-4 text-center">
+            <p className="font-semibold text-gray-900">{documentName}</p>
+            <p className="text-sm text-gray-500 mt-1">
+              {config.label} sedang diunduh...
+            </p>
+          </div>
+          <div className="flex items-center justify-center gap-2 text-gray-500">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span className="text-sm">Memproses...</span>
+          </div>
+        </div>
+      }
+      variant="success"
+      confirmText="Selesai"
+      cancelText=""
+      showCloseButton={false}
+    />
+  )
+}
+
+// 16. Akun Berhasil Dibuat (Welcome)
+export function AccountCreatedDialog({
+  open,
+  onClose,
+  userName,
+  onSetup,
+}: {
+  open: boolean
+  onClose: () => void
+  userName: string
+  onSetup?: () => void
+}) {
+  return (
+    <MessageBox
+      open={open}
+      onClose={onClose}
+      title="Selamat Datang!"
+      message={
+        <div className="space-y-4">
+          <div className="flex items-center justify-center">
+            <div className="relative">
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-400 via-pink-500 to-purple-500 flex items-center justify-center shadow-xl">
+                <PartyPopper className="w-10 h-10 text-white" />
+              </div>
+              <div className="absolute -top-2 -right-2 w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center shadow-lg animate-bounce">
+                <Sparkles className="w-5 h-5 text-white" />
+              </div>
+            </div>
+          </div>
+          <div className="text-center">
+            <p className="text-lg text-gray-700">
+              Halo, <span className="font-bold text-gray-900">{userName}</span>!
+            </p>
+            <p className="text-sm text-gray-500 mt-2">
+              Akun Anda telah berhasil dibuat. Mari mulai perjalanan invoicing Anda!
+            </p>
+          </div>
+        </div>
+      }
+      variant="success"
+      confirmText={onSetup ? "Mulai Setup" : "Mulai Sekarang"}
+      cancelText=""
+      showCloseButton={false}
+    />
+  )
+}
+
+// 17. Langganan Berhasil
+export function SubscriptionActivatedDialog({
+  open,
+  onClose,
+  planName,
+  features,
+  endDate,
+}: {
+  open: boolean
+  onClose: () => void
+  planName: string
+  features?: string[]
+  endDate?: string
+}) {
+  return (
+    <MessageBox
+      open={open}
+      onClose={onClose}
+      title="Langganan Aktif!"
+      message={
+        <div className="space-y-4">
+          <div className="flex items-center justify-center">
+            <div className="relative">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-yellow-400 via-orange-500 to-red-500 flex items-center justify-center shadow-xl">
+                <Rocket className="w-8 h-8 text-white" />
+              </div>
+              <div className="absolute -top-1 -right-1 w-7 h-7 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
+                <BadgeCheck className="w-4 h-4 text-white" />
+              </div>
+            </div>
+          </div>
+          <div className="bg-gradient-to-r from-orange-50 to-pink-50 rounded-xl p-4 text-center">
+            <p className="font-bold text-lg text-gray-900">{planName}</p>
+            <p className="text-sm text-gray-500 mt-1">Sekarang Aktif</p>
+          </div>
+          {features && features.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-700">Fitur yang tersedia:</p>
+              <ul className="space-y-1">
+                {features.map((feature, i) => (
+                  <li key={i} className="flex items-center gap-2 text-sm text-gray-600">
+                    <CheckCircle className="w-4 h-4 text-green-500" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {endDate && (
+            <p className="text-xs text-center text-gray-500">
+              Berlaku hingga: {endDate}
+            </p>
+          )}
+        </div>
+      }
+      variant="success"
+      confirmText="Mulai Gunakan"
+      cancelText=""
+      showCloseButton={false}
+    />
+  )
+}
+
+// 18. File/Logo Diupload
+export function FileUploadedDialog({
+  open,
+  onClose,
+  fileName,
+  fileType,
+  fileSize,
+}: {
+  open: boolean
+  onClose: () => void
+  fileName: string
+  fileType: string
+  fileSize?: string
+}) {
+  return (
+    <MessageBox
+      open={open}
+      onClose={onClose}
+      title="File Berhasil Diupload!"
+      message={
+        <div className="space-y-4">
+          <div className="flex items-center justify-center">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-green-500 to-teal-500 flex items-center justify-center shadow-lg">
+              <CheckCircle className="w-7 h-7 text-white" />
+            </div>
+          </div>
+          <div className="bg-green-50 rounded-xl p-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-500">Nama File</span>
+              <span className="font-medium text-gray-900 truncate max-w-[150px]">{fileName}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-500">Tipe</span>
+              <span className="text-sm text-gray-700">{fileType}</span>
+            </div>
+            {fileSize && (
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-500">Ukuran</span>
+                <span className="text-sm text-gray-700">{fileSize}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      }
+      variant="success"
+      confirmText="Selesai"
+      cancelText=""
+      showCloseButton={false}
+    />
+  )
+}
+
+// 19. Team Created Successfully
+export function TeamCreatedDialog({
+  open,
+  onClose,
+  teamName,
+  onInviteMembers,
+}: {
+  open: boolean
+  onClose: () => void
+  teamName: string
+  onInviteMembers?: () => void
+}) {
+  return (
+    <MessageBox
+      open={open}
+      onClose={onClose}
+      title="Tim Dibuat!"
+      message={
+        <div className="space-y-4">
+          <div className="flex items-center justify-center">
+            <div className="relative">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-200">
+                <Users className="w-8 h-8 text-white" />
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full flex items-center justify-center shadow">
+                <CheckCircle className="w-4 h-4 text-white" />
+              </div>
+            </div>
+          </div>
+          <div className="bg-indigo-50 rounded-xl p-4 text-center">
+            <p className="font-bold text-indigo-900">{teamName}</p>
+            <p className="text-sm text-indigo-600 mt-1">
+              Tim Anda telah berhasil dibuat
+            </p>
+          </div>
+        </div>
+      }
+      variant="success"
+      confirmText="Selesai"
+      cancelText=""
+      showCloseButton={false}
+    >
+      {onInviteMembers && (
+        <button
+          onClick={onInviteMembers}
+          className="w-full mt-3 px-4 py-2.5 bg-indigo-500 text-white hover:bg-indigo-600 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+        >
+          <UserPlus className="w-4 h-4" />
+          Undang Anggota
+        </button>
+      )}
+    </MessageBox>
   )
 }
 
