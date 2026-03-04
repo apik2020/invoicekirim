@@ -10,6 +10,126 @@ try {
   // Resend package not installed, will use dev mode
 }
 
+// Import nodemailer for SMTP
+import nodemailer from 'nodemailer'
+import { prisma } from './prisma'
+
+/**
+ * Send email via SMTP using user's settings
+ */
+async function sendViaSMTP(
+  to: string | string[],
+  subject: string,
+  html: string,
+  userId: string
+): Promise<{ success: boolean; error?: any }> {
+  try {
+    // Get user's SMTP settings
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        smtpHost: true,
+        smtpPort: true,
+        smtpSecure: true,
+        smtpUser: true,
+        smtpPass: true,
+      },
+    })
+
+    if (!user?.smtpHost || !user?.smtpUser || !user?.smtpPass) {
+      return { success: false, error: 'SMTP not configured' }
+    }
+
+    const transporter = nodemailer.createTransport({
+      host: user.smtpHost,
+      port: parseInt(user.smtpPort || '587'),
+      secure: user.smtpSecure === true,
+      auth: {
+        user: user.smtpUser,
+        pass: user.smtpPass,
+      },
+    })
+
+    await transporter.sendMail({
+      from: user.smtpUser,
+      to: Array.isArray(to) ? to.join(', ') : to,
+      subject,
+      html,
+    })
+
+    return { success: true }
+  } catch (error) {
+    console.error('SMTP send error:', error)
+    return { success: false, error }
+  }
+}
+
+/**
+ * Get user's SMTP settings from database
+ */
+async function getUserSmtpSettings(userId: string) {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        smtpHost: true,
+        smtpPort: true,
+        smtpSecure: true,
+        smtpUser: true,
+        smtpPass: true,
+      },
+    })
+    return user
+  } catch (error) {
+    console.error('Error fetching SMTP settings:', error)
+    return null
+  }
+}
+
+/**
+ * Send email using SMTP
+ */
+async function sendEmailViaSmtp({
+  to,
+  subject,
+  html,
+  smtpSettings,
+}: {
+  to: string | string[]
+  subject: string
+  html: string
+  smtpSettings: {
+    smtpHost: string | null
+    smtpPort: string | null
+    smtpSecure: boolean | null
+    smtpUser: string | null
+    smtpPass: string | null
+  }
+}) {
+  if (!smtpSettings.smtpHost || !smtpSettings.smtpUser || !smtpSettings.smtpPass) {
+    return { success: false, error: 'SMTP settings incomplete' }
+  }
+
+  const transporter = nodemailer.createTransport({
+    host: smtpSettings.smtpHost,
+    port: parseInt(smtpSettings.smtpPort || '587'),
+    secure: smtpSettings.smtpSecure === true,
+    auth: {
+      user: smtpSettings.smtpUser,
+      pass: smtpSettings.smtpPass,
+    },
+  })
+
+  await transporter.sendMail({
+    from: smtpSettings.smtpUser,
+    to: Array.isArray(to) ? to.join(', ') : to,
+    subject,
+    html,
+  })
+
+  return { success: true }
+}
+
 // Email templates
 export const emailTemplates = {
   invoiceSent: (data: {
@@ -298,17 +418,61 @@ export const emailTemplates = {
 }
 
 /**
- * Send email using Resend
+ * Send email using SMTP (user's settings) or fall back to Resend
  */
 export async function sendEmail({
   to,
   subject,
   html,
+  userId,
 }: {
   to: string | string[]
   subject: string
   html: string
+  userId?: string // Optional: pass user ID to fetch SMTP settings
 }) {
+  // Try SMTP first if userId is provided
+  if (userId) {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          smtpHost: true,
+          smtpPort: true,
+          smtpSecure: true,
+          smtpUser: true,
+          smtpPass: true,
+        },
+      })
+
+      if (user?.smtpHost && user?.smtpUser && user?.smtpPass) {
+        // User has SMTP configured, use it
+        const transporter = nodemailer.createTransport({
+          host: user.smtpHost,
+          port: parseInt(user.smtpPort || '587'),
+          secure: user.smtpSecure === true,
+          auth: {
+            user: user.smtpUser,
+            pass: user.smtpPass,
+          },
+        })
+
+        await transporter.sendMail({
+          from: user.smtpUser,
+          to: Array.isArray(to) ? to.join(', ') : to,
+          subject,
+          html,
+        })
+
+        return { success: true, data: { id: 'smtp-sent', method: 'smtp' } }
+      }
+    } catch (smtpError) {
+      console.error('SMTP send failed, falling back to Resend:', smtpError)
+      // Continue to Resend fallback
+    }
+  }
+
+  // Fall back to Resend
   if (!resend) {
     // Only log in development
     if (process.env.NODE_ENV === 'development') {
@@ -346,12 +510,14 @@ export async function sendInvoiceSent(data: {
   total: string
   dueDate: string
   invoiceUrl: string
+  userId?: string
 }) {
   const template = emailTemplates.invoiceSent(data)
   return sendEmail({
     to: data.to,
     subject: template.subject,
     html: template.html,
+    userId: data.userId,
   })
 }
 
@@ -367,12 +533,14 @@ export async function sendPaymentReminder(data: {
   dueDate: string
   daysUntilDue: number
   invoiceUrl: string
+  userId?: string
 }) {
   const template = emailTemplates.paymentReminder(data)
   return sendEmail({
     to: data.to,
     subject: template.subject,
     html: template.html,
+    userId: data.userId,
   })
 }
 
@@ -388,12 +556,14 @@ export async function sendInvoiceOverdue(data: {
   dueDate: string
   daysOverdue: number
   invoiceUrl: string
+  userId?: string
 }) {
   const template = emailTemplates.invoiceOverdue(data)
   return sendEmail({
     to: data.to,
     subject: template.subject,
     html: template.html,
+    userId: data.userId,
   })
 }
 
@@ -407,11 +577,13 @@ export async function sendInvoicePaid(data: {
   companyName: string
   total: string
   paidDate: string
+  userId?: string
 }) {
   const template = emailTemplates.invoicePaid(data)
   return sendEmail({
     to: data.to,
     subject: template.subject,
     html: template.html,
+    userId: data.userId,
   })
 }

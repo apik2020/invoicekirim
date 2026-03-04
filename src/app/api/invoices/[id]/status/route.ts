@@ -83,6 +83,7 @@ export async function PATCH(
         companyName: invoice.companyName,
         total: formatCurrency(invoice.total),
         paidDate: formatDate(new Date()),
+        userId: session.user.id,
       }).catch((error) => {
         console.error('Failed to send payment confirmation email:', error)
       })
@@ -103,6 +104,7 @@ export async function PATCH(
         dueDate: invoice.dueDate ? formatDate(invoice.dueDate) : '-',
         daysOverdue,
         invoiceUrl,
+        userId: session.user.id,
       }).catch((error) => {
         console.error('Failed to send overdue email:', error)
       })
