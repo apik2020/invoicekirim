@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { sendPaymentReminder } from '@/lib/email'
+import { sendPaymentReminder, sendInvoiceOverdue } from '@/lib/email'
 import { formatCurrency, formatDate } from '@/lib/utils'
 
 export async function POST(
@@ -48,19 +48,37 @@ export async function POST(
     const daysOverdue = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24))
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    const invoiceUrl = `${baseUrl}/invoices/${id}`
+    const invoiceUrl = `${baseUrl}/invoice/${invoice.accessToken}`
 
-    // Send payment reminder
-    const result = await sendPaymentReminder({
-      to: invoice.clientEmail,
-      invoiceNumber: invoice.invoiceNumber,
-      clientName: invoice.clientName,
-      companyName: invoice.companyName,
-      total: formatCurrency(invoice.total),
-      dueDate: formatDate(dueDate),
-      daysUntilDue: daysUntilDue > 0 ? daysUntilDue : 0,
-      invoiceUrl,
-    })
+    // Determine if overdue or upcoming
+    const isOverdue = daysOverdue > 0
+
+    let result
+    if (isOverdue) {
+      // Send overdue notification for overdue invoices
+      result = await sendInvoiceOverdue({
+        to: invoice.clientEmail,
+        invoiceNumber: invoice.invoiceNumber,
+        clientName: invoice.clientName,
+        companyName: invoice.companyName,
+        total: formatCurrency(invoice.total),
+        dueDate: formatDate(dueDate),
+        daysOverdue,
+        invoiceUrl,
+      })
+    } else {
+      // Send payment reminder for upcoming due dates
+      result = await sendPaymentReminder({
+        to: invoice.clientEmail,
+        invoiceNumber: invoice.invoiceNumber,
+        clientName: invoice.clientName,
+        companyName: invoice.companyName,
+        total: formatCurrency(invoice.total),
+        dueDate: formatDate(dueDate),
+        daysUntilDue: daysUntilDue > 0 ? daysUntilDue : 0,
+        invoiceUrl,
+      })
+    }
 
     if (!result.success) {
       return NextResponse.json(
