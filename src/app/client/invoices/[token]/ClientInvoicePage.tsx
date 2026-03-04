@@ -535,11 +535,11 @@ Terima kasih!`
 
   const getStatusBadge = (status: string) => {
     const styles: Record<string, string> = {
-      DRAFT: 'bg-gray-100 text-gray-600-light-700',
+      DRAFT: 'bg-gray-100 text-gray-700',
       SENT: 'bg-teal-100 text-teal-700',
-      PAID: 'bg-green-light-100 text-teal-light-700',
+      PAID: 'bg-green-100 text-green-700',
       OVERDUE: 'bg-red-100 text-red-700',
-      CANCELED: 'bg-gray-100 text-gray-600-light-700 line-through',
+      CANCELED: 'bg-gray-100 text-gray-700 line-through',
     }
 
     const labels: Record<string, string> = {
@@ -624,14 +624,14 @@ Terima kasih!`
         <div className="max-w-4xl mx-auto">
           {/* Status Banner */}
           {isPaid ? (
-            <div className="mb-6 p-4 rounded-xl bg-green-light-50 border-2 border-green-200 flex items-center gap-3">
-              <CheckCircle className="w-6 h-6 text-teal-light-600 flex-shrink-0" />
+            <div className="mb-6 p-4 rounded-xl bg-green-50 border-2 border-green-200 flex items-center gap-3">
+              <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0" />
               <div>
-                <p className="font-bold text-teal-light-800">
+                <p className="font-bold text-green-800">
                   Invoice Ini Sudah Lunas
                 </p>
                 {invoice.paidAt && (
-                  <p className="text-sm text-teal-light-600">
+                  <p className="text-sm text-green-600">
                   Dibayar pada {formatDate(invoice.paidAt)}
                 </p>
                 )}

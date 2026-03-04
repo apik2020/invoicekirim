@@ -276,7 +276,7 @@ export default function TemplatesPage() {
                   <button
                     onClick={() => handleDelete(template)}
                     disabled={deletingId === template.id}
-                    className="p-2 text-teal-light rounded-xl hover:bg-gray transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-2 text-red-500 rounded-xl hover:bg-gray transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Hapus"
                   >
                     {deletingId === template.id ? (

@@ -101,8 +101,8 @@ function PricingContent() {
 
           {/* Checkout Status Messages */}
           {checkout === 'success' && (
-            <div className="mt-6 p-4 rounded-2xl bg-green-light-50 border border-green-200 max-w-md mx-auto">
-              <p className="font-body text-teal-light-700">
+            <div className="mt-6 p-4 rounded-2xl bg-green-50 border border-green-200 max-w-md mx-auto">
+              <p className="font-body text-green-700">
                 🎉 Upgrade berhasil! Selamat menikmati fitur Pro.
               </p>
             </div>

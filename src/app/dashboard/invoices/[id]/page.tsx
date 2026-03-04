@@ -820,7 +820,7 @@ Terima kasih!`
     const styles = {
       DRAFT: 'bg-gray-100 text-gray-700',
       SENT: 'bg-teal-100 text-teal-700',
-      PAID: 'bg-green-light-100 text-teal-light-700',
+      PAID: 'bg-green-100 text-green-700',
       OVERDUE: 'bg-red-100 text-red-700',
       CANCELED: 'bg-gray-100 text-gray-700 line-through',
     }
@@ -903,7 +903,7 @@ Terima kasih!`
               className="p-2.5 text-gray-600 rounded-xl btn-secondary relative"
               title="Share Link"
             >
-              {copied ? <Check size={20} className="text-teal-light" /> : <Share2 size={20} />}
+              {copied ? <Check size={20} className="text-red-500" /> : <Share2 size={20} />}
             </button>
             {invoice.status === 'DRAFT' && (
               <Link
@@ -917,7 +917,7 @@ Terima kasih!`
             <button
               onClick={handleDelete}
               disabled={deleting || invoice.status === 'PAID'}
-              className="p-2.5 text-teal-light rounded-xl hover:bg-gray transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-2.5 text-red-500 rounded-xl hover:bg-gray transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               title="Hapus"
             >
               {deleting ? <Loader2 size={20} className="animate-spin" /> : <Trash2 size={20} />}
@@ -994,7 +994,7 @@ Terima kasih!`
                 </button>
                 <button
                   onClick={handleOpenPaymentModal}
-                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl bg-green-light-500 hover:bg-green-light-600 transition-colors"
+                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl bg-green-500 hover:bg-green-600 transition-colors"
                 >
                   <DollarSign size={18} />
                   Tandai Lunas
@@ -1002,7 +1002,7 @@ Terima kasih!`
                 <button
                   onClick={handleSendReminder}
                   disabled={sendingReminder}
-                  className="flex items-center gap-2 px-6 py-3 text-teal-light font-bold rounded-xl border-2 border-orange-200 hover:bg-gray transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-6 py-3 text-red-500 font-bold rounded-xl border-2 border-orange-200 hover:bg-gray transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {sendingReminder ? <Loader2 size={18} className="animate-spin" /> : <Bell size={18} />}
                   {sendingReminder ? 'Mengirim...' : 'Kirim Reminder'}
@@ -1025,7 +1025,7 @@ Terima kasih!`
               <div className="flex flex-wrap gap-3">
                 <button
                   onClick={handleOpenPaymentModal}
-                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl bg-green-light-500 hover:bg-green-light-600 transition-colors"
+                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl bg-green-500 hover:bg-green-600 transition-colors"
                 >
                   <DollarSign size={18} />
                   Tandai Lunas
@@ -1033,7 +1033,7 @@ Terima kasih!`
                 <button
                   onClick={handleSendReminder}
                   disabled={sendingReminder}
-                  className="flex items-center gap-2 px-6 py-3 text-teal-light font-bold rounded-xl border-2 border-orange-200 hover:bg-gray transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-6 py-3 text-red-500 font-bold rounded-xl border-2 border-orange-200 hover:bg-gray transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {sendingReminder ? <Loader2 size={18} className="animate-spin" /> : <Bell size={18} />}
                   {sendingReminder ? 'Mengirim...' : 'Kirim Reminder'}
@@ -1054,12 +1054,12 @@ Terima kasih!`
 
             {invoice.status === 'PAID' && invoice.paidAt && (
               <div className="w-full">
-                <div className="p-4 rounded-xl bg-green-light-50 border border-green-200 mb-3">
-                  <p className="font-bold text-teal-light-700 text-center">
+                <div className="p-4 rounded-xl bg-green-50 border border-green-200 mb-3">
+                  <p className="font-bold text-green-700 text-center">
                     Invoice ini telah dibayar pada {formatDate(invoice.paidAt)}
                   </p>
                   {invoice.paymentMethod && (
-                    <p className="text-sm text-teal-light-600 text-center mt-1">
+                    <p className="text-sm text-green-600 text-center mt-1">
                       Metode: {getPaymentMethodLabel(invoice.paymentMethod)}
                     </p>
                   )}
@@ -1306,7 +1306,7 @@ Terima kasih!`
                 </button>
                 <button
                   onClick={handleOpenPaymentModal}
-                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl bg-green-light-500 hover:bg-green-light-600 transition-colors"
+                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl bg-green-500 hover:bg-green-600 transition-colors"
                 >
                   <DollarSign size={18} />
                   Tandai Lunas
@@ -1314,7 +1314,7 @@ Terima kasih!`
                 <button
                   onClick={handleSendReminder}
                   disabled={sendingReminder}
-                  className="flex items-center gap-2 px-6 py-3 text-teal-light font-bold rounded-xl border-2 border-orange-200 hover:bg-gray transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-6 py-3 text-red-500 font-bold rounded-xl border-2 border-orange-200 hover:bg-gray transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {sendingReminder ? <Loader2 size={18} className="animate-spin" /> : <Bell size={18} />}
                   {sendingReminder ? 'Mengirim...' : 'Kirim Reminder'}
@@ -1336,7 +1336,7 @@ Terima kasih!`
               <>
                 <button
                   onClick={handleOpenPaymentModal}
-                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl bg-green-light-500 hover:bg-green-light-600 transition-colors"
+                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl bg-green-500 hover:bg-green-600 transition-colors"
                 >
                   <DollarSign size={18} />
                   Tandai Lunas
@@ -1344,7 +1344,7 @@ Terima kasih!`
                 <button
                   onClick={handleSendReminder}
                   disabled={sendingReminder}
-                  className="flex items-center gap-2 px-6 py-3 text-teal-light font-bold rounded-xl border-2 border-orange-200 hover:bg-gray transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-6 py-3 text-red-500 font-bold rounded-xl border-2 border-orange-200 hover:bg-gray transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {sendingReminder ? <Loader2 size={18} className="animate-spin" /> : <Bell size={18} />}
                   {sendingReminder ? 'Mengirim...' : 'Kirim Reminder'}
@@ -1364,12 +1364,12 @@ Terima kasih!`
             )}
             {invoice.status === 'PAID' && invoice.paidAt && (
               <div className="w-full">
-                <div className="p-4 rounded-xl bg-green-light-50 border border-green-200 mb-3">
-                  <p className="font-bold text-teal-light-700 text-center">
+                <div className="p-4 rounded-xl bg-green-50 border border-green-200 mb-3">
+                  <p className="font-bold text-green-700 text-center">
                     Invoice ini telah dibayar pada {formatDate(invoice.paidAt)}
                   </p>
                   {invoice.paymentMethod && (
-                    <p className="text-sm text-teal-light-600 text-center mt-1">
+                    <p className="text-sm text-green-600 text-center mt-1">
                       Metode: {getPaymentMethodLabel(invoice.paymentMethod)}
                     </p>
                   )}
@@ -1480,7 +1480,7 @@ Terima kasih!`
               <button
                 onClick={handleConfirmPayment}
                 disabled={processingPayment}
-                className="flex-1 px-4 py-3 text-white font-bold rounded-xl bg-green-light-500 hover:bg-green-light-600 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="flex-1 px-4 py-3 text-white font-bold rounded-xl bg-green-500 hover:bg-green-600 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {processingPayment ? (
                   <>

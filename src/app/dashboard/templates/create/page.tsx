@@ -330,7 +330,7 @@ export default function NewTemplatePage() {
                       <button
                         type="button"
                         onClick={() => removeItem(item.id)}
-                        className="p-2 text-teal-light rounded-xl hover:bg-gray transition-colors"
+                        className="p-2 text-red-500 rounded-xl hover:bg-gray transition-colors"
                       >
                         <Trash2 size={16} />
                       </button>
