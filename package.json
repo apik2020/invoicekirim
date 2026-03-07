@@ -31,7 +31,7 @@
     "@hookform/resolvers": "^5.2.2",
     "@prisma/client": "^6.19.2",
     "@react-pdf/renderer": "^4.3.2",
-    "@sentry/nextjs": "^8.47.0",
+    "@sentry/nextjs": "^10.42.0",
     "@stripe/stripe-js": "^8.8.0",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.36.2",
