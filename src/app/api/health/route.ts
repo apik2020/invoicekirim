@@ -8,7 +8,7 @@ interface HealthCheckResult {
   uptime: number
   checks: {
     database: { status: string; latency?: number; error?: string }
-    redis: { status: string; error?: string }
+    rateLimit: { status: string; latency?: number; error?: string }
   }
 }
 
@@ -21,7 +21,7 @@ export async function GET() {
     uptime: process.uptime(),
     checks: {
       database: { status: 'pending' },
-      redis: { status: 'pending' },
+      rateLimit: { status: 'pending' },
     },
   }
 
@@ -41,34 +41,19 @@ export async function GET() {
     }
   }
 
-  // Check Redis connection
+  // Check rate limiting (PostgreSQL-based)
   try {
-    const redisUrl = process.env.UPSTASH_REDIS_REST_URL
-    const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN
+    const rateLimitStart = Date.now()
 
-    if (!redisUrl || !redisToken) {
-      health.checks.redis = {
-        status: 'not_configured',
-      }
-    } else {
-      const redisStart = Date.now()
-      const response = await fetch(`${redisUrl}/ping`, {
-        headers: {
-          Authorization: `Bearer ${redisToken}`,
-        },
-      })
-
-      if (response.ok) {
-        health.checks.redis = {
-          status: 'ok',
-        }
-      } else {
-        throw new Error('Redis ping failed')
-      }
+    // Check if rate_limit_entries table exists and is accessible
+    await prisma.rateLimitEntry.count()
+    health.checks.rateLimit = {
+      status: 'ok',
+      latency: Date.now() - rateLimitStart,
     }
   } catch (error) {
-    health.status = 'degraded' // Redis is not critical
-    health.checks.redis = {
+    health.status = 'degraded' // Rate limiting is not critical
+    health.checks.rateLimit = {
       status: 'error',
       error: error instanceof Error ? error.message : 'Unknown error',
     }
@@ -77,7 +62,7 @@ export async function GET() {
   // Set overall status
   if (health.checks.database.status === 'error') {
     health.status = 'error'
-  } else if (health.checks.redis.status === 'error') {
+  } else if (health.checks.rateLimit.status === 'error') {
     health.status = 'degraded'
   }
 

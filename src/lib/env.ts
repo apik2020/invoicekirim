@@ -91,18 +91,6 @@ const ENV_VARS: EnvVar[] = [
     description: 'Secret key to secure cron job endpoints',
   },
 
-  // Rate Limiting (Upstash Redis)
-  {
-    name: 'UPSTASH_REDIS_REST_URL',
-    required: false,
-    description: 'Upstash Redis REST URL for rate limiting',
-  },
-  {
-    name: 'UPSTASH_REDIS_REST_TOKEN',
-    required: false,
-    description: 'Upstash Redis REST token',
-  },
-
   // Midtrans (optional - Indonesian payment gateway)
   {
     name: 'MIDTRANS_SERVER_KEY',
@@ -332,10 +320,6 @@ export const env = {
 
   // Security
   cronSecret: process.env.CRON_SECRET,
-
-  // Rate Limiting
-  upstashRedisUrl: process.env.UPSTASH_REDIS_REST_URL,
-  upstashRedisToken: process.env.UPSTASH_REDIS_REST_TOKEN,
 
   // Midtrans
   midtransServerKey: process.env.MIDTRANS_SERVER_KEY,
