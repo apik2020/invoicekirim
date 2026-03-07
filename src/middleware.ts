@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { checkRateLimit, getRateLimitType, getClientIp, createRateLimitResponse } from '@/lib/rate-limit'
 
 // Security configuration
 const SECURITY_CONFIG = {
@@ -17,40 +16,6 @@ const SECURITY_CONFIG = {
 export default async function middleware(req: NextRequest) {
   const { pathname, origin } = req.nextUrl
   const response = NextResponse.next()
-
-  // 0. Rate Limiting for API routes
-  if (pathname.startsWith('/api/')) {
-    const rateLimitType = getRateLimitType(pathname, req.method)
-    const identifier = getClientIp(req)
-    const rateLimitResult = await checkRateLimit(identifier, rateLimitType)
-
-    // Add rate limit headers to response
-    response.headers.set('X-RateLimit-Limit', String(rateLimitResult.limit))
-    response.headers.set('X-RateLimit-Remaining', String(rateLimitResult.remaining))
-    response.headers.set('X-RateLimit-Reset', String(rateLimitResult.reset))
-
-    // Block if rate limit exceeded
-    if (!rateLimitResult.success) {
-      const retryAfter = Math.max(1, Math.ceil((rateLimitResult.reset - Date.now()) / 1000))
-      return new NextResponse(
-        JSON.stringify({
-          error: 'Too many requests',
-          message: 'Rate limit exceeded. Please try again later.',
-          retryAfter,
-        }),
-        {
-          status: 429,
-          headers: {
-            'Content-Type': 'application/json',
-            'Retry-After': String(retryAfter),
-            'X-RateLimit-Limit': String(rateLimitResult.limit),
-            'X-RateLimit-Remaining': '0',
-            'X-RateLimit-Reset': String(rateLimitResult.reset),
-          },
-        }
-      )
-    }
-  }
 
   // 1. Security Headers (additional to next.config.ts)
   // Remove server information
