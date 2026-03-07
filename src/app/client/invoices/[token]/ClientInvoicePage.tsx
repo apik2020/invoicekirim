@@ -45,7 +45,7 @@ export default function ClientInvoicePage({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [generatingPDF, setGeneratingPDF] = useState(false)
-  const [sendingWhatsApp, setSendingWhatsApp] = useState(false)
+  const [token, setToken] = useState<string | null>(null)
   const printRef = useRef<HTMLDivElement>(null)
 
   const handlePrint = useReactToPrint({
@@ -56,8 +56,9 @@ export default function ClientInvoicePage({
   useEffect(() => {
     const fetchInvoice = async () => {
       try {
-        const { token } = await params
-        const res = await fetch(`/api/client/invoices/${token}`)
+        const { token: tokenValue } = await params
+        setToken(tokenValue)
+        const res = await fetch(`/api/client/invoices/${tokenValue}`)
 
         if (!res.ok) {
           if (res.status === 404) {
@@ -417,90 +418,37 @@ export default function ClientInvoicePage({
     }
   }
 
-  // Handle WhatsApp with PDF attachment
-  const handleWhatsAppWithPDF = async () => {
-    if (!invoice) return
+  // Handle WhatsApp share with invoice link
+  const handleWhatsApp = () => {
+    if (!invoice || !token) return
 
-    setSendingWhatsApp(true)
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin
+    const invoiceUrl = `${baseUrl}/invoice/${token}`
 
-    try {
-      // Generate PDF
-      const pdfBlob = await generatePDFBlob()
+    const message = `*INVOICE - ${invoice.invoiceNumber}*
 
-      if (!pdfBlob) {
-        // Fallback to simple WhatsApp message if PDF generation fails
-        const message = `Berikut terlampir invoice ${invoice.invoiceNumber} dari ${invoice.companyName}
-
-Total: ${formatCurrency(invoice.total)}
-
-Terima kasih!`
-
-        const encoded = encodeURIComponent(message)
-        window.open(`https://wa.me/?text=${encoded}`, '_blank')
-        return
-      }
-
-      // Create file from blob
-      const file = new File([pdfBlob], `invoice-${invoice.invoiceNumber}.pdf`, { type: 'application/pdf' })
-
-      // Prepare the message
-      const message = `Berikut terlampir invoice ${invoice.invoiceNumber} dari ${invoice.companyName}
+Dari: ${invoice.companyName}
+Kepada: ${invoice.clientName}
 
 Total: ${formatCurrency(invoice.total)}
 ${invoice.dueDate ? `Jatuh Tempo: ${formatDate(invoice.dueDate)}` : ''}
 
-Terima kasih!`
-
-      // Check if Web Share API is available (mainly mobile)
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({
-            title: `Invoice ${invoice.invoiceNumber}`,
-            text: message,
-            files: [file],
-          })
-        } catch (shareError) {
-          // User cancelled or share failed, fallback
-          console.log('Share cancelled or failed, downloading instead')
-          downloadPDFBlob(pdfBlob)
-          openWhatsAppWithMessage(message)
-        }
-      } else {
-        // Desktop fallback: download PDF and open WhatsApp
-        downloadPDFBlob(pdfBlob)
-        openWhatsAppWithMessage(message)
-      }
-    } catch (err) {
-      console.error('WhatsApp share error:', err)
-      // Fallback to simple message
-      const message = `Berikut terlampir invoice ${invoice.invoiceNumber} dari ${invoice.companyName}
-
-Total: ${formatCurrency(invoice.total)}
+📄 Lihat Invoice: ${invoiceUrl}
 
 Terima kasih!`
-      const encoded = encodeURIComponent(message)
-      window.open(`https://wa.me/?text=${encoded}`, '_blank')
-    } finally {
-      setSendingWhatsApp(false)
-    }
-  }
 
-  // Helper to download PDF blob
-  const downloadPDFBlob = (blob: Blob) => {
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `invoice-${invoice?.invoiceNumber || 'download'}.pdf`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }
-
-  // Helper to open WhatsApp with message
-  const openWhatsAppWithMessage = (message: string) => {
     const encoded = encodeURIComponent(message)
-    window.open(`https://wa.me/?text=${encoded}`, '_blank')
+
+    // Try to get phone number if available
+    if (invoice.clientPhone) {
+      const cleanPhone = invoice.clientPhone.replace(/[\s\-\(\)]/g, '')
+      const phoneWithCode = cleanPhone.startsWith('+') ? cleanPhone.substring(1) :
+                            cleanPhone.startsWith('0') ? '62' + cleanPhone.substring(1) :
+                            cleanPhone
+      window.open(`https://wa.me/${phoneWithCode}?text=${encoded}`, '_blank')
+    } else {
+      window.open(`https://wa.me/?text=${encoded}`, '_blank')
+    }
   }
 
   if (loading) {
@@ -561,6 +509,51 @@ Terima kasih!`
     )
   }
 
+  const getStatusStamp = (status: string) => {
+    const stamps: Record<string, { text: string; color: string; bgColor: string }> = {
+      DRAFT: {
+        text: 'DRAFT',
+        color: 'border-gray-400 text-gray-500',
+        bgColor: 'bg-gray-50',
+      },
+      SENT: {
+        text: 'TERKIRIM',
+        color: 'border-blue-500 text-blue-600',
+        bgColor: 'bg-blue-50',
+      },
+      PAID: {
+        text: 'LUNAS',
+        color: 'border-green-500 text-green-600',
+        bgColor: 'bg-green-50',
+      },
+      OVERDUE: {
+        text: 'JATUH TEMPO',
+        color: 'border-red-500 text-red-600',
+        bgColor: 'bg-red-50',
+      },
+      CANCELED: {
+        text: 'BATAL',
+        color: 'border-gray-400 text-gray-500',
+        bgColor: 'bg-gray-50',
+      },
+    }
+
+    const stamp = stamps[status] || stamps.DRAFT
+
+    return (
+      <div className="relative">
+        <div
+          className={`inline-flex items-center justify-center px-6 py-3 border-4 ${stamp.color} ${stamp.bgColor} rounded-lg transform -rotate-12 shadow-sm`}
+          style={{ fontFamily: 'system-ui, sans-serif' }}
+        >
+          <span className="text-xl font-black tracking-widest uppercase">
+            {stamp.text}
+          </span>
+        </div>
+      </div>
+    )
+  }
+
   const isPaid = invoice.status === 'PAID'
 
   return (
@@ -593,18 +586,13 @@ Terima kasih!`
                 <span className="hidden sm:inline">PDF</span>
               </button>
               <button
-                onClick={handleWhatsAppWithPDF}
-                disabled={sendingWhatsApp}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={handleWhatsApp}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white rounded-xl"
                 style={{
                   background: 'linear-gradient(145deg, #25D366, #128C7E)',
                 }}
               >
-                {sendingWhatsApp ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : (
-                  <MessageCircle size={16} />
-                )}
+                <MessageCircle size={16} />
                 <span className="hidden sm:inline">WhatsApp</span>
               </button>
               <button
@@ -649,7 +637,12 @@ Terima kasih!`
           ) : null}
 
           {/* Invoice Card */}
-          <div ref={printRef} id="invoice-card" className="bg-white p-8 md:p-12 rounded-3xl shadow-lg">
+          <div ref={printRef} id="invoice-card" className="bg-white p-8 md:p-12 rounded-3xl shadow-lg relative">
+            {/* Status Stamp */}
+            <div className="absolute top-8 right-8 md:top-10 md:right-10 z-10">
+              {getStatusStamp(invoice.status)}
+            </div>
+
             {/* Invoice Header */}
             <div className="flex flex-col md:flex-row justify-between items-start mb-10 pb-8 border-b border-orange-200">
               <div>
@@ -664,9 +657,6 @@ Terima kasih!`
                     <p className="text-sm text-gray-600">{invoice.companyEmail}</p>
                   </div>
                 </div>
-              </div>
-              <div className="text-left md:text-right mt-4 md:mt-0">
-                {getStatusBadge(invoice.status)}
               </div>
             </div>
 

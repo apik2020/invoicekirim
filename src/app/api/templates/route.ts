@@ -44,12 +44,41 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { items, ...data } = validation.data
+    const {
+      items,
+      settings,
+      defaultClientId,
+      termsAndConditions,
+      signatureUrl,
+      signatoryName,
+      signatoryTitle,
+      discountType,
+      discountValue,
+      additionalDiscountType,
+      additionalDiscountValue,
+      ...data
+    } = validation.data
 
     const template = await prisma.invoiceTemplate.create({
       data: {
         ...data,
         userId: session.user.id,
+        settings: settings ? JSON.parse(JSON.stringify(settings)) : {
+          showClientInfo: true,
+          showDiscount: false,
+          showAdditionalDiscount: false,
+          showTax: true,
+          showSignature: false,
+        },
+        ...(defaultClientId && { defaultClientId }),
+        ...(termsAndConditions && { termsAndConditions }),
+        ...(signatureUrl && { signatureUrl }),
+        ...(signatoryName && { signatoryName }),
+        ...(signatoryTitle && { signatoryTitle }),
+        ...(discountType && { discountType }),
+        ...(discountValue !== undefined && discountValue !== null && { discountValue }),
+        ...(additionalDiscountType && { additionalDiscountType }),
+        ...(additionalDiscountValue !== undefined && additionalDiscountValue !== null && { additionalDiscountValue }),
         items: {
           create: items.map((item) => ({
             description: item.description,

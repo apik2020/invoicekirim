@@ -3,72 +3,53 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-  directUrl  = env("DIRECT_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
-// For development with direct connection
-// datasource db {
-//   provider = "postgresql"
-//   url      = env("DIRECT_URL")
-// }
-
-// Admin & Authentication (Separate from users)
 model Admin {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  password      String    @db.Text // Required for credentials provider
-
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id        String   @id @default(cuid())
+  name      String?
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("admins")
 }
 
-// User & Authentication
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  password      String? // For credentials provider
-
-  // Company Info (Default for new invoices)
-  companyName     String?
+  id              String            @id @default(cuid())
+  name            String?
+  email           String            @unique
+  emailVerified   DateTime?
+  image           String?
+  password        String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  companyAddress  String?
   companyEmail    String?
+  companyName     String?
   companyPhone    String?
-  companyAddress  String?   @db.Text
-
-  // SMTP Configuration (for sending invoices)
   smtpHost        String?
-  smtpPort        String?   @default("587")
-  smtpSecure      Boolean?  @default(false)
+  smtpPass        String?
+  smtpPort        String?           @default("587")
+  smtpSecure      Boolean?          @default(false)
   smtpUser        String?
-  smtpPass        String?   @db.Text
-
-  // Current active team (for multi-team users)
   activeTeamId    String?
-
-  accounts      Account[]
-  sessions      Session[]
-  invoices      Invoice[]
-  clients       Client[]
-  templates     InvoiceTemplate[]
-  items         Item[]
-  subscription  Subscription?
-  activityLogs  ActivityLog[]
-  payments      Payment[]
-
-  // Team relations
-  ownedTeams    Team[]         @relation("TeamOwner")
+  accounts        Account[]
+  activityLogs    ActivityLog[]
+  apiKeys         ApiKey[]
+  clients         Client[]
+  templates       InvoiceTemplate[]
+  invoices        Invoice[]
+  items           Item[]
+  payments        Payment[]
+  sessions        Session[]
+  subscription    Subscription?
   teamMemberships TeamMember[]
-  apiKeys       ApiKey[]
-
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  ownedTeams      Team[]            @relation("TeamOwner")
 
   @@map("users")
 }
@@ -79,15 +60,14 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@map("accounts")
@@ -112,30 +92,392 @@ model VerificationToken {
   @@map("verification_tokens")
 }
 
-// Subscription & Billing
 model Subscription {
-  id                      String    @id @default(cuid())
-  userId                  String    @unique
-  user                    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  stripeCustomerId        String?   @unique
-  stripeSubscriptionId    String?   @unique
-  stripePriceId           String?
-  stripeCurrentPeriodEnd  DateTime?
-
-  status                  SubscriptionStatus @default(FREE)
-  planType                PlanType           @default(FREE)
-
-  // Trial period
-  trialStartsAt           DateTime?  // When trial started
-  trialEndsAt             DateTime?  // When trial ends
-  trialSentReminder       Boolean    @default(false)  // Whether reminder was sent
-
-  createdAt               DateTime   @default(now())
-  updatedAt               DateTime   @updatedAt
+  id                     String             @id @default(cuid())
+  userId                 String             @unique
+  stripeCustomerId       String?            @unique
+  stripeSubscriptionId   String?            @unique
+  stripePriceId          String?
+  stripeCurrentPeriodEnd DateTime?
+  status                 SubscriptionStatus @default(FREE)
+  planType               PlanType           @default(FREE)
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+  trialEndsAt            DateTime?
+  trialSentReminder      Boolean            @default(false)
+  trialStartsAt          DateTime?
+  user                   User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([trialEndsAt])
   @@map("subscriptions")
+}
+
+model Item {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  description String?
+  sku         String?  @unique
+  unit        String   @default("pcs")
+  price       Float
+  taxRate     Float    @default(11)
+  category    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  teamId      String?
+  team        Team?    @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([teamId])
+  @@index([sku])
+  @@map("items")
+}
+
+model Client {
+  id        String    @id @default(cuid())
+  userId    String
+  name      String
+  email     String
+  phone     String?
+  address   String?
+  company   String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  teamId    String?
+  team      Team?     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invoices  Invoice[]
+
+  @@index([userId])
+  @@index([teamId])
+  @@map("clients")
+}
+
+model Invoice {
+  id                       String        @id @default(cuid())
+  userId                   String
+  invoiceNumber            String        @unique
+  date                     DateTime
+  dueDate                  DateTime?
+  accessToken              String        @unique @default(cuid())
+  companyName              String
+  companyEmail             String
+  companyPhone             String?
+  companyAddress           String?
+  clientName               String
+  clientEmail              String
+  clientPhone              String?
+  clientAddress            String?
+  notes                    String?
+  taxRate                  Float         @default(11)
+  subtotal                 Float
+  taxAmount                Float
+  total                    Float
+  status                   InvoiceStatus @default(DRAFT)
+  paidAt                   DateTime?
+  createdAt                DateTime      @default(now())
+  updatedAt                DateTime      @updatedAt
+  clientId                 String?
+  paymentMethod            String?
+  paymentNotes             String?
+  teamId                   String?
+  settings                 Json?
+  termsAndConditions       String?
+  signatureUrl             String?
+  signatoryName            String?
+  signatoryTitle           String?
+  discountType             String?
+  discountValue            Float?
+  discountAmount           Float?
+  additionalDiscountType   String?
+  additionalDiscountValue  Float?
+  additionalDiscountAmount Float?
+  items                    InvoiceItem[]
+  client                   Client?       @relation(fields: [clientId], references: [id])
+  team                     Team?         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user                     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([teamId])
+  @@index([status])
+  @@index([accessToken])
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id          String  @id @default(cuid())
+  invoiceId   String
+  description String
+  quantity    Int
+  price       Float
+  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@map("invoice_items")
+}
+
+model InvoiceTemplate {
+  id                      String         @id @default(cuid())
+  userId                  String
+  name                    String
+  description             String?
+  taxRate                 Float          @default(11)
+  notes                   String?
+  settings                Json?
+  defaultClientId         String?
+  termsAndConditions      String?
+  signatureUrl            String?
+  signatoryName           String?
+  signatoryTitle          String?
+  discountType            String?
+  discountValue           Float?
+  additionalDiscountType  String?
+  additionalDiscountValue Float?
+  createdAt               DateTime       @default(now())
+  updatedAt               DateTime       @updatedAt
+  teamId                  String?
+  team                    Team?          @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user                    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items                   TemplateItem[]
+
+  @@index([userId])
+  @@index([teamId])
+  @@map("invoice_templates")
+}
+
+model TemplateItem {
+  id          String          @id @default(cuid())
+  templateId  String
+  description String
+  quantity    Int
+  price       Float
+  template    InvoiceTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@map("template_items")
+}
+
+model Payment {
+  id                    String        @id @default(cuid())
+  userId                String
+  invoiceId             String?
+  stripePaymentId       String?       @unique
+  amount                Float
+  currency              String        @default("IDR")
+  status                PaymentStatus
+  createdAt             DateTime      @default(now())
+  receiptNumber         String?       @unique
+  receiptUrl            String?
+  description           String?
+  stripePaymentIntentId String?       @unique
+  ewalletType           String?
+  expiredAt             DateTime?
+  midtransOrderId       String?       @unique
+  midtransTransactionId String?
+  paymentGateway        String?
+  paymentMethod         String?
+  qrisUrl               String?
+  updatedAt             DateTime      @updatedAt
+  vaBank                String?
+  vaNumber              String?
+  metadata              Json?
+  user                  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([stripePaymentIntentId])
+  @@index([midtransOrderId])
+  @@index([status])
+  @@map("payments")
+}
+
+model ActivityLog {
+  id          String         @id @default(cuid())
+  userId      String
+  action      ActivityAction
+  entityType  String
+  entityId    String
+  metadata    Json?
+  title       String
+  description String?
+  createdAt   DateTime       @default(now())
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("activity_logs")
+}
+
+model Team {
+  id                     String            @id @default(cuid())
+  name                   String
+  slug                   String            @unique
+  description            String?
+  ownerId                String
+  planType               PlanType          @default(FREE)
+  stripeCustomerId       String?           @unique
+  stripeSubscriptionId   String?           @unique
+  stripePriceId          String?
+  stripeCurrentPeriodEnd DateTime?
+  settings               Json?
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
+  apiKeys                ApiKey[]
+  branding               Branding?
+  clients                Client[]
+  templates              InvoiceTemplate[]
+  invoices               Invoice[]
+  items                  Item[]
+  invitations            TeamInvitation[]
+  members                TeamMember[]
+  owner                  User              @relation("TeamOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  webhooks               Webhook[]
+
+  @@index([ownerId])
+  @@index([slug])
+  @@map("teams")
+}
+
+model TeamMember {
+  id          String   @id @default(cuid())
+  teamId      String
+  userId      String
+  role        TeamRole @default(MEMBER)
+  permissions Json?
+  invitedBy   String?
+  joinedAt    DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  team        Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([teamId])
+  @@index([userId])
+  @@map("team_members")
+}
+
+model TeamInvitation {
+  id        String           @id @default(cuid())
+  teamId    String
+  email     String
+  role      TeamRole         @default(MEMBER)
+  token     String           @unique
+  invitedBy String
+  status    InvitationStatus @default(PENDING)
+  expiresAt DateTime
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  team      Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@index([teamId])
+  @@index([email])
+  @@index([token])
+  @@map("team_invitations")
+}
+
+model ApiKey {
+  id            String    @id @default(cuid())
+  userId        String?
+  teamId        String?
+  name          String
+  key           String    @unique
+  prefix        String
+  scopes        Json?
+  permissions   Json?
+  rateLimit     Int       @default(1000)
+  rateLimitUsed Int       @default(0)
+  isActive      Boolean   @default(true)
+  lastUsedAt    DateTime?
+  expiresAt     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  team          Team?     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user          User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([teamId])
+  @@index([key])
+  @@map("api_keys")
+}
+
+model Webhook {
+  id            String    @id @default(cuid())
+  teamId        String
+  name          String
+  url           String
+  secret        String
+  events        Json
+  isActive      Boolean   @default(true)
+  lastTriggered DateTime?
+  failureCount  Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  team          Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@index([teamId])
+  @@map("webhooks")
+}
+
+model Branding {
+  id             String   @id @default(cuid())
+  teamId         String   @unique
+  logoUrl        String?
+  primaryColor   String   @default("#F97316")
+  secondaryColor String?  @default("#FFFFFF")
+  accentColor    String?
+  invoicePrefix  String?  @default("INV")
+  receiptPrefix  String?  @default("RCP")
+  showLogo       Boolean  @default(true)
+  showColors     Boolean  @default(true)
+  emailFromName  String?
+  emailReplyTo   String?
+  customDomain   String?  @unique
+  domainVerified Boolean  @default(false)
+  fontFamily     String?  @default("inter")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  team           Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@map("branding")
+}
+
+model AnalyticsSnapshot {
+  id               String   @id @default(cuid())
+  teamId           String?
+  userId           String?
+  date             DateTime
+  revenue          Float    @default(0)
+  revenueYtd       Float    @default(0)
+  invoicesCreated  Int      @default(0)
+  invoicesSent     Int      @default(0)
+  invoicesPaid     Int      @default(0)
+  invoicesOverdue  Int      @default(0)
+  newClients       Int      @default(0)
+  activeClients    Int      @default(0)
+  paymentsReceived Int      @default(0)
+  paymentsAmount   Float    @default(0)
+  paymentsFailed   Int      @default(0)
+  conversionRate   Float    @default(0)
+  periodType       String   @default("daily")
+  createdAt        DateTime @default(now())
+
+  @@unique([teamId, userId, date, periodType])
+  @@index([teamId, date])
+  @@index([userId, date])
+  @@map("analytics_snapshots")
+}
+
+model EmailTemplate {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  subject   String
+  body      String
+  variables Json?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("email_templates")
 }
 
 enum SubscriptionStatus {
@@ -153,256 +495,12 @@ enum PlanType {
   PRO
 }
 
-// Item/Product Catalog (Reusable items for invoices)
-model Item {
-  id            String    @id @default(cuid())
-  userId        String
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Team support (optional)
-  teamId        String?
-  team          Team?     @relation(fields: [teamId], references: [id], onDelete: Cascade)
-
-  name          String
-  description   String?
-  sku           String?   @unique // Stock Keeping Code
-
-  unit          String    @default("pcs") // satuan: pcs, kg, jam, dll
-
-  price         Float
-  taxRate       Float     @default(11)
-
-  // Category for grouping
-  category      String?
-
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-
-  @@index([userId])
-  @@index([teamId])
-  @@index([sku])
-  @@map("items")
-}
-
-// Client Management
-model Client {
-  id            String    @id @default(cuid())
-  userId        String
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Team support (optional - for team clients)
-  teamId        String?
-  team          Team?     @relation(fields: [teamId], references: [id], onDelete: Cascade)
-
-  name          String
-  email         String
-  phone         String?
-  address       String?   @db.Text
-  company       String?
-
-  invoices      Invoice[]
-
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-
-  @@index([userId])
-  @@index([teamId])
-  @@map("clients")
-}
-
-// Invoice
-model Invoice {
-  id              String    @id @default(cuid())
-  userId          String
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  clientId        String?   // Optional link to saved client
-  client          Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
-
-  // Team support (optional - for team invoices)
-  teamId          String?
-  team            Team?     @relation(fields: [teamId], references: [id], onDelete: Cascade)
-
-  // Invoice Details
-  invoiceNumber   String    @unique
-  date            DateTime
-  dueDate         DateTime?
-
-  // Access Token (for client portal)
-  accessToken     String    @unique @default(cuid())
-
-  // Company Info (Sender)
-  companyName     String
-  companyEmail    String
-  companyPhone    String?
-  companyAddress  String?
-
-  // Client Info (Receiver)
-  clientName      String
-  clientEmail     String
-  clientPhone     String?
-  clientAddress   String?
-
-  // Content
-  notes           String?   @db.Text
-  taxRate         Float     @default(11)
-
-  // Calculations
-  subtotal        Float
-  taxAmount       Float
-  total           Float
-
-  // Status
-  status          InvoiceStatus @default(DRAFT)
-  paidAt          DateTime?
-  paymentMethod   String?       // Method of payment (TRANSFER, CASH, EWALLET, QRIS, OTHER)
-  paymentNotes    String?       @db.Text // Optional notes about the payment
-
-  // Timestamps
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
-
-  items           InvoiceItem[]
-
-  @@index([userId])
-  @@index([teamId])
-  @@index([status])
-  @@index([accessToken])
-  @@map("invoices")
-}
-
-model InvoiceItem {
-  id          String   @id @default(cuid())
-  invoiceId   String
-  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-
-  description String
-  quantity    Int
-  price       Float
-
-  @@map("invoice_items")
-}
-
 enum InvoiceStatus {
   DRAFT
   SENT
   PAID
   OVERDUE
   CANCELED
-}
-
-// Invoice Templates (User can create reusable templates)
-model InvoiceTemplate {
-  id              String    @id @default(cuid())
-  userId          String
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Team support (optional)
-  teamId          String?
-  team            Team?     @relation(fields: [teamId], references: [id], onDelete: Cascade)
-
-  name            String
-  description     String?
-
-  // Default values
-  taxRate         Float     @default(11)
-  notes           String?   @db.Text
-
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
-
-  items           TemplateItem[]
-
-  @@index([userId])
-  @@index([teamId])
-  @@map("invoice_templates")
-}
-
-model TemplateItem {
-  id          String          @id @default(cuid())
-  templateId  String
-  template    InvoiceTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
-
-  description String
-  quantity    Int
-  price       Float
-
-  @@map("template_items")
-}
-
-// Payment History
-model Payment {
-  id                      String    @id @default(cuid())
-  userId                  String
-  user                    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  invoiceId               String? // Optional: link to invoice if payment is for specific invoice
-
-  // Stripe payment fields
-  stripePaymentId         String?   @unique
-  stripePaymentIntentId   String?   @unique // Payment intent untuk refund
-
-  // Midtrans/Local payment fields
-  midtransOrderId         String?   @unique // Midtrans order ID
-  midtransTransactionId   String?   // Midtrans transaction ID
-  paymentMethod           String?   // 'STRIPE', 'BANK_TRANSFER', 'VA', 'QRIS', 'EWALLET'
-  paymentGateway          String?   // 'STRIPE', 'MIDTRANS'
-
-  // VA (Virtual Account) fields
-  vaNumber                String?   // Virtual account number
-  vaBank                  String?   // Bank name (BCA, BNI, BRI, Mandiri, etc)
-
-  // QRIS fields
-  qrisUrl                 String?   // QRIS QR code URL
-
-  // E-Wallet fields
-  ewalletType             String?   // GOPAY, OVO, DANA, SHOPEEPAY
-
-  // Payment details
-  amount                  Float
-  currency                String    @default("IDR")
-  description             String?   // Deskripsi pembayaran
-  metadata                Json?     // Additional payment metadata (refund info, etc)
-
-  status                  PaymentStatus
-
-  // Expiry for pending payments
-  expiredAt               DateTime?
-
-  // Receipt fields
-  receiptUrl              String?   // Cloudinary URL for receipt PDF
-  receiptNumber           String?   @unique // Format: RCP-YYYYMMDD-XXXX
-
-  createdAt               DateTime   @default(now())
-  updatedAt               DateTime   @updatedAt
-
-  @@index([userId])
-  @@index([stripePaymentIntentId]) // untuk lookup refund
-  @@index([midtransOrderId]) // untuk lookup midtrans order
-  @@index([status])
-  @@map("payments")
-}
-
-// Activity Logs - Track semua user actions
-model ActivityLog {
-  id          String         @id @default(cuid())
-  userId      String
-  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Action details
-  action      ActivityAction
-  entityType  String         // "Invoice", "Client", "Item", "Template", dll
-  entityId    String         // ID dari entity yang terpengaruh
-  metadata    Json?          // Additional context (changes, details, dll)
-
-  // Display info (snapshot untuk referensi jika entity dihapus)
-  title       String         // Human-readable description
-  description String?        // Optional details
-
-  createdAt   DateTime       @default(now())
-
-  @@index([userId])
-  @@index([entityType, entityId])
-  @@index([createdAt])
-  @@map("activity_logs")
 }
 
 enum ActivityAction {
@@ -430,103 +528,11 @@ enum PaymentStatus {
   REFUNDED
 }
 
-// ============================================
-// TEAM/MULTI-USER SUPPORT
-// ============================================
-
-// Team/Organization model
-model Team {
-  id            String    @id @default(cuid())
-  name          String
-  slug          String    @unique // URL-friendly identifier
-  description   String?
-
-  // Owner
-  ownerId       String
-  owner         User      @relation("TeamOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-
-  // Plan & Billing
-  planType      PlanType  @default(FREE)
-  stripeCustomerId      String?   @unique
-  stripeSubscriptionId  String?   @unique
-  stripePriceId         String?
-  stripeCurrentPeriodEnd DateTime?
-
-  // Settings
-  settings      Json?     // Team-specific settings
-
-  // Relations
-  members       TeamMember[]
-  invitations   TeamInvitation[]
-  apiKeys       ApiKey[]
-  webhooks      Webhook[]
-  branding      Branding?
-  invoices      Invoice[]
-  clients       Client[]
-  templates     InvoiceTemplate[]
-  items         Item[]
-
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  @@index([ownerId])
-  @@index([slug])
-  @@map("teams")
-}
-
-// Team membership with roles
-model TeamMember {
-  id          String      @id @default(cuid())
-  teamId      String
-  team        Team        @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  userId      String
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  role        TeamRole    @default(MEMBER)
-  permissions Json?       // Additional granular permissions
-
-  // Invitation tracking
-  invitedBy   String?     // User ID who invited
-  joinedAt    DateTime    @default(now())
-
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-
-  @@unique([teamId, userId])
-  @@index([teamId])
-  @@index([userId])
-  @@map("team_members")
-}
-
 enum TeamRole {
-  OWNER       // Full access, can delete team
-  ADMIN       // Can manage members, billing, settings
-  MEMBER      // Can create/edit invoices, clients
-  VIEWER      // Read-only access
-}
-
-// Team invitation
-model TeamInvitation {
-  id          String            @id @default(cuid())
-  teamId      String
-  team        Team              @relation(fields: [teamId], references: [id], onDelete: Cascade)
-
-  email       String            // Invited email
-  role        TeamRole          @default(MEMBER)
-
-  token       String            @unique // Secure token for acceptance
-  invitedBy   String            // User ID
-
-  status      InvitationStatus  @default(PENDING)
-  expiresAt   DateTime
-
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-
-  @@index([teamId])
-  @@index([email])
-  @@index([token])
-  @@map("team_invitations")
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
 }
 
 enum InvitationStatus {
@@ -534,176 +540,4 @@ enum InvitationStatus {
   ACCEPTED
   DECLINED
   EXPIRED
-}
-
-// ============================================
-// API ACCESS & DOCUMENTATION
-// ============================================
-
-// API Key for programmatic access
-model ApiKey {
-  id            String        @id @default(cuid())
-
-  // Owner (can be user or team)
-  userId        String?
-  user          User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  teamId        String?
-  team          Team?         @relation(fields: [teamId], references: [id], onDelete: Cascade)
-
-  // Key details
-  name          String        // User-defined name
-  key           String        @unique // Hashed API key
-  prefix        String        // First 8 chars for identification (e.g., "ik_live_abc")
-
-  // Permissions
-  scopes        Json?         // ["invoices:read", "invoices:write", "clients:read", etc.]
-  permissions   Json?         // Granular permissions
-
-  // Rate limiting
-  rateLimit     Int           @default(1000) // Requests per hour
-  rateLimitUsed Int           @default(0)
-
-  // Status
-  isActive      Boolean       @default(true)
-  lastUsedAt    DateTime?
-  expiresAt     DateTime?
-
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-
-  @@index([userId])
-  @@index([teamId])
-  @@index([key])
-  @@map("api_keys")
-}
-
-// Webhook configuration
-model Webhook {
-  id            String        @id @default(cuid())
-
-  // Owner
-  teamId        String
-  team          Team          @relation(fields: [teamId], references: [id], onDelete: Cascade)
-
-  // Webhook details
-  name          String
-  url           String
-  secret        String        // For signature verification
-
-  // Events to trigger
-  events        Json          // ["invoice.created", "invoice.paid", "payment.received", etc.]
-
-  // Status
-  isActive      Boolean       @default(true)
-  lastTriggered DateTime?
-  failureCount  Int           @default(0)
-
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-
-  @@index([teamId])
-  @@map("webhooks")
-}
-
-// ============================================
-// WHITE-LABEL / CUSTOMIZATION
-// ============================================
-
-// Branding customization
-model Branding {
-  id            String        @id @default(cuid())
-
-  // Owner
-  teamId        String        @unique
-  team          Team          @relation(fields: [teamId], references: [id], onDelete: Cascade)
-
-  // Logo & Colors
-  logoUrl       String?       // Company logo URL
-  primaryColor  String        @default("#F97316")  // Orange
-  secondaryColor String?      @default("#FFFFFF")
-  accentColor   String?
-
-  // Invoice customization
-  invoicePrefix String?       @default("INV")
-  receiptPrefix String?       @default("RCP")
-  showLogo      Boolean       @default(true)
-  showColors    Boolean       @default(true)
-
-  // Email customization
-  emailFromName String?       // Display name for emails
-  emailReplyTo  String?       // Reply-to email
-
-  // Custom domain
-  customDomain  String?       @unique
-  domainVerified Boolean      @default(false)
-
-  // Font settings
-  fontFamily    String?       @default("inter")
-
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-
-  @@map("branding")
-}
-
-// ============================================
-// ADVANCED ANALYTICS
-// ============================================
-
-// Analytics snapshot (daily aggregations)
-model AnalyticsSnapshot {
-  id            String        @id @default(cuid())
-
-  // Owner (user or team)
-  teamId        String?
-  userId        String?
-
-  // Date
-  date          DateTime      // The date this snapshot is for
-
-  // Revenue metrics
-  revenue       Float         @default(0)
-  revenueYtd    Float         @default(0)  // Year-to-date
-
-  // Invoice metrics
-  invoicesCreated Int         @default(0)
-  invoicesSent    Int         @default(0)
-  invoicesPaid    Int         @default(0)
-  invoicesOverdue Int         @default(0)
-
-  // Client metrics
-  newClients     Int          @default(0)
-  activeClients  Int          @default(0)
-
-  // Payment metrics
-  paymentsReceived Int        @default(0)
-  paymentsAmount   Float      @default(0)
-  paymentsFailed   Int        @default(0)
-
-  // Conversion metrics
-  conversionRate  Float       @default(0)  // invoices sent to paid
-
-  // Period type for aggregation
-  periodType      String      @default("daily") // daily, weekly, monthly
-
-  createdAt       DateTime    @default(now())
-
-  @@unique([teamId, userId, date, periodType])
-  @@index([teamId, date])
-  @@index([userId, date])
-  @@map("analytics_snapshots")
-}
-
-// Email Templates for system emails
-model EmailTemplate {
-  id          String   @id @default(cuid())
-  name        String   @unique // "INVOICE_SENT", "PAYMENT_REMINDER", etc
-  subject     String
-  body        String   @db.Text // HTML body with variables
-  variables   Json?    // {clientName, invoiceNumber, dueDate, etc}
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@map("email_templates")
 }

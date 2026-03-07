@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
-import DashboardHeader from '@/components/DashboardHeader'
+import { DashboardLayout } from '@/components/DashboardLayout'
 import { MessageBox } from '@/components/ui/MessageBox'
 import { useMessageBox } from '@/hooks/useMessageBox'
 import {
@@ -21,16 +21,12 @@ import { formatCurrency } from '@/lib/utils'
 
 // Helper functions untuk currency input
 const formatCurrencyInput = (value: string): string => {
-  // Hapus karakter non-digit
   const numbers = value.replace(/\D/g, '')
   if (!numbers) return ''
-
-  // Format ke currency Indonesia
   return 'Rp ' + parseInt(numbers).toLocaleString('id-ID')
 }
 
 const parseCurrencyInput = (value: string): number => {
-  // Hapus semua karakter non-digit
   const numbers = value.replace(/\D/g, '')
   return numbers ? parseInt(numbers) : 0
 }
@@ -119,8 +115,6 @@ export default function ItemsPage() {
       if (res.ok) {
         fetchItems()
         handleCloseModal()
-
-        // Show success message
         messageBox.showSuccess({
           title: editingItem ? 'Item Diperbarui!' : 'Item Ditambahkan!',
           message: `${formData.name} berhasil ${editingItem ? 'diperbarui' : 'ditambahkan'} ke katalog.`,
@@ -165,9 +159,9 @@ export default function ItemsPage() {
       message: (
         <div className="space-y-2">
           <p>
-            Anda akan menghapus item <span className="font-semibold text-gray-900">{item.name}</span>
+            Anda akan menghapus item <span className="font-semibold text-brand-500">{item.name}</span>
           </p>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-text-muted">
             Item yang dihapus tidak dapat dikembalikan.
           </p>
         </div>
@@ -203,7 +197,7 @@ export default function ItemsPage() {
     })
   }
 
-   const handleOpenModal = () => {
+  const handleOpenModal = () => {
     setEditingItem(null)
     setFormData({
       name: '',
@@ -242,44 +236,49 @@ export default function ItemsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-fresh-bg flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 text-gray-900 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Memuat item...</p>
+      <DashboardLayout>
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 text-brand-500 animate-spin mx-auto mb-4" />
+            <p className="text-text-secondary">Memuat item...</p>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-fresh-bg">
-      <DashboardHeader
-        title="Katalog Item"
-        showBackButton={true}
-        backHref="/dashboard"
-      />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="mb-4">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Katalog Item</h1>
-            <p className="text-gray-600">
+    <DashboardLayout>
+      {/* Page Header */}
+      <div className="mb-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-brand-500 mb-2">Katalog Item</h1>
+            <p className="text-text-secondary">
               Kelola katalog produk/jasa untuk invoice
             </p>
           </div>
+          <button
+            onClick={handleOpenModal}
+            className="btn-primary px-6 py-3 flex items-center gap-2"
+          >
+            <Plus className="w-5 h-5" />
+            <span>Tambah Item</span>
+          </button>
+        </div>
 
-          {/* Search, Filter and Action Button */}
+        {/* Search & Filter */}
+        <div className="card p-4">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             {/* Search */}
-            <div className="relative flex-1 sm:flex-initial">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Cari item..."
-                className="w-full sm:w-64 pl-12 pr-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+                className="input pl-12"
               />
             </div>
 
@@ -288,7 +287,7 @@ export default function ItemsPage() {
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="px-4 py-3 rounded-xl border border-orange-200 text-gray-900 focus:border-orange-500 focus:outline-none transition-colors"
+                className="select sm:w-48"
               >
                 <option value="">Semua Kategori</option>
                 {categories.map((cat) => (
@@ -298,155 +297,143 @@ export default function ItemsPage() {
                 ))}
               </select>
             )}
-
-            {/* Add Item Button */}
-            <button
-              onClick={handleOpenModal}
-              className="flex items-center justify-center gap-2 px-6 py-3 text-white font-bold rounded-xl bg-gradient-to-r from-orange-400 to-pink-500 hover:from-orange-500 hover:to-pink-600 transition-all shadow-lg shadow-orange-500/30"
-            >
-              <Plus className="w-5 h-5" />
-              <span>Tambah Item</span>
-            </button>
           </div>
         </div>
+      </div>
 
-        {/* Items Table */}
-        <div className="card overflow-hidden">
-          {filteredItems.length === 0 ? (
-            <div className="py-16 text-center">
-              <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-gray-700 mb-2">
-                {searchQuery || selectedCategory ? 'Tidak ada item ditemukan' : 'Belum ada item'}
-              </h3>
-              <p className="text-gray-500 mb-6">
-                {searchQuery || selectedCategory
-                  ? 'Coba kata kunci atau kategori lain'
-                  : 'Tambahkan item untuk katalog produk/jasa Anda'}
-              </p>
-              {!searchQuery && !selectedCategory && (
-                <button
-                  onClick={handleOpenModal}
-                  className="inline-flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl bg-gradient-to-r from-orange-400 to-pink-500 hover:from-orange-500 hover:to-pink-600 transition-all shadow-lg shadow-orange-500/30"
-                >
-                  <Plus className="w-5 h-5" />
-                  <span>Tambah Item Pertama</span>
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-orange-200">
-                    <th className="text-left py-4 px-6 text-sm font-bold text-gray-700">
-                      Nama Item
-                    </th>
-                    <th className="text-left py-4 px-6 text-sm font-bold text-gray-700">
-                      SKU
-                    </th>
-                    <th className="text-left py-4 px-6 text-sm font-bold text-gray-700">
-                      Kategori
-                    </th>
-                    <th className="text-left py-4 px-6 text-sm font-bold text-gray-700">
-                      Satuan
-                    </th>
-                    <th className="text-left py-4 px-6 text-sm font-bold text-gray-700">
-                      Harga
-                    </th>
-                    <th className="text-left py-4 px-6 text-sm font-bold text-gray-700">
-                      Pajak
-                    </th>
-                    <th className="text-right py-4 px-6 text-sm font-bold text-gray-700">
-                      Aksi
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredItems.map((item) => (
-                    <tr key={item.id} className="border-b border-orange-100 hover:bg-orange-50/50 transition-colors">
-                      <td className="py-4 px-6">
-                        <div>
-                          <p className="font-semibold text-gray-900">{item.name}</p>
-                          {item.description && (
-                            <p className="text-sm text-gray-500 max-w-xs truncate">{item.description}</p>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-lg">
-                          {item.sku || '-'}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6">
-                        {item.category ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-orange-100 text-orange-700 rounded-lg">
-                            <Tag className="w-3 h-3" />
-                            {item.category}
-                          </span>
-                        ) : (
-                          '-'
-                        )}
-                      </td>
-                      <td className="py-4 px-6 text-gray-600">
-                        {item.unit}
-                      </td>
-                      <td className="py-4 px-6 font-semibold text-gray-900">
-                        {formatCurrency(item.price)}
-                      </td>
-                      <td className="py-4 px-6 text-gray-600">
-                        {item.taxRate}%
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => handleEdit(item)}
-                            className="p-2 text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
-                            title="Edit"
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(item)}
-                            className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Hapus"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+      {/* Items Table */}
+      {filteredItems.length === 0 ? (
+        <div className="card p-16 text-center">
+          <div className="w-24 h-24 rounded-2xl icon-box-secondary mx-auto mb-6">
+            <Package className="w-12 h-12 text-secondary-600" />
+          </div>
+          <h3 className="text-xl font-bold text-brand-500 mb-2">
+            {searchQuery || selectedCategory ? 'Tidak ada item ditemukan' : 'Belum ada item'}
+          </h3>
+          <p className="text-text-secondary mb-6 max-w-md mx-auto">
+            {searchQuery || selectedCategory
+              ? 'Coba kata kunci atau kategori lain'
+              : 'Tambahkan item untuk katalog produk/jasa Anda'}
+          </p>
+          {!searchQuery && !selectedCategory && (
+            <button
+              onClick={handleOpenModal}
+              className="btn-primary px-6 py-3 inline-flex items-center gap-2"
+            >
+              <Plus className="w-5 h-5" />
+              <span>Tambah Item Pertama</span>
+            </button>
           )}
         </div>
-      </div>
+      ) : (
+        <div className="card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-surface-light">
+                <tr>
+                  <th className="table-header">Nama Item</th>
+                  <th className="table-header">SKU</th>
+                  <th className="table-header">Kategori</th>
+                  <th className="table-header">Satuan</th>
+                  <th className="table-header">Harga</th>
+                  <th className="table-header">Pajak</th>
+                  <th className="table-header text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredItems.map((item) => (
+                  <tr key={item.id} className="table-row">
+                    <td className="table-cell">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-secondary-100 flex items-center justify-center">
+                          <Package className="w-5 h-5 text-secondary-600" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-text-primary">{item.name}</p>
+                          {item.description && (
+                            <p className="text-sm text-text-muted max-w-xs truncate">{item.description}</p>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="table-cell">
+                      <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-text-secondary rounded-lg">
+                        {item.sku || '-'}
+                      </span>
+                    </td>
+                    <td className="table-cell">
+                      {item.category ? (
+                        <span className="badge-brand">
+                          <Tag className="w-3 h-3" />
+                          {item.category}
+                        </span>
+                      ) : (
+                        '-'
+                      )}
+                    </td>
+                    <td className="table-cell text-text-secondary">
+                      {item.unit}
+                    </td>
+                    <td className="table-cell font-bold text-text-primary">
+                      {formatCurrency(item.price)}
+                    </td>
+                    <td className="table-cell text-text-secondary">
+                      {item.taxRate}%
+                    </td>
+                    <td className="table-cell text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => handleEdit(item)}
+                          className="p-2 text-brand-500 hover:bg-brand-50 rounded-lg transition-colors"
+                          title="Edit"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(item)}
+                          className="p-2 text-primary-500 hover:bg-primary-50 rounded-lg transition-colors"
+                          title="Hapus"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Add/Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-brand-lg w-full max-w-lg max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-8 py-6 rounded-t-2xl z-10">
-              <h2 className="text-2xl font-bold text-gray-900">
+            <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-5 rounded-t-2xl z-10">
+              <h2 className="text-xl font-bold text-brand-500">
                 {editingItem ? 'Edit Item' : 'Tambah Item Baru'}
               </h2>
+              <button
+                onClick={handleCloseModal}
+                className="absolute top-5 right-6 text-text-muted hover:text-text-primary transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
             </div>
 
             {/* Modal Body */}
-            <div className="px-8 py-6">
+            <div className="px-6 py-6">
               <form onSubmit={handleSubmit} className="space-y-5">
                 {/* Name */}
                 <div>
-                  <label className="block text-sm font-bold text-gray-900 mb-2">
-                    Nama Item *
-                  </label>
+                  <label className="input-label">Nama Item *</label>
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+                    className="input"
                     placeholder="Nama produk/jasa"
                     required
                   />
@@ -454,14 +441,12 @@ export default function ItemsPage() {
 
                 {/* Description */}
                 <div>
-                  <label className="block text-sm font-bold text-gray-900 mb-2">
-                    Deskripsi
-                  </label>
+                  <label className="input-label">Deskripsi</label>
                   <textarea
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     rows={2}
-                    className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors resize-none"
+                    className="textarea"
                     placeholder="Deskripsi item"
                   />
                 </div>
@@ -469,27 +454,23 @@ export default function ItemsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   {/* SKU */}
                   <div>
-                    <label className="block text-sm font-bold text-gray-900 mb-2">
-                      SKU
-                    </label>
+                    <label className="input-label">SKU</label>
                     <input
                       type="text"
                       value={formData.sku}
                       onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+                      className="input"
                       placeholder="Kode barang"
                     />
                   </div>
 
                   {/* Unit */}
                   <div>
-                    <label className="block text-sm font-bold text-gray-900 mb-2">
-                      Satuan *
-                    </label>
+                    <label className="input-label">Satuan *</label>
                     <select
                       value={formData.unit}
                       onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 focus:border-orange-500 focus:outline-none transition-colors"
+                      className="select"
                       required
                     >
                       <option value="pcs">Pcs</option>
@@ -508,14 +489,12 @@ export default function ItemsPage() {
 
                 {/* Category */}
                 <div>
-                  <label className="block text-sm font-bold text-gray-900 mb-2">
-                    Kategori
-                  </label>
+                  <label className="input-label">Kategori</label>
                   <input
                     type="text"
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+                    className="input"
                     placeholder="Contoh: Jasa, Produk, dll"
                   />
                 </div>
@@ -523,9 +502,7 @@ export default function ItemsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   {/* Price */}
                   <div>
-                    <label className="block text-sm font-bold text-gray-900 mb-2">
-                      Harga *
-                    </label>
+                    <label className="input-label">Harga *</label>
                     <input
                       type="text"
                       value={formData.price}
@@ -533,7 +510,7 @@ export default function ItemsPage() {
                         const formatted = formatCurrencyInput(e.target.value)
                         setFormData({ ...formData, price: formatted })
                       }}
-                      className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+                      className="input"
                       placeholder="Rp 0"
                       required
                     />
@@ -541,14 +518,12 @@ export default function ItemsPage() {
 
                   {/* Tax Rate */}
                   <div>
-                    <label className="block text-sm font-bold text-gray-900 mb-2">
-                      Pajak (%)
-                    </label>
+                    <label className="input-label">Pajak (%)</label>
                     <input
                       type="number"
                       value={formData.taxRate}
                       onChange={(e) => setFormData({ ...formData, taxRate: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+                      className="input"
                       placeholder="11"
                       min="0"
                       max="100"
@@ -562,14 +537,14 @@ export default function ItemsPage() {
                   <button
                     type="button"
                     onClick={handleCloseModal}
-                    className="flex-1 px-6 py-3 text-gray-700 font-bold rounded-xl border border-gray-300 hover:bg-gray-50 transition-colors"
+                    className="flex-1 btn-secondary px-6 py-3"
                   >
                     Batal
                   </button>
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="flex-1 px-6 py-3 text-white font-bold rounded-xl bg-gradient-to-r from-orange-400 to-pink-500 hover:from-orange-500 hover:to-pink-600 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-orange-500/30"
+                    className="flex-1 btn-primary px-6 py-3 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isSubmitting ? (
                       <>
@@ -586,14 +561,6 @@ export default function ItemsPage() {
                 </div>
               </form>
             </div>
-
-            {/* Modal Close Button */}
-            <button
-              onClick={handleCloseModal}
-              className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X className="w-6 h-6" />
-            </button>
           </div>
         </div>
       )}
@@ -611,6 +578,6 @@ export default function ItemsPage() {
         onCancel={messageBox.state.onCancel}
         loading={messageBox.state.loading}
       />
-    </div>
+    </DashboardLayout>
   )
 }

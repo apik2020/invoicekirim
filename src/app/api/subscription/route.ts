@@ -82,7 +82,7 @@ export async function GET(req: NextRequest) {
     // Calculate current month's invoice count for free users
     let invoiceCount = 0
     let invoiceLimit = 10
-    let isTrial = subscription.status === 'TRIALING'
+    const isTrial = subscription.status === 'TRIALING'
     let trialDaysLeft = 0
 
     if (subscription.planType === 'FREE' && subscription.status !== 'TRIALING') {

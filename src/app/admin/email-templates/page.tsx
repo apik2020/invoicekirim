@@ -2,9 +2,23 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Mail, Plus, Loader2, LogOut, Edit, Trash2, ToggleLeft, ToggleRight, Users, DollarSign, Activity } from 'lucide-react'
+import {
+  Mail,
+  Plus,
+  Loader2,
+  LogOut,
+  Edit,
+  Trash2,
+  ToggleLeft,
+  ToggleRight,
+  Users,
+  DollarSign,
+  Activity,
+  LayoutDashboard,
+} from 'lucide-react'
 import { EmailTemplateEditor } from '@/components/admin/EmailTemplateEditor'
 import { AdminLogo } from '@/components/Logo'
+import { cn } from '@/lib/utils'
 
 interface EmailTemplate {
   id: string
@@ -24,6 +38,14 @@ const TEMPLATE_NAMES: Record<string, string> = {
   PAYMENT_CONFIRMATION: 'Konfirmasi Pembayaran',
   WELCOME_EMAIL: 'Email Selamat Datang',
 }
+
+const navItems = [
+  { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+  { name: 'Users', href: '/admin/users', icon: Users },
+  { name: 'Payments', href: '/admin/payments', icon: DollarSign },
+  { name: 'Email Templates', href: '/admin/email-templates', icon: Mail },
+  { name: 'Activity Logs', href: '/admin/activity-logs', icon: Activity },
+]
 
 export default function AdminEmailTemplatesPage() {
   const router = useRouter()
@@ -103,10 +125,10 @@ export default function AdminEmailTemplatesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-fresh-bg flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-16 h-16 text-orange-600 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Memuat...</p>
+      <div className="min-h-screen bg-surface-light flex items-center justify-center">
+        <div className="text-center animate-fade-in">
+          <Loader2 className="w-16 h-16 text-brand-500 animate-spin mx-auto mb-4" />
+          <p className="text-text-secondary">Memuat...</p>
         </div>
       </div>
     )
@@ -114,14 +136,16 @@ export default function AdminEmailTemplatesPage() {
 
   if (selectedTemplateId !== null || isCreating) {
     return (
-      <div className="min-h-screen bg-fresh-bg">
+      <div className="min-h-screen bg-surface-light">
         {/* Header */}
-        <div className="bg-white border-b border-orange-100 sticky top-0 z-50">
+        <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Mail className="w-6 h-6 text-orange-600" />
-                <h1 className="text-xl font-bold text-gray-900">
+                <div className="w-10 h-10 rounded-xl bg-brand-100 flex items-center justify-center">
+                  <Mail className="w-5 h-5 text-brand-600" />
+                </div>
+                <h1 className="text-lg sm:text-xl font-bold text-text-primary">
                   {isCreating ? 'Template Baru' : 'Edit Template'}
                 </h1>
               </div>
@@ -130,16 +154,16 @@ export default function AdminEmailTemplatesPage() {
                   setSelectedTemplateId(null)
                   setIsCreating(false)
                 }}
-                className="px-4 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50"
+                className="px-4 py-2 rounded-xl border border-gray-200 text-text-secondary hover:bg-gray-50 transition-all text-sm"
               >
                 Kembali
               </button>
             </div>
           </div>
-        </div>
+        </header>
 
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-          <div className="card p-6">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+          <div className="card p-5 sm:p-6 animate-fade-in-up">
             <EmailTemplateEditor
               templateId={selectedTemplateId}
               onClose={() => {
@@ -159,54 +183,20 @@ export default function AdminEmailTemplatesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-fresh-bg">
+    <div className="min-h-screen bg-surface-light">
       {/* Header */}
-      <div className="bg-white border-b border-orange-100 sticky top-0 z-50">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <AdminLogo size="lg" linkToHome={false} />
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => router.push('/admin')}
-                className="px-4 py-2 rounded-xl border border-orange-200 text-gray-700 hover:bg-orange-50 font-medium"
-              >
-                Dashboard
-              </button>
-              <button
-                onClick={() => router.push('/admin/users')}
-                className="px-4 py-2 rounded-xl border border-orange-200 text-gray-700 hover:bg-orange-50 font-medium flex items-center gap-2"
-              >
-                <Users className="w-4 h-4" />
-                Users
-              </button>
-              <button
-                onClick={() => router.push('/admin/payments')}
-                className="px-4 py-2 rounded-xl border border-orange-200 text-gray-700 hover:bg-orange-50 font-medium flex items-center gap-2"
-              >
-                <DollarSign className="w-4 h-4" />
-                Payments
-              </button>
-              <button
-                onClick={() => router.push('/admin/email-templates')}
-                className="px-4 py-2 rounded-xl bg-orange-500 text-white font-medium flex items-center gap-2"
-              >
-                <Mail className="w-4 h-4" />
-                Email Templates
-              </button>
-              <button
-                onClick={() => router.push('/admin/activity-logs')}
-                className="px-4 py-2 rounded-xl border border-orange-200 text-gray-700 hover:bg-orange-50 font-medium flex items-center gap-2"
-              >
-                <Activity className="w-4 h-4" />
-                Activity Logs
-              </button>
               <button
                 onClick={async () => {
                   await fetch('/api/admin/logout', { method: 'POST' })
                   router.push('/admin/login')
                   router.refresh()
                 }}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition-colors font-medium"
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition-all font-medium text-sm"
               >
                 <LogOut className="w-4 h-4" />
                 <span className="hidden sm:inline">Logout</span>
@@ -214,18 +204,40 @@ export default function AdminEmailTemplatesPage() {
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+        {/* Admin Navigation */}
+        <div className="flex flex-wrap gap-2 sm:gap-3 mb-6 sm:mb-8">
+          {navItems.map((item) => {
+            const isActive = item.href === '/admin/email-templates'
+            return (
+              <button
+                key={item.name}
+                onClick={() => router.push(item.href)}
+                className={cn(
+                  'flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-medium text-sm transition-all',
+                  isActive
+                    ? 'bg-brand-500 text-white'
+                    : 'border border-gray-200 text-text-secondary hover:border-brand-300 hover:text-brand-600 hover:bg-brand-50'
+                )}
+              >
+                <item.icon className="w-4 h-4" />
+                <span className="hidden sm:inline">{item.name}</span>
+              </button>
+            )
+          })}
+        </div>
+
         {/* Page Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8 animate-fade-in-up">
           <div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Template Email</h2>
-            <p className="text-gray-600">Kelola template untuk notifikasi email otomatis</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-text-primary mb-2">Template Email</h1>
+            <p className="text-text-secondary text-sm sm:text-base">Kelola template untuk notifikasi email otomatis</p>
           </div>
           <button
             onClick={() => setIsCreating(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-500 text-white hover:bg-orange-600 transition-colors font-medium"
+            className="flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl btn-primary text-sm font-semibold"
           >
             <Plus className="w-4 h-4" />
             Template Baru
@@ -234,49 +246,56 @@ export default function AdminEmailTemplatesPage() {
 
         {/* Templates Grid */}
         {templates.length === 0 ? (
-          <div className="card p-12 text-center">
-            <Mail className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 mb-4">Belum ada template email</p>
+          <div className="card p-8 sm:p-12 text-center animate-fade-in-up">
+            <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
+              <Mail className="w-8 h-8 text-text-muted" />
+            </div>
+            <p className="text-text-secondary mb-4">Belum ada template email</p>
             <button
               onClick={() => setIsCreating(true)}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-orange-500 text-white hover:bg-orange-600 transition-colors font-medium"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl btn-primary font-semibold"
             >
               <Plus className="w-4 h-4" />
               Buat Template
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {templates.map((template) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            {templates.map((template, index) => (
               <div
                 key={template.id}
-                className={`card p-6 ${
-                  !template.isActive ? 'opacity-60' : ''
-                }`}
+                className={cn(
+                  'card p-5 sm:p-6 animate-fade-in-up',
+                  !template.isActive && 'opacity-60'
+                )}
+                style={{ animationDelay: `${index * 100}ms` }}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                      template.isActive ? 'bg-orange-100' : 'bg-gray-100'
-                    }`}>
-                      <Mail className={`w-6 h-6 ${
-                        template.isActive ? 'text-orange-600' : 'text-gray-400'
-                      }`} />
+                    <div className={cn(
+                      'w-12 h-12 rounded-xl flex items-center justify-center',
+                      template.isActive ? 'bg-brand-100' : 'bg-gray-100'
+                    )}>
+                      <Mail className={cn(
+                        'w-6 h-6',
+                        template.isActive ? 'text-brand-600' : 'text-text-muted'
+                      )} />
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold text-gray-900">
+                      <h3 className="text-base sm:text-lg font-bold text-text-primary">
                         {TEMPLATE_NAMES[template.name] || template.name}
                       </h3>
-                      <p className="text-xs text-gray-500">{template.name}</p>
+                      <p className="text-xs text-text-muted">{template.name}</p>
                     </div>
                   </div>
                   <button
                     onClick={() => toggleTemplateStatus(template)}
-                    className={`p-2 rounded-lg transition-colors ${
+                    className={cn(
+                      'p-2 rounded-lg transition-all',
                       template.isActive
-                        ? 'bg-lime-100 text-lime-600 hover:bg-lime-200'
-                        : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
-                    }`}
+                        ? 'bg-success-100 text-success-600 hover:bg-success-200'
+                        : 'bg-gray-100 text-text-muted hover:bg-gray-200'
+                    )}
                     title={template.isActive ? 'Nonaktifkan' : 'Aktifkan'}
                   >
                     {template.isActive ? (
@@ -288,7 +307,7 @@ export default function AdminEmailTemplatesPage() {
                 </div>
 
                 <div className="mb-4">
-                  <p className="text-sm text-gray-600 line-clamp-1">
+                  <p className="text-sm text-text-secondary line-clamp-1">
                     <strong>Subject:</strong> {template.subject}
                   </p>
                 </div>
@@ -296,14 +315,14 @@ export default function AdminEmailTemplatesPage() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setSelectedTemplateId(template.id)}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-orange-200 text-orange-600 hover:bg-orange-50 transition-colors"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-brand-200 text-brand-600 hover:bg-brand-50 transition-all text-sm font-medium"
                   >
                     <Edit className="w-4 h-4" />
                     Edit
                   </button>
                   <button
                     onClick={() => deleteTemplate(template)}
-                    className="p-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition-colors"
+                    className="p-2.5 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition-all"
                     title="Hapus Template"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -311,16 +330,17 @@ export default function AdminEmailTemplatesPage() {
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-gray-100">
-                  <div className="flex items-center justify-between text-xs text-gray-500">
+                  <div className="flex items-center justify-between text-xs text-text-muted">
                     <span>
                       Update: {new Date(template.updatedAt).toLocaleDateString('id-ID')}
                     </span>
                     <span
-                      className={`px-2 py-1 rounded-lg font-bold ${
+                      className={cn(
+                        'px-2 py-1 rounded-lg font-bold',
                         template.isActive
-                          ? 'bg-lime-100 text-lime-700'
-                          : 'bg-gray-100 text-gray-600'
-                      }`}
+                          ? 'badge-paid'
+                          : 'badge-draft'
+                      )}
                     >
                       {template.isActive ? 'Aktif' : 'Nonaktif'}
                     </span>

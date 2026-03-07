@@ -1,9 +1,19 @@
 import { z } from 'zod'
 
 export const invoiceItemSchema = z.object({
+  id: z.string().optional(), // Allow id field from client
   description: z.string().min(1, 'Deskripsi item harus diisi'),
   quantity: z.number().min(1, 'Quantity minimal 1'),
   price: z.number().min(0, 'Harga tidak boleh negatif'),
+  priceFormatted: z.string().optional(), // Allow formatted price from client
+})
+
+export const templateSettingsSchema = z.object({
+  showClientInfo: z.boolean().optional().default(true),
+  showDiscount: z.boolean().optional().default(false),
+  showAdditionalDiscount: z.boolean().optional().default(false),
+  showTax: z.boolean().optional().default(true),
+  showSignature: z.boolean().optional().default(false),
 })
 
 export const invoiceSchema = z.object({
@@ -22,16 +32,37 @@ export const invoiceSchema = z.object({
   notes: z.string().optional(),
   taxRate: z.number().min(0).max(100).default(11),
   status: z.enum(['DRAFT', 'SENT', 'PAID', 'OVERDUE', 'CANCELED']).optional(),
+  // New fields for template settings
+  settings: templateSettingsSchema.optional().nullable(),
+  termsAndConditions: z.string().optional().nullable(),
+  signatureUrl: z.string().optional().nullable(),
+  signatoryName: z.string().optional().nullable(),
+  signatoryTitle: z.string().optional().nullable(),
+  discountType: z.enum(['percentage', 'fixed']).optional().nullable(),
+  discountValue: z.number().min(0).optional().nullable(),
+  additionalDiscountType: z.enum(['percentage', 'fixed']).optional().nullable(),
+  additionalDiscountValue: z.number().min(0).optional().nullable(),
 })
 
 export const invoiceUpdateSchema = invoiceSchema.partial()
 
 export const templateSchema = z.object({
   name: z.string().min(1, 'Nama template harus diisi'),
-  description: z.string().optional(),
+  description: z.string().optional().nullable(),
   taxRate: z.number().min(0).max(100).default(11),
-  notes: z.string().optional(),
+  notes: z.string().optional().nullable(),
   items: z.array(invoiceItemSchema).min(1, 'Minimal 1 item harus diisi'),
+  // New fields for template settings
+  settings: templateSettingsSchema.optional().nullable(),
+  defaultClientId: z.string().optional().nullable(),
+  termsAndConditions: z.string().optional().nullable(),
+  signatureUrl: z.string().optional().nullable(),
+  signatoryName: z.string().optional().nullable(),
+  signatoryTitle: z.string().optional().nullable(),
+  discountType: z.enum(['percentage', 'fixed']).optional().nullable(),
+  discountValue: z.number().min(0).optional().nullable(),
+  additionalDiscountType: z.enum(['percentage', 'fixed']).optional().nullable(),
+  additionalDiscountValue: z.number().min(0).optional().nullable(),
 })
 
 export const loginSchema = z.object({

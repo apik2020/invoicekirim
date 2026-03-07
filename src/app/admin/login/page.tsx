@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Mail, Lock, ArrowRight, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { AdminLogo } from '@/components/Logo'
+import { AlertBox } from '@/components/Toast'
 
 export default function AdminLoginPage() {
   const router = useRouter()
@@ -44,16 +45,16 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-fresh-bg flex flex-col">
+    <div className="auth-container">
       {/* Header */}
-      <header className="bg-white border-b border-orange-100">
+      <header className="auth-header">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <nav className="flex items-center justify-between">
             <AdminLogo size="lg" linkToHome={false} />
 
             <Link
               href="/"
-              className="flex items-center gap-2 px-5 py-2.5 text-gray-600 font-medium rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors"
+              className="hidden sm:flex items-center gap-2 px-5 py-2.5 btn-secondary"
             >
               Kembali
             </Link>
@@ -62,43 +63,45 @@ export default function AdminLoginPage() {
       </header>
 
       {/* Login Form */}
-      <div className="flex-1 flex items-center justify-center py-16 px-4">
-        <div className="w-full max-w-md">
+      <div className="flex-1 flex items-center justify-center py-8 sm:py-12 md:py-16 px-4">
+        <div className="w-full max-w-md animate-fade-in-up">
           {/* Logo/Icon */}
-          <div className="text-center mb-10">
-            <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center mx-auto mb-6 shadow-xl shadow-orange-500/30">
-              <span className="font-bold text-white text-3xl tracking-tight">[iK]</span>
+          <div className="text-center mb-8 sm:mb-10">
+            <div className="auth-icon bg-gradient-to-br from-brand-500 to-brand-600 shadow-brand-lg">
+              <span className="font-bold text-white text-2xl sm:text-3xl tracking-tight">[iK]</span>
             </div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-3 tracking-tight">
+            <h1 className="text-3xl sm:text-4xl font-bold text-brand-500 mb-2 sm:mb-3 tracking-tight">
               Admin Login
             </h1>
-            <p className="text-gray-600">
+            <p className="text-text-secondary text-sm sm:text-base">
               Login untuk mengakses dashboard admin InvoiceKirim
             </p>
           </div>
 
           {/* Login Card */}
-          <div className="bg-white rounded-3xl shadow-xl border border-orange-100 p-8">
+          <div className="auth-card">
             {error && (
-              <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200">
-                <p className="text-sm text-red-700">{error}</p>
+              <div className="mb-6 animate-scale-in">
+                <AlertBox type="error" title="Login Gagal">
+                  {error}
+                </AlertBox>
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Email */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Email Admin
-                </label>
+                <label className="input-label">Email Admin</label>
                 <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <div className="auth-input-icon">
+                    <Mail className="w-5 h-5" />
+                  </div>
                   <input
                     type="email"
                     placeholder="admin@invoicekirim.com"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+                    className="auth-input"
                     required
                   />
                 </div>
@@ -106,23 +109,23 @@ export default function AdminLoginPage() {
 
               {/* Password */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Password
-                </label>
+                <label className="input-label">Password</label>
                 <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <div className="auth-input-icon">
+                    <Lock className="w-5 h-5" />
+                  </div>
                   <input
                     type={showPassword ? 'text' : 'password'}
                     placeholder="•••••••••"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full pl-12 pr-12 py-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20"
+                    className="auth-input pr-12"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    className="auth-toggle-password"
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -133,13 +136,13 @@ export default function AdminLoginPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-4 bg-gradient-to-r from-orange-500 to-pink-500 text-white rounded-xl font-semibold hover:from-orange-600 hover:to-pink-600 transition-all shadow-lg shadow-orange-500/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="auth-submit-btn"
               >
                 {isLoading ? (
-                  <>
+                  <div className="flex items-center gap-2">
                     <Loader2 className="w-5 h-5 animate-spin" />
-                    Memproses...
-                  </>
+                    <span>Memproses...</span>
+                  </div>
                 ) : (
                   <>
                     <span>Login as Admin</span>
@@ -150,22 +153,29 @@ export default function AdminLoginPage() {
             </form>
 
             {/* Notice */}
-            <div className="mt-6 p-4 rounded-xl bg-blue-50 border border-blue-200">
-              <p className="text-sm text-blue-700">
+            <div className="mt-6 p-4 rounded-xl bg-brand-50 border border-brand-200">
+              <p className="text-sm text-brand-700">
                 <strong>Info:</strong> Gunakan akun admin khusus. Jangan gunakan akun user biasa.
               </p>
             </div>
           </div>
 
           {/* Footer */}
-          <div className="mt-8 text-center">
-            <p className="text-gray-600 text-sm">
+          <div className="mt-6 sm:mt-8 text-center">
+            <p className="text-text-secondary text-sm sm:text-base">
               Login sebagai user biasa?{' '}
-              <Link href="/login" className="text-orange-600 font-semibold hover:text-orange-700">
+              <Link href="/login" className="auth-link">
                 Klik di sini
               </Link>
             </p>
           </div>
+
+          {/* Back to Home - Mobile */}
+          <p className="text-center mt-6 sm:hidden">
+            <Link href="/" className="text-text-secondary hover:text-brand-500 text-sm transition-colors">
+              ← Kembali ke halaman utama
+            </Link>
+          </p>
         </div>
       </div>
     </div>

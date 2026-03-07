@@ -9,6 +9,50 @@ interface LogoProps {
   textClassName?: string
 }
 
+const sizeClasses = {
+  sm: 'w-8 h-8 text-sm',
+  md: 'w-10 h-10 text-base',
+  lg: 'w-12 h-12 text-lg',
+}
+
+const textSizeClasses = {
+  sm: 'text-lg',
+  md: 'text-xl',
+  lg: 'text-2xl',
+}
+
+function LogoIcon({ size, className }: { size?: 'sm' | 'md' | 'lg'; className?: string }) {
+  const sizeClass = sizeClasses[size || 'md']
+
+  return (
+    <div
+      className={cn(
+        'rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-primary',
+        sizeClass,
+        className
+      )}
+    >
+      <span className="font-bold text-white tracking-tight">[iK]</span>
+    </div>
+  )
+}
+
+function LogoText({ size, textClassName }: { size?: 'sm' | 'md' | 'lg'; textClassName?: string }) {
+  const textSizeClass = textSizeClasses[size || 'md']
+
+  return (
+    <span
+      className={cn(
+        'font-bold bg-gradient-to-r from-brand-500 to-brand-600 bg-clip-text text-transparent',
+        textSizeClass,
+        textClassName
+      )}
+    >
+      InvoiceKirim
+    </span>
+  )
+}
+
 export function Logo({
   size = 'md',
   showText = true,
@@ -16,62 +60,28 @@ export function Logo({
   className,
   textClassName,
 }: LogoProps) {
-  const sizeClasses = {
-    sm: 'w-8 h-8 text-sm',
-    md: 'w-10 h-10 text-base',
-    lg: 'w-12 h-12 text-lg',
-  }
-
-  const textSizeClasses = {
-    sm: 'text-lg',
-    md: 'text-xl',
-    lg: 'text-2xl',
-  }
-
-  const LogoContent = () => (
+  const content = (
     <>
-      {/* Logo Icon [iK] */}
-      <div
-        className={cn(
-          'rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-200',
-          sizeClasses[size],
-          className
-        )}
-      >
-        <span className="font-bold text-white tracking-tight">[iK]</span>
-      </div>
-
-      {/* Logo Text */}
-      {showText && (
-        <span
-          className={cn(
-            'font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent',
-            textSizeClasses[size],
-            textClassName
-          )}
-        >
-          InvoiceKirim
-        </span>
-      )}
+      <LogoIcon size={size} className={className} />
+      {showText && <LogoText size={size} textClassName={textClassName} />}
     </>
   )
 
   if (linkToHome) {
     return (
       <Link href="/" className="flex items-center gap-2 group">
-        <LogoContent />
+        {content}
       </Link>
     )
   }
 
   return (
     <div className="flex items-center gap-2">
-      <LogoContent />
+      {content}
     </div>
   )
 }
 
-// Admin Logo variant
 export function AdminLogo({
   size = 'md',
   showText = true,
@@ -79,37 +89,20 @@ export function AdminLogo({
   className,
   textClassName,
 }: LogoProps) {
-  const sizeClasses = {
-    sm: 'w-8 h-8 text-sm',
-    md: 'w-10 h-10 text-base',
-    lg: 'w-12 h-12 text-lg',
-  }
-
-  const textSizeClasses = {
-    sm: 'text-lg',
-    md: 'text-xl',
-    lg: 'text-2xl',
-  }
-
-  const LogoContent = () => (
+  const content = (
     <>
-      {/* Logo Icon [iK] */}
-      <div
-        className={cn(
-          'rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-500/30',
-          sizeClasses[size],
-          className
-        )}
-      >
-        <span className="font-bold text-white tracking-tight">[iK]</span>
-      </div>
-
-      {/* Logo Text */}
+      <LogoIcon size={size} className={className} />
       {showText && (
-        <span className={cn('font-bold text-gray-900', textSizeClasses[size], textClassName)}>
-          InvoiceKirim{' '}
-          <span className="text-orange-500">Admin</span>
-        </span>
+        <div className="flex items-center gap-2">
+          <span className={cn('font-bold text-brand-500', textSizeClasses[size], textClassName)}>
+            InvoiceKirim
+          </span>
+          {linkToHome && (
+            <span className="px-2 py-0.5 bg-primary-100 text-primary-600 text-xs font-semibold rounded-full">
+              Admin
+            </span>
+          )}
+        </div>
       )}
     </>
   )
@@ -117,14 +110,14 @@ export function AdminLogo({
   if (linkToHome) {
     return (
       <Link href="/admin" className="flex items-center gap-2 group">
-        <LogoContent />
+        {content}
       </Link>
     )
   }
 
   return (
     <div className="flex items-center gap-2">
-      <LogoContent />
+      {content}
     </div>
   )
 }

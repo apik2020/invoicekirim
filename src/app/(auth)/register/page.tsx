@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import Link from 'next/link'
-import { Mail, Lock, User, ArrowRight, Eye, EyeOff } from 'lucide-react'
+import { Mail, Lock, User, ArrowRight, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { Logo } from '@/components/Logo'
 import { AlertBox } from '@/components/Toast'
 
@@ -38,6 +38,11 @@ export default function RegisterPage() {
       return
     }
 
+    if (formData.password.length < 6) {
+      setError('Password minimal 6 karakter')
+      return
+    }
+
     setIsLoading(true)
 
     try {
@@ -62,16 +67,16 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-fresh-bg flex flex-col">
+    <div className="auth-container">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-orange-100">
+      <header className="auth-header">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <nav className="flex items-center justify-between">
-            <Logo size="lg" />
+            <Logo size="md" />
 
             <Link
               href="/"
-              className="flex items-center gap-2 px-5 py-2.5 text-gray-600 font-medium rounded-xl btn-secondary"
+              className="hidden sm:flex items-center gap-2 px-5 py-2.5 btn-secondary"
             >
               Kembali
             </Link>
@@ -80,27 +85,29 @@ export default function RegisterPage() {
       </header>
 
       {/* Register Form */}
-      <div className="flex-1 flex items-center justify-center py-16 px-4">
-        <div className="w-full max-w-md">
+      <div className="flex-1 flex items-center justify-center py-8 sm:py-12 md:py-16 px-4">
+        <div className="w-full max-w-md animate-fade-in-up">
           {/* Logo/Icon */}
-          <div className="text-center mb-10">
-            <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center mx-auto mb-6 animate-float shadow-xl shadow-orange-200">
-              <span className="font-bold text-white text-3xl tracking-tight">[iK]</span>
+          <div className="text-center mb-8 sm:mb-10">
+            <div className="auth-icon">
+              <span className="font-bold text-white text-2xl sm:text-3xl tracking-tight">[iK]</span>
             </div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-3 tracking-tight">
+            <h1 className="text-3xl sm:text-4xl font-bold text-brand-500 mb-2 sm:mb-3 tracking-tight">
               Buat Akun Baru
             </h1>
-            <p className="text-gray-600">
+            <p className="text-text-secondary text-sm sm:text-base">
               Mulai buat invoice profesional sekarang
             </p>
           </div>
 
           {/* Form Card */}
-          <div className="card p-10">
+          <div className="auth-card">
             {error && (
-              <AlertBox type="error" title="Registrasi Gagal" className="mb-6">
-                {error}
-              </AlertBox>
+              <div className="mb-6 animate-scale-in">
+                <AlertBox type="error" title="Registrasi Gagal">
+                  {error}
+                </AlertBox>
+              </div>
             )}
 
             {/* Google Sign Up Button */}
@@ -108,13 +115,16 @@ export default function RegisterPage() {
               type="button"
               onClick={handleGoogleLogin}
               disabled={isGoogleLoading}
-              className="w-full py-3.5 bg-white border-2 border-gray-200 text-gray-700 font-bold rounded-xl flex items-center justify-center gap-3 hover:bg-gray-50 hover:border-gray-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="auth-social-btn"
             >
               {isGoogleLoading ? (
-                'Memproses...'
+                <div className="flex items-center gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>Memproses...</span>
+                </div>
               ) : (
                 <>
-                  <svg className="w-5 h-5" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
                     <path
                       fill="#4285F4"
                       d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -132,33 +142,31 @@ export default function RegisterPage() {
                       d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                     />
                   </svg>
-                  Daftar dengan Google
+                  <span>Daftar dengan Google</span>
                 </>
               )}
             </button>
 
             {/* Divider */}
-            <div className="flex items-center gap-4 my-6">
-              <div className="flex-1 h-px bg-gray-200"></div>
-              <span className="text-sm text-gray-400 font-medium">atau</span>
-              <div className="flex-1 h-px bg-gray-200"></div>
+            <div className="auth-divider">
+              <div className="auth-divider-line"></div>
+              <span className="auth-divider-text">atau</span>
+              <div className="auth-divider-line"></div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
               {/* Name */}
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
-                  Nama Lengkap
-                </label>
+                <label className="input-label">Nama Lengkap</label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <User className="w-5 h-5 text-gray-400" />
+                  <div className="auth-input-icon">
+                    <User className="w-5 h-5" />
                   </div>
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:outline-none transition-colors"
+                    className="auth-input"
                     placeholder="John Doe"
                     required
                   />
@@ -167,18 +175,16 @@ export default function RegisterPage() {
 
               {/* Email */}
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
-                  Email
-                </label>
+                <label className="input-label">Email</label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Mail className="w-5 h-5 text-gray-400" />
+                  <div className="auth-input-icon">
+                    <Mail className="w-5 h-5" />
                   </div>
                   <input
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:outline-none transition-colors"
+                    className="auth-input"
                     placeholder="nama@email.com"
                     required
                   />
@@ -187,25 +193,23 @@ export default function RegisterPage() {
 
               {/* Password */}
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
-                  Password
-                </label>
+                <label className="input-label">Password</label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Lock className="w-5 h-5 text-gray-400" />
+                  <div className="auth-input-icon">
+                    <Lock className="w-5 h-5" />
                   </div>
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full pl-12 pr-12 py-3.5 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:outline-none transition-colors"
-                    placeholder="••••••••"
+                    className="auth-input pr-12"
+                    placeholder="Min. 6 karakter"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-orange-600 transition-colors"
+                    className="auth-toggle-password"
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
@@ -214,40 +218,58 @@ export default function RegisterPage() {
 
               {/* Confirm Password */}
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
-                  Konfirmasi Password
-                </label>
+                <label className="input-label">Konfirmasi Password</label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Lock className="w-5 h-5 text-gray-400" />
+                  <div className="auth-input-icon">
+                    <Lock className="w-5 h-5" />
                   </div>
                   <input
                     type={showConfirmPassword ? 'text' : 'password'}
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                    className="w-full pl-12 pr-12 py-3.5 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-400 focus:border-orange-500 focus:outline-none transition-colors"
-                    placeholder="••••••••"
+                    className="auth-input pr-12"
+                    placeholder="Ulangi password"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-orange-600 transition-colors"
+                    className="auth-toggle-password"
                   >
                     {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
               </div>
 
+              {/* Terms */}
+              <div className="flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 mt-0.5 rounded border-gray-300 text-brand-500 focus:ring-brand-500"
+                  required
+                />
+                <span className="text-sm text-text-secondary">
+                  Dengan mendaftar, Anda menyetujui{' '}
+                  <a href="#" className="auth-link">Syarat & Ketentuan</a>
+                  {' '}dan{' '}
+                  <a href="#" className="auth-link">Kebijakan Privasi</a>
+                </span>
+              </div>
+
               {/* Submit Button */}
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-4 text-white font-bold text-lg rounded-xl btn-primary flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="auth-submit-btn"
               >
-                {isLoading ? 'Memproses...' : (
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>Memproses...</span>
+                  </div>
+                ) : (
                   <>
-                    Daftar Sekarang
+                    <span>Daftar Sekarang</span>
                     <ArrowRight className="w-5 h-5" />
                   </>
                 )}
@@ -255,17 +277,17 @@ export default function RegisterPage() {
             </form>
 
             {/* Sign In Link */}
-            <p className="mt-8 text-center text-gray-600">
+            <p className="mt-6 sm:mt-8 text-center text-text-secondary text-sm sm:text-base">
               Sudah punya akun?{' '}
-              <Link href="/login" className="text-orange-600 font-bold hover:text-orange-700">
+              <Link href="/login" className="auth-link">
                 Masuk
               </Link>
             </p>
           </div>
 
-          {/* Back to Home */}
-          <p className="text-center mt-8">
-            <Link href="/" className="text-gray-600 hover:text-orange-600 text-sm transition-colors">
+          {/* Back to Home - Mobile */}
+          <p className="text-center mt-6 sm:hidden">
+            <Link href="/" className="text-text-secondary hover:text-brand-500 text-sm transition-colors">
               ← Kembali ke halaman utama
             </Link>
           </p>

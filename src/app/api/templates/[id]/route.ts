@@ -70,7 +70,20 @@ export async function PUT(
       )
     }
 
-    const { items, ...data } = validation.data
+    const {
+      items,
+      settings,
+      defaultClientId,
+      termsAndConditions,
+      signatureUrl,
+      signatoryName,
+      signatoryTitle,
+      discountType,
+      discountValue,
+      additionalDiscountType,
+      additionalDiscountValue,
+      ...data
+    } = validation.data
 
     // Delete existing items
     await prisma.templateItem.deleteMany({
@@ -82,6 +95,22 @@ export async function PUT(
       where: { id },
       data: {
         ...data,
+        settings: settings ? JSON.parse(JSON.stringify(settings)) : {
+          showClientInfo: true,
+          showDiscount: false,
+          showAdditionalDiscount: false,
+          showTax: true,
+          showSignature: false,
+        },
+        ...(defaultClientId !== undefined && { defaultClientId: defaultClientId || null }),
+        ...(termsAndConditions !== undefined && { termsAndConditions: termsAndConditions || null }),
+        ...(signatureUrl !== undefined && { signatureUrl: signatureUrl || null }),
+        ...(signatoryName !== undefined && { signatoryName: signatoryName || null }),
+        ...(signatoryTitle !== undefined && { signatoryTitle: signatoryTitle || null }),
+        ...(discountType !== undefined && { discountType: discountType || null }),
+        ...(discountValue !== undefined && discountValue !== null && { discountValue }),
+        ...(additionalDiscountType !== undefined && { additionalDiscountType: additionalDiscountType || null }),
+        ...(additionalDiscountValue !== undefined && additionalDiscountValue !== null && { additionalDiscountValue }),
         items: {
           create: items.map((item) => ({
             description: item.description,

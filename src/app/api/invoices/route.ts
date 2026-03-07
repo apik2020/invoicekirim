@@ -7,6 +7,19 @@ import { generateInvoiceNumber } from '@/lib/utils'
 import { checkRateLimit, apiRateLimit } from '@/lib/rate-limit'
 import { logInvoiceCreated } from '@/lib/activity-log'
 
+// Helper function to calculate discount
+function calculateDiscount(
+  amount: number,
+  type?: string | null,
+  value?: number | null
+): number {
+  if (!value || value <= 0 || !type) return 0
+  if (type === 'percentage') {
+    return amount * (value / 100)
+  }
+  return Math.min(value, amount) // Cap at amount for fixed discount
+}
+
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -128,12 +141,30 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { items, ...data } = validation.data
+    const {
+      items,
+      settings,
+      termsAndConditions,
+      signatureUrl,
+      signatoryName,
+      signatoryTitle,
+      discountType,
+      discountValue,
+      additionalDiscountType,
+      additionalDiscountValue,
+      ...data
+    } = validation.data
 
-    // Calculate totals
+    // Calculate totals with discount support
     const subtotal = items.reduce((sum, item) => sum + item.quantity * item.price, 0)
-    const taxAmount = subtotal * (data.taxRate / 100)
-    const total = subtotal + taxAmount
+
+    // Calculate discount amounts
+    const discountAmount = calculateDiscount(subtotal, discountType, discountValue)
+    const afterFirstDiscount = subtotal - discountAmount
+    const additionalDiscountAmount = calculateDiscount(afterFirstDiscount, additionalDiscountType, additionalDiscountValue)
+    const taxableAmount = afterFirstDiscount - additionalDiscountAmount
+    const taxAmount = taxableAmount * (data.taxRate / 100)
+    const total = taxableAmount + taxAmount
 
     // Generate invoice number if not provided
     const invoiceNumber = data.invoiceNumber || generateInvoiceNumber()
@@ -161,6 +192,18 @@ export async function POST(req: NextRequest) {
         taxAmount,
         total,
         status: data.status || 'DRAFT',
+        // New fields - only include if provided
+        ...(settings && { settings: JSON.parse(JSON.stringify(settings)) }),
+        ...(termsAndConditions && { termsAndConditions }),
+        ...(signatureUrl && { signatureUrl }),
+        ...(signatoryName && { signatoryName }),
+        ...(signatoryTitle && { signatoryTitle }),
+        ...(discountType && { discountType }),
+        ...(discountValue !== undefined && discountValue !== null && { discountValue }),
+        ...(discountAmount && { discountAmount }),
+        ...(additionalDiscountType && { additionalDiscountType }),
+        ...(additionalDiscountValue !== undefined && additionalDiscountValue !== null && { additionalDiscountValue }),
+        ...(additionalDiscountAmount && { additionalDiscountAmount }),
         items: {
           create: items.map((item) => ({
             description: item.description,

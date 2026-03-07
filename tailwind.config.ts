@@ -10,77 +10,122 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['var(--font-ubuntu)', 'sans-serif'],
+        sans: ['var(--font-inter)', 'var(--font-plus-jakarta)', 'system-ui', 'sans-serif'],
       },
       colors: {
-        // Freshly Squeezed Color Palette
-        orange: {
-          50: '#FFF7ED',
-          100: '#FFEDD5',
-          200: '#FED7AA',
-          300: '#FDBA74',
-          400: '#FB923C',
-          500: '#F97316', // Primary orange
-          600: '#EA580C',
-          700: '#C2410C',
-          800: '#9A3412',
-          900: '#7C2D12',
+        // Primary Action Color - Main CTA and urgency elements (10%)
+        primary: {
+          50: '#FFF1EC',
+          100: '#FFE4D9',
+          200: '#FFCAB3',
+          300: '#FFA882',
+          400: '#FF7D4D',
+          500: '#EF3F0A', // Bright Orange - Main CTA
+          600: '#D63509',
+          700: '#B32A08',
+          800: '#8F2206',
+          900: '#6B1A05',
         },
-        lemon: {
-          50: '#FEFCE8',
-          100: '#FEF9C3',
-          200: '#FEF08A',
-          300: '#FEDE04',
-          400: '#FACC15',
-          500: '#EAB308', // Primary yellow/lemon
-          600: '#CA8A04',
-          700: '#A16207',
-          800: '#854D0E',
-          900: '#713F12',
+        // Brand/Professional Color - Header, Sidebar, Navigation (30%)
+        brand: {
+          50: '#EEF5F6',
+          100: '#D5E8EA',
+          200: '#B3D4D8',
+          300: '#82B9C0',
+          400: '#4D9BA4',
+          500: '#276874', // Deep Teal - Navigation & Headers
+          600: '#215D68',
+          700: '#1A4D57',
+          800: '#143D45',
+          900: '#0F2D33',
         },
-        lime: {
-          50: '#F7FEE7',
-          100: '#ECFCCB',
-          200: '#D9F99D',
-          300: '#BEF264',
-          400: '#A3E635',
-          500: '#84CC16', // Primary lime
-          600: '#65A30D',
-          700: '#4D7C0F',
-          800: '#3F6212',
-          900: '#365314',
+        // Success/Growth Color - Paid status & profit indicators
+        success: {
+          50: '#FBFEE7',
+          100: '#F5FCBE',
+          200: '#EBF78C',
+          300: '#DEF05A',
+          400: '#C5E151', // Lime Green - Paid status
+          500: '#A8C93E',
+          600: '#87A52F',
+          700: '#657C23',
+          800: '#47591A',
+          900: '#2D3A11',
         },
-        pink: {
-          50: '#FDF2F8',
-          100: '#FCE7F3',
-          200: '#FBCFE8',
-          300: '#F9A8D4',
-          400: '#F472B6',
-          500: '#EC4899', // Primary pink
-          600: '#DB2777',
-          700: '#BE185D',
-          800: '#9D174D',
-          900: '#831843',
+        // Secondary/Soft Color - Supporting elements & badges
+        secondary: {
+          50: '#F0FAFA',
+          100: '#E0F6F6',
+          200: '#C2EDED',
+          300: '#9DE3E3',
+          400: '#82D9D7', // Soft Cyan - Badges & accents
+          500: '#5BC7C4',
+          600: '#3AABAA',
+          700: '#2C8A8A',
+          800: '#266E6E',
+          900: '#225C5C',
         },
-        // Background colors
-        cream: '#FFF9ED',
-        'cream-light': '#FFFBF5',
-        'cream-dark': '#FFF0DB',
-        'fresh-bg': '#FFFAF3',
+        // Warm Highlight Color - Secondary buttons & warnings
+        highlight: {
+          50: '#FFF5ED',
+          100: '#FFE9D4',
+          200: '#FFD4AA',
+          300: '#FFBA80',
+          400: '#FAAC7B', // Soft Peach - Secondary buttons
+          500: '#F58A4D',
+          600: '#E56D2E',
+          700: '#C2531F',
+          800: '#9F431A',
+          900: '#833818',
+        },
+        // Surface/Background Colors
+        surface: {
+          white: '#FFFFFF',
+          light: '#F7F7F7', // Light Grey - Dashboard background
+          muted: '#F0F0F0',
+          dark: '#E5E5E5',
+        },
+        // Text Colors
+        text: {
+          primary: '#1A1A1A',
+          secondary: '#4A4A4A',
+          muted: '#6B7280',
+          light: '#9CA3AF',
+        },
+        // Status Colors for Invoice
+        status: {
+          paid: '#C5E151',      // Lime Green
+          sent: '#82D9D7',      // Soft Cyan
+          overdue: '#EF3F0A',   // Bright Orange
+          draft: '#FAAC7B',     // Soft Peach
+        },
       },
       keyframes: {
         float: {
           "0%, 100%": { transform: "translateY(0px)" },
           "50%": { transform: "translateY(-10px)" },
         },
-        'squeezed': {
-          "0%, 100%": { transform: "scale(1)" },
-          "50%": { transform: "scale(1.05)" },
+        'pulse-soft': {
+          "0%, 100%": { transform: "scale(1)", opacity: "1" },
+          "50%": { transform: "scale(1.02)", opacity: "0.95" },
+        },
+        'fade-in': {
+          "0%": { opacity: "0", transform: "translateY(10px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
         },
       },
       animation: {
         "float": "float 3s ease-in-out infinite",
-        "squeezed": "squeezed 2s ease-in-out infinite",
+        "pulse-soft": "pulse-soft 2s ease-in-out infinite",
+        "fade-in": "fade-in 0.5s ease-out forwards",
+      },
+      boxShadow: {
+        'brand': '0 4px 14px 0 rgba(39, 104, 116, 0.15)',
+        'brand-lg': '0 10px 25px 0 rgba(39, 104, 116, 0.2)',
+        'primary': '0 4px 14px 0 rgba(239, 63, 10, 0.25)',
+        'primary-lg': '0 10px 25px 0 rgba(239, 63, 10, 0.3)',
+        'card': '0 2px 8px rgba(0, 0, 0, 0.06)',
+        'card-hover': '0 8px 24px rgba(0, 0, 0, 0.1)',
       },
     },
   },

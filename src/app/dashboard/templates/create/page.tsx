@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
-import { FileText, Save, Plus, Trash2, Loader2, Package } from 'lucide-react'
+import { FileText, Save, Plus, Trash2, Loader2, Package, Upload, X } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
-import DashboardHeader from '@/components/DashboardHeader'
+import { DashboardLayout } from '@/components/DashboardLayout'
 import { MessageBox } from '@/components/ui/MessageBox'
 import { useMessageBox } from '@/hooks/useMessageBox'
+import { ToggleSwitch } from '@/components/ui/ToggleSwitch'
 
 interface TemplateItem {
   id: string
@@ -17,6 +18,14 @@ interface TemplateItem {
   priceFormatted?: string
 }
 
+interface TemplateSettings {
+  showClientInfo: boolean
+  showDiscount: boolean
+  showAdditionalDiscount: boolean
+  showTax: boolean
+  showSignature: boolean
+}
+
 export default function NewTemplatePage() {
   const router = useRouter()
   const sessionResult = useSession()
@@ -24,6 +33,8 @@ export default function NewTemplatePage() {
   const [mounted, setMounted] = useState(false)
   const [catalogItems, setCatalogItems] = useState<any[]>([])
   const [showItemCatalog, setShowItemCatalog] = useState(false)
+  const [clients, setClients] = useState<any[]>([])
+  const [uploadingSignature, setUploadingSignature] = useState(false)
   const messageBox = useMessageBox()
 
   const [formData, setFormData] = useState({
@@ -31,7 +42,25 @@ export default function NewTemplatePage() {
     description: '',
     notes: '',
     taxRate: 11,
+    defaultClientId: '',
+    termsAndConditions: '',
+    signatoryName: '',
+    signatoryTitle: '',
+    discountType: 'percentage' as 'percentage' | 'fixed',
+    discountValue: 0,
+    additionalDiscountType: 'percentage' as 'percentage' | 'fixed',
+    additionalDiscountValue: 0,
   })
+
+  const [settings, setSettings] = useState<TemplateSettings>({
+    showClientInfo: true,
+    showDiscount: false,
+    showAdditionalDiscount: false,
+    showTax: true,
+    showSignature: false,
+  })
+
+  const [signatureUrl, setSignatureUrl] = useState<string>('')
 
   const [items, setItems] = useState<TemplateItem[]>([
     { id: '1', description: '', quantity: 1, price: 0, priceFormatted: '' }
@@ -58,9 +87,10 @@ export default function NewTemplatePage() {
       return
     }
 
-    // Load catalog items
+    // Load catalog items and clients
     if (sessionResult.status === 'authenticated') {
       loadCatalogItems()
+      loadClients()
     }
   }, [sessionResult, router])
 
@@ -73,6 +103,51 @@ export default function NewTemplatePage() {
       }
     } catch (error) {
       console.error('Failed to load catalog items:', error)
+    }
+  }
+
+  const loadClients = async () => {
+    try {
+      const res = await fetch('/api/clients')
+      if (res.ok) {
+        const data = await res.json()
+        setClients(data)
+      }
+    } catch (error) {
+      console.error('Failed to load clients:', error)
+    }
+  }
+
+  const handleSignatureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploadingSignature(true)
+    try {
+      const formDataUpload = new FormData()
+      formDataUpload.append('file', file)
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formDataUpload,
+      })
+
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || 'Gagal mengupload tanda tangan')
+      }
+
+      const data = await res.json()
+      setSignatureUrl(data.url)
+    } catch (error: any) {
+      messageBox.showWarning({
+        title: 'Gagal Upload',
+        message: error.message,
+        confirmText: 'Mengerti',
+        onConfirm: () => messageBox.close(),
+      })
+    } finally {
+      setUploadingSignature(false)
     }
   }
 
@@ -151,6 +226,8 @@ export default function NewTemplatePage() {
         body: JSON.stringify({
           ...formData,
           items,
+          settings,
+          signatureUrl: signatureUrl || null,
         }),
       })
 
@@ -203,20 +280,28 @@ export default function NewTemplatePage() {
   }
 
   const subtotal = items.reduce((sum, item) => sum + item.quantity * item.price, 0)
-  const taxAmount = subtotal * (formData.taxRate / 100)
-  const total = subtotal + taxAmount
+  const discountAmount = settings.showDiscount && formData.discountValue > 0
+    ? (formData.discountType === 'percentage'
+      ? subtotal * (formData.discountValue / 100)
+      : Math.min(formData.discountValue, subtotal))
+    : 0
+  const afterFirstDiscount = subtotal - discountAmount
+  const additionalDiscountAmount = settings.showAdditionalDiscount && formData.additionalDiscountValue > 0
+    ? (formData.additionalDiscountType === 'percentage'
+      ? afterFirstDiscount * (formData.additionalDiscountValue / 100)
+      : Math.min(formData.additionalDiscountValue, afterFirstDiscount))
+    : 0
+  const taxableAmount = afterFirstDiscount - additionalDiscountAmount
+  const taxAmount = settings.showTax ? taxableAmount * (formData.taxRate / 100) : 0
+  const total = taxableAmount + taxAmount
 
   return (
-    <div className="min-h-screen bg-fresh-bg">
-      <DashboardHeader
-        title="Buat Template Baru"
-        showBackButton={true}
-        backHref="/dashboard/templates"
-      />
-
-      {/* Form */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <form onSubmit={handleSubmit} className="max-w-4xl mx-auto space-y-8">
+    <DashboardLayout
+      title="Buat Template Baru"
+      showBackButton
+      backHref="/dashboard/templates"
+    >
+      <form onSubmit={handleSubmit} className="max-w-4xl mx-auto space-y-8">
           {/* Template Info */}
           <div className="card p-8">
             <h2 className="text-lg font-bold text-gray-900 mb-6">Informasi Template</h2>
@@ -264,6 +349,224 @@ export default function NewTemplatePage() {
               </div>
             </div>
           </div>
+
+          {/* Display Settings */}
+          <div className="card p-8">
+            <h2 className="text-lg font-bold text-gray-900 mb-6">Pengaturan Tampilan</h2>
+            <p className="text-sm text-gray-500 mb-6">Atur komponen mana yang akan ditampilkan di invoice</p>
+
+            <div className="space-y-4">
+              <ToggleSwitch
+                checked={settings.showClientInfo}
+                onChange={(checked) => setSettings({ ...settings, showClientInfo: checked })}
+                label="Tampilkan Info Klien"
+                description="Tampilkan nama, email, telepon, dan alamat klien"
+              />
+              <ToggleSwitch
+                checked={settings.showDiscount}
+                onChange={(checked) => setSettings({ ...settings, showDiscount: checked })}
+                label="Tampilkan Diskon"
+                description="Tampilkan baris diskon di invoice"
+              />
+              <ToggleSwitch
+                checked={settings.showAdditionalDiscount}
+                onChange={(checked) => setSettings({ ...settings, showAdditionalDiscount: checked })}
+                label="Tampilkan Diskon Tambahan"
+                description="Tampilkan baris diskon tambahan (misal: promo khusus)"
+              />
+              <ToggleSwitch
+                checked={settings.showTax}
+                onChange={(checked) => setSettings({ ...settings, showTax: checked })}
+                label="Tampilkan Pajak"
+                description="Tampilkan baris pajak di invoice"
+              />
+              <ToggleSwitch
+                checked={settings.showSignature}
+                onChange={(checked) => setSettings({ ...settings, showSignature: checked })}
+                label="Tampilkan Tanda Tangan"
+                description="Tampilkan area tanda tangan digital di invoice"
+              />
+            </div>
+          </div>
+
+          {/* Discount Settings */}
+          {settings.showDiscount && (
+            <div className="card p-8">
+              <h2 className="text-lg font-bold text-gray-900 mb-6">Pengaturan Diskon</h2>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-900 mb-2">
+                    Tipe Diskon
+                  </label>
+                  <select
+                    value={formData.discountType}
+                    onChange={(e) => setFormData({ ...formData, discountType: e.target.value as 'percentage' | 'fixed' })}
+                    className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 focus:border-orange-500 focus:outline-none transition-colors"
+                  >
+                    <option value="percentage">Persentase (%)</option>
+                    <option value="fixed">Nominal (Rp)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-900 mb-2">
+                    Nilai Diskon {formData.discountType === 'percentage' ? '(%)' : '(Rp)'}
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.discountValue}
+                    onChange={(e) => setFormData({ ...formData, discountValue: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 focus:border-orange-500 focus:outline-none transition-colors"
+                    min="0"
+                    step={formData.discountType === 'percentage' ? '0.01' : '1'}
+                    placeholder={formData.discountType === 'percentage' ? '10' : '100000'}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Additional Discount Settings */}
+          {settings.showAdditionalDiscount && (
+            <div className="card p-8">
+              <h2 className="text-lg font-bold text-gray-900 mb-6">Pengaturan Diskon Tambahan</h2>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-900 mb-2">
+                    Tipe Diskon Tambahan
+                  </label>
+                  <select
+                    value={formData.additionalDiscountType}
+                    onChange={(e) => setFormData({ ...formData, additionalDiscountType: e.target.value as 'percentage' | 'fixed' })}
+                    className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 focus:border-orange-500 focus:outline-none transition-colors"
+                  >
+                    <option value="percentage">Persentase (%)</option>
+                    <option value="fixed">Nominal (Rp)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-900 mb-2">
+                    Nilai Diskon Tambahan {formData.additionalDiscountType === 'percentage' ? '(%)' : '(Rp)'}
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.additionalDiscountValue}
+                    onChange={(e) => setFormData({ ...formData, additionalDiscountValue: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 focus:border-orange-500 focus:outline-none transition-colors"
+                    min="0"
+                    step={formData.additionalDiscountType === 'percentage' ? '0.01' : '1'}
+                    placeholder={formData.additionalDiscountType === 'percentage' ? '5' : '50000'}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Default Client */}
+          {settings.showClientInfo && (
+            <div className="card p-8">
+              <h2 className="text-lg font-bold text-gray-900 mb-6">Klien Default (Opsional)</h2>
+              <p className="text-sm text-gray-500 mb-4">Pilih klien yang akan otomatis terisi saat menggunakan template ini</p>
+
+              <select
+                value={formData.defaultClientId}
+                onChange={(e) => setFormData({ ...formData, defaultClientId: e.target.value })}
+                className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 focus:border-orange-500 focus:outline-none transition-colors"
+              >
+                <option value="">-- Pilih Klien (Opsional) --</option>
+                {clients.map((client) => (
+                  <option key={client.id} value={client.id}>
+                    {client.name} {client.company && `(${client.company})`}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Signature Settings */}
+          {settings.showSignature && (
+            <div className="card p-8">
+              <h2 className="text-lg font-bold text-gray-900 mb-6">Tanda Tangan Digital</h2>
+
+              <div className="space-y-4">
+                {/* Signature Upload */}
+                <div>
+                  <label className="block text-sm font-bold text-gray-900 mb-2">
+                    Upload Tanda Tangan
+                  </label>
+                  <p className="text-sm text-gray-500 mb-3">
+                    Upload gambar tanda tangan (PNG, JPG, WebP, maks 2MB)
+                  </p>
+
+                  {signatureUrl ? (
+                    <div className="flex items-start gap-4">
+                      <div className="relative w-48 h-24 border border-orange-200 rounded-xl overflow-hidden bg-gray-50">
+                        <img
+                          src={signatureUrl}
+                          alt="Tanda tangan"
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setSignatureUrl('')}
+                        className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                      >
+                        <X size={20} />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-orange-300 rounded-xl cursor-pointer hover:bg-orange-50 transition-colors">
+                      {uploadingSignature ? (
+                        <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
+                      ) : (
+                        <>
+                          <Upload className="w-8 h-8 text-orange-500 mb-2" />
+                          <span className="text-sm text-gray-600">Klik untuk upload</span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/jpg,image/webp"
+                        onChange={handleSignatureUpload}
+                        className="hidden"
+                        disabled={uploadingSignature}
+                      />
+                    </label>
+                  )}
+                </div>
+
+                {/* Signatory Info */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-900 mb-2">
+                      Nama Penandatangan
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.signatoryName}
+                      onChange={(e) => setFormData({ ...formData, signatoryName: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+                      placeholder="John Doe"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-900 mb-2">
+                      Jabatan
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.signatoryTitle}
+                      onChange={(e) => setFormData({ ...formData, signatoryTitle: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+                      placeholder="Direktur"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Items */}
           <div className="card p-8">
@@ -398,6 +701,18 @@ export default function NewTemplatePage() {
             />
           </div>
 
+          {/* Terms and Conditions */}
+          <div className="card p-8">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">Syarat & Ketentuan</h2>
+            <textarea
+              value={formData.termsAndConditions}
+              onChange={(e) => setFormData({ ...formData, termsAndConditions: e.target.value })}
+              className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+              rows={4}
+              placeholder="Syarat dan ketentuan yang akan muncul di invoice, misalnya: Pembayaran harus dilakukan dalam 7 hari..."
+            />
+          </div>
+
           {/* Totals & Submit */}
           <div className="card p-8">
             <div className="space-y-3 mb-8">
@@ -405,10 +720,24 @@ export default function NewTemplatePage() {
                 <span>Subtotal</span>
                 <span className="font-semibold">{formatCurrency(subtotal)}</span>
               </div>
-              <div className="flex justify-between text-gray-600">
-                <span>Pajak ({formData.taxRate}%)</span>
-                <span className="font-semibold">{formatCurrency(taxAmount)}</span>
-              </div>
+              {settings.showDiscount && discountAmount > 0 && (
+                <div className="flex justify-between text-green-600">
+                  <span>Diskon {formData.discountType === 'percentage' ? `(${formData.discountValue}%)` : ''}</span>
+                  <span className="font-semibold">-{formatCurrency(discountAmount)}</span>
+                </div>
+              )}
+              {settings.showAdditionalDiscount && additionalDiscountAmount > 0 && (
+                <div className="flex justify-between text-green-600">
+                  <span>Diskon Tambahan {formData.additionalDiscountType === 'percentage' ? `(${formData.additionalDiscountValue}%)` : ''}</span>
+                  <span className="font-semibold">-{formatCurrency(additionalDiscountAmount)}</span>
+                </div>
+              )}
+              {settings.showTax && (
+                <div className="flex justify-between text-gray-600">
+                  <span>Pajak ({formData.taxRate}%)</span>
+                  <span className="font-semibold">{formatCurrency(taxAmount)}</span>
+                </div>
+              )}
               <div className="flex justify-between py-4 border-t-2 border-orange-300 text-2xl font-extrabold text-gray-900">
                 <span>Total</span>
                 <span>{formatCurrency(total)}</span>
@@ -425,7 +754,6 @@ export default function NewTemplatePage() {
             </button>
           </div>
         </form>
-      </div>
 
       {/* MessageBox for notifications */}
       <MessageBox
@@ -440,6 +768,6 @@ export default function NewTemplatePage() {
         onCancel={messageBox.state.onCancel}
         loading={messageBox.state.loading}
       />
-    </div>
+    </DashboardLayout>
   )
 }

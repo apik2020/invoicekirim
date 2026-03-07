@@ -2,27 +2,14 @@
 
 import { Moon, Sun, Monitor } from 'lucide-react'
 import { useTheme } from './ThemeProvider'
-import { useEffect, useState } from 'react'
 
 export default function DarkModeToggle({ className = '' }: { className?: string }) {
   const { theme, setTheme, actualTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-
-  // Prevent hydration mismatch
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  if (!mounted) {
-    return (
-      <div className={`w-10 h-10 rounded-lg ${className}`} />
-    )
-  }
 
   const isDark = actualTheme === 'dark'
 
   return (
-    <div className={`relative ${className}`}>
+    <div className={`w-10 h-10 rounded-lg ${className}`}>
       <button
         onClick={() => {
           if (theme === 'light') {

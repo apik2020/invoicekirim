@@ -74,8 +74,10 @@ export default async function middleware(req: NextRequest) {
   // 3. Authentication check
   const sessionToken = req.cookies.get('next-auth.session-token') ||
                       req.cookies.get('__Secure-next-auth.session-token')
+  const adminSessionToken = req.cookies.get('admin_session')
 
   const isAuth = !!sessionToken
+  const isAdminAuth = !!adminSessionToken
   const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/register')
   const isDashboardPage = pathname.startsWith('/dashboard')
   const isClientPortal = pathname.startsWith('/client')
@@ -110,17 +112,26 @@ export default async function middleware(req: NextRequest) {
   }
 
   // 4. Admin route protection
-  if (pathname.startsWith('/api/admin') || pathname.startsWith('/admin')) {
-    // Admin routes should have their own auth check in the handler
-    // This is an additional layer - the actual admin check happens in the API
-    if (!isAuth) {
-      if (pathname.startsWith('/api/')) {
+  const isAdminLoginPage = pathname === '/admin/login'
+  const isAdminLoginAPI = pathname === '/api/admin/login'
+  const isAdminAPI = pathname.startsWith('/api/admin')
+
+  // Allow admin login page and API without auth
+  if (isAdminLoginPage || isAdminLoginAPI) {
+    return response
+  }
+
+  if (isAdminAPI || pathname.startsWith('/admin')) {
+    // Admin routes use their own session cookie (admin_session)
+    // The actual admin check happens in the API handler
+    if (!isAdminAuth) {
+      if (isAdminAPI) {
         return new NextResponse(
           JSON.stringify({ error: 'Unauthorized' }),
           { status: 401, headers: { 'Content-Type': 'application/json' } }
         )
       }
-      return NextResponse.redirect(new URL('/login', origin))
+      return NextResponse.redirect(new URL('/admin/login', origin))
     }
   }
 

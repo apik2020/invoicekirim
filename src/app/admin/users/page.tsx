@@ -2,19 +2,32 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Users, Loader2, LogOut, DollarSign, Mail, Activity } from 'lucide-react'
+import {
+  Users,
+  Loader2,
+  LogOut,
+  DollarSign,
+  Mail,
+  Activity,
+  LayoutDashboard,
+} from 'lucide-react'
 import { UserTable } from '@/components/admin/UserTable'
 import { UserDetailModal } from '@/components/admin/UserDetailModal'
 import { AdminLogo } from '@/components/Logo'
+import { cn } from '@/lib/utils'
+
+const navItems = [
+  { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+  { name: 'Users', href: '/admin/users', icon: Users },
+  { name: 'Payments', href: '/admin/payments', icon: DollarSign },
+  { name: 'Email Templates', href: '/admin/email-templates', icon: Mail },
+  { name: 'Activity Logs', href: '/admin/activity-logs', icon: Activity },
+]
 
 export default function AdminUsersPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
-
-  useEffect(() => {
-    checkAdminSession()
-  }, [])
 
   const checkAdminSession = async () => {
     try {
@@ -29,6 +42,10 @@ export default function AdminUsersPage() {
       router.push('/admin/login')
     }
   }
+
+  useEffect(() => {
+    checkAdminSession()
+  }, [])
 
   const handleUserDelete = async (user: any) => {
     if (!confirm(`Apakah Anda yakin ingin menghapus user "${user.email}"? Tindakan ini tidak dapat dibatalkan.`)) {
@@ -55,64 +72,30 @@ export default function AdminUsersPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-fresh-bg flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-16 h-16 text-orange-600 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Memuat...</p>
+      <div className="min-h-screen bg-surface-light flex items-center justify-center">
+        <div className="text-center animate-fade-in">
+          <Loader2 className="w-16 h-16 text-brand-500 animate-spin mx-auto mb-4" />
+          <p className="text-text-secondary">Memuat...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-fresh-bg">
+    <div className="min-h-screen bg-surface-light">
       {/* Header */}
-      <div className="bg-white border-b border-orange-100 sticky top-0 z-50">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <AdminLogo size="lg" linkToHome={false} />
             <div className="flex items-center gap-3">
-              <button
-                onClick={() => router.push('/admin')}
-                className="px-4 py-2 rounded-xl border border-orange-200 text-gray-700 hover:bg-orange-50 font-medium"
-              >
-                Dashboard
-              </button>
-              <button
-                onClick={() => router.push('/admin/users')}
-                className="px-4 py-2 rounded-xl bg-orange-500 text-white font-medium flex items-center gap-2"
-              >
-                <Users className="w-4 h-4" />
-                Users
-              </button>
-              <button
-                onClick={() => router.push('/admin/payments')}
-                className="px-4 py-2 rounded-xl border border-orange-200 text-gray-700 hover:bg-orange-50 font-medium flex items-center gap-2"
-              >
-                <DollarSign className="w-4 h-4" />
-                Payments
-              </button>
-              <button
-                onClick={() => router.push('/admin/email-templates')}
-                className="px-4 py-2 rounded-xl border border-orange-200 text-gray-700 hover:bg-orange-50 font-medium flex items-center gap-2"
-              >
-                <Mail className="w-4 h-4" />
-                Email Templates
-              </button>
-              <button
-                onClick={() => router.push('/admin/activity-logs')}
-                className="px-4 py-2 rounded-xl border border-orange-200 text-gray-700 hover:bg-orange-50 font-medium flex items-center gap-2"
-              >
-                <Activity className="w-4 h-4" />
-                Activity Logs
-              </button>
               <button
                 onClick={async () => {
                   await fetch('/api/admin/logout', { method: 'POST' })
                   router.push('/admin/login')
                   router.refresh()
                 }}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition-colors font-medium"
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition-all font-medium text-sm"
               >
                 <LogOut className="w-4 h-4" />
                 <span className="hidden sm:inline">Logout</span>
@@ -120,20 +103,44 @@ export default function AdminUsersPage() {
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+        {/* Admin Navigation */}
+        <div className="flex flex-wrap gap-2 sm:gap-3 mb-6 sm:mb-8">
+          {navItems.map((item) => {
+            const isActive = item.href === '/admin/users'
+            return (
+              <button
+                key={item.name}
+                onClick={() => router.push(item.href)}
+                className={cn(
+                  'flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-medium text-sm transition-all',
+                  isActive
+                    ? 'bg-brand-500 text-white'
+                    : 'border border-gray-200 text-text-secondary hover:border-brand-300 hover:text-brand-600 hover:bg-brand-50'
+                )}
+              >
+                <item.icon className="w-4 h-4" />
+                <span className="hidden sm:inline">{item.name}</span>
+              </button>
+            )
+          })}
+        </div>
+
         {/* Page Header */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Daftar Pengguna</h2>
-          <p className="text-gray-600">Kelola data pengguna, langganan, dan aktivitas</p>
+        <div className="mb-6 sm:mb-8 animate-fade-in-up">
+          <h1 className="text-2xl sm:text-3xl font-bold text-text-primary mb-2">Daftar Pengguna</h1>
+          <p className="text-text-secondary text-sm sm:text-base">Kelola data pengguna, langganan, dan aktivitas</p>
         </div>
 
         {/* User Table */}
-        <UserTable
-          onUserSelect={(user) => setSelectedUserId(user.id)}
-          onUserDelete={handleUserDelete}
-        />
+        <div className="animate-fade-in-up animation-delay-100">
+          <UserTable
+            onUserSelect={(user) => setSelectedUserId(user.id)}
+            onUserDelete={handleUserDelete}
+          />
+        </div>
       </div>
 
       {/* User Detail Modal */}

@@ -54,7 +54,7 @@ export default function Testimonials() {
 
               {/* Content */}
               <p className="font-body text-slate/80 mb-6 leading-relaxed relative">
-                "{testimonial.content}"
+                &ldquo;{testimonial.content}&rdquo;
               </p>
 
               {/* Author */}

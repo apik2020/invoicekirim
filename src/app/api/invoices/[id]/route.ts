@@ -21,7 +21,9 @@ export async function GET(
         id,
         userId: session.user.id,
       },
-      include: { items: true },
+      include: {
+        items: true,
+      },
     })
 
     if (!invoice) {
@@ -79,7 +81,7 @@ export async function PUT(
       )
     }
 
-    const { items, invoiceNumber, ...data } = validation.data
+    const { items, invoiceNumber, settings, ...data } = validation.data
 
     // Track changes
     const changes: string[] = []
@@ -133,6 +135,7 @@ export async function PUT(
         ...(data.dueDate !== undefined && {
           dueDate: data.dueDate ? new Date(data.dueDate) : null,
         }),
+        ...(settings && { settings: JSON.parse(JSON.stringify(settings)) }),
         subtotal,
         taxAmount,
         total,

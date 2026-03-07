@@ -15,16 +15,16 @@ import {
   Loader2,
   Printer,
   Bell,
-  Share2,
   MessageCircle,
   DollarSign,
   Calendar,
   X,
 } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import DashboardHeader from '@/components/DashboardHeader'
+import { DashboardLayout } from '@/components/DashboardLayout'
 import { MessageBox } from '@/components/ui/MessageBox'
 import { useMessageBox } from '@/hooks/useMessageBox'
+import { cn } from '@/lib/utils'
 
 interface InvoiceItem {
   id: string
@@ -76,8 +76,6 @@ export default function InvoiceDetailPage({
   const [sendingReminder, setSendingReminder] = useState(false)
   const [sendingEmail, setSendingEmail] = useState(false)
   const [generatingPDF, setGeneratingPDF] = useState(false)
-  const [sendingWhatsApp, setSendingWhatsApp] = useState(false)
-  const [copied, setCopied] = useState(false)
   const printRef = useRef<HTMLDivElement>(null)
   const messageBox = useMessageBox()
 
@@ -228,10 +226,10 @@ export default function InvoiceDetailPage({
 
   const handleDelete = async () => {
     if (!invoice) return
-    if (invoice.status === 'PAID') {
+    if (invoice.status !== 'DRAFT') {
       messageBox.showWarning({
         title: 'Tidak Dapat Menghapus',
-        message: 'Invoice yang sudah lunas tidak dapat dihapus.',
+        message: 'Hanya invoice dengan status Draft yang dapat dihapus.',
         confirmText: 'Mengerti',
         onConfirm: () => messageBox.close(),
       })
@@ -243,9 +241,9 @@ export default function InvoiceDetailPage({
       message: (
         <div className="space-y-2">
           <p>
-            Anda akan menghapus invoice <span className="font-semibold text-gray-900">#{invoice.invoiceNumber}</span>
+            Anda akan menghapus invoice <span className="font-semibold text-text-primary">#{invoice.invoiceNumber}</span>
           </p>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-text-muted">
             Tindakan ini tidak dapat dibatalkan. Data invoice akan dihapus permanen.
           </p>
         </div>
@@ -280,264 +278,37 @@ export default function InvoiceDetailPage({
   const handleWhatsApp = () => {
     if (!invoice) return
 
-    const message = `*INVOICE - ${invoice.invoiceNumber}*
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin
+    const invoiceUrl = `${baseUrl}/invoice/${invoice.accessToken}`
 
-Dari: ${invoice.companyName}
-Kepada: ${invoice.clientName}
+    const message = `*INVOICE ${invoice.invoiceNumber}*
 
-Total: ${formatCurrency(invoice.total)}
+Halo ${invoice.clientName},
+
+${invoice.companyName} telah mengirimkan invoice kepada Anda. Berikut detail invoice:
+
+💰 *Total:* ${formatCurrency(invoice.total)}
+📅 *Jatuh Tempo:* ${invoice.dueDate ? formatDate(invoice.dueDate) : '-'}
+
+📄 Lihat Invoice:
+${invoiceUrl}
 
 Terima kasih!`
 
     const encoded = encodeURIComponent(message)
-    window.open(`https://wa.me/?text=${encoded}`, '_blank')
-  }
 
-  // Generate PDF as Blob for sharing
-  const generatePDFBlob = async (): Promise<Blob | null> => {
-    if (!invoice) return null
-
-    try {
-      const html2canvas = await import('html2canvas')
-      const { jsPDF } = await import('jspdf')
-
-      // Build simple HTML string
-      const buildInvoiceHTML = () => {
-        const items = invoice.items.map(item => `
-          <tr style="border-bottom: 1px solid #E2E8F0;">
-            <td style="padding: 16px 8px; color: #333333;">${item.description || '-'}</td>
-            <td style="padding: 16px 8px; text-align: center; color: #333333;">${item.quantity}</td>
-            <td style="padding: 16px 8px; text-align: right; color: #333333;">${formatCurrency(item.price)}</td>
-            <td style="padding: 16px 8px; text-align: right; color: #333333; font-weight: 600;">${formatCurrency(item.quantity * item.price)}</td>
-          </tr>
-        `).join('')
-
-        return `
-          <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 800px; margin: 0 auto; padding: 48px; background: #FFFFFF; color: #333333;">
-            <!-- Header -->
-            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 40px; padding-bottom: 32px; border-bottom: 2px solid #E2E8F0;">
-              <div>
-                <h1 style="font-size: 24px; font-weight: bold; color: #333333; margin: 0 0 8px 0;">${invoice.companyName}</h1>
-                <p style="font-size: 14px; color: #333333; margin: 0;">${invoice.companyEmail}</p>
-                ${invoice.companyPhone ? `<p style="font-size: 14px; color: #333333; margin: 0;">${invoice.companyPhone}</p>` : ''}
-                ${invoice.companyAddress ? `<p style="font-size: 14px; color: #333333; margin: 0;">${invoice.companyAddress}</p>` : ''}
-              </div>
-              <div style="text-align: right;">
-                <p style="font-size: 12px; color: #333333; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">Invoice</p>
-                <p style="font-size: 20px; font-weight: bold; color: #333333; margin: 8px 0 0 0;">${invoice.invoiceNumber}</p>
-              </div>
-            </div>
-
-            <!-- Bill To -->
-            <div style="margin-bottom: 40px;">
-              <h3 style="font-size: 12px; color: #333333; margin: 0 0 16px 0; text-transform: uppercase; letter-spacing: 0.5px; font-weight: bold;">Kepada:</h3>
-              <div style="background: #F5F5F5; padding: 24px; border-radius: 12px;">
-                <p style="font-size: 18px; font-weight: bold; color: #333333; margin: 0 0 8px 0;">${invoice.clientName}</p>
-                <p style="font-size: 14px; color: #333333; margin: 0;">${invoice.clientEmail}</p>
-                ${invoice.clientPhone ? `<p style="font-size: 14px; color: #333333; margin: 0;">${invoice.clientPhone}</p>` : ''}
-                ${invoice.clientAddress ? `<p style="font-size: 14px; color: #333333; margin: 0;">${invoice.clientAddress}</p>` : ''}
-              </div>
-            </div>
-
-            <!-- Dates -->
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 40px;">
-              <div>
-                <p style="font-size: 12px; color: #333333; margin: 0 0 4px 0;">Tanggal</p>
-                <p style="font-size: 14px; font-weight: 600; color: #333333; margin: 0;">${formatDate(invoice.date)}</p>
-              </div>
-              ${invoice.dueDate ? `
-              <div>
-                <p style="font-size: 12px; color: #333333; margin: 0 0 4px 0;">Jatuh Tempo</p>
-                <p style="font-size: 14px; font-weight: 600; color: #333333; margin: 0;">${formatDate(invoice.dueDate)}</p>
-              </div>
-              ` : ''}
-            </div>
-
-            <!-- Items Table -->
-            <div style="margin-bottom: 40px;">
-              <h3 style="font-size: 12px; color: #333333; margin: 0 0 16px 0; text-transform: uppercase; letter-spacing: 0.5px; font-weight: bold;">Item Invoice</h3>
-              <table style="width: 100%; border-collapse: collapse;">
-                <thead>
-                  <tr style="border-bottom: 2px solid #E2E8F0;">
-                    <th style="padding: 16px 8px; text-align: left; font-weight: bold; color: #333333; font-size: 14px;">Deskripsi</th>
-                    <th style="padding: 16px 8px; text-align: center; font-weight: bold; color: #333333; font-size: 14px;">Qty</th>
-                    <th style="padding: 16px 8px; text-align: right; font-weight: bold; color: #333333; font-size: 14px;">Harga</th>
-                    <th style="padding: 16px 8px; text-align: right; font-weight: bold; color: #333333; font-size: 14px;">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${items}
-                </tbody>
-              </table>
-            </div>
-
-            <!-- Totals -->
-            <div style="display: flex; justify-content: flex-end;">
-              <div style="width: 100%; max-width: 320px;">
-                <div style="display: flex; justify-content: space-between; padding: 12px 0; color: #333333;">
-                  <span>Subtotal</span>
-                  <span style="font-weight: 600;">${formatCurrency(invoice.subtotal)}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; padding: 12px 0; color: #333333;">
-                  <span>Pajak (${invoice.taxRate}%)</span>
-                  <span style="font-weight: 600;">${formatCurrency(invoice.taxAmount)}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; padding: 16px 0; border-top: 2px solid #E2E8F0; margin-top: 16px; font-size: 24px; font-weight: bold; color: #00D4C5;">
-                  <span>Total</span>
-                  <span>${formatCurrency(invoice.total)}</span>
-                </div>
-              </div>
-            </div>
-
-            ${invoice.notes ? `
-            <!-- Notes -->
-            <div style="margin-top: 40px; padding-top: 32px; border-top: 1px solid #E2E8F0;">
-              <h3 style="font-size: 12px; color: #333333; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.5px; font-weight: bold;">Catatan</h3>
-              <p style="font-size: 14px; color: #333333; margin: 0; white-space: pre-line;">${invoice.notes}</p>
-            </div>
-            ` : ''}
-
-            <!-- Footer -->
-            <div style="margin-top: 48px; padding-top: 32px; border-top: 1px solid #E2E8F0; text-align: center;">
-              <p style="font-size: 12px; color: #333333; margin: 0;">
-                Invoice dibuat dengan <a href="https://invoicekirim.com" style="color: #00D4C5; text-decoration: none; font-weight: 600;">InvoiceKirim</a>
-              </p>
-            </div>
-          </div>
-        `
-      }
-
-      // Create a hidden div with our HTML
-      const container = document.createElement('div')
-      container.style.position = 'absolute'
-      container.style.left = '-9999px'
-      container.style.width = '800px'
-      container.innerHTML = buildInvoiceHTML()
-      document.body.appendChild(container)
-
-      // Wait for rendering
-      await new Promise(resolve => setTimeout(resolve, 100))
-
-      // Capture with html2canvas
-      const canvas = await html2canvas.default(container, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-        allowTaint: true,
-      })
-
-      // Remove container
-      document.body.removeChild(container)
-
-      const imgData = canvas.toDataURL('image/png', 1.0)
-      const pdf = new jsPDF('p', 'mm', 'a4')
-
-      const imgWidth = 210 // A4 width in mm
-      const pageHeight = 297 // A4 height in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width
-      let heightLeft = imgHeight
-      let position = 0
-
-      // Add first page
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
-      heightLeft -= pageHeight
-
-      // Add additional pages if needed
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight
-        pdf.addPage()
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
-        heightLeft -= pageHeight
-      }
-
-      // Return as blob
-      const pdfBlob = pdf.output('blob')
-      return pdfBlob
-    } catch (error) {
-      console.error('Error generating PDF blob:', error)
-      return null
+    // Try to get phone number if available
+    if (invoice.clientPhone) {
+      // Clean phone number (remove spaces, dashes, etc.)
+      const cleanPhone = invoice.clientPhone.replace(/[\s\-\(\)]/g, '')
+      // Add country code if not present
+      const phoneWithCode = cleanPhone.startsWith('+') ? cleanPhone.substring(1) :
+                            cleanPhone.startsWith('0') ? '62' + cleanPhone.substring(1) :
+                            cleanPhone
+      window.open(`https://wa.me/${phoneWithCode}?text=${encoded}`, '_blank')
+    } else {
+      window.open(`https://wa.me/?text=${encoded}`, '_blank')
     }
-  }
-
-  // Handle WhatsApp with PDF attachment
-  const handleWhatsAppWithPDF = async () => {
-    if (!invoice) return
-
-    setSendingWhatsApp(true)
-
-    try {
-      // Generate PDF
-      const pdfBlob = await generatePDFBlob()
-
-      if (!pdfBlob) {
-        // Fallback to simple WhatsApp message if PDF generation fails
-        const message = `Berikut terlampir invoice ${invoice.invoiceNumber} dari ${invoice.companyName}
-
-Total: ${formatCurrency(invoice.total)}
-
-Terima kasih!`
-
-        const encoded = encodeURIComponent(message)
-        window.open(`https://wa.me/?text=${encoded}`, '_blank')
-        return
-      }
-
-      // Create file from blob
-      const file = new File([pdfBlob], `invoice-${invoice.invoiceNumber}.pdf`, { type: 'application/pdf' })
-
-      // Prepare the message
-      const message = `Berikut terlampir invoice ${invoice.invoiceNumber} dari ${invoice.companyName}
-
-Total: ${formatCurrency(invoice.total)}
-${invoice.dueDate ? `Jatuh Tempo: ${formatDate(invoice.dueDate)}` : ''}
-
-Terima kasih!`
-
-      // Check if Web Share API is available (mainly mobile)
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({
-            title: `Invoice ${invoice.invoiceNumber}`,
-            text: message,
-            files: [file],
-          })
-        } catch (shareError) {
-          // User cancelled or share failed, fallback
-          console.log('Share cancelled or failed, downloading instead')
-          downloadPDFBlob(pdfBlob)
-          openWhatsAppWithMessage(message)
-        }
-      } else {
-        // Desktop fallback: download PDF and open WhatsApp
-        downloadPDFBlob(pdfBlob)
-        openWhatsAppWithMessage(message)
-      }
-    } catch (error) {
-      console.error('WhatsApp share error:', error)
-      // Fallback to simple message
-      handleWhatsApp()
-    } finally {
-      setSendingWhatsApp(false)
-    }
-  }
-
-  // Helper to download PDF blob
-  const downloadPDFBlob = (blob: Blob) => {
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `invoice-${invoice?.invoiceNumber || 'download'}.pdf`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }
-
-  // Helper to open WhatsApp with message
-  const openWhatsAppWithMessage = (message: string) => {
-    const encoded = encodeURIComponent(message)
-    window.open(`https://wa.me/?text=${encoded}`, '_blank')
   }
 
   const handleDownloadPDF = async () => {
@@ -656,7 +427,7 @@ Terima kasih!`
                   <span>Pajak (${invoice.taxRate}%)</span>
                   <span style="font-weight: 600;">${formatCurrency(invoice.taxAmount)}</span>
                 </div>
-                <div style="display: flex; justify-content: space-between; padding: 16px 0; border-top: 2px solid #E2E8F0; margin-top: 16px; font-size: 24px; font-weight: bold; color: #00D4C5;">
+                <div style="display: flex; justify-content: space-between; padding: 16px 0; border-top: 2px solid #E2E8F0; margin-top: 16px; font-size: 24px; font-weight: bold; color: #276874;">
                   <span>Total</span>
                   <span>${formatCurrency(invoice.total)}</span>
                 </div>
@@ -674,7 +445,7 @@ Terima kasih!`
             <!-- Footer -->
             <div style="margin-top: 48px; padding-top: 32px; border-top: 1px solid #E2E8F0; text-align: center;">
               <p style="font-size: 12px; color: #333333; margin: 0;">
-                Invoice dibuat dengan <a href="https://invoicekirim.com" style="color: #00D4C5; text-decoration: none; font-weight: 600;">InvoiceKirim</a>
+                Invoice dibuat dengan <a href="https://invoicekirim.com" style="color: #276874; text-decoration: none; font-weight: 600;">InvoiceKirim</a>
               </p>
             </div>
           </div>
@@ -793,36 +564,13 @@ Terima kasih!`
     }
   }
 
-  const handleShareLink = async () => {
-    if (!invoice?.accessToken) return
-
-    const clientUrl = `${window.location.origin}/client/invoices/${invoice.accessToken}`
-
-    try {
-      await navigator.clipboard.writeText(clientUrl)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    } catch (error) {
-      console.error('Failed to copy link:', error)
-      // Fallback
-      const textArea = document.createElement('textarea')
-      textArea.value = clientUrl
-      document.body.appendChild(textArea)
-      textArea.select()
-      document.execCommand('copy')
-      document.body.removeChild(textArea)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    }
-  }
-
   const getStatusBadge = (status: Invoice['status']) => {
-    const styles = {
-      DRAFT: 'bg-gray-100 text-gray-700',
-      SENT: 'bg-teal-100 text-teal-700',
-      PAID: 'bg-green-100 text-green-700',
-      OVERDUE: 'bg-red-100 text-red-700',
-      CANCELED: 'bg-gray-100 text-gray-700 line-through',
+    const styles: Record<string, string> = {
+      DRAFT: 'badge-draft',
+      SENT: 'badge-sent',
+      PAID: 'badge-paid',
+      OVERDUE: 'badge-overdue',
+      CANCELED: 'bg-gray-100 text-gray-600 line-through',
     }
 
     const labels = {
@@ -834,121 +582,154 @@ Terima kasih!`
     }
 
     return (
-      <span
-        className={`px-4 py-2 rounded-xl text-sm font-bold ${
-          styles[status] || styles.DRAFT
-        }`}
-      >
+      <span className={cn('badge', styles[status] || styles.DRAFT)}>
         {labels[status] || status}
       </span>
     )
   }
 
-  if (loading) {
+  const getStatusStamp = (status: Invoice['status']) => {
+    const stamps = {
+      DRAFT: {
+        text: 'DRAFT',
+        color: 'border-gray-400 text-text-muted',
+        bgColor: 'bg-gray-50',
+      },
+      SENT: {
+        text: 'TERKIRIM',
+        color: 'border-secondary-500 text-secondary-600',
+        bgColor: 'bg-secondary-50',
+      },
+      PAID: {
+        text: 'LUNAS',
+        color: 'border-success-500 text-success-600',
+        bgColor: 'bg-success-50',
+      },
+      OVERDUE: {
+        text: 'JATUH TEMPO',
+        color: 'border-primary-500 text-primary-600',
+        bgColor: 'bg-primary-50',
+      },
+      CANCELED: {
+        text: 'BATAL',
+        color: 'border-gray-400 text-text-muted',
+        bgColor: 'bg-gray-50',
+      },
+    }
+
+    const stamp = stamps[status] || stamps.DRAFT
+
     return (
-      <div className="min-h-screen bg-fresh-bg flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 text-gray-900 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Memuat invoice...</p>
+      <div className="relative">
+        <div
+          className={cn(
+            'inline-flex items-center justify-center px-6 py-3 border-4 rounded-lg transform -rotate-12 shadow-sm',
+            stamp.color,
+            stamp.bgColor
+          )}
+          style={{ fontFamily: 'system-ui, sans-serif' }}
+        >
+          <span className="text-xl font-black tracking-widest uppercase">
+            {stamp.text}
+          </span>
         </div>
       </div>
+    )
+  }
+
+  if (loading) {
+    return (
+      <DashboardLayout title="Detail Invoice" showBackButton backHref="/dashboard/invoices">
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center animate-fade-in">
+            <Loader2 className="w-12 h-12 text-brand-500 animate-spin mx-auto mb-4" />
+            <p className="text-text-secondary">Memuat invoice...</p>
+          </div>
+        </div>
+      </DashboardLayout>
     )
   }
 
   if (!invoice) {
     return (
-      <div className="min-h-screen bg-fresh-bg flex items-center justify-center">
-        <div className="text-center">
-          <FileText className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+      <DashboardLayout title="Detail Invoice" showBackButton backHref="/dashboard/invoices">
+        <div className="card p-8 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
+            <FileText className="w-8 h-8 text-text-muted" />
+          </div>
+          <h2 className="text-2xl font-bold text-text-primary mb-2">
             Invoice tidak ditemukan
           </h2>
           <Link
             href="/dashboard/invoices"
-            className="text-gray-900 font-bold hover:underline"
+            className="text-brand-500 font-semibold hover:text-brand-600 transition-colors"
           >
             Kembali ke daftar invoice
           </Link>
         </div>
-      </div>
+      </DashboardLayout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-fresh-bg print:bg-white">
-      {/* Header */}
-      <DashboardHeader
-        title="Detail Invoice"
-        showBackButton={true}
-        backHref="/dashboard/invoices"
-        actions={
-          <>
-            <button
-              onClick={handleDownloadPDF}
-              disabled={generatingPDF}
-              className="p-2.5 text-gray-600 rounded-xl btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Download PDF"
-            >
-              {generatingPDF ? <Loader2 size={20} className="animate-spin" /> : <Download size={20} />}
-            </button>
-            <button
-              onClick={handlePrint}
-              className="p-2.5 text-gray-600 rounded-xl btn-secondary"
-              title="Print"
-            >
-              <Printer size={20} />
-            </button>
-            <button
-              onClick={handleShareLink}
-              className="p-2.5 text-gray-600 rounded-xl btn-secondary relative"
-              title="Share Link"
-            >
-              {copied ? <Check size={20} className="text-red-500" /> : <Share2 size={20} />}
-            </button>
-            {invoice.status === 'DRAFT' && (
+    <DashboardLayout
+      title="Detail Invoice"
+      showBackButton
+      backHref="/dashboard/invoices"
+      actions={
+        <>
+          <button
+            onClick={handleDownloadPDF}
+            disabled={generatingPDF}
+            className="p-2.5 text-text-secondary rounded-xl btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Download PDF"
+          >
+            {generatingPDF ? <Loader2 size={20} className="animate-spin" /> : <Download size={20} />}
+          </button>
+          <button
+            onClick={handlePrint}
+            className="p-2.5 text-text-secondary rounded-xl btn-secondary"
+            title="Print"
+          >
+            <Printer size={20} />
+          </button>
+          {invoice.status === 'DRAFT' && (
+            <>
               <Link
                 href={`/dashboard/invoices/${invoice.id}/edit`}
-                className="p-2.5 text-gray-600 rounded-xl btn-secondary"
+                className="p-2.5 text-text-secondary rounded-xl btn-secondary"
                 title="Edit"
               >
                 <Edit size={20} />
               </Link>
-            )}
-            <button
-              onClick={handleDelete}
-              disabled={deleting || invoice.status === 'PAID'}
-              className="p-2.5 text-red-500 rounded-xl hover:bg-gray transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Hapus"
-            >
-              {deleting ? <Loader2 size={20} className="animate-spin" /> : <Trash2 size={20} />}
-            </button>
-          </>
-        }
-      />
-
-      {/* Invoice Content */}
-      <div className="container mx-auto px-4 py-10">
-        <div className="max-w-4xl mx-auto">
-          {/* Header */}
-          <div className="mb-8">
-            <div className="mb-4">
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">Detail Invoice</h1>
-              <p className="text-gray-600">
-                Lihat dan kelola detail invoice {invoice.invoiceNumber}
-              </p>
-            </div>
-
-            {/* Status & Actions */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-              {getStatusBadge(invoice.status)}
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="p-2.5 text-red-500 rounded-xl hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Hapus"
+              >
+                {deleting ? <Loader2 size={20} className="animate-spin" /> : <Trash2 size={20} />}
+              </button>
+            </>
+          )}
+        </>
+      }
+    >
+      {/* Header */}
+      <div className="mb-6 sm:mb-8 animate-fade-in-up">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+          {getStatusBadge(invoice.status)}
+        </div>
 
             {/* Action Buttons by Status */}
+            <div className="flex flex-wrap gap-3">
+
             {invoice.status === 'DRAFT' && (
-              <div className="flex flex-wrap gap-3">
+              <>
                 <button
                   onClick={handleSendEmail}
                   disabled={sendingEmail}
-                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 text-white font-bold rounded-xl btn-primary disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
                   {sendingEmail ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
                   {sendingEmail ? 'Mengirim...' : 'Kirim Invoice'}
@@ -956,45 +737,45 @@ Terima kasih!`
                 <button
                   onClick={() => handleStatusUpdate('SENT')}
                   disabled={updating}
-                  className="flex items-center gap-2 px-6 py-3 text-gray-600 font-bold rounded-xl btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 text-text-secondary font-bold rounded-xl btn-secondary disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
                   {updating ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
                   {updating ? 'Memproses...' : 'Tandai Terkirim'}
                 </button>
                 <button
-                  onClick={handleWhatsAppWithPDF}
-                  disabled={sendingWhatsApp}
-                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleWhatsApp}
+                  className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 text-white font-bold rounded-xl transition-colors text-sm"
                   style={{
                     background: 'linear-gradient(145deg, #25D366, #128C7E)',
                   }}
                 >
-                  {sendingWhatsApp ? <Loader2 size={18} className="animate-spin" /> : <MessageCircle size={18} />}
-                  {sendingWhatsApp ? 'Memproses...' : 'WhatsApp + PDF'}
+                  <MessageCircle size={18} />
+                  <span className="hidden sm:inline">Kirim via WhatsApp</span>
+                  <span className="sm:hidden">WhatsApp</span>
                 </button>
                 <Link
                   href={`/dashboard/invoices/${invoice.id}/edit`}
-                  className="flex items-center gap-2 px-6 py-3 text-gray-600 font-bold rounded-xl btn-secondary"
+                  className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 text-text-secondary font-bold rounded-xl btn-secondary text-sm"
                 >
                   <Edit size={18} />
                   Edit
                 </Link>
-              </div>
+              </>
             )}
 
             {invoice.status === 'SENT' && (
-              <div className="flex flex-wrap gap-3">
+              <>
                 <button
                   onClick={handleSendEmail}
                   disabled={sendingEmail}
-                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 text-white font-bold rounded-xl btn-primary disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
                   {sendingEmail ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
                   {sendingEmail ? 'Mengirim...' : 'Kirim Ulang'}
                 </button>
                 <button
                   onClick={handleOpenPaymentModal}
-                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl bg-green-500 hover:bg-green-600 transition-colors"
+                  className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 text-white font-bold rounded-xl bg-success-500 hover:bg-success-600 transition-colors text-sm"
                 >
                   <DollarSign size={18} />
                   Tandai Lunas
@@ -1002,30 +783,30 @@ Terima kasih!`
                 <button
                   onClick={handleSendReminder}
                   disabled={sendingReminder}
-                  className="flex items-center gap-2 px-6 py-3 text-red-500 font-bold rounded-xl border-2 border-orange-200 hover:bg-gray transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 text-primary-600 font-bold rounded-xl border-2 border-primary-200 hover:bg-primary-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
                   {sendingReminder ? <Loader2 size={18} className="animate-spin" /> : <Bell size={18} />}
                   {sendingReminder ? 'Mengirim...' : 'Kirim Reminder'}
                 </button>
                 <button
-                  onClick={handleWhatsAppWithPDF}
-                  disabled={sendingWhatsApp}
-                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleWhatsApp}
+                  className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 text-white font-bold rounded-xl transition-colors text-sm"
                   style={{
                     background: 'linear-gradient(145deg, #25D366, #128C7E)',
                   }}
                 >
-                  {sendingWhatsApp ? <Loader2 size={18} className="animate-spin" /> : <MessageCircle size={18} />}
-                  {sendingWhatsApp ? 'Memproses...' : 'WhatsApp + PDF'}
+                  <MessageCircle size={18} />
+                  <span className="hidden sm:inline">Kirim via WhatsApp</span>
+                  <span className="sm:hidden">WhatsApp</span>
                 </button>
-              </div>
+              </>
             )}
 
             {invoice.status === 'OVERDUE' && (
-              <div className="flex flex-wrap gap-3">
+              <>
                 <button
                   onClick={handleOpenPaymentModal}
-                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl bg-green-500 hover:bg-green-600 transition-colors"
+                  className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 text-white font-bold rounded-xl bg-success-500 hover:bg-success-600 transition-colors text-sm"
                 >
                   <DollarSign size={18} />
                   Tandai Lunas
@@ -1033,52 +814,51 @@ Terima kasih!`
                 <button
                   onClick={handleSendReminder}
                   disabled={sendingReminder}
-                  className="flex items-center gap-2 px-6 py-3 text-red-500 font-bold rounded-xl border-2 border-orange-200 hover:bg-gray transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 text-primary-600 font-bold rounded-xl border-2 border-primary-200 hover:bg-primary-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
                   {sendingReminder ? <Loader2 size={18} className="animate-spin" /> : <Bell size={18} />}
                   {sendingReminder ? 'Mengirim...' : 'Kirim Reminder'}
                 </button>
                 <button
-                  onClick={handleWhatsAppWithPDF}
-                  disabled={sendingWhatsApp}
-                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleWhatsApp}
+                  className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 text-white font-bold rounded-xl transition-colors text-sm"
                   style={{
                     background: 'linear-gradient(145deg, #25D366, #128C7E)',
                   }}
                 >
-                  {sendingWhatsApp ? <Loader2 size={18} className="animate-spin" /> : <MessageCircle size={18} />}
-                  {sendingWhatsApp ? 'Memproses...' : 'WhatsApp + PDF'}
+                  <MessageCircle size={18} />
+                  <span className="hidden sm:inline">Kirim via WhatsApp</span>
+                  <span className="sm:hidden">WhatsApp</span>
                 </button>
-              </div>
+              </>
             )}
 
             {invoice.status === 'PAID' && invoice.paidAt && (
               <div className="w-full">
-                <div className="p-4 rounded-xl bg-green-50 border border-green-200 mb-3">
-                  <p className="font-bold text-green-700 text-center">
+                <div className="p-4 rounded-xl bg-success-50 border border-success-200 mb-3">
+                  <p className="font-bold text-success-700 text-center">
                     Invoice ini telah dibayar pada {formatDate(invoice.paidAt)}
                   </p>
                   {invoice.paymentMethod && (
-                    <p className="text-sm text-green-600 text-center mt-1">
+                    <p className="text-sm text-success-600 text-center mt-1">
                       Metode: {getPaymentMethodLabel(invoice.paymentMethod)}
                     </p>
                   )}
                   {invoice.paymentNotes && (
-                    <p className="text-sm text-gray-600 text-center mt-1">
+                    <p className="text-sm text-text-secondary text-center mt-1">
                       {invoice.paymentNotes}
                     </p>
                   )}
                 </div>
                 <button
-                  onClick={handleWhatsAppWithPDF}
-                  disabled={sendingWhatsApp}
-                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full justify-center"
+                  onClick={handleWhatsApp}
+                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl transition-colors w-full justify-center"
                   style={{
                     background: 'linear-gradient(145deg, #25D366, #128C7E)',
                   }}
                 >
-                  {sendingWhatsApp ? <Loader2 size={18} className="animate-spin" /> : <MessageCircle size={18} />}
-                  {sendingWhatsApp ? 'Memproses...' : 'Kirim via WhatsApp'}
+                  <MessageCircle size={18} />
+                  Kirim via WhatsApp
                 </button>
               </div>
             )}
@@ -1086,67 +866,71 @@ Terima kasih!`
           </div>
 
           {/* Invoice Card */}
-          <div ref={printRef} id="invoice-card" className="bg-white p-8 md:p-10 rounded-3xl shadow-lg">
+          <div ref={printRef} id="invoice-card" className="card p-6 sm:p-8 md:p-10 relative animate-fade-in-up animation-delay-100">
+            {/* Status Stamp */}
+            <div className="absolute top-6 right-6 sm:top-8 sm:right-8 md:top-10 md:right-10 z-10">
+              {getStatusStamp(invoice.status)}
+            </div>
+
             {/* Header */}
-            <div className="flex justify-between items-start mb-8 pb-8 border-b border-orange-200">
+            <div className="flex justify-between items-start mb-8 pb-8 border-b border-gray-200">
               <div>
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-charcoal flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-xl bg-brand-500 flex items-center justify-center">
                     <FileText className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h1 className="font-bold text-xl text-gray-900">
+                    <h1 className="font-bold text-xl text-text-primary">
                       {invoice.companyName}
                     </h1>
-                    <p className="text-sm text-gray-600">{invoice.companyEmail}</p>
+                    <p className="text-sm text-text-secondary">{invoice.companyEmail}</p>
                   </div>
                 </div>
               </div>
-              {getStatusBadge(invoice.status)}
             </div>
 
             {/* Invoice Title */}
             <div className="mb-8">
-              <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight mb-2">
+              <h2 className="text-3xl font-extrabold text-text-primary tracking-tight mb-2">
                 INVOICE
               </h2>
-              <p className="text-gray-600 font-mono">{invoice.invoiceNumber}</p>
+              <p className="text-text-secondary font-mono">{invoice.invoiceNumber}</p>
             </div>
 
             {/* Bill To */}
             <div className="mb-8">
-              <h3 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wide text-gray-600">
+              <h3 className="font-bold text-text-primary mb-4 text-sm uppercase tracking-wide text-text-secondary">
                 Kepada:
               </h3>
-              <div className="bg-gray rounded-xl p-6">
-                <p className="font-bold text-gray-900 text-lg mb-2">
+              <div className="bg-surface-light rounded-xl p-6">
+                <p className="font-bold text-text-primary text-lg mb-2">
                   {invoice.clientName}
                 </p>
-                <p className="text-gray-600">{invoice.clientEmail}</p>
+                <p className="text-text-secondary">{invoice.clientEmail}</p>
                 {invoice.clientPhone && (
-                  <p className="text-gray-600">{invoice.clientPhone}</p>
+                  <p className="text-text-secondary">{invoice.clientPhone}</p>
                 )}
                 {invoice.clientAddress && (
-                  <p className="text-gray-600 whitespace-pre-line">{invoice.clientAddress}</p>
+                  <p className="text-text-secondary whitespace-pre-line">{invoice.clientAddress}</p>
                 )}
               </div>
             </div>
 
             {/* From Section */}
             <div className="mb-8">
-              <h3 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wide text-gray-600">
+              <h3 className="font-bold text-text-primary mb-4 text-sm uppercase tracking-wide text-text-secondary">
                 Dari:
               </h3>
-              <div className="bg-gray rounded-xl p-6">
-                <p className="font-bold text-gray-900 text-lg mb-1">
+              <div className="bg-surface-light rounded-xl p-6">
+                <p className="font-bold text-text-primary text-lg mb-1">
                   {invoice.companyName}
                 </p>
-                <p className="text-gray-600">{invoice.companyEmail}</p>
+                <p className="text-text-secondary">{invoice.companyEmail}</p>
                 {invoice.companyPhone && (
-                  <p className="text-gray-600">{invoice.companyPhone}</p>
+                  <p className="text-text-secondary">{invoice.companyPhone}</p>
                 )}
                 {invoice.companyAddress && (
-                  <p className="text-gray-600 whitespace-pre-line">{invoice.companyAddress}</p>
+                  <p className="text-text-secondary whitespace-pre-line">{invoice.companyAddress}</p>
                 )}
               </div>
             </div>
@@ -1154,15 +938,15 @@ Terima kasih!`
             {/* Invoice Info */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-8">
               <div>
-                <span className="text-gray-600 text-sm">Tanggal</span>
-                <p className="font-semibold text-gray-900 mt-1">
+                <span className="text-text-secondary text-sm">Tanggal</span>
+                <p className="font-semibold text-text-primary mt-1">
                   {formatDate(invoice.date)}
                 </p>
               </div>
               {invoice.dueDate && (
                 <div>
-                  <span className="text-gray-600 text-sm">Jatuh Tempo</span>
-                  <p className="font-semibold text-gray-900 mt-1">
+                  <span className="text-text-secondary text-sm">Jatuh Tempo</span>
+                  <p className="font-semibold text-text-primary mt-1">
                     {formatDate(invoice.dueDate)}
                   </p>
                 </div>
@@ -1171,40 +955,40 @@ Terima kasih!`
 
             {/* Items Table */}
             <div className="mb-8">
-              <h3 className="font-bold text-gray-900 mb-4 text-sm uppercase tracking-wide text-gray-600">
+              <h3 className="font-bold text-text-primary mb-4 text-sm uppercase tracking-wide text-text-secondary">
                 Item Invoice
               </h3>
-              <div className="overflow-x-auto rounded-xl border border-orange-200">
+              <div className="overflow-x-auto rounded-xl border border-gray-200">
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-gray">
-                      <th className="text-left py-4 px-6 font-bold text-gray-900">
+                    <tr className="bg-surface-light">
+                      <th className="text-left py-4 px-4 sm:px-6 font-bold text-text-primary text-sm">
                         Deskripsi
                       </th>
-                      <th className="text-center py-4 px-6 font-bold text-gray-900">
+                      <th className="text-center py-4 px-4 sm:px-6 font-bold text-text-primary text-sm">
                         Qty
                       </th>
-                      <th className="text-right py-4 px-6 font-bold text-gray-900">
+                      <th className="text-right py-4 px-4 sm:px-6 font-bold text-text-primary text-sm">
                         Harga
                       </th>
-                      <th className="text-right py-4 px-6 font-bold text-gray-900">
+                      <th className="text-right py-4 px-4 sm:px-6 font-bold text-text-primary text-sm">
                         Total
                       </th>
                     </tr>
                   </thead>
                   <tbody>
                     {invoice.items.map((item) => (
-                      <tr key={item.id} className="border-b border-orange-200">
-                        <td className="py-4 px-6 text-gray-900">
+                      <tr key={item.id} className="border-b border-gray-100">
+                        <td className="py-4 px-4 sm:px-6 text-text-primary">
                           {item.description || '-'}
                         </td>
-                        <td className="py-4 px-6 text-center text-gray-900">
+                        <td className="py-4 px-4 sm:px-6 text-center text-text-primary">
                           {item.quantity}
                         </td>
-                        <td className="py-4 px-6 text-right text-gray-900">
+                        <td className="py-4 px-4 sm:px-6 text-right text-text-primary">
                           {formatCurrency(item.price)}
                         </td>
-                        <td className="py-4 px-6 text-right font-semibold text-gray-900">
+                        <td className="py-4 px-4 sm:px-6 text-right font-semibold text-text-primary">
                           {formatCurrency(item.quantity * item.price)}
                         </td>
                       </tr>
@@ -1217,19 +1001,19 @@ Terima kasih!`
             {/* Totals */}
             <div className="flex justify-end mb-8">
               <div className="w-full md:w-80">
-                <div className="flex justify-between py-3 text-gray-600">
+                <div className="flex justify-between py-3 text-text-secondary">
                   <span>Subtotal</span>
                   <span className="font-semibold">
                     {formatCurrency(invoice.subtotal)}
                   </span>
                 </div>
-                <div className="flex justify-between py-3 text-gray-600">
+                <div className="flex justify-between py-3 text-text-secondary">
                   <span>Pajak ({invoice.taxRate}%)</span>
                   <span className="font-semibold">
                     {formatCurrency(invoice.taxAmount)}
                   </span>
                 </div>
-                <div className="flex justify-between py-4 border-t-2 border-orange-200 text-2xl font-extrabold text-gray-900 mt-4">
+                <div className="flex justify-between py-4 border-t-2 border-gray-200 text-2xl font-extrabold text-brand-500 mt-4">
                   <span>Total</span>
                   <span>{formatCurrency(invoice.total)}</span>
                 </div>
@@ -1238,24 +1022,24 @@ Terima kasih!`
 
             {/* Notes */}
             {invoice.notes && (
-              <div className="border-t border-orange-200 pt-8">
-                <h3 className="font-bold text-gray-900 mb-3 text-sm uppercase tracking-wide text-gray-600">
+              <div className="border-t border-gray-200 pt-8">
+                <h3 className="font-bold text-text-primary mb-3 text-sm uppercase tracking-wide text-text-secondary">
                   Catatan
                 </h3>
-                <p className="text-gray-600 whitespace-pre-line">{invoice.notes}</p>
+                <p className="text-text-secondary whitespace-pre-line">{invoice.notes}</p>
               </div>
             )}
 
             {/* Footer */}
-            <div className="mt-8 pt-6 border-t border-orange-200 text-center">
-              <p className="text-sm text-gray-600">
+            <div className="mt-8 pt-6 border-t border-gray-200 text-center">
+              <p className="text-sm text-text-muted">
                 Generated by InvoiceKirim - Invoice Generator untuk Freelancer Indonesia
               </p>
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="mt-8 flex flex-wrap gap-4 justify-center no-print">
+          {/* Bottom Action Buttons */}
+          <div className="mt-8 flex flex-wrap gap-4 justify-center no-print animate-fade-in-up animation-delay-200">
             {invoice.status === 'DRAFT' && (
               <>
                 <button
@@ -1269,25 +1053,24 @@ Terima kasih!`
                 <button
                   onClick={() => handleStatusUpdate('SENT')}
                   disabled={updating}
-                  className="flex items-center gap-2 px-6 py-3 text-gray-600 font-bold rounded-xl btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-6 py-3 text-text-secondary font-bold rounded-xl btn-secondary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {updating ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />}
                   {updating ? 'Memproses...' : 'Tandai Terkirim'}
                 </button>
                 <button
-                  onClick={handleWhatsAppWithPDF}
-                  disabled={sendingWhatsApp}
-                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleWhatsApp}
+                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl transition-colors"
                   style={{
                     background: 'linear-gradient(145deg, #25D366, #128C7E)',
                   }}
                 >
-                  {sendingWhatsApp ? <Loader2 size={18} className="animate-spin" /> : <MessageCircle size={18} />}
-                  {sendingWhatsApp ? 'Memproses...' : 'WhatsApp + PDF'}
+                  <MessageCircle size={18} />
+                  Kirim via WhatsApp
                 </button>
                 <Link
                   href={`/dashboard/invoices/${invoice.id}/edit`}
-                  className="flex items-center gap-2 px-6 py-3 text-gray-600 font-bold rounded-xl btn-secondary"
+                  className="flex items-center gap-2 px-6 py-3 text-text-secondary font-bold rounded-xl btn-secondary"
                 >
                   <Edit size={18} />
                   Edit
@@ -1306,7 +1089,7 @@ Terima kasih!`
                 </button>
                 <button
                   onClick={handleOpenPaymentModal}
-                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl bg-green-500 hover:bg-green-600 transition-colors"
+                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl bg-success-500 hover:bg-success-600 transition-colors"
                 >
                   <DollarSign size={18} />
                   Tandai Lunas
@@ -1314,21 +1097,20 @@ Terima kasih!`
                 <button
                   onClick={handleSendReminder}
                   disabled={sendingReminder}
-                  className="flex items-center gap-2 px-6 py-3 text-red-500 font-bold rounded-xl border-2 border-orange-200 hover:bg-gray transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-6 py-3 text-primary-600 font-bold rounded-xl border-2 border-primary-200 hover:bg-primary-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {sendingReminder ? <Loader2 size={18} className="animate-spin" /> : <Bell size={18} />}
                   {sendingReminder ? 'Mengirim...' : 'Kirim Reminder'}
                 </button>
                 <button
-                  onClick={handleWhatsAppWithPDF}
-                  disabled={sendingWhatsApp}
-                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleWhatsApp}
+                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl transition-colors"
                   style={{
                     background: 'linear-gradient(145deg, #25D366, #128C7E)',
                   }}
                 >
-                  {sendingWhatsApp ? <Loader2 size={18} className="animate-spin" /> : <MessageCircle size={18} />}
-                  {sendingWhatsApp ? 'Memproses...' : 'WhatsApp + PDF'}
+                  <MessageCircle size={18} />
+                  Kirim via WhatsApp
                 </button>
               </>
             )}
@@ -1336,7 +1118,7 @@ Terima kasih!`
               <>
                 <button
                   onClick={handleOpenPaymentModal}
-                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl bg-green-500 hover:bg-green-600 transition-colors"
+                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl bg-success-500 hover:bg-success-600 transition-colors"
                 >
                   <DollarSign size={18} />
                   Tandai Lunas
@@ -1344,74 +1126,41 @@ Terima kasih!`
                 <button
                   onClick={handleSendReminder}
                   disabled={sendingReminder}
-                  className="flex items-center gap-2 px-6 py-3 text-red-500 font-bold rounded-xl border-2 border-orange-200 hover:bg-gray transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center gap-2 px-6 py-3 text-primary-600 font-bold rounded-xl border-2 border-primary-200 hover:bg-primary-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {sendingReminder ? <Loader2 size={18} className="animate-spin" /> : <Bell size={18} />}
                   {sendingReminder ? 'Mengirim...' : 'Kirim Reminder'}
                 </button>
                 <button
-                  onClick={handleWhatsAppWithPDF}
-                  disabled={sendingWhatsApp}
-                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleWhatsApp}
+                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl transition-colors"
                   style={{
                     background: 'linear-gradient(145deg, #25D366, #128C7E)',
                   }}
                 >
-                  {sendingWhatsApp ? <Loader2 size={18} className="animate-spin" /> : <MessageCircle size={18} />}
-                  {sendingWhatsApp ? 'Memproses...' : 'WhatsApp + PDF'}
+                  <MessageCircle size={18} />
+                  Kirim via WhatsApp
                 </button>
               </>
             )}
-            {invoice.status === 'PAID' && invoice.paidAt && (
-              <div className="w-full">
-                <div className="p-4 rounded-xl bg-green-50 border border-green-200 mb-3">
-                  <p className="font-bold text-green-700 text-center">
-                    Invoice ini telah dibayar pada {formatDate(invoice.paidAt)}
-                  </p>
-                  {invoice.paymentMethod && (
-                    <p className="text-sm text-green-600 text-center mt-1">
-                      Metode: {getPaymentMethodLabel(invoice.paymentMethod)}
-                    </p>
-                  )}
-                  {invoice.paymentNotes && (
-                    <p className="text-sm text-gray-600 text-center mt-1">
-                      {invoice.paymentNotes}
-                    </p>
-                  )}
-                </div>
-                <button
-                  onClick={handleWhatsAppWithPDF}
-                  disabled={sendingWhatsApp}
-                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed w-full justify-center"
-                  style={{
-                    background: 'linear-gradient(145deg, #25D366, #128C7E)',
-                  }}
-                >
-                  {sendingWhatsApp ? <Loader2 size={18} className="animate-spin" /> : <MessageCircle size={18} />}
-                  {sendingWhatsApp ? 'Memproses...' : 'Kirim via WhatsApp'}
-                </button>
-              </div>
-            )}
           </div>
-        </div>
-      </div>
 
       {/* Payment Confirmation Modal */}
       {showPaymentModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md animate-scale-in">
             {/* Modal Header */}
-            <div className="px-6 py-5 border-b border-gray-200 rounded-t-2xl">
+            <div className="px-6 py-5 border-b border-gray-100 rounded-t-2xl">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">Konfirmasi Pembayaran</h2>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <h2 className="text-xl font-bold text-text-primary">Konfirmasi Pembayaran</h2>
+                  <p className="text-sm text-text-secondary mt-1">
                     Invoice #{invoice?.invoiceNumber} - {invoice ? formatCurrency(invoice.total) : ''}
                   </p>
                 </div>
                 <button
                   onClick={handleClosePaymentModal}
-                  className="p-2 text-gray-400 hover:text-gray-600 rounded-xl hover:bg-gray-100 transition-colors"
+                  className="p-2 text-text-muted hover:text-text-primary rounded-xl hover:bg-gray-100 transition-colors"
                 >
                   <X size={20} />
                 </button>
@@ -1422,13 +1171,13 @@ Terima kasih!`
             <div className="p-6 space-y-4">
               {/* Payment Method */}
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
+                <label className="block text-sm font-bold text-text-primary mb-2">
                   Metode Pembayaran
                 </label>
                 <select
                   value={paymentData.paymentMethod}
                   onChange={(e) => setPaymentData({ ...paymentData, paymentMethod: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 focus:border-orange-500 focus:outline-none transition-colors"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-text-primary focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 transition-all"
                 >
                   <option value="TRANSFER">Transfer Bank</option>
                   <option value="CASH">Tunai</option>
@@ -1440,47 +1189,47 @@ Terima kasih!`
 
               {/* Payment Date */}
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
+                <label className="block text-sm font-bold text-text-primary mb-2">
                   Tanggal Pembayaran
                 </label>
                 <div className="relative">
-                  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
                   <input
                     type="date"
                     value={paymentData.paymentDate}
                     onChange={(e) => setPaymentData({ ...paymentData, paymentDate: e.target.value })}
-                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-orange-200 text-gray-900 focus:border-orange-500 focus:outline-none transition-colors"
+                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 text-text-primary focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 transition-all"
                   />
                 </div>
               </div>
 
               {/* Payment Notes */}
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
+                <label className="block text-sm font-bold text-text-primary mb-2">
                   Catatan Pembayaran (Opsional)
                 </label>
                 <textarea
                   value={paymentData.paymentNotes}
                   onChange={(e) => setPaymentData({ ...paymentData, paymentNotes: e.target.value })}
                   rows={2}
-                  className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors resize-none"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-text-primary placeholder:text-text-muted focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 transition-all resize-none"
                   placeholder="Contoh: Transfer dari BCA ke Mandiri"
                 />
               </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-4 border-t border-gray-200 flex gap-3">
+            <div className="px-6 py-4 border-t border-gray-100 flex gap-3">
               <button
                 onClick={handleClosePaymentModal}
-                className="flex-1 px-4 py-3 text-gray-700 font-bold rounded-xl border border-gray-300 hover:bg-gray-50 transition-colors"
+                className="flex-1 px-4 py-3 text-text-secondary font-bold rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
               >
                 Batal
               </button>
               <button
                 onClick={handleConfirmPayment}
                 disabled={processingPayment}
-                className="flex-1 px-4 py-3 text-white font-bold rounded-xl bg-green-500 hover:bg-green-600 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="flex-1 px-4 py-3 text-white font-bold rounded-xl bg-success-500 hover:bg-success-600 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {processingPayment ? (
                   <>
@@ -1515,6 +1264,6 @@ Terima kasih!`
       >
         {messageBox.state.children}
       </MessageBox>
-    </div>
+    </DashboardLayout>
   )
 }

@@ -6,6 +6,21 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('Start seeding...')
 
+  // Create admin user
+  const adminPassword = await bcrypt.hash('admin123', 12)
+
+  const admin = await prisma.admin.upsert({
+    where: { email: 'admin@invoicekirim.com' },
+    update: {},
+    create: {
+      email: 'admin@invoicekirim.com',
+      name: 'Admin',
+      password: adminPassword,
+    },
+  })
+
+  console.log('Created admin user:', admin)
+
   // Create test user
   const hashedPassword = await bcrypt.hash('password123', 12)
 
@@ -28,12 +43,17 @@ async function main() {
   console.log('Created test user:', user)
 
   // Create sample invoice
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const invoiceNumber = `INV-${year}-${month}-001`
+
   const invoice = await prisma.invoice.create({
     data: {
       userId: user.id,
-      invoiceNumber: 'INV-001',
+      invoiceNumber,
       date: new Date(),
-      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      dueDate: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
       companyName: 'Test Company',
       companyEmail: 'test@example.com',
       companyPhone: '+628123456789',

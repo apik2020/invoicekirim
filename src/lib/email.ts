@@ -130,7 +130,10 @@ async function sendEmailViaSmtp({
   return { success: true }
 }
 
-// Email templates
+// Email templates with new InvoiceKirim theme
+// Brand/Deep Teal: #276874
+// Primary/Bright Orange: #EF3F0A
+// Success/Lime Green: #C5E151
 export const emailTemplates = {
   invoiceSent: (data: {
     invoiceNumber: string
@@ -149,18 +152,20 @@ export const emailTemplates = {
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>Invoice ${data.invoiceNumber}</title>
         </head>
-        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f8fafc;">
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f7f7f7;">
           <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
             <!-- Header -->
             <div style="text-align: center; margin-bottom: 40px;">
-              <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #0891b2, #06b6d4); border-radius: 16px; margin: 0 auto 20px;"></div>
-              <h1 style="color: #1e293b; font-size: 24px; font-weight: bold; margin: 0;">InvoiceKirim</h1>
+              <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #276874, #2d7d8a); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
+                <span style="color: white; font-weight: bold; font-size: 16px;">[iK]</span>
+              </div>
+              <h1 style="color: #276874; font-size: 24px; font-weight: bold; margin: 0;">InvoiceKirim</h1>
               <p style="color: #64748b; margin: 8px 0 0;">Platform Invoice untuk Freelancer</p>
             </div>
 
             <!-- Main Card -->
             <div style="background: white; border-radius: 20px; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-              <h2 style="color: #0891b2; font-size: 28px; font-weight: bold; margin: 0 0 10px;">
+              <h2 style="color: #276874; font-size: 28px; font-weight: bold; margin: 0 0 10px;">
                 Invoice ${data.invoiceNumber}
               </h2>
               <p style="color: #64748b; margin: 0 0 30px;">
@@ -171,20 +176,20 @@ export const emailTemplates = {
               </p>
 
               <!-- Invoice Details -->
-              <div style="background: #f8fafc; border-radius: 12px; padding: 20px; margin: 30px 0;">
+              <div style="background: #f7f7f7; border-radius: 12px; padding: 20px; margin: 30px 0;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
                   <span style="color: #64748b;">Total Amount</span>
                   <span style="color: #1e293b; font-weight: bold; font-size: 20px;">${data.total}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
                   <span style="color: #64748b;">Jatuh Tempo</span>
-                  <span style="color: #0891b2; font-weight: 600;">${data.dueDate}</span>
+                  <span style="color: #276874; font-weight: 600;">${data.dueDate}</span>
                 </div>
               </div>
 
               <!-- CTA Button -->
               <div style="text-align: center; margin: 30px 0;">
-                <a href="${data.invoiceUrl}" style="display: inline-block; background: linear-gradient(145deg, #0891b2, #06b6d4); color: white; text-decoration: none; padding: 14px 32px; border-radius: 12px; font-weight: 600; font-size: 16px;">
+                <a href="${data.invoiceUrl}" style="display: inline-block; background: linear-gradient(145deg, #EF3F0A, #d63509); color: white; text-decoration: none; padding: 14px 32px; border-radius: 12px; font-weight: 600; font-size: 16px;">
                   Lihat Invoice
                 </a>
               </div>
@@ -223,12 +228,14 @@ export const emailTemplates = {
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <title>Payment Reminder - ${data.invoiceNumber}</title>
         </head>
-        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #fef3c7;">
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #fff7ed;">
           <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
             <!-- Header -->
             <div style="text-align: center; margin-bottom: 40px;">
-              <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #f59e0b, #d97706); border-radius: 16px; margin: 0 auto 20px;"></div>
-              <h1 style="color: #92400e; font-size: 24px; font-weight: bold; margin: 0;">⏰ Payment Reminder</h1>
+              <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #EF3F0A, #d63509); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
+                <span style="color: white; font-size: 24px;">⏰</span>
+              </div>
+              <h1 style="color: #c2410c; font-size: 24px; font-weight: bold; margin: 0;">Payment Reminder</h1>
             </div>
 
             <!-- Main Card -->
@@ -241,20 +248,20 @@ export const emailTemplates = {
               </p>
 
               <!-- Invoice Details -->
-              <div style="background: #fffbeb; border: 2px solid #fcd34d; border-radius: 12px; padding: 20px; margin: 30px 0;">
+              <div style="background: #fff7ed; border: 2px solid #fed7aa; border-radius: 12px; padding: 20px; margin: 30px 0;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                  <span style="color: #92400e;">Total Amount</span>
-                  <span style="color: #92400e; font-weight: bold; font-size: 20px;">${data.total}</span>
+                  <span style="color: #9a3412;">Total Amount</span>
+                  <span style="color: #9a3412; font-weight: bold; font-size: 20px;">${data.total}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
-                  <span style="color: #92400e;">Jatuh Tempo</span>
-                  <span style="color: #d97706; font-weight: 600;">${data.dueDate}</span>
+                  <span style="color: #9a3412;">Jatuh Tempo</span>
+                  <span style="color: #EF3F0A; font-weight: 600;">${data.dueDate}</span>
                 </div>
               </div>
 
               <!-- CTA Button -->
               <div style="text-align: center; margin: 30px 0;">
-                <a href="${data.invoiceUrl}" style="display: inline-block; background: linear-gradient(145deg, #f59e0b, #d97706); color: white; text-decoration: none; padding: 14px 32px; border-radius: 12px; font-weight: 600; font-size: 16px;">
+                <a href="${data.invoiceUrl}" style="display: inline-block; background: linear-gradient(145deg, #EF3F0A, #d63509); color: white; text-decoration: none; padding: 14px 32px; border-radius: 12px; font-weight: 600; font-size: 16px;">
                   Bayar Sekarang
                 </a>
               </div>
@@ -265,7 +272,7 @@ export const emailTemplates = {
             </div>
 
             <!-- Footer -->
-            <div style="text-align: center; margin-top: 40px; color: #92400e; font-size: 14px;">
+            <div style="text-align: center; margin-top: 40px; color: #9a3412; font-size: 14px;">
               <p style="margin: 0 0 8px;">Invoice dibuat dengan InvoiceKirim</p>
               <p style="margin: 0;">&copy; ${new Date().getFullYear()} InvoiceKirim. All rights reserved.</p>
             </div>
@@ -297,8 +304,10 @@ export const emailTemplates = {
           <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
             <!-- Header -->
             <div style="text-align: center; margin-bottom: 40px;">
-              <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #ef4444, #dc2626); border-radius: 16px; margin: 0 auto 20px;"></div>
-              <h1 style="color: #991b1b; font-size: 24px; font-weight: bold; margin: 0;">⚠️ Invoice Overdue</h1>
+              <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #ef4444, #dc2626); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
+                <span style="color: white; font-size: 24px;">⚠️</span>
+              </div>
+              <h1 style="color: #991b1b; font-size: 24px; font-weight: bold; margin: 0;">Invoice Overdue</h1>
             </div>
 
             <!-- Main Card -->
@@ -369,10 +378,10 @@ export const emailTemplates = {
           <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
             <!-- Header -->
             <div style="text-align: center; margin-bottom: 40px;">
-              <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #10b981, #059669); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 32px;">
-                ✅
+              <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #C5E151, #a8c945); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
+                <span style="color: white; font-size: 28px;">✓</span>
               </div>
-              <h1 style="color: #065f46; font-size: 24px; font-weight: bold; margin: 0;">Pembayaran Berhasil!</h1>
+              <h1 style="color: #3f6212; font-size: 24px; font-weight: bold; margin: 0;">Pembayaran Berhasil!</h1>
             </div>
 
             <!-- Main Card -->
@@ -380,23 +389,23 @@ export const emailTemplates = {
               <p style="color: #334155; line-height: 1.6; margin: 0 0 20px;">
                 Halo ${data.clientName},
               </p>
-              <p style="color: #065f46; line-height: 1.6; margin: 0 0 30px; font-weight: 600;">
+              <p style="color: #3f6212; line-height: 1.6; margin: 0 0 30px; font-weight: 600;">
                 Terima kasih! Pembayaran untuk <strong>Invoice ${data.invoiceNumber}</strong> dari ${data.companyName} telah berhasil diterima.
               </p>
 
               <!-- Payment Details -->
-              <div style="background: #f0fdf4; border: 2px solid #6ee7b7; border-radius: 12px; padding: 20px; margin: 30px 0;">
+              <div style="background: #f0fdf4; border: 2px solid #C5E151; border-radius: 12px; padding: 20px; margin: 30px 0;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                  <span style="color: #065f46;">Invoice Number</span>
-                  <span style="color: #065f46; font-weight: 600;">${data.invoiceNumber}</span>
+                  <span style="color: #3f6212;">Invoice Number</span>
+                  <span style="color: #3f6212; font-weight: 600;">${data.invoiceNumber}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                  <span style="color: #065f46;">Total Amount</span>
-                  <span style="color: #065f46; font-weight: bold; font-size: 20px;">${data.total}</span>
+                  <span style="color: #3f6212;">Total Amount</span>
+                  <span style="color: #3f6212; font-weight: bold; font-size: 20px;">${data.total}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
-                  <span style="color: #065f46;">Tanggal Bayar</span>
-                  <span style="color: #059669; font-weight: 600;">${data.paidDate}</span>
+                  <span style="color: #3f6212;">Tanggal Bayar</span>
+                  <span style="color: #C5E151; font-weight: 600;">${data.paidDate}</span>
                 </div>
               </div>
 
@@ -406,7 +415,7 @@ export const emailTemplates = {
             </div>
 
             <!-- Footer -->
-            <div style="text-align: center; margin-top: 40px; color: #065f46; font-size: 14px;">
+            <div style="text-align: center; margin-top: 40px; color: #3f6212; font-size: 14px;">
               <p style="margin: 0 0 8px;">Invoice dibuat dengan InvoiceKirim</p>
               <p style="margin: 0;">&copy; ${new Date().getFullYear()} InvoiceKirim. All rights reserved.</p>
             </div>

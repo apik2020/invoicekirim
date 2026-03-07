@@ -4,13 +4,13 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #1A1A1A;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-ubuntu);
+  --font-sans: var(--font-inter), var(--font-plus-jakarta), system-ui, sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -23,118 +23,615 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-ubuntu), sans-serif;
+  font-family: var(--font-inter), var(--font-plus-jakarta), system-ui, sans-serif;
 }
 
-/* Custom Components - Freshly Squeezed Theme */
+/* ============================================
+   InvoiceKirim Design System - Professional Theme
+   ============================================ */
+
 @layer components {
+  /* Primary CTA Button - Bright Orange (#EF3F0A) */
   .btn-primary {
-    @apply bg-orange-500 text-white rounded-xl font-semibold hover:bg-orange-600 transition-all shadow-lg shadow-orange-200;
+    @apply bg-primary-500 text-white rounded-xl font-semibold hover:bg-primary-600 transition-all duration-300 shadow-primary;
   }
 
+  .btn-primary:hover {
+    @apply shadow-primary-lg transform -translate-y-0.5;
+  }
+
+  .btn-primary:active {
+    @apply transform translate-y-0 shadow-primary;
+  }
+
+  /* Secondary Button - Deep Teal outline */
   .btn-secondary {
-    @apply bg-white text-orange-600 border-2 border-orange-200 rounded-xl font-semibold hover:bg-orange-50 hover:border-orange-300 transition-all;
+    @apply bg-white text-brand-500 border-2 border-brand-200 rounded-xl font-semibold hover:bg-brand-50 hover:border-brand-300 transition-all duration-300;
   }
 
+  .btn-secondary:hover {
+    @apply transform -translate-y-0.5;
+  }
+
+  /* Ghost Button - Soft Peach */
+  .btn-ghost {
+    @apply bg-highlight-400/20 text-highlight-600 border border-highlight-300 rounded-xl font-semibold hover:bg-highlight-400/30 transition-all duration-300;
+  }
+
+  /* Card Component - White with subtle shadow */
   .card {
-    @apply bg-white rounded-2xl shadow-lg border border-orange-100;
+    @apply bg-white rounded-2xl shadow-card border border-gray-100;
   }
 
   .card-hover {
-    @apply hover:shadow-xl hover:-translate-y-1 transition-all duration-300;
+    @apply hover:shadow-card-hover hover:-translate-y-1 transition-all duration-300;
   }
 
+  /* Badge Components */
   .badge {
-    @apply inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold;
+    @apply inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold;
   }
 
-  .badge-orange {
-    @apply bg-orange-100 text-orange-700;
+  .badge-paid {
+    @apply bg-success-400 text-success-800;
   }
 
-  .badge-yellow {
-    @apply bg-yellow-100 text-yellow-700;
+  .badge-sent {
+    @apply bg-secondary-400 text-secondary-800;
   }
 
-  .badge-lemon {
-    @apply bg-lemon-100 text-lemon-700;
+  .badge-overdue {
+    @apply bg-primary-100 text-primary-700;
   }
 
-  .badge-lime {
-    @apply bg-lime-100 text-lime-700;
+  .badge-draft {
+    @apply bg-highlight-200 text-highlight-700;
   }
 
-  .badge-pink {
-    @apply bg-pink-100 text-pink-700;
+  .badge-brand {
+    @apply bg-brand-100 text-brand-700;
   }
 
+  /* Icon Box Components */
   .icon-box {
     @apply w-14 h-14 rounded-2xl flex items-center justify-center;
   }
 
-  .icon-box-orange {
-    @apply bg-orange-100;
+  .icon-box-primary {
+    @apply bg-primary-100;
   }
 
-  .icon-box-yellow {
-    @apply bg-yellow-100;
+  .icon-box-brand {
+    @apply bg-brand-100;
   }
 
-  .icon-box-lemon {
-    @apply bg-lemon-100;
+  .icon-box-success {
+    @apply bg-success-100;
   }
 
-  .icon-box-lime {
-    @apply bg-lime-100;
+  .icon-box-secondary {
+    @apply bg-secondary-100;
   }
 
-  .icon-box-pink {
-    @apply bg-pink-100;
+  .icon-box-highlight {
+    @apply bg-highlight-100;
   }
 
+  /* Checkmark - Success Green */
   .checkmark {
-    @apply w-5 h-5 rounded-full bg-lime-500 flex items-center justify-center flex-shrink-0;
+    @apply w-5 h-5 rounded-full bg-success-400 flex items-center justify-center flex-shrink-0;
   }
 
-  .gradient-fresh {
-    @apply bg-gradient-to-br from-orange-400 via-lemon-400 to-lime-400;
+  /* Gradient Utilities */
+  .gradient-brand {
+    @apply bg-gradient-to-br from-brand-500 to-brand-600;
   }
 
-  .gradient-sunset {
-    @apply bg-gradient-to-br from-orange-500 to-pink-500;
+  .gradient-primary {
+    @apply bg-gradient-to-br from-primary-500 to-highlight-500;
   }
 
-  .gradient-citrus {
-    @apply bg-gradient-to-br from-lemon-400 to-lime-500;
+  .gradient-success {
+    @apply bg-gradient-to-br from-success-400 to-success-500;
   }
 
+  /* Pricing Cards */
   .pricing-card {
-    @apply bg-white rounded-2xl shadow-lg border-2 border-orange-100 p-8;
+    @apply bg-white rounded-2xl shadow-card border-2 border-gray-100 p-8;
   }
 
   .pricing-card-featured {
-    @apply bg-white rounded-2xl shadow-2xl border-2 border-orange-400 p-8 pt-12 relative;
+    @apply bg-white rounded-2xl shadow-brand-lg border-2 border-brand-300 p-8 pt-12 relative;
   }
 
-  /* Form Inputs with better contrast */
+  /* Form Inputs */
   .input {
-    @apply w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-black placeholder-gray-500 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200 transition-all;
+    @apply w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-text-primary placeholder:text-text-muted focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 transition-all duration-300;
   }
 
   .input-label {
-    @apply block text-sm font-bold text-black mb-2;
+    @apply block text-sm font-semibold text-text-primary mb-2;
   }
 
   .select {
-    @apply w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-black focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200 transition-all;
+    @apply w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-text-primary focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 transition-all duration-300;
   }
 
   .textarea {
-    @apply w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-black placeholder-gray-500 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200 transition-all resize-none;
+    @apply w-full px-4 py-3 rounded-xl bg-white border border-gray-200 text-text-primary placeholder:text-text-muted focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 transition-all duration-300 resize-none;
+  }
+
+  /* Table Styles */
+  .table-header {
+    @apply text-left py-3 px-4 text-sm font-semibold text-text-secondary border-b border-gray-100;
+  }
+
+  .table-row {
+    @apply border-b border-gray-50 hover:bg-surface-light transition-colors duration-200;
+  }
+
+  .table-cell {
+    @apply py-4 px-4 text-text-primary;
+  }
+
+  /* Sidebar Navigation */
+  .sidebar {
+    @apply bg-brand-500 text-white;
+  }
+
+  .sidebar-item {
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl text-white/80 hover:bg-white/10 hover:text-white transition-all duration-200;
+  }
+
+  .sidebar-item-active {
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl bg-white/15 text-white font-semibold;
+  }
+
+  /* Dashboard Header */
+  .dashboard-header {
+    @apply bg-white border-b border-gray-200 sticky top-0 z-50;
+  }
+
+  /* Status Pills for Invoice */
+  .status-pill {
+    @apply px-3 py-1 rounded-full text-xs font-semibold;
+  }
+
+  .status-paid {
+    @apply bg-success-400 text-success-800;
+  }
+
+  .status-sent {
+    @apply bg-secondary-400 text-secondary-800;
+  }
+
+  .status-overdue {
+    @apply bg-primary-100 text-primary-700;
+  }
+
+  .status-draft {
+    @apply bg-highlight-200 text-highlight-700;
   }
 }
 
-/* Print Styles - Ubuntu Font */
+/* ============================================
+   LANDING PAGE STYLES
+   ============================================ */
+
+@layer components {
+  .hero-gradient {
+    @apply bg-gradient-to-br from-white via-brand-50/30 to-secondary-50/30;
+  }
+
+  .section-alt {
+    @apply bg-surface-light;
+  }
+
+  .cta-gradient {
+    @apply bg-gradient-to-br from-brand-500 via-brand-600 to-brand-700;
+  }
+}
+
+/* ============================================
+   AUTH PAGES (LOGIN/REGISTER)
+   ============================================ */
+
+@layer components {
+  .auth-container {
+    @apply min-h-screen bg-surface-light flex flex-col;
+  }
+
+  .auth-header {
+    @apply bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50;
+  }
+
+  .auth-card {
+    @apply bg-white rounded-2xl shadow-card-hover p-6 sm:p-8 md:p-10 border border-gray-100;
+  }
+
+  .auth-icon {
+    @apply w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center mx-auto mb-6 shadow-primary-lg animate-float;
+  }
+
+  .auth-divider {
+    @apply flex items-center gap-4 my-6;
+  }
+
+  .auth-divider-line {
+    @apply flex-1 h-px bg-gray-200;
+  }
+
+  .auth-divider-text {
+    @apply text-sm text-text-muted font-medium px-2;
+  }
+
+  .auth-input-icon {
+    @apply absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none;
+  }
+
+  .auth-input {
+    @apply w-full pl-12 pr-4 py-3.5 rounded-xl bg-white border border-gray-200 text-text-primary placeholder:text-text-muted focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 transition-all duration-300;
+  }
+
+  .auth-social-btn {
+    @apply w-full py-3.5 bg-white border-2 border-gray-200 text-text-primary font-semibold rounded-xl flex items-center justify-center gap-3 hover:bg-gray-50 hover:border-gray-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .auth-social-btn:hover {
+    @apply transform -translate-y-0.5;
+  }
+
+  .auth-input-icon {
+    @apply absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none;
+  }
+
+  .auth-input-icon svg {
+    @apply w-5 h-5 text-text-muted;
+  }
+
+  .auth-input {
+    @apply w-full pl-12 pr-4 py-3.5 rounded-xl bg-white border border-gray-200 text-text-primary placeholder:text-text-muted focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 transition-all duration-300;
+  }
+
+  .auth-toggle-password {
+    @apply absolute inset-y-0 right-0 pr-4 flex items-center text-text-muted hover:text-brand-500 transition-colors;
+  }
+
+  .auth-submit-btn {
+    @apply w-full py-4 text-white font-bold text-lg rounded-xl btn-primary flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300;
+  }
+
+  .auth-link {
+    @apply text-brand-500 font-semibold hover:text-brand-600 transition-colors;
+  }
+
+  /* Auth specific utility classes */
+  .auth-divider-line {
+    @apply flex-1 h-px bg-gray-200;
+  }
+
+  .auth-input-icon {
+    @apply absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none;
+  }
+
+  .auth-toggle-password {
+    @apply absolute inset-y-0 right-0 pr-4 flex items-center text-text-muted hover:text-brand-500 transition-colors;
+  }
+
+  .auth-social-btn {
+    @apply w-full py-3.5 bg-white border-2 border-gray-200 text-text-primary font-semibold rounded-xl flex items-center justify-center gap-3 hover:bg-gray-50 hover:border-gray-300 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .auth-social-btn:hover {
+    @apply transform -translate-y-0.5 shadow-md;
+  }
+
+  .auth-submit-btn {
+    @apply w-full py-4 text-white font-bold text-lg rounded-xl btn-primary flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300;
+  }
+}
+
+/* ============================================
+   ANIMATIONS & MICRO-INTERACTIONS
+   ============================================ */
+
+@layer utilities {
+  /* Fade Animations */
+  .animate-fade-in {
+    animation: fade-in 0.5s ease-out forwards;
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.5s ease-out forwards;
+  }
+
+  .animate-fade-in-down {
+    animation: fade-in-down 0.5s ease-out forwards;
+  }
+
+  /* Float Animation */
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  /* Pulse Animation */
+  .animate-pulse-soft {
+    animation: pulse-soft 2s ease-in-out infinite;
+  }
+
+  /* Scale Animation */
+  .animate-scale-in {
+    animation: scale-in 0.3s ease-out forwards;
+  }
+
+  /* Bounce Animation */
+  .animate-bounce-in {
+    animation: bounce-in 0.5s ease-out forwards;
+  }
+
+  /* Shimmer Loading */
+  .animate-shimmer {
+    animation: shimmer 2s linear infinite;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+  }
+
+  /* Slide Animations */
+  .animate-slide-in-left {
+    animation: slide-in-left 0.3s ease-out forwards;
+  }
+
+  .animate-slide-in-right {
+    animation: slide-in-right 0.3s ease-out forwards;
+  }
+
+  /* Animation Delays */
+  .animation-delay-100 { animation-delay: 100ms; }
+  .animation-delay-200 { animation-delay: 200ms; }
+  .animation-delay-300 { animation-delay: 300ms; }
+  .animation-delay-400 { animation-delay: 400ms; }
+  .animation-delay-500 { animation-delay: 500ms; }
+
+  /* Transition Utilities */
+  .transition-smooth {
+    @apply transition-all duration-300 ease-out;
+  }
+
+  .transition-fast {
+    @apply transition-all duration-150 ease-out;
+  }
+
+  /* Hover Effects */
+  .hover-lift {
+    @apply transition-transform duration-300 hover:-translate-y-1;
+  }
+
+  .hover-scale {
+    @apply transition-transform duration-300 hover:scale-105;
+  }
+
+  .hover-glow {
+    @apply transition-shadow duration-300 hover:shadow-lg hover:shadow-brand-500/20;
+  }
+
+  /* Focus Ring */
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2;
+  }
+}
+
+/* Keyframe Definitions */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in-down {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes pulse-soft {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.02);
+    opacity: 0.95;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes bounce-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ============================================
+   RESPONSIVE UTILITIES
+   ============================================ */
+
+@layer utilities {
+  /* Responsive Text */
+  .text-responsive-sm {
+    @apply text-sm sm:text-base;
+  }
+
+  .text-responsive-base {
+    @apply text-base sm:text-lg;
+  }
+
+  .text-responsive-lg {
+    @apply text-lg sm:text-xl md:text-2xl;
+  }
+
+  .text-responsive-xl {
+    @apply text-xl sm:text-2xl md:text-3xl lg:text-4xl;
+  }
+
+  .text-responsive-2xl {
+    @apply text-2xl sm:text-3xl md:text-4xl lg:text-5xl;
+  }
+
+  /* Responsive Padding */
+  .p-responsive {
+    @apply p-4 sm:p-6 md:p-8 lg:p-10;
+  }
+
+  .px-responsive {
+    @apply px-4 sm:px-6 md:px-8 lg:px-10;
+  }
+
+  .py-responsive {
+    @apply py-6 sm:py-8 md:py-10 lg:py-12;
+  }
+
+  /* Responsive Gap */
+  .gap-responsive {
+    @apply gap-4 sm:gap-6 md:gap-8;
+  }
+
+  /* Hide Scrollbar */
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Touch-friendly tap targets */
+  .tap-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Safe Area Insets */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* ============================================
+   MOBILE SIDEBAR
+   ============================================ */
+
+.sidebar-overlay {
+  @apply fixed inset-0 bg-black/50 backdrop-blur-sm z-30 lg:hidden transition-opacity duration-300;
+}
+
+.sidebar-mobile {
+  @apply fixed left-0 top-0 h-full z-40 transform -translate-x-full transition-transform duration-300 ease-out lg:translate-x-0 lg:static;
+}
+
+.sidebar-mobile.open {
+  @apply translate-x-0;
+}
+
+/* ============================================
+   SKELETON LOADING
+   ============================================ */
+
+.skeleton {
+  @apply animate-pulse bg-gray-200 rounded;
+}
+
+.skeleton-text {
+  @apply skeleton h-4 w-full;
+}
+
+.skeleton-title {
+  @apply skeleton h-6 w-3/4;
+}
+
+.skeleton-avatar {
+  @apply skeleton h-10 w-10 rounded-full;
+}
+
+.skeleton-card {
+  @apply skeleton h-32 w-full rounded-xl;
+}
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+
 @media print {
   @page {
     margin: 1cm;
@@ -142,23 +639,21 @@ body {
   }
 
   * {
-    font-family: var(--font-ubuntu), 'Ubuntu', sans-serif !important;
+    font-family: var(--font-inter), var(--font-plus-jakarta), sans-serif !important;
   }
 
   body {
-    font-family: var(--font-ubuntu), 'Ubuntu', sans-serif !important;
+    font-family: var(--font-inter), var(--font-plus-jakarta), sans-serif !important;
     background: white !important;
     color: black !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
-  /* Hide non-printable elements */
   .no-print {
     display: none !important;
   }
 
-  /* Ensure printable content is visible */
   #invoice-preview,
   #invoice-card {
     display: block !important;
@@ -171,21 +666,16 @@ body {
     max-width: 100% !important;
   }
 
-  /* Preserve colors in print */
-  * {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-    color-adjust: exact !important;
-  }
-
-  /* Remove shadows and rounded corners for cleaner print */
   .shadow-lg,
   .shadow-xl,
-  .shadow-2xl {
+  .shadow-2xl,
+  .shadow-card,
+  .shadow-card-hover,
+  .shadow-primary,
+  .shadow-brand {
     box-shadow: none !important;
   }
 
-  /* Page break handling */
   .page-break-before {
     page-break-before: always;
   }
@@ -197,4 +687,47 @@ body {
   .avoid-page-break {
     page-break-inside: avoid;
   }
+}
+
+/* ============================================
+   DARK MODE
+   ============================================ */
+
+.dark {
+  --background: #0f172a;
+  --foreground: #f8fafc;
+}
+
+.dark .card {
+  @apply bg-slate-800 border-slate-700;
+}
+
+.dark .dashboard-header {
+  @apply bg-slate-900 border-slate-700;
+}
+
+.dark .input,
+.dark .select,
+.dark .textarea {
+  @apply bg-slate-800 border-slate-600 text-white;
+}
+
+.dark .table-row {
+  @apply border-slate-700 hover:bg-slate-700/50;
+}
+
+.dark .table-header {
+  @apply border-slate-700 text-slate-300;
+}
+
+.dark .auth-card {
+  @apply bg-slate-800 border-slate-700;
+}
+
+.dark .auth-header {
+  @apply bg-slate-900/80 border-slate-700;
+}
+
+.dark .auth-input {
+  @apply bg-slate-800 border-slate-600 text-white;
 }

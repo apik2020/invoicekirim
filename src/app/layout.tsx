@@ -1,14 +1,21 @@
 import type { Metadata } from "next";
-import { Ubuntu } from "next/font/google";
+import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { ResourceHints } from "@/components/ResourceHints";
 
-const ubuntu = Ubuntu({
-  variable: "--font-ubuntu",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "700"],
-  display: 'swap', // Better performance
+  weight: ["300", "400", "500", "600", "700"],
+  display: 'swap',
+});
+
+const plusJakartaSans = Plus_Jakarta_Sans({
+  variable: "--font-plus-jakarta",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
@@ -39,7 +46,7 @@ export default function RootLayout({
         <ResourceHints />
       </head>
       <body
-        className={`${ubuntu.variable} antialiased`}
+        className={`${inter.variable} ${plusJakartaSans.variable} font-sans antialiased`}
       >
         <Providers>{children}</Providers>
       </body>

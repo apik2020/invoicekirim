@@ -30,15 +30,12 @@ interface InvoiceData {
   taxRate: number
 }
 
-export default function InvoicePage() {
-  const [showPreview, setShowPreview] = useState(false)
-  const [savedInvoices, setSavedInvoices] = useState<InvoiceData[]>([])
-  const printRef = useRef<HTMLDivElement>(null)
-
-  const [formData, setFormData] = useState<InvoiceData>({
-    invoiceNumber: `INV-${Date.now().toString().slice(-6)}`,
+function getInitialFormData(): InvoiceData {
+  const now = Date.now()
+  return {
+    invoiceNumber: `INV-${now.toString().slice(-6)}`,
     date: new Date().toISOString().split('T')[0],
-    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    dueDate: new Date(now + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     companyName: '',
     companyEmail: '',
     companyPhone: '',
@@ -50,7 +47,15 @@ export default function InvoicePage() {
     items: [{ id: '1', description: '', quantity: 1, price: 0 }],
     notes: '',
     taxRate: 11
-  })
+  }
+}
+
+export default function InvoicePage() {
+  const [showPreview, setShowPreview] = useState(false)
+  const [savedInvoices, setSavedInvoices] = useState<InvoiceData[]>([])
+  const printRef = useRef<HTMLDivElement>(null)
+
+  const [formData, setFormData] = useState<InvoiceData>(getInitialFormData)
 
   useEffect(() => {
     const saved = localStorage.getItem('invoices')

@@ -10,6 +10,14 @@ interface PageProps {
   params: Promise<{ token: string }>
 }
 
+interface InvoiceSettings {
+  showClientInfo?: boolean
+  showDiscount?: boolean
+  showAdditionalDiscount?: boolean
+  showTax?: boolean
+  showSignature?: boolean
+}
+
 export default async function InvoicePage({ params }: PageProps) {
   const { token } = await params
 
@@ -22,11 +30,15 @@ export default async function InvoicePage({ params }: PageProps) {
     notFound()
   }
 
+  // Parse settings from JSON
+  const settings = invoice.settings as InvoiceSettings | null
+
   // Convert dates and serialize for client component
   const invoiceData = {
     ...invoice,
     date: invoice.date,
     dueDate: invoice.dueDate,
+    settings,
     items: invoice.items.map(item => ({
       id: item.id,
       description: item.description,

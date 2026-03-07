@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
-import { FileText, Plus, Search, Trash2, Eye, Loader2, Download, Send } from 'lucide-react'
+import { FileText, Plus, Search, Trash2, Eye, Loader2, Download, Send, LayoutTemplate } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { DashboardLayout } from '@/components/DashboardLayout'
 
@@ -224,13 +224,22 @@ export default function InvoicesPage() {
               Kelola semua invoice bisnismu di satu tempat
             </p>
           </div>
-          <Link
-            href="/dashboard/invoices/create"
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 btn-primary font-bold"
-          >
-            <Plus size={18} />
-            <span>Buat Invoice</span>
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Link
+              href="/dashboard/invoices/create"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 btn-primary font-bold"
+            >
+              <Plus size={18} />
+              <span>Buat Invoice</span>
+            </Link>
+            <Link
+              href="/dashboard/templates"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 btn-secondary font-bold"
+            >
+              <LayoutTemplate size={18} />
+              <span>Gunakan Template</span>
+            </Link>
+          </div>
         </div>
 
         {/* Filters Bar */}
@@ -295,13 +304,22 @@ export default function InvoicesPage() {
           <p className="text-text-secondary mb-8 max-w-md mx-auto">
             Buat invoice pertamamu sekarang dan mulai kirim ke klien
           </p>
-          <Link
-            href="/dashboard/invoices/create"
-            className="inline-flex items-center gap-2 px-6 py-3 btn-primary font-bold"
-          >
-            <Plus size={18} />
-            Buat Invoice Pertama
-          </Link>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link
+              href="/dashboard/invoices/create"
+              className="inline-flex items-center gap-2 px-6 py-3 btn-primary font-bold"
+            >
+              <Plus size={18} />
+              Buat Invoice Pertama
+            </Link>
+            <Link
+              href="/dashboard/templates"
+              className="inline-flex items-center gap-2 px-6 py-3 btn-secondary font-bold"
+            >
+              <LayoutTemplate size={18} />
+              Gunakan Template
+            </Link>
+          </div>
         </div>
       ) : (
         <div className="card overflow-hidden">

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
-import DashboardHeader from '@/components/DashboardHeader'
+import { DashboardLayout } from '@/components/DashboardLayout'
 import { MessageBox } from '@/components/ui/MessageBox'
 import { useMessageBox } from '@/hooks/useMessageBox'
 import {
@@ -19,6 +19,7 @@ import {
   Search,
   X,
   Check,
+  User,
 } from 'lucide-react'
 
 interface Client {
@@ -67,7 +68,6 @@ export default function ClientsPage() {
 
       const data = await res.json()
 
-      // Ensure data is an array
       if (Array.isArray(data)) {
         setClients(data)
       } else {
@@ -105,7 +105,6 @@ export default function ClientsPage() {
         fetchClients()
         handleCloseModal()
 
-        // Show success message
         if (editingClient) {
           messageBox.showSuccess({
             title: 'Klien Diperbarui!',
@@ -152,9 +151,9 @@ export default function ClientsPage() {
       message: (
         <div className="space-y-2">
           <p>
-            Anda akan menghapus klien <span className="font-semibold text-gray-900">{client.name}</span>
+            Anda akan menghapus klien <span className="font-semibold text-brand-500">{client.name}</span>
           </p>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-text-muted">
             Data klien yang dihapus tidak dapat dikembalikan.
           </p>
         </div>
@@ -223,235 +222,256 @@ export default function ClientsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-fresh-bg flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 text-gray-900 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Memuat klien...</p>
+      <DashboardLayout>
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 text-brand-500 animate-spin mx-auto mb-4" />
+            <p className="text-text-secondary">Memuat klien...</p>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-fresh-bg">
-      <DashboardHeader
-        title="Klien"
-        showBackButton={true}
-        backHref="/dashboard"
-      />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="mb-4">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Daftar Klien</h1>
-            <p className="text-gray-600">
+    <DashboardLayout>
+      {/* Page Header */}
+      <div className="mb-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-brand-500 mb-2">Daftar Klien</h1>
+            <p className="text-text-secondary">
               Kelola data klien untuk mempermudah pembuatan invoice
             </p>
           </div>
+          <button
+            onClick={handleOpenModal}
+            className="btn-primary px-6 py-3 flex items-center gap-2"
+          >
+            <Plus className="w-5 h-5" />
+            <span>Tambah Klien</span>
+          </button>
+        </div>
 
-          {/* Search and Action Button */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            {/* Search */}
-            <div className="relative flex-1 sm:flex-initial">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Cari klien..."
-                className="w-full sm:w-64 pl-12 pr-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
-              />
-            </div>
-
-            {/* Add Client Button */}
-            <button
-              onClick={handleOpenModal}
-              className="flex items-center justify-center gap-2 px-6 py-3 text-white font-bold rounded-xl bg-gradient-to-r from-orange-400 to-pink-500 hover:from-orange-500 hover:to-pink-600 transition-all shadow-lg shadow-orange-500/30"
-            >
-              <Plus className="w-5 h-5" />
-              <span>Tambah Klien</span>
-            </button>
+        {/* Search Bar */}
+        <div className="card p-4">
+          <div className="relative max-w-md">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Cari klien..."
+              className="input pl-12"
+            />
           </div>
         </div>
+      </div>
 
-        {/* Clients Table */}
-        <div className="card overflow-hidden">
-          {filteredClients.length === 0 ? (
-            <div className="py-16 text-center">
-              <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-bold text-gray-700 mb-2">
-                {searchQuery ? 'Tidak ada klien ditemukan' : 'Belum ada klien'}
-              </h3>
-              <p className="text-gray-500 mb-6">
-                {searchQuery
-                  ? 'Coba kata kunci lain'
-                  : 'Tambahkan klien untuk memulai membuat invoice'}
-              </p>
-              {!searchQuery && (
-                <button
-                  onClick={handleOpenModal}
-                  className="inline-flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl bg-gradient-to-r from-orange-400 to-pink-500 hover:from-orange-500 hover:to-pink-600 transition-all shadow-lg shadow-orange-500/30"
-                >
-                  <Plus className="w-5 h-5" />
-                  <span>Tambah Klien Pertama</span>
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-orange-200">
-                    <th className="text-left py-4 px-6 text-sm font-bold text-gray-700">
-                      Nama Klien
-                    </th>
-                    <th className="text-left py-4 px-6 text-sm font-bold text-gray-700">
-                      Perusahaan
-                    </th>
-                    <th className="text-left py-4 px-6 text-sm font-bold text-gray-700">
-                      Email
-                    </th>
-                    <th className="text-left py-4 px-6 text-sm font-bold text-gray-700">
-                      Telepon
-                    </th>
-                    <th className="text-left py-4 px-6 text-sm font-bold text-gray-700">
-                      Alamat
-                    </th>
-                    <th className="text-right py-4 px-6 text-sm font-bold text-gray-700">
-                      Aksi
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredClients.map((client) => (
-                    <tr key={client.id} className="border-b border-orange-100 hover:bg-orange-50/50 transition-colors">
-                      <td className="py-4 px-6">
-                        <p className="font-semibold text-gray-900">{client.name}</p>
-                      </td>
-                      <td className="py-4 px-6">
-                        <p className="text-gray-600">{client.company || '-'}</p>
-                      </td>
-                      <td className="py-4 px-6">
-                        <p className="text-gray-600">{client.email}</p>
-                      </td>
-                      <td className="py-4 px-6">
-                        <p className="text-gray-600">{client.phone || '-'}</p>
-                      </td>
-                      <td className="py-4 px-6">
-                        <p className="text-gray-600 max-w-xs truncate">{client.address || '-'}</p>
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => handleEdit(client)}
-                            className="p-2 text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
-                            title="Edit"
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(client)}
-                            className="p-2 text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Hapus"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+      {/* Clients Table */}
+      {filteredClients.length === 0 ? (
+        <div className="card p-16 text-center">
+          <div className="w-24 h-24 rounded-2xl icon-box-brand mx-auto mb-6">
+            <Users className="w-12 h-12 text-brand-500" />
+          </div>
+          <h3 className="text-xl font-bold text-brand-500 mb-2">
+            {searchQuery ? 'Tidak ada klien ditemukan' : 'Belum ada klien'}
+          </h3>
+          <p className="text-text-secondary mb-6 max-w-md mx-auto">
+            {searchQuery
+              ? 'Coba kata kunci lain'
+              : 'Tambahkan klien untuk memulai membuat invoice'}
+          </p>
+          {!searchQuery && (
+            <button
+              onClick={handleOpenModal}
+              className="btn-primary px-6 py-3 inline-flex items-center gap-2"
+            >
+              <Plus className="w-5 h-5" />
+              <span>Tambah Klien Pertama</span>
+            </button>
           )}
         </div>
-      </div>
+      ) : (
+        <div className="card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-surface-light">
+                <tr>
+                  <th className="table-header">Nama Klien</th>
+                  <th className="table-header">Perusahaan</th>
+                  <th className="table-header">Email</th>
+                  <th className="table-header">Telepon</th>
+                  <th className="table-header">Alamat</th>
+                  <th className="table-header text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredClients.map((client) => (
+                  <tr key={client.id} className="table-row">
+                    <td className="table-cell">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-brand-100 flex items-center justify-center">
+                          <User className="w-5 h-5 text-brand-500" />
+                        </div>
+                        <span className="font-semibold text-text-primary">{client.name}</span>
+                      </div>
+                    </td>
+                    <td className="table-cell">
+                      <div className="flex items-center gap-2">
+                        {client.company && <Building2 className="w-4 h-4 text-text-muted" />}
+                        <span>{client.company || '-'}</span>
+                      </div>
+                    </td>
+                    <td className="table-cell">
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-text-muted" />
+                        <span>{client.email}</span>
+                      </div>
+                    </td>
+                    <td className="table-cell">
+                      <div className="flex items-center gap-2">
+                        {client.phone && <Phone className="w-4 h-4 text-text-muted" />}
+                        <span>{client.phone || '-'}</span>
+                      </div>
+                    </td>
+                    <td className="table-cell">
+                      <div className="flex items-center gap-2 max-w-xs">
+                        {client.address && <MapPin className="w-4 h-4 text-text-muted flex-shrink-0" />}
+                        <span className="truncate">{client.address || '-'}</span>
+                      </div>
+                    </td>
+                    <td className="table-cell text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => handleEdit(client)}
+                          className="p-2 text-brand-500 hover:bg-brand-50 rounded-lg transition-colors"
+                          title="Edit"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(client)}
+                          className="p-2 text-primary-500 hover:bg-primary-50 rounded-lg transition-colors"
+                          title="Hapus"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Add/Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-brand-lg w-full max-w-lg max-h-[90vh] overflow-y-auto">
             {/* Modal Header */}
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-8 py-6 rounded-t-2xl z-10">
-              <h2 className="text-2xl font-bold text-gray-900">
+            <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-5 rounded-t-2xl z-10">
+              <h2 className="text-xl font-bold text-brand-500">
                 {editingClient ? 'Edit Klien' : 'Tambah Klien Baru'}
               </h2>
+              <button
+                onClick={handleCloseModal}
+                className="absolute top-5 right-6 text-text-muted hover:text-text-primary transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
             </div>
 
             {/* Modal Body */}
-            <div className="px-8 py-6">
+            <div className="px-6 py-6">
               <form onSubmit={handleSubmit} className="space-y-5">
                 {/* Name */}
                 <div>
-                  <label className="block text-sm font-bold text-gray-900 mb-2">
-                    Nama Klien *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
-                    placeholder="Nama lengkap klien"
-                    required
-                  />
+                  <label className="input-label">Nama Klien *</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <User className="w-5 h-5 text-text-muted" />
+                    </div>
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="input pl-12"
+                      placeholder="Nama lengkap klien"
+                      required
+                    />
+                  </div>
                 </div>
 
                 {/* Company */}
                 <div>
-                  <label className="block text-sm font-bold text-gray-900 mb-2">
-                    Perusahaan
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.company}
-                    onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
-                    placeholder="Nama perusahaan klien"
-                  />
+                  <label className="input-label">Perusahaan</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <Building2 className="w-5 h-5 text-text-muted" />
+                    </div>
+                    <input
+                      type="text"
+                      value={formData.company}
+                      onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                      className="input pl-12"
+                      placeholder="Nama perusahaan klien"
+                    />
+                  </div>
                 </div>
 
                 {/* Email */}
                 <div>
-                  <label className="block text-sm font-bold text-gray-900 mb-2">
-                    Email *
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
-                    placeholder="email@klien.com"
-                    required
-                  />
+                  <label className="input-label">Email *</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <Mail className="w-5 h-5 text-text-muted" />
+                    </div>
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="input pl-12"
+                      placeholder="email@klien.com"
+                      required
+                    />
+                  </div>
                 </div>
 
                 {/* Phone */}
                 <div>
-                  <label className="block text-sm font-bold text-gray-900 mb-2">
-                    Telepon
-                  </label>
-                  <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
-                    placeholder="+62 812 3456 7890"
-                  />
+                  <label className="input-label">Telepon</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <Phone className="w-5 h-5 text-text-muted" />
+                    </div>
+                    <input
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      className="input pl-12"
+                      placeholder="+62 812 3456 7890"
+                    />
+                  </div>
                 </div>
 
                 {/* Address */}
                 <div>
-                  <label className="block text-sm font-bold text-gray-900 mb-2">
-                    Alamat
-                  </label>
-                  <textarea
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    rows={3}
-                    className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors resize-none"
-                    placeholder="Alamat lengkap klien"
-                  />
+                  <label className="input-label">Alamat</label>
+                  <div className="relative">
+                    <div className="absolute top-4 left-4 pointer-events-none">
+                      <MapPin className="w-5 h-5 text-text-muted" />
+                    </div>
+                    <textarea
+                      value={formData.address}
+                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                      rows={3}
+                      className="textarea pl-12"
+                      placeholder="Alamat lengkap klien"
+                    />
+                  </div>
                 </div>
 
                 {/* Buttons */}
@@ -459,14 +479,14 @@ export default function ClientsPage() {
                   <button
                     type="button"
                     onClick={handleCloseModal}
-                    className="flex-1 px-6 py-3 text-gray-700 font-bold rounded-xl border border-gray-300 hover:bg-gray-50 transition-colors"
+                    className="flex-1 btn-secondary px-6 py-3"
                   >
                     Batal
                   </button>
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="flex-1 px-6 py-3 text-white font-bold rounded-xl bg-gradient-to-r from-orange-400 to-pink-500 hover:from-orange-500 hover:to-pink-600 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-orange-500/30"
+                    className="flex-1 btn-primary px-6 py-3 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isSubmitting ? (
                       <>
@@ -483,14 +503,6 @@ export default function ClientsPage() {
                 </div>
               </form>
             </div>
-
-            {/* Modal Close Button */}
-            <button
-              onClick={handleCloseModal}
-              className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X className="w-6 h-6" />
-            </button>
           </div>
         </div>
       )}
@@ -508,6 +520,6 @@ export default function ClientsPage() {
         onCancel={messageBox.state.onCancel}
         loading={messageBox.state.loading}
       />
-    </div>
+    </DashboardLayout>
   )
 }

@@ -5,9 +5,10 @@ import { useRouter, useParams } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { FileText, Save, Plus, Trash2, Loader2, Package, X, UserPlus, Check, Users, ChevronDown, PackagePlus } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
-import DashboardHeader from '@/components/DashboardHeader'
+import { DashboardLayout } from '@/components/DashboardLayout'
 import { MessageBox } from '@/components/ui/MessageBox'
 import { useMessageBox } from '@/hooks/useMessageBox'
+import { cn } from '@/lib/utils'
 
 interface InvoiceItem {
   id: string
@@ -532,12 +533,14 @@ export default function EditInvoicePage() {
 
   if (!mounted || loading || !sessionResult || sessionResult.status === 'loading') {
     return (
-      <div className="min-h-screen bg-fresh-bg flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-16 h-16 text-gray-900 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Memuat invoice...</p>
+      <DashboardLayout title="Edit Invoice" showBackButton backHref={`/dashboard/invoices/${id}`}>
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center animate-fade-in">
+            <Loader2 className="w-16 h-16 text-brand-500 animate-spin mx-auto mb-4" />
+            <p className="text-text-secondary">Memuat invoice...</p>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     )
   }
 
@@ -547,15 +550,15 @@ export default function EditInvoicePage() {
 
   if (notFound) {
     return (
-      <div className="min-h-screen bg-fresh-bg flex items-center justify-center">
-        <div className="card p-16 text-center max-w-md">
-          <div className="w-24 h-24 rounded-2xl icon-box flex items-center justify-center mx-auto mb-6">
-            <FileText className="w-12 h-12 text-gray-600" />
+      <DashboardLayout title="Edit Invoice" showBackButton backHref={`/dashboard/invoices/${id}`}>
+        <div className="card p-8 sm:p-12 text-center max-w-md mx-auto">
+          <div className="w-20 h-20 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-6">
+            <FileText className="w-10 h-10 text-text-muted" />
           </div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-3">
+          <h3 className="text-2xl font-bold text-text-primary mb-3">
             Invoice Tidak Ditemukan
           </h3>
-          <p className="text-gray-600 mb-8">
+          <p className="text-text-secondary mb-8">
             Invoice yang Anda cari tidak ada atau telah dihapus
           </p>
           <button
@@ -565,72 +568,59 @@ export default function EditInvoicePage() {
             Kembali ke Daftar Invoice
           </button>
         </div>
-      </div>
+      </DashboardLayout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-fresh-bg">
-      {/* Header */}
-      <DashboardHeader
-        title="Edit Invoice"
-        showBackButton={true}
-        backHref={`/dashboard/invoices/${id}`}
-      />
-
-      {/* Form */}
-      <div className="container mx-auto px-4 py-10">
-        <form onSubmit={handleSubmit} className="max-w-4xl mx-auto space-y-8">
+    <DashboardLayout
+      title="Edit Invoice"
+      showBackButton
+      backHref={`/dashboard/invoices/${id}`}
+    >
+      <form onSubmit={handleSubmit} className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
           {/* Invoice Info */}
-          <div className="card p-8">
-            <h2 className="text-lg font-bold text-gray-900 mb-6">Informasi Invoice</h2>
+          <div className="card p-6 sm:p-8 animate-fade-in-up">
+            <h2 className="text-lg font-bold text-text-primary mb-6">Informasi Invoice</h2>
 
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
-                  Nomor Invoice *
-                </label>
+                <label className="input-label">Nomor Invoice *</label>
                 <input
                   type="text"
                   value={formData.invoiceNumber}
                   onChange={(e) => setFormData({ ...formData, invoiceNumber: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+                  className="input"
                   placeholder="INV-001"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
-                  Tanggal *
-                </label>
+                <label className="input-label">Tanggal *</label>
                 <input
                   type="date"
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 focus:border-orange-500 focus:outline-none transition-colors"
+                  className="input"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
-                  Jatuh Tempo
-                </label>
+                <label className="input-label">Jatuh Tempo</label>
                 <input
                   type="date"
                   value={formData.dueDate}
                   onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 focus:border-orange-500 focus:outline-none transition-colors"
+                  className="input"
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
-                  Tarif Pajak (%)
-                </label>
+                <label className="input-label">Tarif Pajak (%)</label>
                 <input
                   type="number"
                   value={formData.taxRate}
                   onChange={(e) => setFormData({ ...formData, taxRate: parseFloat(e.target.value) })}
-                  className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+                  className="input"
                   min="0"
                   max="100"
                   step="0.01"
@@ -641,56 +631,48 @@ export default function EditInvoicePage() {
           </div>
 
           {/* Dari (Company Info) */}
-          <div className="card p-8">
-            <h2 className="text-lg font-bold text-gray-900 mb-6">Dari (Info Perusahaan)</h2>
+          <div className="card p-6 sm:p-8 animate-fade-in-up animation-delay-100">
+            <h2 className="text-lg font-bold text-text-primary mb-6">Dari (Info Perusahaan)</h2>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
-                  Nama Perusahaan *
-                </label>
+                <label className="input-label">Nama Perusahaan *</label>
                 <input
                   type="text"
                   value={formData.companyName}
                   onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+                  className="input"
                   placeholder="Nama perusahaan Anda"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
-                  Email *
-                </label>
+                <label className="input-label">Email *</label>
                 <input
                   type="email"
                   value={formData.companyEmail}
                   onChange={(e) => setFormData({ ...formData, companyEmail: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+                  className="input"
                   placeholder="email@perusahaan.com"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
-                  Telepon
-                </label>
+                <label className="input-label">Telepon</label>
                 <input
                   type="tel"
                   value={formData.companyPhone}
                   onChange={(e) => setFormData({ ...formData, companyPhone: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+                  className="input"
                   placeholder="+62 812-3456-7890"
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
-                  Alamat
-                </label>
+                <label className="input-label">Alamat</label>
                 <textarea
                   value={formData.companyAddress}
                   onChange={(e) => setFormData({ ...formData, companyAddress: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+                  className="textarea"
                   rows={2}
                   placeholder="Alamat lengkap"
                 />
@@ -699,19 +681,19 @@ export default function EditInvoicePage() {
           </div>
 
           {/* Kepada (Client Info) */}
-          <div className="card p-8">
-            <h2 className="text-lg font-bold text-gray-900 mb-6">Kepada (Info Klien)</h2>
+          <div className="card p-6 sm:p-8 animate-fade-in-up animation-delay-200">
+            <h2 className="text-lg font-bold text-text-primary mb-6">Kepada (Info Klien)</h2>
 
             {/* Client Selector */}
-            <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-xl">
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-bold text-gray-900">
+            <div className="mb-6 p-4 bg-brand-50 border border-brand-200 rounded-xl">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                <label className="block text-sm font-bold text-text-primary">
                   Pilih dari Klien Tersimpan
                 </label>
                 <button
                   type="button"
                   onClick={handleOpenClientModal}
-                  className="flex items-center gap-1.5 text-sm font-bold text-orange-600 hover:text-orange-700 transition-colors"
+                  className="flex items-center gap-1.5 text-sm font-bold text-brand-600 hover:text-brand-700 transition-colors"
                 >
                   <UserPlus size={16} />
                   Tambah Klien Baru
@@ -720,11 +702,11 @@ export default function EditInvoicePage() {
               {clients.length > 0 ? (
                 <>
                   <div className="relative">
-                    <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
                     <select
                       value={selectedClientId}
                       onChange={(e) => handleClientSelect(e.target.value)}
-                      className="w-full pl-12 pr-10 py-3 rounded-xl border border-orange-200 text-gray-900 focus:border-orange-500 focus:outline-none appearance-none cursor-pointer transition-colors"
+                      className="w-full pl-12 pr-10 py-3 rounded-xl border border-gray-200 text-text-primary focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 appearance-none cursor-pointer transition-all"
                     >
                       <option value="">-- Pilih Klien (Opsional) --</option>
                       {clients.map((client) => (
@@ -733,19 +715,19 @@ export default function EditInvoicePage() {
                         </option>
                       ))}
                     </select>
-                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted pointer-events-none" />
                   </div>
-                  <p className="text-sm text-gray-600 mt-2">
+                  <p className="text-sm text-text-secondary mt-2">
                     Pilih klien untuk auto-fill data klien, atau isi manual di bawah
                   </p>
                 </>
               ) : (
                 <div className="py-4 text-center">
-                  <p className="text-gray-600 mb-3">Belum ada klien tersimpan</p>
+                  <p className="text-text-secondary mb-3">Belum ada klien tersimpan</p>
                   <button
                     type="button"
                     onClick={handleOpenClientModal}
-                    className="inline-flex items-center gap-2 px-4 py-2 text-white font-bold text-sm rounded-xl bg-gradient-to-r from-orange-400 to-pink-500 hover:from-orange-500 hover:to-pink-600 transition-all"
+                    className="inline-flex items-center gap-2 px-4 py-2 text-white font-bold text-sm rounded-xl btn-primary"
                   >
                     <UserPlus size={16} />
                     Tambah Klien Pertama
@@ -756,51 +738,43 @@ export default function EditInvoicePage() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
-                  Nama Klien *
-                </label>
+                <label className="input-label">Nama Klien *</label>
                 <input
                   type="text"
                   value={formData.clientName}
                   onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+                  className="input"
                   placeholder="Nama klien"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
-                  Email Klien *
-                </label>
+                <label className="input-label">Email Klien *</label>
                 <input
                   type="email"
                   value={formData.clientEmail}
                   onChange={(e) => setFormData({ ...formData, clientEmail: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+                  className="input"
                   placeholder="client@email.com"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
-                  Telepon
-                </label>
+                <label className="input-label">Telepon</label>
                 <input
                   type="tel"
                   value={formData.clientPhone}
                   onChange={(e) => setFormData({ ...formData, clientPhone: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+                  className="input"
                   placeholder="+62 812-3456-7890"
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
-                  Alamat
-                </label>
+                <label className="input-label">Alamat</label>
                 <textarea
                   value={formData.clientAddress}
                   onChange={(e) => setFormData({ ...formData, clientAddress: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+                  className="textarea"
                   rows={2}
                   placeholder="Alamat klien"
                 />
@@ -809,10 +783,10 @@ export default function EditInvoicePage() {
           </div>
 
           {/* Items */}
-          <div className="card overflow-hidden">
-            <div className="p-6 border-b border-orange-200">
+          <div className="card overflow-hidden animate-fade-in-up animation-delay-300">
+            <div className="p-4 sm:p-6 border-b border-gray-100">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <h2 className="text-lg font-bold text-gray-900">Item Invoice</h2>
+                <h2 className="text-lg font-bold text-text-primary">Item Invoice</h2>
                 <div className="flex flex-wrap gap-2">
                   {catalogItems.length > 0 && (
                     <button
@@ -821,7 +795,7 @@ export default function EditInvoicePage() {
                         setSelectedItemIndex(null)
                         setShowCatalogModal(true)
                       }}
-                      className="flex items-center gap-2 px-4 py-2 text-gray-700 font-bold text-sm rounded-xl border border-orange-200 bg-orange-50 hover:bg-orange-100 transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 text-text-secondary font-bold text-sm rounded-xl border border-gray-200 bg-surface-light hover:bg-gray-100 transition-colors"
                     >
                       <Package size={16} />
                       Dari Katalog
@@ -830,7 +804,7 @@ export default function EditInvoicePage() {
                   <button
                     type="button"
                     onClick={handleOpenItemModal}
-                    className="flex items-center gap-2 px-4 py-2 text-orange-600 font-bold text-sm rounded-xl border border-orange-300 hover:bg-orange-50 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 text-brand-600 font-bold text-sm rounded-xl border border-brand-300 hover:bg-brand-50 transition-colors"
                   >
                     <PackagePlus size={16} />
                     Tambah Item Baru
@@ -849,29 +823,29 @@ export default function EditInvoicePage() {
 
             {/* Items Table */}
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full min-w-[600px]">
                 <thead>
-                  <tr className="bg-gray-50 border-b border-orange-200">
-                    <th className="text-left py-4 px-6 text-sm font-bold text-gray-700 w-12">#</th>
-                    <th className="text-left py-4 px-6 text-sm font-bold text-gray-700">Deskripsi *</th>
-                    <th className="text-center py-4 px-4 text-sm font-bold text-gray-700 w-24">Qty *</th>
-                    <th className="text-right py-4 px-4 text-sm font-bold text-gray-700 w-40">Harga *</th>
-                    <th className="text-right py-4 px-4 text-sm font-bold text-gray-700 w-36">Subtotal</th>
-                    <th className="text-center py-4 px-4 text-sm font-bold text-gray-700 w-16">Aksi</th>
+                  <tr className="bg-surface-light border-b border-gray-100">
+                    <th className="text-left py-4 px-4 sm:px-6 text-sm font-bold text-text-secondary w-12">#</th>
+                    <th className="text-left py-4 px-4 sm:px-6 text-sm font-bold text-text-secondary">Deskripsi *</th>
+                    <th className="text-center py-4 px-4 text-sm font-bold text-text-secondary w-24">Qty *</th>
+                    <th className="text-right py-4 px-4 text-sm font-bold text-text-secondary w-36 sm:w-40">Harga *</th>
+                    <th className="text-right py-4 px-4 text-sm font-bold text-text-secondary w-32 sm:w-36">Subtotal</th>
+                    <th className="text-center py-4 px-4 text-sm font-bold text-text-secondary w-16">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
                   {items.map((item, index) => (
-                    <tr key={item.id} className="border-b border-orange-100 hover:bg-orange-50/30 transition-colors">
-                      <td className="py-4 px-6">
-                        <span className="font-bold text-gray-500">{index + 1}</span>
+                    <tr key={item.id} className="border-b border-gray-50 hover:bg-surface-light/50 transition-colors">
+                      <td className="py-4 px-4 sm:px-6">
+                        <span className="font-bold text-text-muted">{index + 1}</span>
                       </td>
-                      <td className="py-4 px-6">
+                      <td className="py-4 px-4 sm:px-6">
                         <input
                           type="text"
                           value={item.description}
                           onChange={(e) => updateItem(item.id, 'description', e.target.value)}
-                          className="w-full px-3 py-2 rounded-lg border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors text-sm"
+                          className="w-full px-3 py-2 rounded-lg border border-gray-200 text-text-primary placeholder:text-text-muted focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 transition-all text-sm"
                           placeholder="Deskripsi item/jasa"
                           required
                         />
@@ -881,7 +855,7 @@ export default function EditInvoicePage() {
                           type="number"
                           value={item.quantity || 1}
                           onChange={(e) => updateItem(item.id, 'quantity', parseInt(e.target.value) || 1)}
-                          className="w-full px-3 py-2 rounded-lg border border-orange-200 text-gray-900 text-center focus:border-orange-500 focus:outline-none transition-colors text-sm"
+                          className="w-full px-3 py-2 rounded-lg border border-gray-200 text-text-primary text-center focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 transition-all text-sm"
                           min="1"
                           required
                         />
@@ -891,14 +865,14 @@ export default function EditInvoicePage() {
                           type="number"
                           value={item.price || 0}
                           onChange={(e) => updateItem(item.id, 'price', parseFloat(e.target.value) || 0)}
-                          className="w-full px-3 py-2 rounded-lg border border-orange-200 text-gray-900 text-right focus:border-orange-500 focus:outline-none transition-colors text-sm"
+                          className="w-full px-3 py-2 rounded-lg border border-gray-200 text-text-primary text-right focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 transition-all text-sm"
                           min="0"
                           step="0.01"
                           required
                         />
                       </td>
                       <td className="py-4 px-4 text-right">
-                        <span className="font-bold text-gray-900">
+                        <span className="font-bold text-text-primary">
                           {formatCurrency(item.quantity * item.price)}
                         </span>
                       </td>
@@ -907,7 +881,7 @@ export default function EditInvoicePage() {
                           type="button"
                           onClick={() => removeItem(item.id)}
                           disabled={items.length === 1}
-                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                          className="p-2 text-text-muted hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                           title="Hapus item"
                         >
                           <Trash2 size={16} />
@@ -920,17 +894,17 @@ export default function EditInvoicePage() {
             </div>
 
             {/* Subtotal, Tax, Total */}
-            <div className="p-6 bg-gray-50 border-t border-orange-200">
+            <div className="p-4 sm:p-6 bg-surface-light border-t border-gray-100">
               <div className="max-w-sm ml-auto space-y-3">
-                <div className="flex justify-between text-gray-600">
+                <div className="flex justify-between text-text-secondary">
                   <span>Subtotal</span>
                   <span className="font-semibold">{formatCurrency(subtotal)}</span>
                 </div>
-                <div className="flex justify-between text-gray-600">
+                <div className="flex justify-between text-text-secondary">
                   <span>Pajak ({formData.taxRate}%)</span>
                   <span className="font-semibold">{formatCurrency(taxAmount)}</span>
                 </div>
-                <div className="flex justify-between pt-3 border-t border-orange-300 text-xl font-bold text-gray-900">
+                <div className="flex justify-between pt-3 border-t border-gray-200 text-xl font-bold text-brand-500">
                   <span>Total</span>
                   <span>{formatCurrency(total)}</span>
                 </div>
@@ -939,19 +913,19 @@ export default function EditInvoicePage() {
           </div>
 
           {/* Notes */}
-          <div className="card p-8">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">Catatan</h2>
+          <div className="card p-6 sm:p-8 animate-fade-in-up animation-delay-400">
+            <h2 className="text-lg font-bold text-text-primary mb-4">Catatan</h2>
             <textarea
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+              className="textarea"
               rows={3}
               placeholder="Catatan tambahan untuk invoice..."
             />
           </div>
 
           {/* Submit */}
-          <div className="card p-8">
+          <div className="card p-6 sm:p-8 animate-fade-in-up animation-delay-500">
             <button
               type="submit"
               disabled={saving}
@@ -965,12 +939,12 @@ export default function EditInvoicePage() {
 
         {/* Catalog Modal */}
         {showCatalogModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] overflow-hidden animate-scale-in">
               {/* Modal Header */}
-              <div className="p-6 border-b border-orange-200">
+              <div className="p-6 border-b border-gray-100">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-bold text-gray-900">Pilih dari Katalog</h3>
+                  <h3 className="text-xl font-bold text-text-primary">Pilih dari Katalog</h3>
                   <button
                     type="button"
                     onClick={() => {
@@ -978,7 +952,7 @@ export default function EditInvoicePage() {
                       setSelectedItemIndex(null)
                       setCatalogSearch('')
                     }}
-                    className="p-2 text-gray-500 hover:text-gray-700 rounded-xl hover:bg-gray-100 transition-colors"
+                    className="p-2 text-text-muted hover:text-text-primary rounded-xl hover:bg-gray-100 transition-colors"
                   >
                     <X size={20} />
                   </button>
@@ -991,7 +965,7 @@ export default function EditInvoicePage() {
                     value={catalogSearch}
                     onChange={(e) => setCatalogSearch(e.target.value)}
                     placeholder="Cari item..."
-                    className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+                    className="input"
                     autoFocus
                   />
                 </div>
@@ -1001,8 +975,10 @@ export default function EditInvoicePage() {
               <div className="p-6 overflow-y-auto max-h-[60vh]">
                 {filteredCatalogItems.length === 0 ? (
                   <div className="text-center py-8">
-                    <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-600">
+                    <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
+                      <Package className="w-8 h-8 text-text-muted" />
+                    </div>
+                    <p className="text-text-secondary">
                       {catalogSearch ? 'Tidak ada item ditemukan' : 'Belum ada item di katalog'}
                     </p>
                   </div>
@@ -1011,7 +987,7 @@ export default function EditInvoicePage() {
                     {filteredCatalogItems.map((item) => (
                       <div
                         key={item.id}
-                        className="p-4 rounded-xl border border-orange-200 hover:border-orange-400 hover:bg-orange-50 transition-all cursor-pointer"
+                        className="p-4 rounded-xl border border-gray-200 hover:border-brand-400 hover:bg-brand-50 transition-all cursor-pointer"
                         onClick={() => {
                           if (selectedItemIndex !== null) {
                             selectCatalogItem(item)
@@ -1023,19 +999,19 @@ export default function EditInvoicePage() {
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
-                              <h4 className="font-bold text-gray-900">{item.name}</h4>
+                              <h4 className="font-bold text-text-primary">{item.name}</h4>
                               {item.sku && (
-                                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-text-secondary">
                                   {item.sku}
                                 </span>
                               )}
                             </div>
                             {item.description && (
-                              <p className="text-sm text-gray-600 mb-1">{item.description}</p>
+                              <p className="text-sm text-text-secondary mb-1">{item.description}</p>
                             )}
-                            <div className="flex items-center gap-3 text-sm text-gray-500">
+                            <div className="flex items-center gap-3 text-sm text-text-muted">
                               {item.category && (
-                                <span className="px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">
+                                <span className="px-2 py-0.5 rounded-full bg-brand-100 text-brand-700">
                                   {item.category}
                                 </span>
                               )}
@@ -1043,7 +1019,7 @@ export default function EditInvoicePage() {
                             </div>
                           </div>
                           <div className="text-right">
-                            <span className="font-bold text-gray-900">{formatCurrency(item.price)}</span>
+                            <span className="font-bold text-text-primary">{formatCurrency(item.price)}</span>
                           </div>
                         </div>
                       </div>
@@ -1053,8 +1029,8 @@ export default function EditInvoicePage() {
               </div>
 
               {/* Modal Footer */}
-              <div className="p-4 border-t border-orange-200 bg-gray-50">
-                <p className="text-sm text-gray-600 text-center">
+              <div className="p-4 border-t border-gray-100 bg-surface-light">
+                <p className="text-sm text-text-secondary text-center">
                   {selectedItemIndex !== null
                     ? 'Klik item untuk mengganti item yang dipilih'
                     : 'Klik item untuk menambahkan ke invoice'}
@@ -1067,26 +1043,34 @@ export default function EditInvoicePage() {
         {/* Add New Client Modal */}
         {showClientModal && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-scale-in">
               {/* Modal Header */}
-              <div className="sticky top-0 bg-white border-b border-gray-200 px-8 py-6 rounded-t-2xl z-10">
-                <h2 className="text-2xl font-bold text-gray-900">Tambah Klien Baru</h2>
-                <p className="text-sm text-gray-600 mt-1">Klien baru akan disimpan dan dapat digunakan untuk invoice berikutnya</p>
+              <div className="sticky top-0 bg-white border-b border-gray-100 px-6 sm:px-8 py-6 rounded-t-2xl z-10">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl sm:text-2xl font-bold text-text-primary">Tambah Klien Baru</h2>
+                    <p className="text-sm text-text-secondary mt-1">Klien baru akan disimpan dan dapat digunakan untuk invoice berikutnya</p>
+                  </div>
+                  <button
+                    onClick={handleCloseClientModal}
+                    className="p-2 text-text-muted hover:text-text-primary rounded-xl hover:bg-gray-100 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
 
               {/* Modal Body */}
-              <div className="px-8 py-6">
+              <div className="px-6 sm:px-8 py-6">
                 <form onSubmit={(e) => { e.preventDefault(); handleCreateClient(); }} className="space-y-5">
                   {/* Name */}
                   <div>
-                    <label className="block text-sm font-bold text-gray-900 mb-2">
-                      Nama Klien *
-                    </label>
+                    <label className="input-label">Nama Klien *</label>
                     <input
                       type="text"
                       value={newClientData.name}
                       onChange={(e) => setNewClientData({ ...newClientData, name: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+                      className="input"
                       placeholder="Nama lengkap klien"
                       required
                     />
@@ -1094,28 +1078,24 @@ export default function EditInvoicePage() {
 
                   {/* Company */}
                   <div>
-                    <label className="block text-sm font-bold text-gray-900 mb-2">
-                      Perusahaan
-                    </label>
+                    <label className="input-label">Perusahaan</label>
                     <input
                       type="text"
                       value={newClientData.company}
                       onChange={(e) => setNewClientData({ ...newClientData, company: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+                      className="input"
                       placeholder="Nama perusahaan klien"
                     />
                   </div>
 
                   {/* Email */}
                   <div>
-                    <label className="block text-sm font-bold text-gray-900 mb-2">
-                      Email *
-                    </label>
+                    <label className="input-label">Email *</label>
                     <input
                       type="email"
                       value={newClientData.email}
                       onChange={(e) => setNewClientData({ ...newClientData, email: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+                      className="input"
                       placeholder="email@klien.com"
                       required
                     />
@@ -1123,28 +1103,24 @@ export default function EditInvoicePage() {
 
                   {/* Phone */}
                   <div>
-                    <label className="block text-sm font-bold text-gray-900 mb-2">
-                      Telepon
-                    </label>
+                    <label className="input-label">Telepon</label>
                     <input
                       type="tel"
                       value={newClientData.phone}
                       onChange={(e) => setNewClientData({ ...newClientData, phone: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+                      className="input"
                       placeholder="+62 812 3456 7890"
                     />
                   </div>
 
                   {/* Address */}
                   <div>
-                    <label className="block text-sm font-bold text-gray-900 mb-2">
-                      Alamat
-                    </label>
+                    <label className="input-label">Alamat</label>
                     <textarea
                       value={newClientData.address}
                       onChange={(e) => setNewClientData({ ...newClientData, address: e.target.value })}
                       rows={3}
-                      className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors resize-none"
+                      className="textarea"
                       placeholder="Alamat lengkap klien"
                     />
                   </div>
@@ -1154,14 +1130,14 @@ export default function EditInvoicePage() {
                     <button
                       type="button"
                       onClick={handleCloseClientModal}
-                      className="flex-1 px-6 py-3 text-gray-700 font-bold rounded-xl border border-gray-300 hover:bg-gray-50 transition-colors"
+                      className="flex-1 px-6 py-3 text-text-secondary font-bold rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
                     >
                       Batal
                     </button>
                     <button
                       type="submit"
                       disabled={isCreatingClient}
-                      className="flex-1 px-6 py-3 text-white font-bold rounded-xl bg-gradient-to-r from-orange-400 to-pink-500 hover:from-orange-500 hover:to-pink-600 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-orange-500/30"
+                      className="flex-1 px-6 py-3 text-white font-bold rounded-xl btn-primary flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isCreatingClient ? (
                         <>
@@ -1178,14 +1154,6 @@ export default function EditInvoicePage() {
                   </div>
                 </form>
               </div>
-
-              {/* Modal Close Button */}
-              <button
-                onClick={handleCloseClientModal}
-                className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <X className="w-6 h-6" />
-              </button>
             </div>
           </div>
         )}
@@ -1193,26 +1161,34 @@ export default function EditInvoicePage() {
         {/* Add New Item Modal */}
         {showItemModal && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-scale-in">
               {/* Modal Header */}
-              <div className="sticky top-0 bg-white border-b border-gray-200 px-8 py-6 rounded-t-2xl z-10">
-                <h2 className="text-2xl font-bold text-gray-900">Tambah Item Baru</h2>
-                <p className="text-sm text-gray-600 mt-1">Item baru akan disimpan ke katalog dan ditambahkan ke invoice</p>
+              <div className="sticky top-0 bg-white border-b border-gray-100 px-6 sm:px-8 py-6 rounded-t-2xl z-10">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl sm:text-2xl font-bold text-text-primary">Tambah Item Baru</h2>
+                    <p className="text-sm text-text-secondary mt-1">Item baru akan disimpan ke katalog dan ditambahkan ke invoice</p>
+                  </div>
+                  <button
+                    onClick={handleCloseItemModal}
+                    className="p-2 text-text-muted hover:text-text-primary rounded-xl hover:bg-gray-100 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
 
               {/* Modal Body */}
-              <div className="px-8 py-6">
+              <div className="px-6 sm:px-8 py-6">
                 <form onSubmit={(e) => { e.preventDefault(); handleCreateItem(); }} className="space-y-5">
                   {/* Name */}
                   <div>
-                    <label className="block text-sm font-bold text-gray-900 mb-2">
-                      Nama Item *
-                    </label>
+                    <label className="input-label">Nama Item *</label>
                     <input
                       type="text"
                       value={newItemData.name}
                       onChange={(e) => setNewItemData({ ...newItemData, name: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+                      className="input"
                       placeholder="Nama produk/jasa"
                       required
                     />
@@ -1220,14 +1196,12 @@ export default function EditInvoicePage() {
 
                   {/* Description */}
                   <div>
-                    <label className="block text-sm font-bold text-gray-900 mb-2">
-                      Deskripsi
-                    </label>
+                    <label className="input-label">Deskripsi</label>
                     <textarea
                       value={newItemData.description}
                       onChange={(e) => setNewItemData({ ...newItemData, description: e.target.value })}
                       rows={2}
-                      className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors resize-none"
+                      className="textarea"
                       placeholder="Deskripsi singkat item"
                     />
                   </div>
@@ -1235,27 +1209,23 @@ export default function EditInvoicePage() {
                   <div className="grid grid-cols-2 gap-4">
                     {/* SKU */}
                     <div>
-                      <label className="block text-sm font-bold text-gray-900 mb-2">
-                        SKU
-                      </label>
+                      <label className="input-label">SKU</label>
                       <input
                         type="text"
                         value={newItemData.sku}
                         onChange={(e) => setNewItemData({ ...newItemData, sku: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+                        className="input"
                         placeholder="Kode barang"
                       />
                     </div>
 
                     {/* Unit */}
                     <div>
-                      <label className="block text-sm font-bold text-gray-900 mb-2">
-                        Satuan *
-                      </label>
+                      <label className="input-label">Satuan *</label>
                       <select
                         value={newItemData.unit}
                         onChange={(e) => setNewItemData({ ...newItemData, unit: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 focus:border-orange-500 focus:outline-none transition-colors"
+                        className="select"
                         required
                       >
                         <option value="pcs">Pcs</option>
@@ -1274,23 +1244,19 @@ export default function EditInvoicePage() {
 
                   {/* Category */}
                   <div>
-                    <label className="block text-sm font-bold text-gray-900 mb-2">
-                      Kategori
-                    </label>
+                    <label className="input-label">Kategori</label>
                     <input
                       type="text"
                       value={newItemData.category}
                       onChange={(e) => setNewItemData({ ...newItemData, category: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+                      className="input"
                       placeholder="Contoh: Jasa, Produk, dll"
                     />
                   </div>
 
                   {/* Price */}
                   <div>
-                    <label className="block text-sm font-bold text-gray-900 mb-2">
-                      Harga *
-                    </label>
+                    <label className="input-label">Harga *</label>
                     <input
                       type="text"
                       value={newItemData.price}
@@ -1302,7 +1268,7 @@ export default function EditInvoicePage() {
                           setNewItemData({ ...newItemData, price: '' })
                         }
                       }}
-                      className="w-full px-4 py-3 rounded-xl border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
+                      className="input"
                       placeholder="Rp 0"
                       required
                     />
@@ -1313,14 +1279,14 @@ export default function EditInvoicePage() {
                     <button
                       type="button"
                       onClick={handleCloseItemModal}
-                      className="flex-1 px-6 py-3 text-gray-700 font-bold rounded-xl border border-gray-300 hover:bg-gray-50 transition-colors"
+                      className="flex-1 px-6 py-3 text-text-secondary font-bold rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
                     >
                       Batal
                     </button>
                     <button
                       type="submit"
                       disabled={isCreatingItem}
-                      className="flex-1 px-6 py-3 text-white font-bold rounded-xl bg-gradient-to-r from-orange-400 to-pink-500 hover:from-orange-500 hover:to-pink-600 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-orange-500/30"
+                      className="flex-1 px-6 py-3 text-white font-bold rounded-xl btn-primary flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isCreatingItem ? (
                         <>
@@ -1337,18 +1303,9 @@ export default function EditInvoicePage() {
                   </div>
                 </form>
               </div>
-
-              {/* Modal Close Button */}
-              <button
-                onClick={handleCloseItemModal}
-                className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <X className="w-6 h-6" />
-              </button>
             </div>
           </div>
         )}
-      </div>
 
       {/* MessageBox for notifications */}
       <MessageBox
@@ -1363,6 +1320,6 @@ export default function EditInvoicePage() {
         onCancel={messageBox.state.onCancel}
         loading={messageBox.state.loading}
       />
-    </div>
+    </DashboardLayout>
   )
 }

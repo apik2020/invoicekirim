@@ -753,7 +753,7 @@ export function SessionTimeoutDialog({
             </span>
           </div>
           <p className="text-xs text-gray-500">
-            Klik "Perpanjang Sesi" untuk tetap masuk.
+            Klik &ldquo;Perpanjang Sesi&rdquo; untuk tetap masuk.
           </p>
         </div>
       }
@@ -802,6 +802,31 @@ function SuccessDialogBase({
     }
   }, [open])
 
+  // Pre-generated confetti positions to avoid Math.random() during render
+  const confettiPositions = [
+    { left: 12, top: 45, delay: 0.1 },
+    { left: 78, top: 23, delay: 0.2 },
+    { left: 34, top: 67, delay: 0.15 },
+    { left: 89, top: 12, delay: 0.3 },
+    { left: 56, top: 89, delay: 0.05 },
+    { left: 23, top: 34, delay: 0.25 },
+    { left: 67, top: 78, delay: 0.35 },
+    { left: 45, top: 15, delay: 0.18 },
+    { left: 91, top: 56, delay: 0.22 },
+    { left: 8, top: 91, delay: 0.12 },
+    { left: 52, top: 38, delay: 0.28 },
+    { left: 19, top: 72, delay: 0.08 },
+    { left: 73, top: 5, delay: 0.32 },
+    { left: 36, top: 54, delay: 0.16 },
+    { left: 84, top: 41, delay: 0.24 },
+    { left: 61, top: 83, delay: 0.14 },
+    { left: 27, top: 19, delay: 0.26 },
+    { left: 95, top: 65, delay: 0.11 },
+    { left: 42, top: 97, delay: 0.19 },
+    { left: 15, top: 28, delay: 0.33 },
+  ]
+  const confettiColors = ['#10B981', '#3B82F6', '#F59E0B', '#EC4899', '#8B5CF6']
+
   return (
     <MessageBox
       open={open}
@@ -819,15 +844,15 @@ function SuccessDialogBase({
       {/* Confetti Animation */}
       {showConfetti && (
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {[...Array(20)].map((_, i) => (
+          {confettiPositions.map((pos, i) => (
             <div
               key={i}
               className="absolute w-2 h-2 rounded-full animate-ping"
               style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                backgroundColor: ['#10B981', '#3B82F6', '#F59E0B', '#EC4899', '#8B5CF6'][i % 5],
-                animationDelay: `${Math.random() * 0.5}s`,
+                left: `${pos.left}%`,
+                top: `${pos.top}%`,
+                backgroundColor: confettiColors[i % 5],
+                animationDelay: `${pos.delay}s`,
                 animationDuration: '1s',
               }}
             />

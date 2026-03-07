@@ -329,25 +329,3 @@ export function AlertBox({
     </div>
   )
 }
-
-/**
- * Convenience functions for different toast types
- */
-export const toast = {
-  success: (message: string, title?: string) => {
-    const { showSuccess } = useToast()
-    showSuccess(message, title)
-  },
-  error: (message: string, title?: string) => {
-    const { showError } = useToast()
-    showError(message, title)
-  },
-  warning: (message: string, title?: string) => {
-    const { showWarning } = useToast()
-    showWarning(message, title)
-  },
-  info: (message: string, title?: string) => {
-    const { showInfo } = useToast()
-    showInfo(message, title)
-  },
-}
