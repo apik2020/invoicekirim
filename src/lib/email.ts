@@ -639,6 +639,76 @@ export const emailTemplates = {
       </html>
     `,
   }),
+
+  passwordReset: (data: {
+    userName: string
+    resetUrl: string
+    expiresIn: string
+  }) => ({
+    subject: `Reset Password InvoiceKirim`,
+    html: `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Reset Password - InvoiceKirim</title>
+        </head>
+        <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f7f7f7;">
+          <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+            <!-- Header -->
+            <div style="text-align: center; margin-bottom: 40px;">
+              <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #276874, #2d7d8a); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
+                <span style="color: white; font-weight: bold; font-size: 16px;">[iK]</span>
+              </div>
+              <h1 style="color: #276874; font-size: 24px; font-weight: bold; margin: 0;">InvoiceKirim</h1>
+              <p style="color: #64748b; margin: 8px 0 0;">Platform Invoice untuk Freelancer</p>
+            </div>
+
+            <!-- Main Card -->
+            <div style="background: white; border-radius: 20px; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+              <h2 style="color: #276874; font-size: 24px; font-weight: bold; margin: 0 0 20px;">
+                Reset Password
+              </h2>
+              <p style="color: #334155; line-height: 1.6; margin: 0 0 20px;">
+                Halo ${data.userName},
+              </p>
+              <p style="color: #334155; line-height: 1.6; margin: 0 0 30px;">
+                Kami menerima permintaan untuk mengubah password akun Anda. Klik tombol di bawah untuk membuat password baru:
+              </p>
+
+              <!-- CTA Button -->
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${data.resetUrl}" style="display: inline-block; background: linear-gradient(145deg, #EF3F0A, #d63509); color: white; text-decoration: none; padding: 14px 32px; border-radius: 12px; font-weight: 600; font-size: 16px;">
+                  Reset Password
+                </a>
+              </div>
+
+              <!-- Info Box -->
+              <div style="background: #fff7ed; border: 2px solid #fed7aa; border-radius: 12px; padding: 20px; margin: 30px 0;">
+                <p style="color: #9a3412; font-size: 14px; margin: 0;">
+                  <strong>⚠️ Penting:</strong> Link ini akan kadaluarsa dalam ${data.expiresIn}. Jika Anda tidak meminta reset password, Anda bisa mengabaikan email ini.
+                </p>
+              </div>
+
+              <p style="color: #64748b; font-size: 14px; margin: 20px 0 0;">
+                Jika tombol di atas tidak berfungsi, salin dan tempel link berikut ke browser Anda:
+              </p>
+              <p style="color: #276874; font-size: 12px; word-break: break-all; margin: 10px 0 0;">
+                ${data.resetUrl}
+              </p>
+            </div>
+
+            <!-- Footer -->
+            <div style="text-align: center; margin-top: 40px; color: #94a3b8; font-size: 14px;">
+              <p style="margin: 0 0 8px;">Invoice dibuat dengan InvoiceKirim</p>
+              <p style="margin: 0;">&copy; ${new Date().getFullYear()} InvoiceKirim. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `,
+  }),
 }
 
 /**
@@ -876,6 +946,23 @@ export async function sendTeamInvitationEmail(data: {
   expiresIn: string
 }) {
   const template = emailTemplates.teamInvitation(data)
+  return sendEmail({
+    to: data.to,
+    subject: template.subject,
+    html: template.html,
+  })
+}
+
+/**
+ * Send password reset email
+ */
+export async function sendPasswordResetEmail(data: {
+  to: string
+  userName: string
+  resetUrl: string
+  expiresIn: string
+}) {
+  const template = emailTemplates.passwordReset(data)
   return sendEmail({
     to: data.to,
     subject: template.subject,

@@ -214,9 +214,9 @@ export default function LoginPage() {
                   />
                   <span className="text-text-secondary">Ingat saya</span>
                 </label>
-                <a href="#" className="auth-link">
+                <Link href="/forgot-password" className="auth-link">
                   Lupa password?
-                </a>
+                </Link>
               </div>
 
               {/* Submit Button */}
