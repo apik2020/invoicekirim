@@ -44,12 +44,19 @@ model activity_logs {
 }
 
 model admins {
-  id        String   @id
-  name      String?
-  email     String   @unique
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime
+  id            String   @id
+  name          String?
+  email         String   @unique
+  password       String
+  smtpHost       String?
+  smtpPort       String?   @default("587")
+  smtpSecure     Boolean  @default(false)
+  smtpUser       String?
+  smtpPass       String?
+  smtpFromName   String?  @default("InvoiceKirim")
+  smtpFromEmail   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime
 }
 
 model analytics_snapshots {

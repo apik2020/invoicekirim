@@ -39,7 +39,7 @@ const navItems = [
   { name: 'Payments', href: '/admin/payments', icon: DollarSign },
   { name: 'Activity Logs', href: '/admin/activity-logs', icon: Activity },
   { name: 'Email Templates', href: '/admin/email-templates', icon: Mail },
-  { name: 'Settings', href: '/admin/settings', icon: Settings },
+  { name: 'Email Settings', href: '/admin/settings/email', icon: Settings },
 ]
 
 export function AdminLayout({ children }: AdminLayoutProps) {

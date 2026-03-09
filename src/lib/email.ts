@@ -712,7 +712,66 @@ export const emailTemplates = {
 }
 
 /**
- * Send email using SMTP (user's settings) or fall back to Resend
+ * Send email using admin SMTP settings (for system emails like password reset)
+ */
+export async function sendSystemEmail({
+  to,
+  subject,
+  html,
+}: {
+  to: string | string[]
+  subject: string
+  html: string
+}) {
+  try {
+    // Get admin SMTP settings
+    const admin = await prisma.admins.findFirst({
+      where: {}, // Get the first (and only) admin
+      select: {
+        smtpHost: true,
+        smtpPort: true,
+        smtpSecure: true,
+        smtpUser: true,
+        smtpPass: true,
+        smtpFromName: true,
+        smtpFromEmail: true,
+      },
+    })
+
+    if (!admin?.smtpHost || !admin?.smtpUser || !admin?.smtpPass || !admin?.smtpFromEmail) {
+      console.error('Admin SMTP not configured. Please configure SMTP in Admin Settings.')
+      return { success: false, error: 'SMTP not configured' }
+    }
+
+    const transporter = nodemailer.createTransport({
+      host: admin.smtpHost,
+      port: parseInt(admin.smtpPort || '587'),
+      secure: admin.smtpSecure === true,
+      auth: {
+        user: admin.smtpUser,
+        pass: admin.smtpPass,
+      },
+    })
+
+    const fromName = admin.smtpFromName || 'InvoiceKirim'
+    const fromEmail = admin.smtpFromEmail
+
+    await transporter.sendMail({
+      from: `"${fromName}" <${fromEmail}>`,
+      to: Array.isArray(to) ? to.join(', ') : to,
+      subject,
+      html,
+    })
+
+    return { success: true, data: { id: 'smtp-sent', method: 'admin-smtp' } }
+  } catch (error) {
+    console.error('System email send failed:', error)
+    return { success: false, error }
+  }
+}
+
+/**
+ * Send email using SMTP (user's settings) or fall back to admin SMTP
  */
 export async function sendEmail({
   to,
@@ -725,7 +784,7 @@ export async function sendEmail({
   html: string
   userId?: string // Optional: pass user ID to fetch SMTP settings
 }) {
-  // Try SMTP first if userId is provided
+  // Try SMTP first if userId is provided (for invoice emails)
   if (userId) {
     try {
       const user = await prisma.users.findUnique({
@@ -758,39 +817,16 @@ export async function sendEmail({
           html,
         })
 
-        return { success: true, data: { id: 'smtp-sent', method: 'smtp' } }
+        return { success: true, data: { id: 'smtp-sent', method: 'user-smtp' } }
       }
     } catch (smtpError) {
-      console.error('SMTP send failed, falling back to Resend:', smtpError)
-      // Continue to Resend fallback
+      console.error('User SMTP send failed:', smtpError)
+      // Fall back to admin SMTP
     }
   }
 
-  // Fall back to Resend
-  if (!resend) {
-    // Only log in development
-    if (process.env.NODE_ENV === 'development') {
-      console.log('⚠️  Resend not configured. Skipping email send.')
-      console.log('To:', to)
-      console.log('Subject:', subject)
-    }
-    // Return success for development when Resend is not configured
-    return { success: true, data: { id: 'dev-mode-skipped' } }
-  }
-
-  try {
-    const result = await resend.emails.send({
-      from: 'InvoiceKirim <hs.pramono@gmail.com>',
-      to: Array.isArray(to) ? to : [to],
-      subject,
-      html,
-    })
-
-    return { success: true, data: result }
-  } catch (error) {
-    console.error('Failed to send email:', error)
-    return { success: false, error }
-  }
+  // Fall back to admin SMTP (for system emails)
+  return sendSystemEmail({ to, subject, html })
 }
 
 /**
@@ -946,7 +982,7 @@ export async function sendTeamInvitationEmail(data: {
   expiresIn: string
 }) {
   const template = emailTemplates.teamInvitation(data)
-  return sendEmail({
+  return sendSystemEmail({
     to: data.to,
     subject: template.subject,
     html: template.html,
@@ -963,7 +999,7 @@ export async function sendPasswordResetEmail(data: {
   expiresIn: string
 }) {
   const template = emailTemplates.passwordReset(data)
-  return sendEmail({
+  return sendSystemEmail({
     to: data.to,
     subject: template.subject,
     html: template.html,
