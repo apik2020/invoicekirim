@@ -3,20 +3,20 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const subscription = await prisma.subscription.findUnique({
+    const subscription = await prisma.subscriptions.findUnique({
       where: { userId: session.user.id },
     })
 
     if (!subscription) {
       // Check if user exists first
-      const user = await prisma.user.findUnique({
+      const user = await prisma.users.findUnique({
         where: { id: session.user.id },
         select: { id: true },
       })
@@ -40,13 +40,15 @@ export async function GET(req: NextRequest) {
       const now = new Date()
       const trialEndsAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
 
-      const newSubscription = await prisma.subscription.create({
+      const newSubscription = await prisma.subscriptions.create({
         data: {
+          id: crypto.randomUUID(),
           userId: user.id,
           status: 'TRIALING',
           planType: 'PRO',
           trialStartsAt: now,
           trialEndsAt: trialEndsAt,
+          updatedAt: new Date(),
         },
       })
 
@@ -67,7 +69,7 @@ export async function GET(req: NextRequest) {
       const now = new Date()
       if (now > subscription.trialEndsAt) {
         // Trial expired, downgrade to FREE
-        const updatedSubscription = await prisma.subscription.update({
+        const updatedSubscription = await prisma.subscriptions.update({
           where: { id: subscription.id },
           data: {
             status: 'FREE',
@@ -86,7 +88,7 @@ export async function GET(req: NextRequest) {
     let trialDaysLeft = 0
 
     if (subscription.planType === 'FREE' && subscription.status !== 'TRIALING') {
-      invoiceCount = await prisma.invoice.count({
+      invoiceCount = await prisma.invoices.count({
         where: {
           userId: session.user.id,
           createdAt: {

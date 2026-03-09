@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getUserTeamRole, inviteToTeam } from '@/lib/teams'
 import { TeamRole } from '@/lib/permissions'
+import { sendTeamInvitationEmail } from '@/lib/email'
 import { z } from 'zod'
 
 const inviteSchema = z.object({
@@ -29,7 +30,7 @@ export async function GET(
       return NextResponse.json({ error: 'Team not found' }, { status: 404 })
     }
 
-    const invitations = await prisma.teamInvitation.findMany({
+    const invitations = await prisma.team_invitations.findMany({
       where: {
         teamId,
         status: 'PENDING',
@@ -83,7 +84,37 @@ export async function POST(
       session.user.id
     )
 
-    // TODO: Send invitation email
+    // Get team and inviter details for email
+    const [team, inviter] = await Promise.all([
+      prisma.teams.findUnique({
+        where: { id: teamId },
+        select: { name: true },
+      }),
+      prisma.users.findUnique({
+        where: { id: session.user.id },
+        select: { name: true },
+      }),
+    ])
+
+    // Send invitation email
+    if (team && inviter) {
+      const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+      const acceptUrl = `${baseUrl}/api/teams/invitations/accept?token=${invitation.token}`
+
+      try {
+        await sendTeamInvitationEmail({
+          to: validated.data.email,
+          inviterName: inviter.name || 'Tim Admin',
+          teamName: team.name,
+          role: validated.data.role,
+          acceptUrl,
+          expiresIn: '7 hari',
+        })
+      } catch (emailError) {
+        console.error('Failed to send invitation email:', emailError)
+        // Don't fail the request if email fails
+      }
+    }
 
     return NextResponse.json({ invitation }, { status: 201 })
   } catch (error) {

@@ -10,11 +10,13 @@ async function main() {
   // Create admin in Admin table (separate from users)
   const hashedPassword = await bcrypt.hash(password, 10)
 
-  const admin = await prisma.admin.create({
+  const admin = await prisma.admins.create({
     data: {
+      id: crypto.randomUUID(),
       email,
       name: 'Admin',
       password: hashedPassword,
+      updatedAt: new Date(),
     },
   })
 

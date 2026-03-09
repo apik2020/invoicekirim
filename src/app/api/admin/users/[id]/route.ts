@@ -18,10 +18,10 @@ export async function GET(
     }
 
     const { id } = await params
-    const user = await prisma.user.findUnique({
+    const user = await prisma.users.findUnique({
       where: { id },
       include: {
-        subscription: true,
+        subscriptions: true,
         invoices: {
           take: 10,
           orderBy: { createdAt: 'desc' },
@@ -31,7 +31,7 @@ export async function GET(
             invoices: true,
             clients: true,
             items: true,
-            templates: true,
+            invoice_templates: true,
           },
         },
       },
@@ -42,14 +42,14 @@ export async function GET(
     }
 
     // Get user's payments
-    const payments = await prisma.payment.findMany({
+    const payments = await prisma.payments.findMany({
       where: { userId: id },
       orderBy: { createdAt: 'desc' },
       take: 20,
     })
 
     // Get user's activity logs
-    const activityLogs = await prisma.activityLog.findMany({
+    const activityLogs = await prisma.activity_logs.findMany({
       where: { userId: id },
       orderBy: { createdAt: 'desc' },
       take: 50,
@@ -85,7 +85,7 @@ export async function PATCH(
     const body = await req.json()
     const { name, email, companyName, companyEmail, companyPhone, companyAddress } = body
 
-    const user = await prisma.user.update({
+    const user = await prisma.users.update({
       where: { id },
       data: {
         name,
@@ -96,7 +96,7 @@ export async function PATCH(
         companyAddress,
       },
       include: {
-        subscription: true,
+        subscriptions: true,
       },
     })
 
@@ -123,7 +123,7 @@ export async function DELETE(
     }
 
     const { id } = await params
-    await prisma.user.delete({
+    await prisma.users.delete({
       where: { id },
     })
 

@@ -20,15 +20,15 @@ export async function GET(
 
     const { id } = await params
 
-    const payment = await prisma.payment.findUnique({
+    const payment = await prisma.payments.findUnique({
       where: { id },
       include: {
-        user: {
+        users: {
           select: {
             id: true,
             name: true,
             email: true,
-            subscription: true,
+            subscriptions: true,
           },
         },
       },
@@ -39,7 +39,7 @@ export async function GET(
     }
 
     // Get related activity logs
-    const activityLogs = await prisma.activityLog.findMany({
+    const activityLogs = await prisma.activity_logs.findMany({
       where: {
         entityType: 'PAYMENT',
         entityId: id,
@@ -77,12 +77,12 @@ export async function PATCH(
     const body = await req.json()
     const { action, status, refundAmount, refundReason } = body
 
-    const payment = await prisma.payment.findUnique({
+    const payment = await prisma.payments.findUnique({
       where: { id },
       include: {
-        user: {
+        users: {
           include: {
-            subscription: true,
+            subscriptions: true,
           },
         },
       },
@@ -114,7 +114,7 @@ export async function PATCH(
         })
 
         // Update payment status
-        const updatedPayment = await prisma.payment.update({
+        const updatedPayment = await prisma.payments.update({
           where: { id },
           data: {
             status: 'REFUNDED',
@@ -129,8 +129,9 @@ export async function PATCH(
         })
 
         // Log the refund
-        await prisma.activityLog.create({
+        await prisma.activity_logs.create({
           data: {
+            id: crypto.randomUUID(),
             userId: result.admin!.id,
             action: 'PAYMENT_REFUNDED',
             entityType: 'PAYMENT',
@@ -141,9 +142,9 @@ export async function PATCH(
         })
 
         // If user has subscription, handle subscription cancellation if needed
-        if (payment.user?.subscription?.stripeSubscriptionId) {
-          await prisma.subscription.update({
-            where: { stripeSubscriptionId: payment.user.subscription.stripeSubscriptionId! },
+        if (payment.users?.subscriptions?.stripeSubscriptionId) {
+          await prisma.subscriptions.update({
+            where: { stripeSubscriptionId: payment.users.subscriptions.stripeSubscriptionId! },
             data: {
               status: 'CANCELED',
             },
@@ -165,14 +166,15 @@ export async function PATCH(
 
     // Handle status update
     if (status) {
-      const updatedPayment = await prisma.payment.update({
+      const updatedPayment = await prisma.payments.update({
         where: { id },
         data: { status },
       })
 
       // Log the status change
-      await prisma.activityLog.create({
+      await prisma.activity_logs.create({
         data: {
+          id: crypto.randomUUID(),
           userId: result.admin!.id,
           action: 'PAYMENT_STATUS_CHANGED',
           entityType: 'PAYMENT',
@@ -209,7 +211,7 @@ export async function DELETE(
 
     const { id } = await params
 
-    const payment = await prisma.payment.findUnique({
+    const payment = await prisma.payments.findUnique({
       where: { id },
     })
 
@@ -226,13 +228,14 @@ export async function DELETE(
     }
 
     // Delete the payment
-    await prisma.payment.delete({
+    await prisma.payments.delete({
       where: { id },
     })
 
     // Log the deletion
-    await prisma.activityLog.create({
+    await prisma.activity_logs.create({
       data: {
+        id: crypto.randomUUID(),
         userId: result.admin!.id,
         action: 'PAYMENT_DELETED',
         entityType: 'PAYMENT',

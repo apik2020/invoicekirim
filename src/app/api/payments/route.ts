@@ -26,13 +26,13 @@ export async function GET(req: NextRequest) {
     }
 
     const [payments, total] = await Promise.all([
-      prisma.payment.findMany({
+      prisma.payments.findMany({
         where,
         orderBy: { createdAt: 'desc' },
         take: limit,
         skip: offset,
       }),
-      prisma.payment.count({ where }),
+      prisma.payments.count({ where }),
     ])
 
     return NextResponse.json({
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if payment with this stripePaymentId already exists
-    const existingPayment = await prisma.payment.findUnique({
+    const existingPayment = await prisma.payments.findUnique({
       where: { stripePaymentId },
     })
 
@@ -90,8 +90,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Create payment
-    const payment = await prisma.payment.create({
+    const payment = await prisma.payments.create({
       data: {
+        id: crypto.randomUUID(),
         userId: session.user.id,
         stripePaymentId,
         stripePaymentIntentId: stripePaymentIntentId || null,
@@ -100,6 +101,7 @@ export async function POST(req: NextRequest) {
         currency: currency.toUpperCase(),
         description: description || null,
         status: 'COMPLETED',
+        updatedAt: new Date(),
       },
     })
 

@@ -23,7 +23,7 @@ export async function PATCH(
     }
 
     // Check if invoice exists and belongs to user
-    const invoice = await prisma.invoice.findFirst({
+    const invoice = await prisma.invoices.findFirst({
       where: {
         id,
         userId: session.user.id,
@@ -37,7 +37,7 @@ export async function PATCH(
     const previousStatus = invoice.status
 
     // Update status and paidAt if marking as paid
-    const updatedInvoice = await prisma.invoice.update({
+    const updatedInvoice = await prisma.invoices.update({
       where: { id },
       data: {
         status,
@@ -52,7 +52,7 @@ export async function PATCH(
           paymentNotes: null,
         }),
       },
-      include: { items: true },
+      include: { invoice_items: true },
     })
 
     // Send email notifications based on status change

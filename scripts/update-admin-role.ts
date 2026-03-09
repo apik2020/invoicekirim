@@ -6,7 +6,7 @@ async function main() {
   const adminEmails = ['hs.pramono@gmail.com', 'apik2020@users.noreply.github.com']
 
   for (const email of adminEmails) {
-    const user = await prisma.user.findUnique({
+    const user = await prisma.users.findUnique({
       where: { email },
     })
 
@@ -18,7 +18,7 @@ async function main() {
   }
 
   // List all users
-  const allUsers = await prisma.user.findMany({
+  const allUsers = await prisma.users.findMany({
     select: { email: true, name: true },
   })
 

@@ -20,7 +20,7 @@ export async function PUT(
     }
 
     // Verify client belongs to user
-    const client = await prisma.client.findFirst({
+    const client = await prisma.clients.findFirst({
       where: {
         id,
         userId: session.user.id,
@@ -36,7 +36,7 @@ export async function PUT(
 
     // Check if email is being changed and if it conflicts with another client
     if (email && email !== client.email) {
-      const existingClient = await prisma.client.findFirst({
+      const existingClient = await prisma.clients.findFirst({
         where: {
           userId: session.user.id,
           email,
@@ -52,7 +52,7 @@ export async function PUT(
       }
     }
 
-    const updatedClient = await prisma.client.update({
+    const updatedClient = await prisma.clients.update({
       where: { id },
       data: {
         name,
@@ -87,7 +87,7 @@ export async function DELETE(
     }
 
     // Verify client belongs to user
-    const client = await prisma.client.findFirst({
+    const client = await prisma.clients.findFirst({
       where: {
         id,
         userId: session.user.id,
@@ -99,7 +99,7 @@ export async function DELETE(
     }
 
     // Check if client is used in any invoice
-    const invoiceCount = await prisma.invoice.count({
+    const invoiceCount = await prisma.invoices.count({
       where: { clientId: id },
     })
 
@@ -110,7 +110,7 @@ export async function DELETE(
       )
     }
 
-    await prisma.client.delete({
+    await prisma.clients.delete({
       where: { id },
     })
 

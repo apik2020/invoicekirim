@@ -38,7 +38,7 @@ interface AnalyticsData {
     status: string
     date: string
     createdAt: string
-    user: {
+    users: {
       name: string | null
       email: string
     }

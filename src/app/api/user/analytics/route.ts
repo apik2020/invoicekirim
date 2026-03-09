@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
     startDate.setMonth(startDate.getMonth() - months)
 
     // Fetch all invoices in date range
-    const invoices = await prisma.invoice.findMany({
+    const invoices = await prisma.invoices.findMany({
       where: {
         userId: session.user.id,
         date: {
@@ -72,7 +72,7 @@ export async function GET(req: NextRequest) {
     })
 
     // Revenue by status
-    const statusData = await prisma.invoice.groupBy({
+    const statusData = await prisma.invoices.groupBy({
       by: ['status'],
       where: { userId: session.user.id },
       _sum: { total: true },

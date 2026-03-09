@@ -16,7 +16,7 @@ export async function GET(
 
     const { id } = await params
 
-    const payment = await prisma.payment.findUnique({
+    const payment = await prisma.payments.findUnique({
       where: { id },
     })
 
@@ -36,7 +36,7 @@ export async function GET(
 
         // Update status if changed
         if (midtransStatus.transactionStatus === 'settlement' || midtransStatus.transactionStatus === 'capture') {
-          await prisma.payment.update({
+          await prisma.payments.update({
             where: { id },
             data: {
               status: 'COMPLETED',
@@ -45,7 +45,7 @@ export async function GET(
           })
 
           // Update subscription
-          const existingSub = await prisma.subscription.findFirst({
+          const existingSub = await prisma.subscriptions.findFirst({
             where: { userId: session.user.id },
           })
 
@@ -53,7 +53,7 @@ export async function GET(
           periodEnd.setMonth(periodEnd.getMonth() + 1)
 
           if (existingSub) {
-            await prisma.subscription.update({
+            await prisma.subscriptions.update({
               where: { id: existingSub.id },
               data: {
                 planType: 'PRO',
@@ -62,12 +62,14 @@ export async function GET(
               },
             })
           } else {
-            await prisma.subscription.create({
+            await prisma.subscriptions.create({
               data: {
+                id: crypto.randomUUID(),
                 userId: session.user.id,
                 planType: 'PRO',
                 status: 'ACTIVE',
                 stripeCurrentPeriodEnd: periodEnd,
+                updatedAt: new Date(),
               },
             })
           }

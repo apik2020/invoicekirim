@@ -6,7 +6,7 @@ export async function generateReceiptNumber(): Promise<string> {
   const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '') // YYYYMMDD
 
   // Find the last receipt number for today
-  const lastReceipt = await prisma.payment.findFirst({
+  const lastReceipt = await prisma.payments.findFirst({
     where: {
       receiptNumber: {
         startsWith: `RCP-${dateStr}`,
@@ -31,7 +31,7 @@ export async function generateReceiptNumber(): Promise<string> {
 
 // Create receipt record
 export async function createReceipt(paymentId: string) {
-  const payment = await prisma.payment.findUnique({
+  const payment = await prisma.payments.findUnique({
     where: { id: paymentId },
   })
 
@@ -40,7 +40,7 @@ export async function createReceipt(paymentId: string) {
   }
 
   // Get user info
-  const user = await prisma.user.findUnique({
+  const user = await prisma.users.findUnique({
     where: { id: payment.userId },
     select: {
       name: true,
@@ -57,7 +57,7 @@ export async function createReceipt(paymentId: string) {
 
   // Update payment with receipt details
   // The PDF is generated on-demand when downloaded
-  const updatedPayment = await prisma.payment.update({
+  const updatedPayment = await prisma.payments.update({
     where: { id: paymentId },
     data: {
       receiptNumber,

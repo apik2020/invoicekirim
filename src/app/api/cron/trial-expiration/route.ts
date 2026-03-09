@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
+import {
+  sendTrialExpiredEmail,
+  sendTrialExpiringSoonEmail,
+  sendTrialWarningEmail,
+} from '@/lib/email'
 
 // Cron job to handle trial expiration
 // Should be called daily by Vercel Cron or external scheduler
@@ -18,9 +23,10 @@ export async function GET(req: NextRequest) {
     const now = new Date()
     let expiredCount = 0
     let reminderCount = 0
+    const dashboardUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
 
     // 1. Find and expire trials that have ended
-    const expiredTrials = await prisma.subscription.findMany({
+    const expiredTrials = await prisma.subscriptions.findMany({
       where: {
         status: 'TRIALING',
         trialEndsAt: {
@@ -28,7 +34,7 @@ export async function GET(req: NextRequest) {
         },
       },
       include: {
-        user: {
+        users: {
           select: {
             id: true,
             email: true,
@@ -39,8 +45,10 @@ export async function GET(req: NextRequest) {
     })
 
     for (const subscription of expiredTrials) {
+      const user = subscription.users
+
       // Downgrade to FREE
-      await prisma.subscription.update({
+      await prisma.subscriptions.update({
         where: { id: subscription.id },
         data: {
           status: 'FREE',
@@ -49,8 +57,9 @@ export async function GET(req: NextRequest) {
       })
 
       // Log activity
-      await prisma.activityLog.create({
+      await prisma.activity_logs.create({
         data: {
+          id: crypto.randomUUID(),
           userId: subscription.userId,
           action: 'UPDATED',
           entityType: 'Subscription',
@@ -60,15 +69,26 @@ export async function GET(req: NextRequest) {
         },
       })
 
-      // TODO: Send email notification about trial expiration
-      logger.dev('Cron', `Trial expired for user: ${subscription.user.email}`)
+      // Send email notification about trial expiration
+      if (user?.email) {
+        try {
+          await sendTrialExpiredEmail({
+            to: user.email,
+            userName: user.name || 'Pengguna',
+            dashboardUrl: `${dashboardUrl}/dashboard/settings/billing`,
+          })
+          logger.dev('Cron', `Trial expired email sent to: ${user.email}`)
+        } catch (emailError) {
+          logger.error(`Failed to send trial expired email to ${user.email}:`, emailError)
+        }
+      }
 
       expiredCount++
     }
 
     // 2. Send reminders for trials expiring in 1 day (if not already sent)
     const oneDayFromNow = new Date(now.getTime() + 24 * 60 * 60 * 1000)
-    const trialsExpiringSoon = await prisma.subscription.findMany({
+    const trialsExpiringSoon = await prisma.subscriptions.findMany({
       where: {
         status: 'TRIALING',
         trialEndsAt: {
@@ -78,7 +98,7 @@ export async function GET(req: NextRequest) {
         trialSentReminder: false,
       },
       include: {
-        user: {
+        users: {
           select: {
             id: true,
             email: true,
@@ -89,16 +109,35 @@ export async function GET(req: NextRequest) {
     })
 
     for (const subscription of trialsExpiringSoon) {
+      const user = subscription.users
+
       // Mark reminder as sent
-      await prisma.subscription.update({
+      await prisma.subscriptions.update({
         where: { id: subscription.id },
         data: {
           trialSentReminder: true,
         },
       })
 
-      // TODO: Send email reminder about trial expiring
-      logger.dev('Cron', `Trial reminder for user: ${subscription.user.email}`)
+      // Send email reminder about trial expiring in 1 day
+      if (user?.email) {
+        try {
+          await sendTrialExpiringSoonEmail({
+            to: user.email,
+            userName: user.name || 'Pengguna',
+            daysLeft: 1,
+            expiryDate: subscription.trialEndsAt?.toLocaleDateString('id-ID', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            }) || '',
+            dashboardUrl: `${dashboardUrl}/dashboard/settings/billing`,
+          })
+          logger.dev('Cron', `Trial reminder (1 day) sent to: ${user.email}`)
+        } catch (emailError) {
+          logger.error(`Failed to send trial reminder to ${user.email}:`, emailError)
+        }
+      }
 
       reminderCount++
     }
@@ -107,7 +146,7 @@ export async function GET(req: NextRequest) {
     const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
     const twoDaysFromNow = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000)
 
-    const trialsExpiringIn3Days = await prisma.subscription.findMany({
+    const trialsExpiringIn3Days = await prisma.subscriptions.findMany({
       where: {
         status: 'TRIALING',
         trialEndsAt: {
@@ -116,7 +155,7 @@ export async function GET(req: NextRequest) {
         },
       },
       include: {
-        user: {
+        users: {
           select: {
             id: true,
             email: true,
@@ -127,8 +166,27 @@ export async function GET(req: NextRequest) {
     })
 
     for (const subscription of trialsExpiringIn3Days) {
-      // TODO: Send 3-day warning email
-      logger.dev('Cron', `3-day trial warning for user: ${subscription.user.email}`)
+      const user = subscription.users
+
+      // Send 3-day warning email
+      if (user?.email) {
+        try {
+          await sendTrialWarningEmail({
+            to: user.email,
+            userName: user.name || 'Pengguna',
+            daysLeft: 3,
+            expiryDate: subscription.trialEndsAt?.toLocaleDateString('id-ID', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+            }) || '',
+            dashboardUrl: `${dashboardUrl}/dashboard/settings/billing`,
+          })
+          logger.dev('Cron', `3-day trial warning sent to: ${user.email}`)
+        } catch (emailError) {
+          logger.error(`Failed to send 3-day warning to ${user.email}:`, emailError)
+        }
+      }
       reminderCount++
     }
 

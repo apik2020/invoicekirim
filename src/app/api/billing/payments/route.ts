@@ -39,13 +39,13 @@ export async function GET(req: NextRequest) {
 
     // Get payments with pagination
     const [payments, total] = await Promise.all([
-      prisma.payment.findMany({
+      prisma.payments.findMany({
         where,
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
       }),
-      prisma.payment.count({ where }),
+      prisma.payments.count({ where }),
     ])
 
     return NextResponse.json({

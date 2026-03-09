@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminAuth } from '@/lib/admin-session'
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   const result = await requireAdminAuth()
 
   if (result.error || !result.admin) {

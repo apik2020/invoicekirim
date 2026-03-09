@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Users,
@@ -8,24 +8,11 @@ import {
   DollarSign,
   TrendingUp,
   TrendingDown,
-  Activity,
-  LogOut,
-  Mail,
   Crown,
-  Loader2,
-  LayoutDashboard,
 } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { useAutoLogout } from '@/hooks/useAutoLogout'
-import { SessionTimeoutModal } from '@/components/SessionTimeoutModal'
-import { AdminLogo } from '@/components/Logo'
+import { AdminLayout } from '@/components/admin/AdminLayout'
 import { cn } from '@/lib/utils'
-
-interface Admin {
-  id: string
-  email: string
-  name: string
-}
 
 interface AnalyticsData {
   summary: {
@@ -53,7 +40,7 @@ interface AnalyticsData {
     status: string
     date: string
     createdAt: string
-    user: {
+    users: {
       name: string | null
       email: string
     }
@@ -82,79 +69,34 @@ interface AnalyticsData {
   }>
 }
 
-const navItems = [
-  { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-  { name: 'Users', href: '/admin/users', icon: Users },
-  { name: 'Payments', href: '/admin/payments', icon: DollarSign },
-  { name: 'Email Templates', href: '/admin/email-templates', icon: Mail },
-  { name: 'Activity Logs', href: '/admin/activity-logs', icon: Activity },
-]
-
 export default function AdminDashboard() {
   const router = useRouter()
-  const [admin, setAdmin] = useState<Admin | null>(null)
-  const [loading, setLoading] = useState(true)
   const [data, setData] = useState<AnalyticsData | null>(null)
   const [period, setPeriod] = useState('30')
+  const [loading, setLoading] = useState(true)
 
-  // Auto logout after 1 minute of inactivity (for testing)
-  const { showWarning, timeRemaining, stayLoggedIn, logout } = useAutoLogout({
-    timeout: 1 * 60 * 1000, // 1 minute (testing)
-    warningTime: 30 * 1000, // 30 seconds warning
-    redirectPath: '/admin/login',
-  })
-
-  useEffect(() => {
-    checkAdminSession()
-  }, [])
-
-  const checkAdminSession = async () => {
+  const fetchAnalytics = useCallback(async () => {
     try {
-      const res = await fetch('/api/admin/me')
-      if (res.ok) {
-        const adminData = await res.json()
-        setAdmin(adminData)
-        fetchAnalytics()
-      } else {
-        router.push('/admin/login')
-      }
-    } catch (error) {
-      console.error('Error checking admin session:', error)
-      router.push('/admin/login')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const fetchAnalytics = async () => {
-    try {
+      setLoading(true)
       const res = await fetch(`/api/admin/analytics?period=${period}`)
-      const data = await res.json()
+      const responseData = await res.json()
 
       if (!res.ok) {
-        console.error('Analytics API error:', data)
-        throw new Error(data.error || 'Failed to fetch analytics')
+        console.error('Analytics API error:', responseData)
+        throw new Error(responseData.error || 'Failed to fetch analytics')
       }
 
-      setData(data)
+      setData(responseData)
     } catch (error) {
       console.error('Error fetching analytics:', error)
-      alert(error instanceof Error ? error.message : 'Failed to fetch analytics')
     } finally {
       setLoading(false)
     }
-  }
+  }, [period])
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-surface-light flex items-center justify-center">
-        <div className="text-center animate-fade-in">
-          <Loader2 className="w-16 h-16 text-brand-500 animate-spin mx-auto mb-4" />
-          <p className="text-text-secondary">Memuat dashboard...</p>
-        </div>
-      </div>
-    )
-  }
+  useEffect(() => {
+    fetchAnalytics()
+  }, [fetchAnalytics])
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
@@ -182,106 +124,70 @@ export default function AdminDashboard() {
     return `${Math.min((value / max) * 100, 100)}%`
   }
 
-  const maxInvoiceCount = Math.max(...(data?.invoicesByStatus?.map((s: any) => Number(s.count)) || [0]))
-  const maxRevenue = Math.max(...(data?.revenueByMonth?.map((r: any) => Number(r.revenue)) || [0]))
-  const maxUserCount = Math.max(...(data?.usersByMonth?.map((u: any) => Number(u.count)) || [0]))
+  const maxInvoiceCount = Math.max(...(data?.invoicesByStatus?.map((s) => Number(s.count)) || [0]))
+  const maxRevenue = Math.max(...(data?.revenueByMonth?.map((r) => Number(r.revenue)) || [0]))
+  const maxUserCount = Math.max(...(data?.usersByMonth?.map((u) => Number(u.count)) || [0]))
 
   return (
-    <div className="min-h-screen bg-surface-light">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <AdminLogo size="lg" linkToHome={false} />
-            <div className="flex items-center gap-3 sm:gap-4">
-              <select
-                value={period}
-                onChange={(e) => setPeriod(e.target.value)}
-                className="px-3 sm:px-4 py-2 rounded-xl border border-gray-200 text-text-primary text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 transition-all"
-              >
-                <option value="7">7 Hari Terakhir</option>
-                <option value="30">30 Hari Terakhir</option>
-                <option value="90">90 Hari Terakhir</option>
-                <option value="365">1 Tahun</option>
-              </select>
-              <button
-                onClick={async () => {
-                  await fetch('/api/admin/logout', { method: 'POST' })
-                  router.push('/admin/login')
-                  router.refresh()
-                }}
-                className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition-all font-medium text-sm"
-              >
-                <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline">Logout</span>
-              </button>
-            </div>
+    <AdminLayout>
+      <div className="space-y-6">
+        {/* Page Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-text-primary">Dashboard Overview</h1>
+            <p className="text-text-secondary">Pantau aktivitas dan performa aplikasi</p>
           </div>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
-        {/* Admin Navigation */}
-        <div className="flex flex-wrap gap-2 sm:gap-3 mb-6 sm:mb-8">
-          {navItems.map((item) => {
-            const isActive = item.href === '/admin'
-            return (
-              <button
-                key={item.name}
-                onClick={() => router.push(item.href)}
-                className={cn(
-                  'flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-medium text-sm transition-all',
-                  isActive
-                    ? 'bg-brand-500 text-white'
-                    : 'border border-gray-200 text-text-secondary hover:border-brand-300 hover:text-brand-600 hover:bg-brand-50'
-                )}
-              >
-                <item.icon className="w-4 h-4" />
-                <span className="hidden sm:inline">{item.name}</span>
-              </button>
-            )
-          })}
+          <select
+            value={period}
+            onChange={(e) => setPeriod(e.target.value)}
+            className="px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-text-primary text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 transition-all"
+          >
+            <option value="7">7 Hari Terakhir</option>
+            <option value="30">30 Hari Terakhir</option>
+            <option value="90">90 Hari Terakhir</option>
+            <option value="365">1 Tahun</option>
+          </select>
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8 sm:mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Users with Subscription */}
-          <div className="card card-hover p-5 sm:p-6 animate-fade-in-up">
-            <div className="flex items-center justify-between mb-4">
-              <div className="icon-box icon-box-success">
-                <Crown className="w-6 h-6 text-success-600" />
+          <div className="card p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-success-400 to-success-600 flex items-center justify-center">
+                <Crown className="w-6 h-6 text-white" />
               </div>
-              <div className="flex items-center gap-1 text-xs font-semibold text-text-muted">
+              <span className="text-xs font-medium text-text-muted bg-gray-100 px-2 py-1 rounded-full">
                 dari {data?.summary?.totalUsers ?? 0} user
-              </div>
+              </span>
             </div>
-            <h3 className="text-sm font-bold text-text-secondary mb-1">User Berlangganan</h3>
-            <p className="text-2xl sm:text-3xl font-bold text-text-primary">{data?.summary?.usersWithSubscription ?? 0}</p>
+            <p className="text-sm font-medium text-text-secondary mb-1">User Berlangganan</p>
+            <p className="text-3xl font-bold text-text-primary">{data?.summary?.usersWithSubscription ?? 0}</p>
           </div>
 
           {/* Users without Subscription */}
-          <div className="card card-hover p-5 sm:p-6 animate-fade-in-up animation-delay-100">
-            <div className="flex items-center justify-between mb-4">
-              <div className="icon-box icon-box-primary">
-                <Users className="w-6 h-6 text-primary-600" />
+          <div className="card p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center">
+                <Users className="w-6 h-6 text-white" />
               </div>
-              <div className="flex items-center gap-1 text-xs font-semibold text-text-muted">
+              <span className="text-xs font-medium text-text-muted bg-gray-100 px-2 py-1 rounded-full">
                 dari {data?.summary?.totalUsers ?? 0} user
-              </div>
+              </span>
             </div>
-            <h3 className="text-sm font-bold text-text-secondary mb-1">User Gratis</h3>
-            <p className="text-2xl sm:text-3xl font-bold text-text-primary">{data?.summary?.usersWithoutSubscription ?? 0}</p>
+            <p className="text-sm font-medium text-text-secondary mb-1">User Gratis</p>
+            <p className="text-3xl font-bold text-text-primary">{data?.summary?.usersWithoutSubscription ?? 0}</p>
           </div>
 
           {/* Total Invoices */}
-          <div className="card card-hover p-5 sm:p-6 animate-fade-in-up animation-delay-200">
-            <div className="flex items-center justify-between mb-4">
-              <div className="icon-box icon-box-secondary">
-                <FileText className="w-6 h-6 text-secondary-600" />
+          <div className="card p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-secondary-400 to-secondary-600 flex items-center justify-center">
+                <FileText className="w-6 h-6 text-white" />
               </div>
               <div className={cn(
-                'flex items-center gap-1 text-sm font-semibold',
-                (data?.summary?.invoiceGrowth ?? 0) >= 0 ? 'text-success-600' : 'text-primary-600'
+                'flex items-center gap-1 text-sm font-semibold px-2 py-1 rounded-full',
+                (data?.summary?.invoiceGrowth ?? 0) >= 0 ? 'text-success-600 bg-success-50' : 'text-red-600 bg-red-50'
               )}>
                 {(data?.summary?.invoiceGrowth ?? 0) >= 0 ? (
                   <TrendingUp className="w-4 h-4" />
@@ -291,19 +197,19 @@ export default function AdminDashboard() {
                 {Math.abs(data?.summary?.invoiceGrowth ?? 0)}%
               </div>
             </div>
-            <h3 className="text-sm font-bold text-text-secondary mb-1">Total Invoices</h3>
-            <p className="text-2xl sm:text-3xl font-bold text-text-primary">{data?.summary?.totalInvoices ?? 0}</p>
+            <p className="text-sm font-medium text-text-secondary mb-1">Total Invoices</p>
+            <p className="text-3xl font-bold text-text-primary">{data?.summary?.totalInvoices ?? 0}</p>
           </div>
 
           {/* Total Revenue */}
-          <div className="card card-hover p-5 sm:p-6 animate-fade-in-up animation-delay-300">
-            <div className="flex items-center justify-between mb-4">
-              <div className="icon-box icon-box-brand">
-                <DollarSign className="w-6 h-6 text-brand-600" />
+          <div className="card p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
+                <DollarSign className="w-6 h-6 text-white" />
               </div>
               <div className={cn(
-                'flex items-center gap-1 text-sm font-semibold',
-                (data?.summary?.revenueGrowth ?? 0) >= 0 ? 'text-success-600' : 'text-primary-600'
+                'flex items-center gap-1 text-sm font-semibold px-2 py-1 rounded-full',
+                (data?.summary?.revenueGrowth ?? 0) >= 0 ? 'text-success-600 bg-success-50' : 'text-red-600 bg-red-50'
               )}>
                 {(data?.summary?.revenueGrowth ?? 0) >= 0 ? (
                   <TrendingUp className="w-4 h-4" />
@@ -313,15 +219,16 @@ export default function AdminDashboard() {
                 {Math.abs(data?.summary?.revenueGrowth ?? 0)}%
               </div>
             </div>
-            <h3 className="text-sm font-bold text-text-secondary mb-1">Total Revenue</h3>
-            <p className="text-2xl sm:text-3xl font-bold text-text-primary">{formatCurrency(data?.summary?.totalRevenue ?? 0)}</p>
+            <p className="text-sm font-medium text-text-secondary mb-1">Total Revenue</p>
+            <p className="text-3xl font-bold text-text-primary">{formatCurrency(data?.summary?.totalRevenue ?? 0)}</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 mb-8 sm:mb-10">
+        {/* Charts Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Invoice Status Breakdown */}
-          <div className="card p-5 sm:p-6">
-            <h2 className="text-lg sm:text-xl font-bold text-text-primary mb-6">Status Invoice</h2>
+          <div className="card p-5">
+            <h2 className="text-lg font-bold text-text-primary mb-5">Status Invoice</h2>
             <div className="space-y-4">
               {data?.invoicesByStatus?.map((status) => (
                 <div key={status.status}>
@@ -331,7 +238,7 @@ export default function AdminDashboard() {
                     </span>
                     <span className="text-sm font-bold text-text-primary">{status.count}</span>
                   </div>
-                  <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+                  <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r from-brand-400 to-brand-500 rounded-full transition-all duration-500"
                       style={{ width: calculateBarWidth(Number(status.count), maxInvoiceCount) }}
@@ -343,27 +250,27 @@ export default function AdminDashboard() {
           </div>
 
           {/* Top Clients */}
-          <div className="card p-5 sm:p-6">
-            <h2 className="text-lg sm:text-xl font-bold text-text-primary mb-6">Top Klien</h2>
+          <div className="card p-5">
+            <h2 className="text-lg font-bold text-text-primary mb-5">Top Klien</h2>
             <div className="space-y-3">
               {data?.topClients?.slice(0, 5).map((client, index) => (
-                <div key={client.clientEmail} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
+                <div key={client.clientEmail} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
                   <div className="flex items-center gap-3">
                     <div className={cn(
-                      'w-8 h-8 rounded-xl flex items-center justify-center text-white text-sm font-bold',
-                      index === 0 ? 'bg-primary-500' :
-                      index === 1 ? 'bg-brand-500' :
-                      index === 2 ? 'bg-success-500' :
-                      'bg-secondary-500'
+                      'w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-bold',
+                      index === 0 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600' :
+                      index === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-500' :
+                      index === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-600' :
+                      'bg-gradient-to-br from-gray-200 to-gray-400'
                     )}>
                       {index + 1}
                     </div>
                     <div>
-                      <p className="font-semibold text-text-primary text-sm">{client.clientEmail}</p>
+                      <p className="font-medium text-text-primary text-sm">{client.clientEmail}</p>
                       <p className="text-xs text-text-muted">{client.invoiceCount} invoice</p>
                     </div>
                   </div>
-                  <p className="font-bold text-text-primary text-sm sm:text-base">{formatCurrency(client.totalRevenue)}</p>
+                  <p className="font-bold text-text-primary text-sm">{formatCurrency(client.totalRevenue)}</p>
                 </div>
               ))}
             </div>
@@ -371,8 +278,8 @@ export default function AdminDashboard() {
         </div>
 
         {/* Revenue Chart */}
-        <div className="card p-5 sm:p-6 mb-8 sm:mb-10">
-          <h2 className="text-lg sm:text-xl font-bold text-text-primary mb-6">Pendapatan per Bulan</h2>
+        <div className="card p-5">
+          <h2 className="text-lg font-bold text-text-primary mb-5">Pendapatan per Bulan</h2>
           <div className="space-y-3">
             {data?.revenueByMonth?.slice(0, 6).map((item) => {
               const revenue = Number(item.revenue)
@@ -380,13 +287,13 @@ export default function AdminDashboard() {
               return (
                 <div key={item.month as string}>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-semibold text-text-secondary">{month}</span>
+                    <span className="text-sm font-medium text-text-secondary">{month}</span>
                     <div className="flex items-center gap-3">
                       <span className="text-xs text-text-muted">{Number(item.count)} invoice</span>
-                      <span className="font-bold text-text-primary">{formatCurrency(revenue)}</span>
+                      <span className="font-bold text-text-primary text-sm">{formatCurrency(revenue)}</span>
                     </div>
                   </div>
-                  <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden">
+                  <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r from-success-400 to-success-500 rounded-full transition-all duration-500"
                       style={{ width: calculateBarWidth(revenue, maxRevenue || 1) }}
@@ -399,8 +306,8 @@ export default function AdminDashboard() {
         </div>
 
         {/* User Growth Chart */}
-        <div className="card p-5 sm:p-6 mb-8 sm:mb-10">
-          <h2 className="text-lg sm:text-xl font-bold text-text-primary mb-6">Pertumbuhan User</h2>
+        <div className="card p-5">
+          <h2 className="text-lg font-bold text-text-primary mb-5">Pertumbuhan User</h2>
           <div className="space-y-3">
             {data?.usersByMonth?.slice(0, 6).map((item) => {
               const count = Number(item.count)
@@ -408,10 +315,10 @@ export default function AdminDashboard() {
               return (
                 <div key={item.month as string}>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-semibold text-text-secondary">{month}</span>
-                    <span className="font-bold text-text-primary">{count} user baru</span>
+                    <span className="text-sm font-medium text-text-secondary">{month}</span>
+                    <span className="font-bold text-text-primary text-sm">{count} user baru</span>
                   </div>
-                  <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+                  <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r from-primary-400 via-brand-400 to-success-400 rounded-full transition-all duration-500"
                       style={{ width: calculateBarWidth(count, maxUserCount || 1) }}
@@ -423,86 +330,77 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Recent Users */}
-        <div className="card p-5 sm:p-6 mb-8 sm:mb-10">
-          <h2 className="text-lg sm:text-xl font-bold text-text-primary mb-6">User Terbaru</h2>
-          <div className="overflow-x-auto -mx-5 sm:-mx-6 px-5 sm:px-6">
-            <table className="w-full min-w-[400px]">
-              <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="table-header">Nama</th>
-                  <th className="table-header">Email</th>
-                  <th className="table-header">Tanggal Daftar</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data?.recentUsers?.map((user) => (
-                  <tr key={user.id} className="table-row">
-                    <td className="table-cell">
-                      <p className="font-semibold text-text-primary">{user.name || '-'}</p>
-                    </td>
-                    <td className="table-cell">
-                      <p className="text-text-secondary">{user.email}</p>
-                    </td>
-                    <td className="table-cell">
-                      <p className="text-text-secondary">{formatDate(user.createdAt)}</p>
-                    </td>
+        {/* Tables Row */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          {/* Recent Users */}
+          <div className="card p-5">
+            <h2 className="text-lg font-bold text-text-primary mb-5">User Terbaru</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-100">
+                    <th className="table-header">Nama</th>
+                    <th className="table-header">Email</th>
+                    <th className="table-header">Tanggal</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {data?.recentUsers?.slice(0, 5).map((user) => (
+                    <tr key={user.id} className="table-row">
+                      <td className="table-cell">
+                        <p className="font-medium text-text-primary">{user.name || '-'}</p>
+                      </td>
+                      <td className="table-cell">
+                        <p className="text-text-secondary text-sm">{user.email}</p>
+                      </td>
+                      <td className="table-cell">
+                        <p className="text-text-muted text-sm">{formatDate(user.createdAt)}</p>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
 
-        {/* Recent Invoices */}
-        <div className="card p-5 sm:p-6">
-          <h2 className="text-lg sm:text-xl font-bold text-text-primary mb-6">Invoice Terbaru</h2>
-          <div className="overflow-x-auto -mx-5 sm:-mx-6 px-5 sm:px-6">
-            <table className="w-full min-w-[500px]">
-              <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="table-header">No. Invoice</th>
-                  <th className="table-header">Klien</th>
-                  <th className="table-header">Pembuat</th>
-                  <th className="table-header">Total</th>
-                  <th className="table-header">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data?.recentInvoices?.map((invoice) => (
-                  <tr key={invoice.id} className="table-row">
-                    <td className="table-cell">
-                      <p className="font-semibold text-text-primary">{invoice.invoiceNumber}</p>
-                    </td>
-                    <td className="table-cell">
-                      <p className="text-text-secondary">{invoice.clientName}</p>
-                    </td>
-                    <td className="table-cell">
-                      <p className="text-text-secondary">{invoice.user.name || invoice.user.email}</p>
-                    </td>
-                    <td className="table-cell">
-                      <p className="font-bold text-text-primary">{formatCurrency(invoice.total)}</p>
-                    </td>
-                    <td className="table-cell">
-                      <span className={cn('badge', getStatusColor(invoice.status))}>
-                        {getStatusLabel(invoice.status)}
-                      </span>
-                    </td>
+          {/* Recent Invoices */}
+          <div className="card p-5">
+            <h2 className="text-lg font-bold text-text-primary mb-5">Invoice Terbaru</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-100">
+                    <th className="table-header">No. Invoice</th>
+                    <th className="table-header">Klien</th>
+                    <th className="table-header">Total</th>
+                    <th className="table-header">Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {data?.recentInvoices?.slice(0, 5).map((invoice) => (
+                    <tr key={invoice.id} className="table-row">
+                      <td className="table-cell">
+                        <p className="font-medium text-text-primary">{invoice.invoiceNumber}</p>
+                      </td>
+                      <td className="table-cell">
+                        <p className="text-text-secondary text-sm">{invoice.clientName}</p>
+                      </td>
+                      <td className="table-cell">
+                        <p className="font-bold text-text-primary text-sm">{formatCurrency(invoice.total)}</p>
+                      </td>
+                      <td className="table-cell">
+                        <span className={cn('badge', getStatusColor(invoice.status))}>
+                          {getStatusLabel(invoice.status)}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
-
-      {/* Session Timeout Warning Modal */}
-      <SessionTimeoutModal
-        show={showWarning}
-        timeRemaining={timeRemaining}
-        onStayLoggedIn={stayLoggedIn}
-        onLogout={logout}
-      />
-    </div>
+    </AdminLayout>
   )
 }

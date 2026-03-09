@@ -21,9 +21,9 @@ interface InvoiceSettings {
 export default async function InvoicePage({ params }: PageProps) {
   const { token } = await params
 
-  const invoice = await prisma.invoice.findUnique({
+  const invoice = await prisma.invoices.findUnique({
     where: { accessToken: token },
-    include: { items: true },
+    include: { invoice_items: true },
   })
 
   if (!invoice) {
@@ -39,7 +39,7 @@ export default async function InvoicePage({ params }: PageProps) {
     date: invoice.date,
     dueDate: invoice.dueDate,
     settings,
-    items: invoice.items.map(item => ({
+    items: invoice.invoice_items.map(item => ({
       id: item.id,
       description: item.description,
       quantity: item.quantity,

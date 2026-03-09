@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
         const userId = session.metadata?.userId
 
         if (userId) {
-          await prisma.subscription.update({
+          await prisma.subscriptions.update({
             where: { userId },
             data: {
               stripeSubscriptionId: session.subscription,
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
             incomplete_expired: 'INCOMPLETE_EXPIRED',
           }
 
-          await prisma.subscription.update({
+          await prisma.subscriptions.update({
             where: { stripeSubscriptionId: subscription.id },
             data: {
               status: statusMap[subscription.status] || 'FREE',
@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as any
 
-        await prisma.subscription.update({
+        await prisma.subscriptions.update({
           where: { stripeSubscriptionId: subscription.id },
           data: {
             status: 'CANCELED',
@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
 
         // Update subscription status if payment succeeded
         if (invoice.subscription) {
-          const subscription = await prisma.subscription.update({
+          const subscription = await prisma.subscriptions.update({
             where: { stripeSubscriptionId: invoice.subscription },
             data: {
               status: 'ACTIVE',
@@ -119,8 +119,9 @@ export async function POST(req: NextRequest) {
           })
 
           // Create payment record
-          const payment = await prisma.payment.create({
+          const payment = await prisma.payments.create({
             data: {
+              id: crypto.randomUUID(),
               userId: subscription.userId,
               stripePaymentId: invoice.payment_intent || invoice.id,
               stripePaymentIntentId: invoice.payment_intent || null,
@@ -128,6 +129,7 @@ export async function POST(req: NextRequest) {
               currency: invoice.currency.toUpperCase(),
               description: `InvoiceKirim Pro Subscription - ${new Date().toLocaleDateString('id-ID')}`,
               status: 'COMPLETED',
+              updatedAt: new Date(),
             },
           })
 
@@ -144,7 +146,7 @@ export async function POST(req: NextRequest) {
 
         // Update subscription status if payment failed
         if (invoice.subscription) {
-          await prisma.subscription.update({
+          await prisma.subscriptions.update({
             where: { stripeSubscriptionId: invoice.subscription },
             data: {
               status: 'PAST_DUE',

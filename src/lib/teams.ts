@@ -17,19 +17,19 @@ export interface TeamWithMembership {
  * Get all teams for a user
  */
 export async function getUserTeams(userId: string): Promise<TeamWithMembership[]> {
-  const memberships = await prisma.teamMember.findMany({
+  const memberships = await prisma.team_members.findMany({
     where: { userId },
-    include: { team: true },
+    include: { teams: true },
     orderBy: { createdAt: 'asc' },
   })
 
   return memberships.map((m) => ({
-    id: m.team.id,
-    name: m.team.name,
-    slug: m.team.slug,
-    description: m.team.description,
-    ownerId: m.team.ownerId,
-    planType: m.team.planType,
+    id: m.teams.id,
+    name: m.teams.name,
+    slug: m.teams.slug,
+    description: m.teams.description,
+    ownerId: m.teams.ownerId,
+    planType: m.teams.planType,
     role: m.role as TeamRole,
     membershipId: m.id,
   }))
@@ -42,7 +42,7 @@ export async function getUserTeamRole(
   userId: string,
   teamId: string
 ): Promise<TeamRole | null> {
-  const membership = await prisma.teamMember.findUnique({
+  const membership = await prisma.team_members.findUnique({
     where: {
       teamId_userId: { teamId, userId },
     },
@@ -56,7 +56,7 @@ export async function getUserTeamRole(
  * Check if user is a member of a team
  */
 export async function isTeamMember(userId: string, teamId: string): Promise<boolean> {
-  const membership = await prisma.teamMember.findUnique({
+  const membership = await prisma.team_members.findUnique({
     where: {
       teamId_userId: { teamId, userId },
     },
@@ -89,29 +89,35 @@ export async function createTeam(
 ) {
   const slug = generateTeamSlug(name)
 
-  const team = await prisma.team.create({
+  const team = await prisma.teams.create({
     data: {
+      id: crypto.randomUUID(),
       name,
       slug,
       description,
       ownerId: userId,
-      members: {
+      updatedAt: new Date(),
+      team_members: {
         create: {
+          id: crypto.randomUUID(),
           userId,
           role: TeamRole.OWNER,
           joinedAt: new Date(),
+          updatedAt: new Date(),
         },
       },
       branding: {
         create: {
+          id: crypto.randomUUID(),
           primaryColor: '#F97316',
           showLogo: true,
           showColors: true,
+          updatedAt: new Date(),
         },
       },
     },
     include: {
-      members: true,
+      team_members: true,
       branding: true,
     },
   })
@@ -149,13 +155,13 @@ export async function inviteToTeam(
   }
 
   // Check if user is already a member
-  const existingUser = await prisma.user.findUnique({
+  const existingUser = await prisma.users.findUnique({
     where: { email },
     select: { id: true },
   })
 
   if (existingUser) {
-    const existingMember = await prisma.teamMember.findUnique({
+    const existingMember = await prisma.team_members.findUnique({
       where: {
         teamId_userId: { teamId, userId: existingUser.id },
       },
@@ -167,7 +173,7 @@ export async function inviteToTeam(
   }
 
   // Check for existing pending invitation
-  const existingInvitation = await prisma.teamInvitation.findFirst({
+  const existingInvitation = await prisma.team_invitations.findFirst({
     where: {
       teamId,
       email,
@@ -184,8 +190,9 @@ export async function inviteToTeam(
   const token = nanoid(32)
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
 
-  const invitation = await prisma.teamInvitation.create({
+  const invitation = await prisma.team_invitations.create({
     data: {
+      id: crypto.randomUUID(),
       teamId,
       email,
       role,
@@ -193,6 +200,7 @@ export async function inviteToTeam(
       invitedBy,
       status: 'PENDING',
       expiresAt,
+      updatedAt: new Date(),
     },
   })
 
@@ -203,9 +211,9 @@ export async function inviteToTeam(
  * Accept a team invitation
  */
 export async function acceptInvitation(token: string, userId: string) {
-  const invitation = await prisma.teamInvitation.findUnique({
+  const invitation = await prisma.team_invitations.findUnique({
     where: { token },
-    include: { team: true },
+    include: { teams: true },
   })
 
   if (!invitation) {
@@ -217,7 +225,7 @@ export async function acceptInvitation(token: string, userId: string) {
   }
 
   if (invitation.expiresAt < new Date()) {
-    await prisma.teamInvitation.update({
+    await prisma.team_invitations.update({
       where: { id: invitation.id },
       data: { status: 'EXPIRED' },
     })
@@ -225,7 +233,7 @@ export async function acceptInvitation(token: string, userId: string) {
   }
 
   // Get user email
-  const user = await prisma.user.findUnique({
+  const user = await prisma.users.findUnique({
     where: { id: userId },
     select: { email: true },
   })
@@ -236,18 +244,20 @@ export async function acceptInvitation(token: string, userId: string) {
 
   // Create membership and update invitation
   const [membership] = await prisma.$transaction([
-    prisma.teamMember.create({
+    prisma.team_members.create({
       data: {
+        id: crypto.randomUUID(),
         teamId: invitation.teamId,
         userId,
         role: invitation.role,
         invitedBy: invitation.invitedBy,
         joinedAt: new Date(),
+        updatedAt: new Date(),
       },
     }),
-    prisma.teamInvitation.update({
+    prisma.team_invitations.update({
       where: { id: invitation.id },
-      data: { status: 'ACCEPTED' },
+      data: { status: 'ACCEPTED', updatedAt: new Date() },
     }),
   ])
 
@@ -262,9 +272,9 @@ export async function removeMember(
   memberId: string,
   removedBy: string
 ) {
-  const membership = await prisma.teamMember.findUnique({
+  const membership = await prisma.team_members.findUnique({
     where: { id: memberId },
-    include: { team: true },
+    include: { teams: true },
   })
 
   if (!membership || membership.teamId !== teamId) {
@@ -272,7 +282,7 @@ export async function removeMember(
   }
 
   // Can't remove the owner
-  if (membership.team.ownerId === membership.userId) {
+  if (membership.teams.ownerId === membership.userId) {
     throw new Error('Cannot remove the team owner')
   }
 
@@ -287,7 +297,7 @@ export async function removeMember(
     throw new Error('Cannot remove a member with equal or higher role')
   }
 
-  await prisma.teamMember.delete({
+  await prisma.team_members.delete({
     where: { id: memberId },
   })
 
@@ -303,9 +313,9 @@ export async function updateMemberRole(
   newRole: TeamRole,
   updatedBy: string
 ) {
-  const membership = await prisma.teamMember.findUnique({
+  const membership = await prisma.team_members.findUnique({
     where: { id: memberId },
-    include: { team: true },
+    include: { teams: true },
   })
 
   if (!membership || membership.teamId !== teamId) {
@@ -313,7 +323,7 @@ export async function updateMemberRole(
   }
 
   // Can't change owner's role
-  if (membership.team.ownerId === membership.userId) {
+  if (membership.teams.ownerId === membership.userId) {
     throw new Error('Cannot change the team owner\'s role')
   }
 
@@ -323,7 +333,7 @@ export async function updateMemberRole(
     throw new Error('Only team owners can change member roles')
   }
 
-  const updated = await prisma.teamMember.update({
+  const updated = await prisma.team_members.update({
     where: { id: memberId },
     data: { role: newRole },
   })
@@ -335,7 +345,7 @@ export async function updateMemberRole(
  * Delete a team (owner only)
  */
 export async function deleteTeam(teamId: string, userId: string) {
-  const team = await prisma.team.findUnique({
+  const team = await prisma.teams.findUnique({
     where: { id: teamId },
     select: { ownerId: true },
   })
@@ -348,7 +358,7 @@ export async function deleteTeam(teamId: string, userId: string) {
     throw new Error('Only team owners can delete teams')
   }
 
-  await prisma.team.delete({
+  await prisma.teams.delete({
     where: { id: teamId },
   })
 

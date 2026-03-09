@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
     futureDate.setDate(futureDate.getDate() + days)
 
     // Fetch invoices with due dates
-    const invoices = await prisma.invoice.findMany({
+    const invoices = await prisma.invoices.findMany({
       where: {
         userId: session.user.id,
         dueDate: { not: null, lte: futureDate },

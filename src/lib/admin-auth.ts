@@ -15,7 +15,7 @@ export async function verifyAdmin() {
   }
 
   // Admin role check from Admin table (separate from User table)
-  const admin = await prisma.admin.findUnique({
+  const admin = await prisma.admins.findUnique({
     where: { email: session.user.email },
     select: { id: true, email: true, name: true },
   })

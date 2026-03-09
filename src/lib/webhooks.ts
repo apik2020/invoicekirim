@@ -78,14 +78,16 @@ export async function createWebhook(params: {
 }): Promise<{ id: string; name: string; url: string; secret: string; events: string[] }> {
   const secret = generateWebhookSecret()
 
-  const webhook = await prisma.webhook.create({
+  const webhook = await prisma.webhooks.create({
     data: {
+      id: crypto.randomUUID(),
       teamId: params.teamId,
       name: params.name,
       url: params.url,
       secret,
       events: params.events,
       isActive: true,
+      updatedAt: new Date(),
     },
   })
 
@@ -102,7 +104,7 @@ export async function createWebhook(params: {
  * List webhooks for a team
  */
 export async function listWebhooks(teamId: string) {
-  const webhooks = await prisma.webhook.findMany({
+  const webhooks = await prisma.webhooks.findMany({
     where: { teamId },
     select: {
       id: true,
@@ -136,7 +138,7 @@ export async function updateWebhook(
     isActive?: boolean
   }
 ) {
-  const webhook = await prisma.webhook.updateMany({
+  const webhook = await prisma.webhooks.updateMany({
     where: { id: webhookId, teamId },
     data: params,
   })
@@ -148,7 +150,7 @@ export async function updateWebhook(
  * Delete a webhook
  */
 export async function deleteWebhook(webhookId: string, teamId: string): Promise<boolean> {
-  const result = await prisma.webhook.deleteMany({
+  const result = await prisma.webhooks.deleteMany({
     where: { id: webhookId, teamId },
   })
 
@@ -164,7 +166,7 @@ export async function triggerWebhooks(
   data: Record<string, unknown>
 ): Promise<void> {
   // Find all webhooks that listen to this event
-  const allWebhooks = await prisma.webhook.findMany({
+  const allWebhooks = await prisma.webhooks.findMany({
     where: {
       teamId,
       isActive: true,
@@ -213,7 +215,7 @@ export async function triggerWebhooks(
         }
 
         // Update last triggered and reset failure count
-        await prisma.webhook.update({
+        await prisma.webhooks.update({
           where: { id: webhook.id },
           data: {
             lastTriggered: new Date(),
@@ -224,7 +226,7 @@ export async function triggerWebhooks(
         console.error(`Webhook ${webhook.id} failed:`, error)
 
         // Increment failure count
-        await prisma.webhook.update({
+        await prisma.webhooks.update({
           where: { id: webhook.id },
           data: {
             failureCount: { increment: 1 },
@@ -233,7 +235,7 @@ export async function triggerWebhooks(
 
         // Disable webhook if too many failures
         if (webhook.failureCount >= 9) {
-          await prisma.webhook.update({
+          await prisma.webhooks.update({
             where: { id: webhook.id },
             data: { isActive: false },
           })
@@ -252,7 +254,7 @@ export async function rotateWebhookSecret(
 ): Promise<string | null> {
   const newSecret = generateWebhookSecret()
 
-  const result = await prisma.webhook.updateMany({
+  const result = await prisma.webhooks.updateMany({
     where: { id: webhookId, teamId },
     data: { secret: newSecret },
   })

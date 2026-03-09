@@ -7,7 +7,7 @@ async function main() {
   const email = 'hs.pramono@gmail.com'
   const testPassword = 'admin123'
 
-  const user = await prisma.user.findUnique({
+  const user = await prisma.users.findUnique({
     where: { email },
     select: {
       id: true,
@@ -40,7 +40,7 @@ async function main() {
     const newHash = await bcrypt.hash(testPassword, 10)
 
     // Update user
-    await prisma.user.update({
+    await prisma.users.update({
       where: { email },
       data: { password: newHash },
     })

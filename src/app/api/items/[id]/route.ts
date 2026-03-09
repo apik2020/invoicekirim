@@ -20,7 +20,7 @@ export async function PUT(
     }
 
     // Verify item belongs to user
-    const item = await prisma.item.findFirst({
+    const item = await prisma.items.findFirst({
       where: {
         id,
         userId: session.user.id,
@@ -36,7 +36,7 @@ export async function PUT(
 
     // Check if SKU is being changed and if it conflicts with another item
     if (sku && sku !== item.sku) {
-      const existingItem = await prisma.item.findFirst({
+      const existingItem = await prisma.items.findFirst({
         where: {
           userId: session.user.id,
           sku,
@@ -52,7 +52,7 @@ export async function PUT(
       }
     }
 
-    const updatedItem = await prisma.item.update({
+    const updatedItem = await prisma.items.update({
       where: { id },
       data: {
         name,
@@ -89,7 +89,7 @@ export async function DELETE(
     }
 
     // Verify item belongs to user
-    const item = await prisma.item.findFirst({
+    const item = await prisma.items.findFirst({
       where: {
         id,
         userId: session.user.id,
@@ -100,7 +100,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Item not found' }, { status: 404 })
     }
 
-    await prisma.item.delete({
+    await prisma.items.delete({
       where: { id },
     })
 

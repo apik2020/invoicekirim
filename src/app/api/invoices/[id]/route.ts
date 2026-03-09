@@ -16,13 +16,13 @@ export async function GET(
     }
 
     const { id } = await params
-    const invoice = await prisma.invoice.findFirst({
+    const invoice = await prisma.invoices.findFirst({
       where: {
         id,
         userId: session.user.id,
       },
       include: {
-        items: true,
+        invoice_items: true,
       },
     })
 
@@ -52,7 +52,7 @@ export async function PUT(
 
     const { id } = await params
     // Check if invoice exists and belongs to user
-    const existingInvoice = await prisma.invoice.findFirst({
+    const existingInvoice = await prisma.invoices.findFirst({
       where: {
         id,
         userId: session.user.id,
@@ -106,7 +106,7 @@ export async function PUT(
 
     // Check if invoice number is unique
     if (invoiceNumber && invoiceNumber !== existingInvoice.invoiceNumber) {
-      const duplicateInvoice = await prisma.invoice.findUnique({
+      const duplicateInvoice = await prisma.invoices.findUnique({
         where: { invoiceNumber },
       })
 
@@ -120,13 +120,13 @@ export async function PUT(
 
     // Delete existing items if new items are provided
     if (items && items.length > 0) {
-      await prisma.invoiceItem.deleteMany({
+      await prisma.invoice_items.deleteMany({
         where: { invoiceId: id },
       })
     }
 
     // Update invoice
-    const invoice = await prisma.invoice.update({
+    const invoice = await prisma.invoices.update({
       where: { id },
       data: {
         ...data,
@@ -140,8 +140,9 @@ export async function PUT(
         taxAmount,
         total,
         ...(items && {
-          items: {
+          invoice_items: {
             create: items.map((item) => ({
+              id: crypto.randomUUID(),
               description: item.description,
               quantity: item.quantity,
               price: item.price,
@@ -149,7 +150,7 @@ export async function PUT(
           },
         }),
       },
-      include: { items: true },
+      include: { invoice_items: true },
     })
 
     // Log activity
@@ -179,7 +180,7 @@ export async function DELETE(
 
     const { id } = await params
     // Check if invoice exists and belongs to user
-    const invoice = await prisma.invoice.findFirst({
+    const invoice = await prisma.invoices.findFirst({
       where: {
         id,
         userId: session.user.id,
@@ -206,7 +207,7 @@ export async function DELETE(
     }
 
     // Delete invoice (cascade will delete items)
-    await prisma.invoice.delete({
+    await prisma.invoices.delete({
       where: { id },
     })
 

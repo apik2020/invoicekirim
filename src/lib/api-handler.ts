@@ -39,7 +39,7 @@ export function withApiHandler(
         // Admin check
         if (config.requireAdmin) {
           const { prisma } = await import('@/lib/prisma')
-          const isAdmin = session.user.email ? await prisma.admin.findUnique({
+          const isAdmin = session.user.email ? await prisma.admins.findUnique({
             where: { email: session.user.email },
             select: { id: true },
           }) : null

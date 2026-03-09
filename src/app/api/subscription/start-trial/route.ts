@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if user already has a subscription
-    const existingSubscription = await prisma.subscription.findUnique({
+    const existingSubscription = await prisma.subscriptions.findUnique({
       where: { userId: session.user.id },
     })
 
@@ -20,13 +20,15 @@ export async function POST(req: NextRequest) {
       const now = new Date()
       const trialEndsAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000) // 7 days
 
-      const subscription = await prisma.subscription.create({
+      const subscription = await prisma.subscriptions.create({
         data: {
+          id: crypto.randomUUID(),
           userId: session.user.id,
           status: 'TRIALING',
           planType: 'PRO',
           trialStartsAt: now,
           trialEndsAt: trialEndsAt,
+          updatedAt: new Date(),
         },
       })
 
@@ -55,7 +57,7 @@ export async function POST(req: NextRequest) {
     const now = new Date()
     const trialEndsAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000) // 7 days
 
-    const subscription = await prisma.subscription.update({
+    const subscription = await prisma.subscriptions.update({
       where: { id: existingSubscription.id },
       data: {
         status: 'TRIALING',
@@ -67,8 +69,9 @@ export async function POST(req: NextRequest) {
     })
 
     // Log activity
-    await prisma.activityLog.create({
+    await prisma.activity_logs.create({
       data: {
+        id: crypto.randomUUID(),
         userId: session.user.id,
         action: 'UPDATED',
         entityType: 'Subscription',

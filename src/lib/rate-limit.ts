@@ -107,37 +107,41 @@ async function checkPostgresRateLimit(
     // Use upsert for atomic operation
     const result = await prisma.$transaction(async (tx) => {
       // Clean up expired entries first
-      await tx.rateLimitEntry.deleteMany({
+      await tx.rate_limit_entries.deleteMany({
         where: {
           resetAt: { lt: now },
         },
       })
 
       // Get or create entry
-      let entry = await tx.rateLimitEntry.findUnique({
+      let entry = await tx.rate_limit_entries.findUnique({
         where: { key },
       })
 
       if (!entry || entry.resetAt < now) {
         // Create new entry or reset expired entry
-        entry = await tx.rateLimitEntry.upsert({
+        entry = await tx.rate_limit_entries.upsert({
           where: { key },
           create: {
+            id: crypto.randomUUID(),
             key,
             count: 1,
             resetAt,
+            updatedAt: new Date(),
           },
           update: {
             count: 1,
             resetAt,
+            updatedAt: new Date(),
           },
         })
       } else {
         // Increment count
-        entry = await tx.rateLimitEntry.update({
+        entry = await tx.rate_limit_entries.update({
           where: { key },
           data: {
             count: { increment: 1 },
+            updatedAt: new Date(),
           },
         })
       }
@@ -402,7 +406,7 @@ export function withRateLimit(
  * Clean up expired rate limit entries (can be called by cron job)
  */
 export async function cleanupExpiredRateLimits(): Promise<number> {
-  const result = await prisma.rateLimitEntry.deleteMany({
+  const result = await prisma.rate_limit_entries.deleteMany({
     where: {
       resetAt: { lt: new Date() },
     },

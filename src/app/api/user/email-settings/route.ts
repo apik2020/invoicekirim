@@ -38,7 +38,7 @@ export async function PUT(req: NextRequest) {
       updateData.smtpPass = smtpPass
     }
 
-    const updatedUser = await prisma.user.update({
+    const updatedUser = await prisma.users.update({
       where: { id: session.user.id },
       data: updateData,
       select: {

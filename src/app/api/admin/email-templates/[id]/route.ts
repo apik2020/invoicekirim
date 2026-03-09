@@ -18,7 +18,7 @@ export async function GET(
     }
 
     const { id } = await params
-    const template = await prisma.emailTemplate.findUnique({
+    const template = await prisma.email_templates.findUnique({
       where: { id },
     })
 
@@ -52,7 +52,7 @@ export async function PATCH(
     const body = await req.json()
     const { subject, body: templateBody, variables, isActive } = body
 
-    const template = await prisma.emailTemplate.update({
+    const template = await prisma.email_templates.update({
       where: { id },
       data: {
         ...(subject !== undefined && { subject }),
@@ -85,7 +85,7 @@ export async function DELETE(
     }
 
     const { id } = await params
-    await prisma.emailTemplate.delete({
+    await prisma.email_templates.delete({
       where: { id },
     })
 

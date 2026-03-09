@@ -29,10 +29,10 @@ export async function GET(
       return NextResponse.json({ error: 'Team not found' }, { status: 404 })
     }
 
-    const members = await prisma.teamMember.findMany({
+    const members = await prisma.team_members.findMany({
       where: { teamId },
       include: {
-        user: {
+        users: {
           select: { id: true, name: true, email: true, image: true },
         },
       },

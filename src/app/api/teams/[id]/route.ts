@@ -30,12 +30,12 @@ export async function GET(
       return NextResponse.json({ error: 'Team not found' }, { status: 404 })
     }
 
-    const team = await prisma.team.findUnique({
+    const team = await prisma.teams.findUnique({
       where: { id: teamId },
       include: {
-        members: {
+        team_members: {
           include: {
-            user: {
+            users: {
               select: { id: true, name: true, email: true, image: true },
             },
           },
@@ -46,7 +46,7 @@ export async function GET(
           select: {
             invoices: true,
             clients: true,
-            apiKeys: true,
+            api_keys: true,
             webhooks: true,
           },
         },
@@ -95,7 +95,7 @@ export async function PUT(
       )
     }
 
-    const team = await prisma.team.update({
+    const team = await prisma.teams.update({
       where: { id: teamId },
       data: {
         name: validated.data.name,

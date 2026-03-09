@@ -20,13 +20,13 @@ export async function GET(
     }
 
     const { id } = await params
-    const payment = await prisma.payment.findFirst({
+    const payment = await prisma.payments.findFirst({
       where: {
         id,
         userId: session.user.id,
       },
       include: {
-        user: {
+        users: {
           select: {
             name: true,
             email: true,
@@ -47,6 +47,8 @@ export async function GET(
       return NextResponse.json({ error: 'Receipt not generated' }, { status: 400 })
     }
 
+    const user = payment.users
+
     // Generate PDF
     const pdfBuffer = await generateReceiptPDF({
       receiptNumber: payment.receiptNumber,
@@ -55,8 +57,8 @@ export async function GET(
       currency: payment.currency,
       paymentMethod: 'Stripe',
       description: payment.description || 'InvoiceKirim Subscription Payment',
-      customerName: payment.user.name || payment.user.email,
-      customerEmail: payment.user.email,
+      customerName: user?.name || user?.email || 'Customer',
+      customerEmail: user?.email || '',
       invoiceNumber: payment.invoiceId || undefined,
     })
 

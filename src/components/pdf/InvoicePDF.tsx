@@ -9,13 +9,13 @@ import {
   PDFViewer,
   PDFDownloadLink,
 } from '@react-pdf/renderer'
-import { Invoice, InvoiceItem } from '@prisma/client'
+import { invoices, invoice_items } from '@prisma/client'
 
 // Register font (optional - using default fonts for now)
 // For production, you might want to use custom fonts
 
-interface InvoiceWithItems extends Omit<Invoice, 'items'> {
-  items: InvoiceItem[]
+interface InvoiceWithItems extends Omit<invoices, 'invoice_items'> {
+  items: invoice_items[]
 }
 
 interface InvoicePDFProps {

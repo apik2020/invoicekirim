@@ -9,9 +9,9 @@ export async function GET(
     const { token } = await params
 
     // Find invoice by access token
-    const invoice = await prisma.invoice.findUnique({
+    const invoice = await prisma.invoices.findUnique({
       where: { accessToken: token },
-      include: { items: true },
+      include: { invoice_items: true },
     })
 
     if (!invoice) {

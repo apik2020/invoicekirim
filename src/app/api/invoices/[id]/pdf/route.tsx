@@ -18,12 +18,12 @@ export async function GET(
     const { id } = await params
 
     // Get invoice with items
-    const invoice = await prisma.invoice.findFirst({
+    const invoice = await prisma.invoices.findFirst({
       where: {
         id,
         userId: session.user.id,
       },
-      include: { items: true },
+      include: { invoice_items: true },
     })
 
     if (!invoice) {

@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
-import { FileText, Plus, Search, Trash2, Eye, Loader2, Download, Send, LayoutTemplate } from 'lucide-react'
+import { FileText, Plus, Search, Trash2, Eye, Loader2, Download, LayoutTemplate } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { DashboardLayout } from '@/components/DashboardLayout'
+import { InvoiceExportButton } from '@/components/invoices/InvoiceExportButton'
 
 interface InvoiceItem {
   id: string
@@ -88,17 +89,7 @@ export default function InvoicesPage() {
     CANCELED: 0,
   })
 
-  useEffect(() => {
-    setMounted(true)
-
-    if (!sessionResult || sessionResult.status === 'unauthenticated') {
-      router.push('/login')
-    } else if (sessionResult.status === 'authenticated') {
-      fetchInvoices()
-    }
-  }, [sessionResult, router])
-
-  const fetchInvoices = async () => {
+  const fetchInvoices = useCallback(async () => {
     try {
       // For OVERDUE filter, we need to fetch both SENT and OVERDUE invoices
       // then filter client-side by effective status
@@ -143,7 +134,17 @@ export default function InvoicesPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [statusFilter, searchQuery])
+
+  useEffect(() => {
+    setMounted(true)
+
+    if (!sessionResult || sessionResult.status === 'unauthenticated') {
+      router.push('/login')
+    } else if (sessionResult.status === 'authenticated') {
+      fetchInvoices()
+    }
+  }, [sessionResult, router, fetchInvoices])
 
   useEffect(() => {
     if (sessionResult?.status === 'authenticated') {
@@ -153,7 +154,7 @@ export default function InvoicesPage() {
 
       return () => clearTimeout(delayedFetch)
     }
-  }, [statusFilter, searchQuery, sessionResult?.status])
+  }, [statusFilter, searchQuery, sessionResult?.status, fetchInvoices])
 
   const handleDelete = async (id: string) => {
     if (!confirm('Apakah Anda yakin ingin menghapus invoice ini?')) return
@@ -225,6 +226,10 @@ export default function InvoicesPage() {
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
+            <InvoiceExportButton
+              status={statusFilter}
+              search={searchQuery}
+            />
             <Link
               href="/dashboard/invoices/create"
               className="inline-flex items-center justify-center gap-2 px-6 py-3 btn-primary font-bold"

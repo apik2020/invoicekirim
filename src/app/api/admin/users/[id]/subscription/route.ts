@@ -22,21 +22,23 @@ export async function PATCH(
     const { planType, status, stripeCustomerId } = body
 
     // Get or create subscription
-    let subscription = await prisma.subscription.findUnique({
+    let subscription = await prisma.subscriptions.findUnique({
       where: { userId: id },
     })
 
     if (!subscription) {
-      subscription = await prisma.subscription.create({
+      subscription = await prisma.subscriptions.create({
         data: {
+          id: crypto.randomUUID(),
           userId: id,
           status: status || (planType === 'PRO' ? 'ACTIVE' : 'FREE'),
           planType: planType || 'FREE',
           stripeCustomerId,
+          updatedAt: new Date(),
         },
       })
     } else {
-      subscription = await prisma.subscription.update({
+      subscription = await prisma.subscriptions.update({
         where: { userId: id },
         data: {
           ...(planType && { planType }),

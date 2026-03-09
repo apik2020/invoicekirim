@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import {
@@ -36,26 +36,14 @@ export default function DashboardPage() {
   const [subscription, setSubscription] = useState<Subscription | null>(null)
   const [showUpgradeBanner, setShowUpgradeBanner] = useState(true)
 
-  // Auto logout after 1 minute of inactivity (for testing)
+  // Auto logout after 5 minutes of inactivity
   const { showWarning, timeRemaining, stayLoggedIn, logout } = useAutoLogout({
-    timeout: 1 * 60 * 1000,
-    warningTime: 30 * 1000,
+    timeout: 5 * 60 * 1000, // 5 minutes
+    warningTime: 60 * 1000, // 1 minute warning before logout
     redirectPath: '/login',
   })
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login')
-      return
-    }
-
-    if (status === 'authenticated' && session?.user) {
-      fetchDashboardData()
-      fetchSubscription()
-    }
-  }, [status, session, router])
-
-  const fetchSubscription = async () => {
+  const fetchSubscription = useCallback(async () => {
     try {
       const res = await fetch('/api/subscription')
       if (res.ok) {
@@ -65,9 +53,9 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('Error fetching subscription:', error)
     }
-  }
+  }, [])
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       setError(null)
       const response = await fetch('/api/user/dashboard-data', {
@@ -93,7 +81,19 @@ export default function DashboardPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [router])
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login')
+      return
+    }
+
+    if (status === 'authenticated' && session?.user) {
+      fetchDashboardData()
+      fetchSubscription()
+    }
+  }, [status, session, router, fetchDashboardData, fetchSubscription])
 
   const handleRetry = () => {
     setLoading(true)

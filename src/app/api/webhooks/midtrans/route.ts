@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { verifyNotificationSignature, getTransactionStatus } from '@/lib/midtrans'
+import { verifyNotificationSignature } from '@/lib/midtrans'
 import { createReceipt } from '@/lib/receipt-generator'
 import { logger } from '@/lib/logger'
 
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Find payment by order ID
-    const payment = await prisma.payment.findFirst({
+    const payment = await prisma.payments.findFirst({
       where: { midtransOrderId: order_id },
     })
 
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
       // Payment successful
       if (fraud_status === 'accept' || !fraud_status) {
         // Update payment status
-        await prisma.payment.update({
+        await prisma.payments.update({
           where: { id: payment.id },
           data: {
             status: 'COMPLETED',
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
         })
 
         // Update or create subscription
-        const existingSubscription = await prisma.subscription.findFirst({
+        const existingSubscription = await prisma.subscriptions.findFirst({
           where: { userId: payment.userId },
         })
 
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
         periodEndDate.setMonth(periodEndDate.getMonth() + 1)
 
         if (existingSubscription) {
-          await prisma.subscription.update({
+          await prisma.subscriptions.update({
             where: { id: existingSubscription.id },
             data: {
               planType: 'PRO',
@@ -78,12 +78,14 @@ export async function POST(req: NextRequest) {
             },
           })
         } else {
-          await prisma.subscription.create({
+          await prisma.subscriptions.create({
             data: {
+              id: crypto.randomUUID(),
               userId: payment.userId,
               planType: 'PRO',
               status: 'ACTIVE',
               stripeCurrentPeriodEnd: periodEndDate,
+              updatedAt: new Date(),
             },
           })
         }
@@ -96,8 +98,9 @@ export async function POST(req: NextRequest) {
         }
 
         // Log activity
-        await prisma.activityLog.create({
+        await prisma.activity_logs.create({
           data: {
+            id: crypto.randomUUID(),
             userId: payment.userId,
             action: 'UPDATED',
             entityType: 'Subscription',
@@ -111,7 +114,7 @@ export async function POST(req: NextRequest) {
       }
     } else if (transaction_status === 'pending') {
       // Payment pending
-      await prisma.payment.update({
+      await prisma.payments.update({
         where: { id: payment.id },
         data: {
           status: 'PENDING',
@@ -123,7 +126,7 @@ export async function POST(req: NextRequest) {
       logger.dev('Midtrans', 'Payment pending for order:', order_id)
     } else if (transaction_status === 'deny' || transaction_status === 'cancel') {
       // Payment denied or cancelled
-      await prisma.payment.update({
+      await prisma.payments.update({
         where: { id: payment.id },
         data: {
           status: 'FAILED',
@@ -133,7 +136,7 @@ export async function POST(req: NextRequest) {
       logger.dev('Midtrans', 'Payment failed for order:', order_id)
     } else if (transaction_status === 'expire') {
       // Payment expired
-      await prisma.payment.update({
+      await prisma.payments.update({
         where: { id: payment.id },
         data: {
           status: 'FAILED',

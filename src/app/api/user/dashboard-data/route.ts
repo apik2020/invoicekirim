@@ -25,7 +25,7 @@ async function withRetry<T>(
   throw lastError
 }
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     if (!session?.user?.id) {
@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Check if user is admin - block access to user dashboard
-    const admin = await prisma.admin.findUnique({
+    const admin = await prisma.admins.findUnique({
       where: { email: session.user.email! },
       select: { id: true },
     })
@@ -48,21 +48,21 @@ export async function GET(req: NextRequest) {
     const userId = session.user.id
 
     const [invoices, subscription, activityLogs, dueInvoices] = await Promise.all([
-      withRetry(() => prisma.invoice.findMany({
+      withRetry(() => prisma.invoices.findMany({
         where: { userId },
         orderBy: { createdAt: 'desc' },
         take: 10,
-        include: { items: true },
+        include: { invoice_items: true },
       })),
-      withRetry(() => prisma.subscription.findUnique({
+      withRetry(() => prisma.subscriptions.findUnique({
         where: { userId },
       })),
-      withRetry(() => prisma.activityLog.findMany({
+      withRetry(() => prisma.activity_logs.findMany({
         where: { userId },
         orderBy: { createdAt: 'desc' },
         take: 10,
       })),
-      withRetry(() => prisma.invoice.findMany({
+      withRetry(() => prisma.invoices.findMany({
         where: {
           userId,
           dueDate: { not: null },
@@ -75,8 +75,8 @@ export async function GET(req: NextRequest) {
 
     // Calculate stats from ALL invoices
     const [allInvoices, stats] = await Promise.all([
-      withRetry(() => prisma.invoice.findMany({ where: { userId } })),
-      withRetry(() => prisma.invoice.groupBy({
+      withRetry(() => prisma.invoices.findMany({ where: { userId } })),
+      withRetry(() => prisma.invoices.groupBy({
         by: ['status'],
         where: { userId },
         _count: { id: true },

@@ -10,8 +10,9 @@ export async function logActivity(params: {
   description?: string
   metadata?: any
 }) {
-  return await prisma.activityLog.create({
+  return await prisma.activity_logs.create({
     data: {
+      id: crypto.randomUUID(),
       userId: params.userId,
       action: params.action,
       entityType: params.entityType,

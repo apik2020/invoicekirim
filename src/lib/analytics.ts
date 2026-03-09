@@ -71,7 +71,7 @@ export async function getAnalytics(params: {
   const lastMonthEnd = endOfMonth(subMonths(now, 1))
 
   // Get invoice stats
-  const invoices = await prisma.invoice.findMany({
+  const invoices = await prisma.invoices.findMany({
     where: whereClause,
     select: {
       total: true,
@@ -82,7 +82,7 @@ export async function getAnalytics(params: {
   })
 
   // Get payment stats
-  const payments = await prisma.payment.findMany({
+  const payments = await prisma.payments.findMany({
     where: {
       ...whereClause,
       status: 'COMPLETED',
@@ -94,7 +94,7 @@ export async function getAnalytics(params: {
   })
 
   // Get client stats
-  const clients = await prisma.client.findMany({
+  const clients = await prisma.clients.findMany({
     where: whereClause,
     select: {
       id: true,
@@ -160,7 +160,7 @@ export async function getAnalytics(params: {
     : 0
 
   // Calculate customer lifetime value
-  const clientRevenues = await prisma.invoice.groupBy({
+  const clientRevenues = await prisma.invoices.groupBy({
     by: ['clientId'],
     where: {
       ...whereClause,
@@ -175,7 +175,7 @@ export async function getAnalytics(params: {
     : 0
 
   // Calculate average payment time (days between invoice sent and paid)
-  const paidInvoicesWithDates = await prisma.invoice.findMany({
+  const paidInvoicesWithDates = await prisma.invoices.findMany({
     where: {
       ...whereClause,
       status: 'PAID',
@@ -237,7 +237,7 @@ export async function getRevenueByMonth(params: {
   const now = new Date()
   const startDate = subMonths(now, months - 1)
 
-  const payments = await prisma.payment.findMany({
+  const payments = await prisma.payments.findMany({
     where: {
       ...whereClause,
       status: 'COMPLETED',
@@ -249,7 +249,7 @@ export async function getRevenueByMonth(params: {
     },
   })
 
-  const invoices = await prisma.invoice.findMany({
+  const invoices = await prisma.invoices.findMany({
     where: {
       ...whereClause,
       createdAt: { gte: startOfMonth(startDate) },
@@ -296,7 +296,7 @@ export async function getInvoiceStatusBreakdown(params: {
   if (userId) whereClause.userId = userId
   if (teamId) whereClause.teamId = teamId
 
-  const statusCounts = await prisma.invoice.groupBy({
+  const statusCounts = await prisma.invoices.groupBy({
     by: ['status'],
     where: whereClause,
     _count: { id: true },

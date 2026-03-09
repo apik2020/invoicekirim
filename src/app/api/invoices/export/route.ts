@@ -1,0 +1,139 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
+import { generateInvoicesCSV, generateInvoicesExcel, InvoiceExportData } from '@/lib/export-invoices'
+
+// Force dynamic rendering
+export const dynamic = 'force-dynamic'
+
+// GET /api/invoices/export - Export invoices to CSV or Excel
+export async function GET(req: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(req.url)
+    const format = searchParams.get('format') || 'csv' // csv or excel
+    const status = searchParams.get('status') // Filter by status
+    const search = searchParams.get('search') // Search query
+    const startDate = searchParams.get('startDate') // Start date filter
+    const endDate = searchParams.get('endDate') // End date filter
+
+    // Build where clause
+    const where: any = {
+      userId: session.user.id,
+    }
+
+    if (status && status !== 'ALL') {
+      where.status = status
+    }
+
+    if (search) {
+      where.OR = [
+        { invoiceNumber: { contains: search, mode: 'insensitive' } },
+        { clientName: { contains: search, mode: 'insensitive' } },
+        { clientEmail: { contains: search, mode: 'insensitive' } },
+      ]
+    }
+
+    if (startDate || endDate) {
+      where.date = {}
+      if (startDate) {
+        where.date.gte = new Date(startDate)
+      }
+      if (endDate) {
+        where.date.lte = new Date(endDate)
+      }
+    }
+
+    // Fetch invoices with items and client relation
+    const invoices = await prisma.invoices.findMany({
+      where,
+      include: {
+        invoice_items: {
+          select: {
+            description: true,
+            quantity: true,
+            price: true,
+          },
+        },
+        clients: {
+          select: {
+            name: true,
+            company: true,
+          },
+        },
+      },
+      orderBy: { date: 'desc' },
+    })
+
+    if (invoices.length === 0) {
+      return NextResponse.json(
+        { error: 'Tidak ada invoice untuk diekspor' },
+        { status: 400 }
+      )
+    }
+
+    // Transform data for export - flatten items
+    const exportData: InvoiceExportData[] = invoices.map((invoice) => ({
+      id: invoice.id,
+      invoiceNumber: invoice.invoiceNumber,
+      date: invoice.date,
+      dueDate: invoice.dueDate,
+      clientName: invoice.clientName,
+      clientEmail: invoice.clientEmail,
+      clientPhone: invoice.clientPhone,
+      clientCompany: invoice.clients?.company || '',
+      status: invoice.status,
+      subtotal: invoice.subtotal,
+      taxRate: invoice.taxRate,
+      taxAmount: invoice.taxAmount,
+      discountType: invoice.discountType,
+      discountValue: invoice.discountValue,
+      discountAmount: invoice.discountAmount,
+      total: invoice.total,
+      notes: invoice.notes,
+      items: invoice.invoice_items.map((item) => ({
+        description: item.description,
+        quantity: item.quantity,
+        price: item.price,
+        total: item.quantity * item.price,
+      })),
+    }))
+
+    const timestamp = new Date().toISOString().split('T')[0]
+
+    if (format === 'excel') {
+      // Generate Excel file
+      const buffer = await generateInvoicesExcel(exportData)
+
+      return new NextResponse(new Uint8Array(buffer), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'Content-Disposition': `attachment; filename="invoices-${timestamp}.xlsx"`,
+        },
+      })
+    } else {
+      // Generate CSV
+      const csv = generateInvoicesCSV(exportData)
+
+      return new NextResponse(csv, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/csv; charset=utf-8',
+          'Content-Disposition': `attachment; filename="invoices-${timestamp}.csv"`,
+        },
+      })
+    }
+  } catch (error) {
+    console.error('Export invoices error:', error)
+    return NextResponse.json(
+      { error: 'Gagal mengekspor invoice' },
+      { status: 500 }
+    )
+  }
+}

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { DashboardLayout } from '@/components/DashboardLayout'
+import { TwoFactorSetup } from '@/components/settings/TwoFactorSetup'
 import {
   Lock,
   Eye,
@@ -20,6 +21,7 @@ export default function SecurityPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false)
 
   // Password State
   const [passwordData, setPasswordData] = useState({
@@ -297,6 +299,14 @@ export default function SecurityPage() {
             </button>
           </div>
         </form>
+      </div>
+
+      {/* Two-Factor Authentication */}
+      <div className="mt-8">
+        <TwoFactorSetup
+          isEnabled={twoFactorEnabled}
+          onStatusChange={setTwoFactorEnabled}
+        />
       </div>
     </DashboardLayout>
   )

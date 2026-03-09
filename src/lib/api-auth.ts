@@ -20,7 +20,7 @@ export async function verifyRegularUser(req: NextRequest) {
   }
 
   // Check if user is admin
-  const admin = await prisma.admin.findUnique({
+  const admin = await prisma.admins.findUnique({
     where: { email: session.user.email! },
     select: { id: true },
   })
@@ -60,7 +60,7 @@ export async function verifyAuthenticated(req: NextRequest) {
 export async function isAdminSession(session: { email?: string | null }) {
   if (!session?.email) return false
 
-  const admin = await prisma.admin.findUnique({
+  const admin = await prisma.admins.findUnique({
     where: { email: session.email },
     select: { id: true },
   })

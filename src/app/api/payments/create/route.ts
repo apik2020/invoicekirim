@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { paymentMethod, bankCode, planType, billingCycle } = body
+    const { paymentMethod, bankCode, billingCycle } = body
 
     // Validate payment method
     const validMethods = ['VA', 'QRIS', 'SNAP']
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     const orderId = `IK-${Date.now()}-${session.user.id.slice(-6)}`
 
     // Get user info
-    const user = await prisma.user.findUnique({
+    const user = await prisma.users.findUnique({
       where: { id: session.user.id },
       select: { name: true, email: true },
     })
@@ -52,8 +52,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Create pending payment record
-    const payment = await prisma.payment.create({
+    const payment = await prisma.payments.create({
       data: {
+        id: crypto.randomUUID(),
         userId: session.user.id,
         midtransOrderId: orderId,
         amount,
@@ -62,6 +63,7 @@ export async function POST(req: NextRequest) {
         status: 'PENDING',
         paymentMethod,
         paymentGateway: 'MIDTRANS',
+        updatedAt: new Date(),
       },
     })
 
@@ -78,7 +80,7 @@ export async function POST(req: NextRequest) {
       })
 
       // Update payment with VA details
-      await prisma.payment.update({
+      await prisma.payments.update({
         where: { id: payment.id },
         data: {
           vaNumber: vaResult.vaNumber,
@@ -111,7 +113,7 @@ export async function POST(req: NextRequest) {
       })
 
       // Update payment with QRIS details
-      await prisma.payment.update({
+      await prisma.payments.update({
         where: { id: payment.id },
         data: {
           qrisUrl: qrisResult.qrImageUrl,

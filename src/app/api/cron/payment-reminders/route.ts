@@ -23,7 +23,6 @@ export const dynamic = 'force-dynamic'
 export async function GET(req: NextRequest) {
   try {
     // Verify cron secret to prevent unauthorized access
-    const authHeader = req.headers.get('authorization')
     const cronSecret = req.headers.get('x-cron-secret')
 
     if (cronSecret !== process.env.CRON_SECRET) {
@@ -42,7 +41,7 @@ export async function GET(req: NextRequest) {
     // 1. Find invoices due in 3 days (for reminder)
     const threeDaysFromNow = addDays(today, 3)
 
-    const invoicesDueSoon = await prisma.invoice.findMany({
+    const invoicesDueSoon = await prisma.invoices.findMany({
       where: {
         status: { in: ['SENT', 'OVERDUE'] },
         dueDate: {
@@ -51,7 +50,7 @@ export async function GET(req: NextRequest) {
         },
       },
       include: {
-        user: {
+        users: {
           select: {
             id: true,
             name: true,
@@ -63,7 +62,7 @@ export async function GET(req: NextRequest) {
     })
 
     // 2. Find overdue invoices
-    const overdueInvoices = await prisma.invoice.findMany({
+    const overdueInvoices = await prisma.invoices.findMany({
       where: {
         status: { in: ['SENT', 'OVERDUE'] },
         dueDate: {
@@ -71,7 +70,7 @@ export async function GET(req: NextRequest) {
         },
       },
       include: {
-        user: {
+        users: {
           select: {
             id: true,
             name: true,
@@ -92,7 +91,7 @@ export async function GET(req: NextRequest) {
         if (daysUntilDue <= 0) continue
 
         // Check if we already sent a reminder today
-        const existingReminder = await prisma.activityLog.findFirst({
+        const existingReminder = await prisma.activity_logs.findFirst({
           where: {
             userId: invoice.userId,
             entityType: 'INVOICE',
@@ -108,12 +107,13 @@ export async function GET(req: NextRequest) {
 
         // Send reminder email
         const invoiceUrl = `${process.env.NEXT_PUBLIC_APP_URL}/invoice/${invoice.accessToken}`
+        const user = invoice.users
 
         await sendPaymentReminder({
           to: invoice.clientEmail,
           invoiceNumber: invoice.invoiceNumber,
           clientName: invoice.clientName,
-          companyName: invoice.user.companyName || invoice.user.name || 'InvoiceKirim',
+          companyName: user?.companyName || user?.name || 'InvoiceKirim',
           total: formatCurrency(invoice.total),
           dueDate: formatDate(invoice.dueDate),
           daysUntilDue,
@@ -121,8 +121,9 @@ export async function GET(req: NextRequest) {
         })
 
         // Log the reminder
-        await prisma.activityLog.create({
+        await prisma.activity_logs.create({
           data: {
+            id: crypto.randomUUID(),
             userId: invoice.userId,
             action: 'REMINDER_SENT',
             entityType: 'INVOICE',
@@ -150,7 +151,7 @@ export async function GET(req: NextRequest) {
 
         // Update invoice status to OVERDUE if not already
         if (invoice.status !== 'OVERDUE') {
-          await prisma.invoice.update({
+          await prisma.invoices.update({
             where: { id: invoice.id },
             data: { status: 'OVERDUE' },
           })
@@ -158,7 +159,7 @@ export async function GET(req: NextRequest) {
 
         // Check if we already sent an overdue notice this week
         const weekAgo = addDays(today, -7)
-        const existingNotice = await prisma.activityLog.findFirst({
+        const existingNotice = await prisma.activity_logs.findFirst({
           where: {
             userId: invoice.userId,
             entityType: 'INVOICE',
@@ -174,12 +175,13 @@ export async function GET(req: NextRequest) {
 
         // Send overdue notice email
         const invoiceUrl = `${process.env.NEXT_PUBLIC_APP_URL}/invoice/${invoice.accessToken}`
+        const user = invoice.users
 
         await sendInvoiceOverdue({
           to: invoice.clientEmail,
           invoiceNumber: invoice.invoiceNumber,
           clientName: invoice.clientName,
-          companyName: invoice.user.companyName || invoice.user.name || 'InvoiceKirim',
+          companyName: user?.companyName || user?.name || 'InvoiceKirim',
           total: formatCurrency(invoice.total),
           dueDate: formatDate(invoice.dueDate),
           daysOverdue,
@@ -187,8 +189,9 @@ export async function GET(req: NextRequest) {
         })
 
         // Log the overdue notice
-        await prisma.activityLog.create({
+        await prisma.activity_logs.create({
           data: {
+            id: crypto.randomUUID(),
             userId: invoice.userId,
             action: 'OVERDUE_NOTICE_SENT',
             entityType: 'INVOICE',

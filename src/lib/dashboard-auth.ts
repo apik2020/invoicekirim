@@ -16,7 +16,7 @@ export async function ensureNotAdmin() {
   }
 
   // Check if this email belongs to an admin
-  const admin = await prisma.admin.findUnique({
+  const admin = await prisma.admins.findUnique({
     where: { email: session.user.email },
     select: { id: true },
   })

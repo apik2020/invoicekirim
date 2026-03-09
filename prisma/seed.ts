@@ -9,13 +9,17 @@ async function main() {
   // Create admin user
   const adminPassword = await bcrypt.hash('admin123', 12)
 
-  const admin = await prisma.admin.upsert({
+  const admin = await prisma.admins.upsert({
     where: { email: 'admin@invoicekirim.com' },
-    update: {},
+    update: {
+      updatedAt: new Date(),
+    },
     create: {
+      id: crypto.randomUUID(),
       email: 'admin@invoicekirim.com',
       name: 'Admin',
       password: adminPassword,
+      updatedAt: new Date(),
     },
   })
 
@@ -24,19 +28,30 @@ async function main() {
   // Create test user
   const hashedPassword = await bcrypt.hash('password123', 12)
 
-  const user = await prisma.user.upsert({
+  const user = await prisma.users.upsert({
     where: { email: 'test@example.com' },
-    update: {},
+    update: {
+      updatedAt: new Date(),
+    },
     create: {
+      id: crypto.randomUUID(),
       email: 'test@example.com',
       name: 'Test User',
       password: hashedPassword,
-      subscription: {
-        create: {
-          status: 'FREE',
-          planType: 'FREE',
-        },
-      },
+      updatedAt: new Date(),
+    },
+  })
+
+  // Create subscription for test user
+  await prisma.subscriptions.upsert({
+    where: { userId: user.id },
+    update: {},
+    create: {
+      id: crypto.randomUUID(),
+      userId: user.id,
+      status: 'FREE',
+      planType: 'FREE',
+      updatedAt: new Date(),
     },
   })
 
@@ -48,10 +63,12 @@ async function main() {
   const month = String(now.getMonth() + 1).padStart(2, '0')
   const invoiceNumber = `INV-${year}-${month}-001`
 
-  const invoice = await prisma.invoice.create({
+  const invoice = await prisma.invoices.create({
     data: {
+      id: crypto.randomUUID(),
       userId: user.id,
       invoiceNumber,
+      accessToken: crypto.randomUUID(),
       date: new Date(),
       dueDate: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
       companyName: 'Test Company',
@@ -68,15 +85,18 @@ async function main() {
       taxAmount: 110000,
       total: 1110000,
       status: 'DRAFT',
-      items: {
-        create: [
-          {
-            description: 'Web Development Service',
-            quantity: 1,
-            price: 1000000,
-          },
-        ],
-      },
+      updatedAt: new Date(),
+    },
+  })
+
+  // Create invoice item
+  await prisma.invoice_items.create({
+    data: {
+      id: crypto.randomUUID(),
+      invoiceId: invoice.id,
+      description: 'Web Development Service',
+      quantity: 1,
+      price: 1000000,
     },
   })
 

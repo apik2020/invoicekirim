@@ -7,7 +7,7 @@ import { stripe } from '@/lib/stripe'
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Get user's subscription
-    const subscription = await prisma.subscription.findUnique({
+    const subscription = await prisma.subscriptions.findUnique({
       where: { userId: session.user.id },
     })
 
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     })
 
     // Update in database immediately (will take effect at period end)
-    await prisma.subscription.update({
+    await prisma.subscriptions.update({
       where: { userId: session.user.id },
       data: {
         status: 'CANCELED',

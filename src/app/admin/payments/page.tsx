@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
-import { useRouter } from 'next/navigation'
 import {
   CreditCard,
   Search,
@@ -12,15 +11,10 @@ import {
   XCircle,
   Clock,
   Loader2,
-  LogOut,
   AlertCircle,
-  Users,
-  Mail,
-  Activity,
-  LayoutDashboard,
 } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { AdminLogo } from '@/components/Logo'
+import { AdminLayout } from '@/components/admin/AdminLayout'
 import { cn } from '@/lib/utils'
 
 interface Payment {
@@ -36,7 +30,7 @@ interface Payment {
     id: string
     name: string | null
     email: string
-  }
+  } | null
 }
 
 interface PaymentData {
@@ -54,16 +48,7 @@ interface PaymentData {
   }
 }
 
-const navItems = [
-  { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-  { name: 'Users', href: '/admin/users', icon: Users },
-  { name: 'Payments', href: '/admin/payments', icon: DollarSign },
-  { name: 'Email Templates', href: '/admin/email-templates', icon: Mail },
-  { name: 'Activity Logs', href: '/admin/activity-logs', icon: Activity },
-]
-
 function PaymentsContent() {
-  const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<PaymentData | null>(null)
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null)
@@ -74,10 +59,6 @@ function PaymentsContent() {
   const [status, setStatus] = useState('')
   const [page, setPage] = useState(1)
   const [debouncedSearch, setDebouncedSearch] = useState('')
-
-  useEffect(() => {
-    checkAdminSession()
-  }, [])
 
   // Debounce search
   useEffect(() => {
@@ -92,24 +73,8 @@ function PaymentsContent() {
 
   // Fetch payments when filters change
   useEffect(() => {
-    if (!loading) {
-      fetchPayments()
-    }
+    fetchPayments()
   }, [page, status, debouncedSearch])
-
-  const checkAdminSession = async () => {
-    try {
-      const res = await fetch('/api/admin/me')
-      if (res.ok) {
-        fetchPayments()
-      } else {
-        router.push('/admin/login')
-      }
-    } catch (error) {
-      console.error('Error checking admin session:', error)
-      router.push('/admin/login')
-    }
-  }
 
   const fetchPayments = async () => {
     setLoading(true)
@@ -131,7 +96,6 @@ function PaymentsContent() {
       }
     } catch (error) {
       console.error('Error fetching payments:', error)
-      alert(error instanceof Error ? error.message : 'Failed to fetch payments')
     } finally {
       setLoading(false)
     }
@@ -194,93 +158,49 @@ function PaymentsContent() {
   }
 
   return (
-    <div className="min-h-screen bg-surface-light">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <AdminLogo size="lg" linkToHome={false} />
-            <div className="flex items-center gap-3">
-              <button
-                onClick={async () => {
-                  await fetch('/api/admin/logout', { method: 'POST' })
-                  router.push('/admin/login')
-                  router.refresh()
-                }}
-                className="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 transition-all font-medium text-sm"
-              >
-                <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline">Logout</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
-        {/* Admin Navigation */}
-        <div className="flex flex-wrap gap-2 sm:gap-3 mb-6 sm:mb-8">
-          {navItems.map((item) => {
-            const isActive = item.href === '/admin/payments'
-            return (
-              <button
-                key={item.name}
-                onClick={() => router.push(item.href)}
-                className={cn(
-                  'flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl font-medium text-sm transition-all',
-                  isActive
-                    ? 'bg-brand-500 text-white'
-                    : 'border border-gray-200 text-text-secondary hover:border-brand-300 hover:text-brand-600 hover:bg-brand-50'
-                )}
-              >
-                <item.icon className="w-4 h-4" />
-                <span className="hidden sm:inline">{item.name}</span>
-              </button>
-            )
-          })}
-        </div>
-
+    <AdminLayout>
+      <div className="space-y-6">
         {/* Page Header */}
-        <div className="mb-6 sm:mb-8 animate-fade-in-up">
-          <h1 className="text-2xl sm:text-3xl font-bold text-text-primary mb-2">Daftar Pembayaran</h1>
-          <p className="text-text-secondary text-sm sm:text-base">Kelola dan pantau semua pembayaran</p>
+        <div>
+          <h1 className="text-2xl font-bold text-text-primary">Daftar Pembayaran</h1>
+          <p className="text-text-secondary">Kelola dan pantau semua pembayaran</p>
         </div>
 
         {/* Summary Cards */}
         {data && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-            <div className="card p-5 sm:p-6 animate-fade-in-up">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="card p-5">
               <div className="flex items-center gap-4">
-                <div className="icon-box icon-box-success">
-                  <DollarSign className="w-6 h-6 text-success-600" />
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-success-400 to-success-600 flex items-center justify-center">
+                  <DollarSign className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <p className="text-sm text-text-secondary">Total Revenue</p>
-                  <p className="text-xl sm:text-2xl font-bold text-text-primary">
+                  <p className="text-xl font-bold text-text-primary">
                     {formatCurrency(data.summary.totalRevenue)}
                   </p>
                 </div>
               </div>
             </div>
-            <div className="card p-5 sm:p-6 animate-fade-in-up animation-delay-100">
+            <div className="card p-5">
               <div className="flex items-center gap-4">
-                <div className="icon-box icon-box-brand">
-                  <CheckCircle className="w-6 h-6 text-brand-600" />
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center">
+                  <CheckCircle className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <p className="text-sm text-text-secondary">Completed</p>
-                  <p className="text-xl sm:text-2xl font-bold text-text-primary">{data.summary.completedCount}</p>
+                  <p className="text-xl font-bold text-text-primary">{data.summary.completedCount}</p>
                 </div>
               </div>
             </div>
-            <div className="card p-5 sm:p-6 animate-fade-in-up animation-delay-200">
+            <div className="card p-5">
               <div className="flex items-center gap-4">
-                <div className="icon-box icon-box-primary">
-                  <Clock className="w-6 h-6 text-primary-600" />
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center">
+                  <Clock className="w-6 h-6 text-white" />
                 </div>
                 <div>
                   <p className="text-sm text-text-secondary">Pending</p>
-                  <p className="text-xl sm:text-2xl font-bold text-text-primary">{data.summary.pendingCount}</p>
+                  <p className="text-xl font-bold text-text-primary">{data.summary.pendingCount}</p>
                 </div>
               </div>
             </div>
@@ -288,8 +208,8 @@ function PaymentsContent() {
         )}
 
         {/* Filters */}
-        <div className="card p-4 sm:p-6 mb-6 sm:mb-8 animate-fade-in-up animation-delay-100">
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+        <div className="card p-4">
+          <div className="flex flex-col sm:flex-row gap-3">
             {/* Search */}
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-muted" />
@@ -298,7 +218,7 @@ function PaymentsContent() {
                 placeholder="Search by receipt number, payment ID..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 text-sm"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 text-sm"
               />
             </div>
 
@@ -306,7 +226,7 @@ function PaymentsContent() {
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="px-4 py-3 rounded-xl border border-gray-200 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 text-sm"
+              className="px-4 py-2.5 rounded-xl border border-gray-200 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 text-sm"
             >
               <option value="">All Status</option>
               <option value="COMPLETED">Completed</option>
@@ -318,7 +238,7 @@ function PaymentsContent() {
             {/* Export Button */}
             <button
               onClick={handleExport}
-              className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-gray-200 text-text-secondary hover:bg-gray-50 transition-all text-sm"
+              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-text-secondary hover:bg-gray-50 transition-all text-sm"
             >
               <Download className="w-4 h-4" />
               Export
@@ -327,7 +247,7 @@ function PaymentsContent() {
             {/* Refresh Button */}
             <button
               onClick={fetchPayments}
-              className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-gray-200 text-text-secondary hover:bg-gray-50 transition-all text-sm"
+              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-text-secondary hover:bg-gray-50 transition-all text-sm"
             >
               <RefreshCw className="w-4 h-4" />
               Refresh
@@ -341,7 +261,7 @@ function PaymentsContent() {
             <Loader2 className="w-12 h-12 text-brand-500 animate-spin" />
           </div>
         ) : (
-          <div className="card overflow-hidden animate-fade-in-up animation-delay-200">
+          <div className="card overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[600px]">
                 <thead className="bg-gray-50 border-b border-gray-100">
@@ -377,10 +297,10 @@ function PaymentsContent() {
                         <td className="table-cell">
                           <div className="flex flex-col">
                             <span className="text-sm font-medium text-text-primary">
-                              {payment.user.name || '-'}
+                              {payment.user?.name || '-'}
                             </span>
                             <span className="text-xs text-text-muted">
-                              {payment.user.email}
+                              {payment.user?.email || '-'}
                             </span>
                           </div>
                         </td>
@@ -413,7 +333,7 @@ function PaymentsContent() {
 
             {/* Pagination */}
             {data && data.pagination.totalPages > 1 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between px-4 sm:px-6 py-4 border-t border-gray-100 gap-3">
+              <div className="flex flex-col sm:flex-row items-center justify-between px-4 py-4 border-t border-gray-100 gap-3">
                 <p className="text-sm text-text-secondary">
                   Showing {((data.pagination.page - 1) * data.pagination.limit) + 1} to{' '}
                   {Math.min(data.pagination.page * data.pagination.limit, data.pagination.total)} of{' '}
@@ -455,7 +375,7 @@ function PaymentsContent() {
           onRefresh={fetchPayments}
         />
       )}
-    </div>
+    </AdminLayout>
   )
 }
 
@@ -552,12 +472,12 @@ function PaymentDetailModal({
               <div className="flex justify-between">
                 <span className="text-sm text-text-secondary">User</span>
                 <span className="text-sm font-semibold text-text-primary">
-                  {payment.user.name || payment.user.email}
+                  {payment.user?.name || payment.user?.email || '-'}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm text-text-secondary">Email</span>
-                <span className="text-sm text-text-primary">{payment.user.email}</span>
+                <span className="text-sm text-text-primary">{payment.user?.email || '-'}</span>
               </div>
               {payment.description && (
                 <div className="pt-3 border-t border-gray-100">

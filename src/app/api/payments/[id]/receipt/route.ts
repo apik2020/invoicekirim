@@ -20,7 +20,7 @@ export async function GET(
     }
 
     const { id } = await params
-    const payment = await prisma.payment.findFirst({
+    const payment = await prisma.payments.findFirst({
       where: {
         id,
         userId: session.user.id,
@@ -68,7 +68,7 @@ export async function POST(
     }
 
     const { id } = await params
-    const payment = await prisma.payment.findFirst({
+    const payment = await prisma.payments.findFirst({
       where: {
         id,
         userId: session.user.id,

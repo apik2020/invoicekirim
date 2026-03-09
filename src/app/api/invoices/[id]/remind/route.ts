@@ -18,7 +18,7 @@ export async function POST(
     const { id } = await params
 
     // Check if invoice exists and belongs to user
-    const invoice = await prisma.invoice.findFirst({
+    const invoice = await prisma.invoices.findFirst({
       where: {
         id,
         userId: session.user.id,

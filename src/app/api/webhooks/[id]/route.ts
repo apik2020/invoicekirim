@@ -32,7 +32,7 @@ export async function GET(
 
     // Get webhook from database
     const { prisma } = await import('@/lib/prisma')
-    const webhook = await prisma.webhook.findFirst({
+    const webhook = await prisma.webhooks.findFirst({
       where: { id: webhookId, teamId },
     })
 

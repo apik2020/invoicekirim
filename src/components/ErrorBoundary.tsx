@@ -2,7 +2,6 @@
 
 import { Component, ReactNode } from 'react'
 import { FileQuestion, RefreshCw, Home } from 'lucide-react'
-import { useRouter } from 'next/navigation'
 
 interface Props {
   children: ReactNode

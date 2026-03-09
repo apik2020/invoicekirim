@@ -37,19 +37,19 @@ export async function GET(req: NextRequest) {
       usersWithSubscription,
     ] = await Promise.all([
       // Total users
-      prisma.user.count(),
+      prisma.users.count(),
 
       // Total invoices
-      prisma.invoice.count(),
+      prisma.invoices.count(),
 
       // Total revenue (paid invoices only)
-      prisma.invoice.aggregate({
+      prisma.invoices.aggregate({
         where: { status: 'PAID' },
         _sum: { total: true },
       }),
 
       // Active subscriptions (PRO plans with valid stripe period)
-      prisma.subscription.count({
+      prisma.subscriptions.count({
         where: {
           status: 'ACTIVE',
           stripeCurrentPeriodEnd: {
@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
       }),
 
       // Recent users
-      prisma.user.findMany({
+      prisma.users.findMany({
         take: 10,
         orderBy: { createdAt: 'desc' },
         select: {
@@ -71,11 +71,11 @@ export async function GET(req: NextRequest) {
       }),
 
       // Recent invoices
-      prisma.invoice.findMany({
+      prisma.invoices.findMany({
         take: 20,
         orderBy: { createdAt: 'desc' },
         include: {
-          user: {
+          users: {
             select: {
               name: true,
               email: true,
@@ -85,13 +85,13 @@ export async function GET(req: NextRequest) {
       }),
 
       // Invoice count by status
-      prisma.invoice.groupBy({
+      prisma.invoices.groupBy({
         by: ['status'],
         _count: true,
       }),
 
       // Top clients by revenue
-      prisma.invoice.groupBy({
+      prisma.invoices.groupBy({
         by: ['clientEmail'],
         _count: true,
         _sum: { total: true },
@@ -100,7 +100,7 @@ export async function GET(req: NextRequest) {
       }),
 
       // Users with active subscriptions (unique users)
-      prisma.subscription.groupBy({
+      prisma.subscriptions.groupBy({
         by: ['userId'],
         where: {
           status: 'ACTIVE',
@@ -127,17 +127,17 @@ export async function GET(req: NextRequest) {
       const monthEnd = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0, 23, 59, 59, 999)
 
       const [monthInvoiceCount, monthUserCount, monthRevenue] = await Promise.all([
-        prisma.invoice.count({
+        prisma.invoices.count({
           where: {
             createdAt: { gte: monthStart, lt: monthEnd },
           },
         }),
-        prisma.user.count({
+        prisma.users.count({
           where: {
             createdAt: { gte: monthStart, lt: monthEnd },
           },
         }),
-        prisma.invoice.aggregate({
+        prisma.invoices.aggregate({
           where: {
             status: 'PAID',
             date: { gte: monthStart, lt: monthEnd },
@@ -165,7 +165,7 @@ export async function GET(req: NextRequest) {
 
     // Calculate growth metrics
     const [previousRevenue, previousInvoices, previousUsers] = await Promise.all([
-      prisma.invoice.aggregate({
+      prisma.invoices.aggregate({
         where: {
           status: 'PAID',
           date: {
@@ -176,7 +176,7 @@ export async function GET(req: NextRequest) {
         _sum: { total: true },
         _count: true,
       }),
-      prisma.user.count({
+      prisma.users.count({
         where: {
           createdAt: {
             gte: previousStartDate,
@@ -184,7 +184,7 @@ export async function GET(req: NextRequest) {
           },
         },
       }),
-      prisma.invoice.count({
+      prisma.invoices.count({
         where: {
           createdAt: {
             gte: previousStartDate,
@@ -219,7 +219,19 @@ export async function GET(req: NextRequest) {
         userGrowth: Number(userGrowth.toFixed(2)),
       },
       recentUsers,
-      recentInvoices,
+      recentInvoices: recentInvoices.map(invoice => ({
+        id: invoice.id,
+        invoiceNumber: invoice.invoiceNumber,
+        clientName: invoice.clientName,
+        total: invoice.total,
+        status: invoice.status,
+        date: invoice.date,
+        createdAt: invoice.createdAt,
+        users: {
+          name: invoice.users.name,
+          email: invoice.users.email,
+        },
+      })),
       invoicesByStatus: invoicesByStatus.map(item => ({
         status: item.status,
         count: item._count,

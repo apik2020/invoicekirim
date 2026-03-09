@@ -50,14 +50,14 @@ export async function GET(req: NextRequest) {
     }
 
     const [invoices, total] = await Promise.all([
-      prisma.invoice.findMany({
+      prisma.invoices.findMany({
         where,
-        include: { items: true },
+        include: { invoice_items: true },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit,
       }),
-      prisma.invoice.count({ where }),
+      prisma.invoices.count({ where }),
     ])
 
     return NextResponse.json({
@@ -107,12 +107,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Check subscription limits
-    const subscription = await prisma.subscription.findUnique({
+    const subscription = await prisma.subscriptions.findUnique({
       where: { userId: session.user.id },
     })
 
     if (subscription?.planType === 'FREE') {
-      const invoiceCount = await prisma.invoice.count({
+      const invoiceCount = await prisma.invoices.count({
         where: {
           userId: session.user.id,
           createdAt: {
@@ -170,7 +170,7 @@ export async function POST(req: NextRequest) {
     const invoiceNumber = data.invoiceNumber || generateInvoiceNumber()
 
     // Check if invoice number already exists
-    const existingInvoice = await prisma.invoice.findUnique({
+    const existingInvoice = await prisma.invoices.findUnique({
       where: { invoiceNumber },
     })
 
@@ -181,10 +181,12 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const invoice = await prisma.invoice.create({
+    const invoice = await prisma.invoices.create({
       data: {
+        id: crypto.randomUUID(),
         ...data,
         invoiceNumber,
+        accessToken: crypto.randomUUID(), // Generate access token for public viewing
         userId: session.user.id,
         date: new Date(data.date),
         dueDate: data.dueDate ? new Date(data.dueDate) : null,
@@ -192,6 +194,7 @@ export async function POST(req: NextRequest) {
         taxAmount,
         total,
         status: data.status || 'DRAFT',
+        updatedAt: new Date(),
         // New fields - only include if provided
         ...(settings && { settings: JSON.parse(JSON.stringify(settings)) }),
         ...(termsAndConditions && { termsAndConditions }),
@@ -204,15 +207,16 @@ export async function POST(req: NextRequest) {
         ...(additionalDiscountType && { additionalDiscountType }),
         ...(additionalDiscountValue !== undefined && additionalDiscountValue !== null && { additionalDiscountValue }),
         ...(additionalDiscountAmount && { additionalDiscountAmount }),
-        items: {
+        invoice_items: {
           create: items.map((item) => ({
+            id: crypto.randomUUID(),
             description: item.description,
             quantity: item.quantity,
             price: item.price,
           })),
         },
       },
-      include: { items: true },
+      include: { invoice_items: true },
     })
 
     // Log activity

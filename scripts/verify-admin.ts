@@ -3,11 +3,11 @@ import { PrismaClient } from '@prisma/client'
 const prisma = new PrismaClient()
 
 async function main() {
-  const admins = await prisma.admin.findMany()
+  const admins = await prisma.admins.findMany()
   console.log('Admins in Admin table:')
   console.table(admins.map(a => ({ id: a.id, email: a.email, name: a.name })))
 
-  const users = await prisma.user.findMany()
+  const users = await prisma.users.findMany()
   console.log('\nUsers in User table:')
   console.table(users.map(u => ({ id: u.id, email: u.email, name: u.name })))
 }

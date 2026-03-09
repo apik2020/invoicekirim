@@ -55,10 +55,10 @@ export async function GET(req: NextRequest) {
 
     // Get payments with user and subscription info
     const [payments, total] = await Promise.all([
-      prisma.payment.findMany({
+      prisma.payments.findMany({
         where,
         include: {
-          user: {
+          users: {
             select: {
               id: true,
               name: true,
@@ -72,21 +72,27 @@ export async function GET(req: NextRequest) {
         skip,
         take: limit,
       }),
-      prisma.payment.count({ where }),
+      prisma.payments.count({ where }),
     ])
 
     // Calculate summary statistics
     const [totalRevenue, completedCount, pendingCount] = await Promise.all([
-      prisma.payment.aggregate({
+      prisma.payments.aggregate({
         where: { status: 'COMPLETED' },
         _sum: { amount: true },
       }),
-      prisma.payment.count({ where: { status: 'COMPLETED' } }),
-      prisma.payment.count({ where: { status: 'PENDING' } }),
+      prisma.payments.count({ where: { status: 'COMPLETED' } }),
+      prisma.payments.count({ where: { status: 'PENDING' } }),
     ])
 
+    // Transform data to rename 'users' to 'user' for frontend compatibility
+    const transformedPayments = payments.map((payment) => ({
+      ...payment,
+      user: payment.users,
+    }))
+
     return NextResponse.json({
-      payments,
+      payments: transformedPayments,
       pagination: {
         total,
         page,
@@ -128,7 +134,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if user exists
-    const user = await prisma.user.findUnique({
+    const user = await prisma.users.findUnique({
       where: { id: userId },
       select: { id: true, name: true, email: true },
     })
@@ -148,8 +154,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Create payment
-    const payment = await prisma.payment.create({
+    const payment = await prisma.payments.create({
       data: {
+        id: crypto.randomUUID(),
         userId,
         amount,
         currency: currency || 'IDR',
@@ -157,9 +164,10 @@ export async function POST(req: NextRequest) {
         status: status || 'PENDING',
         stripePaymentIntentId,
         receiptNumber,
+        updatedAt: new Date(),
       },
       include: {
-        user: {
+        users: {
           select: {
             id: true,
             name: true,
@@ -170,8 +178,9 @@ export async function POST(req: NextRequest) {
     })
 
     // Log the activity
-    await prisma.activityLog.create({
+    await prisma.activity_logs.create({
       data: {
+        id: crypto.randomUUID(),
         userId: result.admin!.id, // Admin who created it
         action: 'MANUAL_PAYMENT_CREATED',
         entityType: 'PAYMENT',

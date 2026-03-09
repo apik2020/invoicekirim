@@ -7,7 +7,7 @@ import { prisma } from '@/lib/prisma'
 export const dynamic = 'force-dynamic'
 
 // GET - Get all clients for current user
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const clients = await prisma.client.findMany({
+    const clients = await prisma.clients.findMany({
       where: { userId: session.user.id },
       orderBy: { createdAt: 'desc' },
     })
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if client with same email already exists for this user
-    const existingClient = await prisma.client.findFirst({
+    const existingClient = await prisma.clients.findFirst({
       where: {
         userId: session.user.id,
         email,
@@ -65,14 +65,16 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const client = await prisma.client.create({
+    const client = await prisma.clients.create({
       data: {
+        id: crypto.randomUUID(),
         userId: session.user.id,
         name,
         email,
         phone,
         address,
         company,
+        updatedAt: new Date(),
       },
     })
 

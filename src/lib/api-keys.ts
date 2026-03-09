@@ -93,7 +93,7 @@ export async function verifyApiKey(
 
   const hashedKey = hashApiKey(key)
 
-  const apiKey = await prisma.apiKey.findUnique({
+  const apiKey = await prisma.api_keys.findUnique({
     where: { key: hashedKey },
     select: {
       id: true,
@@ -115,7 +115,7 @@ export async function verifyApiKey(
   }
 
   // Update last used
-  await prisma.apiKey.update({
+  await prisma.api_keys.update({
     where: { id: apiKey.id },
     data: { lastUsedAt: new Date() },
   })
@@ -145,16 +145,18 @@ export async function createApiKey(
 ): Promise<CreateApiKeyResult> {
   const { key, hashedKey, prefix } = generateApiKey()
 
-  const apiKey = await prisma.apiKey.create({
+  const apiKey = await prisma.api_keys.create({
     data: {
+      id: crypto.randomUUID(),
       name: params.name,
       key: hashedKey,
       prefix,
-      userId: params.userId,
-      teamId: params.teamId,
+      userId: params.userId ?? null,
+      teamId: params.teamId ?? null,
       scopes: params.scopes || Object.keys(API_SCOPES),
       expiresAt: params.expiresAt,
       isActive: true,
+      updatedAt: new Date(),
     },
   })
 
@@ -177,7 +179,7 @@ export async function listApiKeys(params: {
   if (params.userId) where.userId = params.userId
   if (params.teamId) where.teamId = params.teamId
 
-  const keys = await prisma.apiKey.findMany({
+  const keys = await prisma.api_keys.findMany({
     where,
     select: {
       id: true,
@@ -215,7 +217,7 @@ export async function revokeApiKey(keyId: string, params: {
   if (params.userId) where.userId = params.userId
   if (params.teamId) where.teamId = params.teamId
 
-  const result = await prisma.apiKey.updateMany({
+  const result = await prisma.api_keys.updateMany({
     where,
     data: { isActive: false },
   })
@@ -234,7 +236,7 @@ export async function deleteApiKey(keyId: string, params: {
   if (params.userId) where.userId = params.userId
   if (params.teamId) where.teamId = params.teamId
 
-  const result = await prisma.apiKey.deleteMany({
+  const result = await prisma.api_keys.deleteMany({
     where,
   })
 

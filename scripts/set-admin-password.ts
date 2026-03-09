@@ -7,7 +7,7 @@ async function main() {
   const email = 'hs.pramono@gmail.com'
   const newPassword = 'Admin@123' // Ganti dengan password yang aman
 
-  const user = await prisma.user.findUnique({
+  const user = await prisma.users.findUnique({
     where: { email },
   })
 
@@ -20,7 +20,7 @@ async function main() {
   const hashedPassword = await bcrypt.hash(newPassword, 10)
 
   // Update password user
-  await prisma.user.update({
+  await prisma.users.update({
     where: { email },
     data: { password: hashedPassword },
   })

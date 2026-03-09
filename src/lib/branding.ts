@@ -51,8 +51,10 @@ export async function getBranding(teamId: string): Promise<BrandingSettings | nu
 async function createDefaultBranding(teamId: string): Promise<BrandingSettings> {
   const branding = await prisma.branding.create({
     data: {
+      id: crypto.randomUUID(),
       teamId,
       ...DEFAULT_BRANDING,
+      updatedAt: new Date(),
     },
   })
 
@@ -68,11 +70,13 @@ export async function updateBranding(
 ): Promise<BrandingSettings> {
   const branding = await prisma.branding.upsert({
     where: { teamId },
-    update: data,
+    update: { ...data, updatedAt: new Date() },
     create: {
+      id: crypto.randomUUID(),
       teamId,
       ...DEFAULT_BRANDING,
       ...data,
+      updatedAt: new Date(),
     },
   })
 

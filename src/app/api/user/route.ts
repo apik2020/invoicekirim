@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma'
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Check if user exists in database
-    const user = await prisma.user.findUnique({
+    const user = await prisma.users.findUnique({
       where: { id: session.user.id },
       select: {
         id: true,
@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Get subscription
-    const subscription = await prisma.subscription.findUnique({
+    const subscription = await prisma.subscriptions.findUnique({
       where: { userId: user.id },
       select: {
         id: true,

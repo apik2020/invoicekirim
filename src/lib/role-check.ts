@@ -12,7 +12,7 @@ export async function isAdminUser(session?: { email?: string | null }) {
     return false
   }
 
-  const admin = await prisma.admin.findUnique({
+  const admin = await prisma.admins.findUnique({
     where: { email: session.email },
     select: { id: true, email: true },
   })
@@ -29,7 +29,7 @@ export async function isRegularUser(session?: { id?: string | null }) {
     return false
   }
 
-  const user = await prisma.user.findUnique({
+  const user = await prisma.users.findUnique({
     where: { id: session.id },
     select: { id: true },
   })
@@ -48,7 +48,7 @@ export async function getUserType(session?: { id?: string | null; email?: string
 
   // Check if admin first
   if (session.email) {
-    const admin = await prisma.admin.findUnique({
+    const admin = await prisma.admins.findUnique({
       where: { email: session.email },
       select: { id: true },
     })
@@ -57,7 +57,7 @@ export async function getUserType(session?: { id?: string | null; email?: string
 
   // Check if regular user
   if (session.id) {
-    const user = await prisma.user.findUnique({
+    const user = await prisma.users.findUnique({
       where: { id: session.id },
       select: { id: true },
     })

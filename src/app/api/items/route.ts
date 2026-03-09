@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
       where.category = category
     }
 
-    const items = await prisma.item.findMany({
+    const items = await prisma.items.findMany({
       where,
       orderBy: { createdAt: 'desc' },
     })
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
 
     // Check if SKU already exists for this user
     if (sku) {
-      const existingItem = await prisma.item.findFirst({
+      const existingItem = await prisma.items.findFirst({
         where: {
           userId: session.user.id,
           sku,
@@ -76,8 +76,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const item = await prisma.item.create({
+    const item = await prisma.items.create({
       data: {
+        id: crypto.randomUUID(),
         userId: session.user.id,
         name,
         description,
@@ -86,6 +87,7 @@ export async function POST(req: NextRequest) {
         price,
         taxRate,
         category,
+        updatedAt: new Date(),
       },
     })
 

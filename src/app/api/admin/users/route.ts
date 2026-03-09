@@ -39,21 +39,21 @@ export async function GET(req: NextRequest) {
 
     // Filter by subscription
     if (planType || status) {
-      where.subscription = {}
+      where.subscriptions = {}
       if (planType) {
-        where.subscription.planType = planType
+        where.subscriptions.planType = planType
       }
       if (status) {
-        where.subscription.status = status
+        where.subscriptions.status = status
       }
     }
 
     // Get users with subscription data
     const [users, total] = await Promise.all([
-      prisma.user.findMany({
+      prisma.users.findMany({
         where,
         include: {
-          subscription: true,
+          subscriptions: true,
           _count: {
             select: {
               invoices: true,
@@ -66,7 +66,7 @@ export async function GET(req: NextRequest) {
         skip,
         take: limit,
       }),
-      prisma.user.count({ where }),
+      prisma.users.count({ where }),
     ])
 
     return NextResponse.json({
@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
+    const existingUser = await prisma.users.findUnique({
       where: { email },
     })
 
@@ -125,18 +125,21 @@ export async function POST(req: NextRequest) {
       userData.password = await bcrypt.hash(password, 12)
     }
 
-    const user = await prisma.user.create({
+    const user = await prisma.users.create({
       data: {
+        id: crypto.randomUUID(),
         ...userData,
-        subscription: {
+        subscriptions: {
           create: {
+            id: crypto.randomUUID(),
             status: planType === 'PRO' ? 'ACTIVE' : 'FREE',
             planType: planType || 'FREE',
+            updatedAt: new Date(),
           },
         },
       },
       include: {
-        subscription: true,
+        subscriptions: true,
       },
     })
 

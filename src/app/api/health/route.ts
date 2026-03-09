@@ -46,7 +46,7 @@ export async function GET() {
     const rateLimitStart = Date.now()
 
     // Check if rate_limit_entries table exists and is accessible
-    await prisma.rateLimitEntry.count()
+    await prisma.rate_limit_entries.count()
     health.checks.rateLimit = {
       status: 'ok',
       latency: Date.now() - rateLimitStart,

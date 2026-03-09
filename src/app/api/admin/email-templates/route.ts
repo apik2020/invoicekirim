@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma'
 export const dynamic = 'force-dynamic'
 
 // Get all email templates
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   try {
     // Verify admin access
     const result = await requireAdminAuth()
@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: result.error || 'Unauthorized' }, { status: 401 })
     }
 
-    const templates = await prisma.emailTemplate.findMany({
+    const templates = await prisma.email_templates.findMany({
       orderBy: { name: 'asc' },
     })
 
@@ -47,13 +47,15 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const template = await prisma.emailTemplate.create({
+    const template = await prisma.email_templates.create({
       data: {
+        id: crypto.randomUUID(),
         name,
         subject,
         body: templateBody,
         variables,
         isActive: isActive !== undefined ? isActive : true,
+        updatedAt: new Date(),
       },
     })
 

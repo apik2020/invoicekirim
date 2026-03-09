@@ -16,7 +16,7 @@ export interface AdminSession {
  * Verify admin credentials and create session
  */
 export async function verifyAdminCredentials(email: string, password: string) {
-  const admin = await prisma.admin.findUnique({
+  const admin = await prisma.admins.findUnique({
     where: { email },
   })
 
@@ -112,7 +112,7 @@ export async function requireAdminAuth() {
   }
 
   // Verify admin still exists in database
-  const admin = await prisma.admin.findUnique({
+  const admin = await prisma.admins.findUnique({
     where: { id: session.id },
     select: { id: true, email: true, name: true },
   })

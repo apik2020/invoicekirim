@@ -6,7 +6,7 @@ const prisma = new PrismaClient()
 async function main() {
   const email = 'hs.pramono@gmail.com'
 
-  const user = await prisma.user.findUnique({
+  const user = await prisma.users.findUnique({
     where: { email },
     select: {
       id: true,
@@ -32,7 +32,7 @@ async function main() {
     const newPassword = 'admin123' // Password sederhana tanpa simbol
     const hashedPassword = await bcrypt.hash(newPassword, 10)
 
-    await prisma.user.update({
+    await prisma.users.update({
       where: { email },
       data: { password: hashedPassword },
     })
@@ -52,7 +52,7 @@ async function main() {
       const newPassword = 'admin123'
       const hashedPassword = await bcrypt.hash(newPassword, 10)
 
-      await prisma.user.update({
+      await prisma.users.update({
         where: { email },
         data: { password: hashedPassword },
       })

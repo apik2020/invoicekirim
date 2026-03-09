@@ -13,7 +13,7 @@ function getStripe() {
 export const getStripeCustomerId = async (userId: string, email: string) => {
   const { prisma } = await import('@/lib/prisma')
 
-  const subscription = await prisma.subscription.findUnique({
+  const subscription = await prisma.subscriptions.findUnique({
     where: { userId },
   })
 
@@ -32,7 +32,7 @@ export const getStripeCustomerId = async (userId: string, email: string) => {
   })
 
   // Update subscription with customer ID
-  await prisma.subscription.update({
+  await prisma.subscriptions.update({
     where: { userId },
     data: { stripeCustomerId: customer.id },
   })

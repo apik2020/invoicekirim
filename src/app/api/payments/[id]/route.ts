@@ -16,7 +16,7 @@ export async function GET(
 
     const { id } = await params
 
-    const payment = await prisma.payment.findUnique({
+    const payment = await prisma.payments.findUnique({
       where: { id },
     })
 
@@ -59,7 +59,7 @@ export async function PATCH(
     const { id } = await params
     const body = await req.json()
 
-    const payment = await prisma.payment.findUnique({
+    const payment = await prisma.payments.findUnique({
       where: { id },
     })
 
@@ -86,7 +86,7 @@ export async function PATCH(
     if (receiptUrl !== undefined) updateData.receiptUrl = receiptUrl
     if (receiptNumber !== undefined) updateData.receiptNumber = receiptNumber
 
-    const updatedPayment = await prisma.payment.update({
+    const updatedPayment = await prisma.payments.update({
       where: { id },
       data: updateData,
     })
@@ -117,7 +117,7 @@ export async function DELETE(
 
     const { id } = await params
 
-    const payment = await prisma.payment.findUnique({
+    const payment = await prisma.payments.findUnique({
       where: { id },
     })
 
@@ -136,7 +136,7 @@ export async function DELETE(
       )
     }
 
-    await prisma.payment.delete({
+    await prisma.payments.delete({
       where: { id },
     })
 

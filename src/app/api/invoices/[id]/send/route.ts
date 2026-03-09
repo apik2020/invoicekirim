@@ -22,13 +22,13 @@ export async function POST(
     }
 
     // Fetch invoice with items
-    const invoice = await prisma.invoice.findFirst({
+    const invoice = await prisma.invoices.findFirst({
       where: {
         id,
         userId: session.user.id,
       },
       include: {
-        items: true,
+        invoice_items: true,
       },
     })
 
@@ -39,10 +39,6 @@ export async function POST(
     // Generate invoice URL
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
     const invoiceUrl = `${baseUrl}/invoice/${invoice.accessToken}`
-
-    // Calculate totals
-    const subtotal = invoice.items.reduce((sum, item) => sum + item.quantity * item.price, 0)
-    const taxAmount = invoice.subtotal * (invoice.taxRate / 100)
 
     // Create HTML email template
     const emailHtml = `
@@ -211,7 +207,7 @@ export async function POST(
                   </tr>
                 </thead>
                 <tbody>
-                  ${invoice.items.map(item => `
+                  ${invoice.invoice_items.map((item: { description: string; quantity: number; price: number }) => `
                     <tr>
                       <td>${item.description}</td>
                       <td style="text-align: center;">${item.quantity}</td>
@@ -259,7 +255,7 @@ export async function POST(
     `
 
     // Fetch user to get SMTP settings
-    const user = await prisma.user.findUnique({
+    const user = await prisma.users.findUnique({
       where: { id: session.user.id },
       select: {
         smtpHost: true,
@@ -297,7 +293,7 @@ export async function POST(
     })
 
     // Update invoice status to SENT
-    await prisma.invoice.update({
+    await prisma.invoices.update({
       where: { id },
       data: { status: 'SENT' },
     })

@@ -15,13 +15,13 @@ export async function GET(req: NextRequest) {
     const offset = parseInt(searchParams.get('offset') || '0')
 
     const [logs, total] = await Promise.all([
-      prisma.activityLog.findMany({
+      prisma.activity_logs.findMany({
         where: { userId: session.user.id },
         orderBy: { createdAt: 'desc' },
         take: limit,
         skip: offset,
       }),
-      prisma.activityLog.count({
+      prisma.activity_logs.count({
         where: { userId: session.user.id },
       }),
     ])
