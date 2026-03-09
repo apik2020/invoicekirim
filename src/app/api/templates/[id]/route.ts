@@ -15,19 +15,25 @@ export async function GET(
     }
 
     const { id } = await params
-    const template = await prisma.invoiceTemplate.findFirst({
+    const template = await prisma.invoice_templates.findFirst({
       where: {
         id,
         userId: session.user.id,
       },
-      include: { items: true },
+      include: { template_items: true },
     })
 
     if (!template) {
       return NextResponse.json({ error: 'Template tidak ditemukan' }, { status: 404 })
     }
 
-    return NextResponse.json(template)
+    // Transform template_items to items for frontend compatibility
+    const transformedTemplate = {
+      ...template,
+      items: template.template_items,
+    }
+
+    return NextResponse.json(transformedTemplate)
   } catch (error) {
     console.error('Get template error:', error)
     return NextResponse.json(
@@ -49,7 +55,7 @@ export async function PUT(
 
     const { id } = await params
     // Check if template exists and belongs to user
-    const existingTemplate = await prisma.invoiceTemplate.findFirst({
+    const existingTemplate = await prisma.invoice_templates.findFirst({
       where: {
         id,
         userId: session.user.id,
@@ -86,12 +92,12 @@ export async function PUT(
     } = validation.data
 
     // Delete existing items
-    await prisma.templateItem.deleteMany({
+    await prisma.template_items.deleteMany({
       where: { templateId: id },
     })
 
     // Update template
-    const template = await prisma.invoiceTemplate.update({
+    const template = await prisma.invoice_templates.update({
       where: { id },
       data: {
         ...data,
@@ -111,18 +117,26 @@ export async function PUT(
         ...(discountValue !== undefined && discountValue !== null && { discountValue }),
         ...(additionalDiscountType !== undefined && { additionalDiscountType: additionalDiscountType || null }),
         ...(additionalDiscountValue !== undefined && additionalDiscountValue !== null && { additionalDiscountValue }),
-        items: {
+        updatedAt: new Date(),
+        template_items: {
           create: items.map((item) => ({
+            id: crypto.randomUUID(),
             description: item.description,
             quantity: item.quantity,
             price: item.price,
           })),
         },
       },
-      include: { items: true },
+      include: { template_items: true },
     })
 
-    return NextResponse.json(template)
+    // Transform template_items to items for frontend compatibility
+    const transformedTemplate = {
+      ...template,
+      items: template.template_items,
+    }
+
+    return NextResponse.json(transformedTemplate)
   } catch (error) {
     console.error('Update template error:', error)
     return NextResponse.json(
@@ -144,7 +158,7 @@ export async function DELETE(
 
     const { id } = await params
     // Check if template exists and belongs to user
-    const template = await prisma.invoiceTemplate.findFirst({
+    const template = await prisma.invoice_templates.findFirst({
       where: {
         id,
         userId: session.user.id,
@@ -156,7 +170,7 @@ export async function DELETE(
     }
 
     // Delete template (cascade will delete items)
-    await prisma.invoiceTemplate.delete({
+    await prisma.invoice_templates.delete({
       where: { id },
     })
 

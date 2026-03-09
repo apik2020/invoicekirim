@@ -37,10 +37,10 @@ export async function GET(req: NextRequest) {
     }
 
     const [logs, total] = await Promise.all([
-      prisma.activityLog.findMany({
+      prisma.activity_logs.findMany({
         where,
         include: {
-          user: {
+          users: {
             select: {
               id: true,
               name: true,
@@ -52,11 +52,17 @@ export async function GET(req: NextRequest) {
         skip,
         take: limit,
       }),
-      prisma.activityLog.count({ where }),
+      prisma.activity_logs.count({ where }),
     ])
 
+    // Transform data to rename 'users' to 'user' for frontend compatibility
+    const transformedLogs = logs.map((log) => ({
+      ...log,
+      user: log.users,
+    }))
+
     return NextResponse.json({
-      logs,
+      logs: transformedLogs,
       pagination: {
         total,
         page,

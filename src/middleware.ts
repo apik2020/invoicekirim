@@ -3,8 +3,8 @@ import type { NextRequest } from 'next/server'
 
 // Security configuration
 const SECURITY_CONFIG = {
-  // Routes that don't require authentication
-  publicRoutes: ['/login', '/register', '/pricing', '/invoice', '/client'],
+  // Routes that don't require authentication (includes OAuth callback routes)
+  publicRoutes: ['/login', '/register', '/pricing', '/invoice', '/client', '/api/auth/callback'],
   // Routes that require authentication
   protectedRoutes: ['/dashboard'],
   // API routes that need auth
@@ -53,7 +53,8 @@ export default async function middleware(req: NextRequest) {
     const host = req.headers.get('host') || ''
 
     // Skip CSRF for API webhooks (they have their own signature verification)
-    if (pathname.includes('/webhooks/')) {
+    // Also skip for OAuth callbacks (Google, GitHub, etc.) and NextAuth endpoints
+    if (pathname.includes('/webhooks/') || pathname.includes('/api/auth/')) {
       // Continue to auth check
     } else if (pathname.startsWith('/api/')) {
       // For API routes, check Origin/Referer matches host

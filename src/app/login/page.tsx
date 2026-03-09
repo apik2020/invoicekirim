@@ -1,15 +1,29 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import Link from 'next/link'
 import { Mail, Lock, ArrowRight, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { Logo } from '@/components/Logo'
 import { AlertBox } from '@/components/Toast'
 
+const errorMessages: Record<string, string> = {
+  google: 'Gagal login dengan Google. Silakan coba lagi.',
+  github: 'Gagal login dengan GitHub. Silakan coba lagi.',
+  OAuthSignin: 'Error saat memulai login dengan OAuth.',
+  OAuthCallback: 'Error saat menerima callback dari OAuth provider.',
+  OAuthCreateAccount: 'Gagal membuat akun dengan OAuth provider.',
+  OAuthAccountNotLinked: 'Email sudah terdaftar dengan metode login lain.',
+  EmailSignin: 'Gagal mengirim email login.',
+  CredentialsSignin: 'Email atau password salah.',
+  SessionRequired: 'Silakan login untuk mengakses halaman ini.',
+  Default: 'Terjadi kesalahan saat login.',
+}
+
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
@@ -18,6 +32,14 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const [error, setError] = useState('')
+
+  // Handle error from URL params
+  useEffect(() => {
+    const errorParam = searchParams.get('error')
+    if (errorParam) {
+      setError(errorMessages[errorParam] || errorMessages.Default)
+    }
+  }, [searchParams])
 
   const handleGoogleLogin = () => {
     setIsGoogleLoading(true)
@@ -44,7 +66,7 @@ export default function LoginPage() {
         router.push('/dashboard')
         router.refresh()
       }
-    } catch (err) {
+    } catch {
       setError('Terjadi kesalahan saat login')
     } finally {
       setIsLoading(false)

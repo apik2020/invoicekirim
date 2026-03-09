@@ -1,5 +1,5 @@
 import { NextAuthOptions } from 'next-auth'
-import { PrismaAdapter } from '@auth/prisma-adapter'
+import { PrismaAdapter } from '@next-auth/prisma-adapter'
 import GoogleProvider from 'next-auth/providers/google'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
@@ -11,7 +11,7 @@ import { logger } from './logger'
 // Helper to check if user is admin
 async function isAdminEmail(email: string): Promise<boolean> {
   try {
-    const admin = await prisma.admin.findUnique({
+    const admin = await prisma.admins.findUnique({
       where: { email },
       select: { id: true },
     })
@@ -59,7 +59,7 @@ export const authOptions: NextAuthOptions = {
 
         // Check Admin table first
         logger.dev('Auth', 'Checking Admin table for:', credentials.email)
-        const admin = await prisma.admin.findUnique({
+        const admin = await prisma.admins.findUnique({
           where: { email: credentials.email },
           select: {
             id: true,
@@ -94,7 +94,7 @@ export const authOptions: NextAuthOptions = {
         logger.dev('Auth', 'Checking User table for:', credentials.email)
         let user
         try {
-          user = await prisma.user.findUnique({
+          user = await prisma.users.findUnique({
             where: { email: credentials.email },
             select: {
               id: true,
@@ -115,7 +115,7 @@ export const authOptions: NextAuthOptions = {
         let subscription = null
         if (user) {
           try {
-            subscription = await prisma.subscription.findUnique({
+            subscription = await prisma.subscriptions.findUnique({
               where: { userId: user.id },
             })
           } catch (error) {
@@ -181,11 +181,13 @@ export const authOptions: NextAuthOptions = {
         // Create subscription if doesn't exist
         if (!subscription) {
           try {
-            await prisma.subscription.create({
+            await prisma.subscriptions.create({
               data: {
+                id: crypto.randomUUID(),
                 userId: user.id,
                 status: 'FREE',
                 planType: 'FREE',
+                updatedAt: new Date(),
               },
             })
           } catch (error) {
@@ -232,11 +234,13 @@ export const authOptions: NextAuthOptions = {
   events: {
     async createUser({ user }) {
       if (user.id) {
-        await prisma.subscription.create({
+        await prisma.subscriptions.create({
           data: {
+            id: crypto.randomUUID(),
             userId: user.id,
             status: 'FREE',
             planType: 'FREE',
+            updatedAt: new Date(),
           },
         }).catch(() => {
           // Ignore if subscription already exists

@@ -17,7 +17,7 @@ interface ActivityLog {
     id: string
     name: string | null
     email: string
-  }
+  } | null
 }
 
 interface ActivityLogTableProps {
@@ -71,7 +71,7 @@ export function ActivityLogTable({ userIdFilter }: ActivityLogTableProps) {
     const headers = ['Date', 'User', 'Action', 'Entity Type', 'Title', 'Description']
     const rows = logs.map(log => [
       formatDate(log.createdAt),
-      log.user.name || log.user.email,
+      log.user?.name || log.user?.email || 'System',
       log.action,
       log.entityType,
       log.title,
@@ -282,9 +282,9 @@ export function ActivityLogTable({ userIdFilter }: ActivityLogTableProps) {
                   <td className="py-4">
                     <div>
                       <p className="font-medium text-gray-900">
-                        {log.user.name || 'Tanpa Nama'}
+                        {log.user?.name || 'Tanpa Nama'}
                       </p>
-                      <p className="text-xs text-gray-500">{log.user.email}</p>
+                      <p className="text-xs text-gray-500">{log.user?.email || '-'}</p>
                     </div>
                   </td>
                   <td className="py-4">{getActionBadge(log.action)}</td>

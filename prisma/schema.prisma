@@ -8,54 +8,8 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-model Admin {
-  id        String   @id @default(cuid())
-  name      String?
-  email     String   @unique
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("admins")
-}
-
-model User {
-  id              String            @id @default(cuid())
-  name            String?
-  email           String            @unique
-  emailVerified   DateTime?
-  image           String?
-  password        String?
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  companyAddress  String?
-  companyEmail    String?
-  companyName     String?
-  companyPhone    String?
-  smtpHost        String?
-  smtpPass        String?
-  smtpPort        String?           @default("587")
-  smtpSecure      Boolean?          @default(false)
-  smtpUser        String?
-  activeTeamId    String?
-  accounts        Account[]
-  activityLogs    ActivityLog[]
-  apiKeys         ApiKey[]
-  clients         Client[]
-  templates       InvoiceTemplate[]
-  invoices        Invoice[]
-  items           Item[]
-  payments        Payment[]
-  sessions        Session[]
-  subscription    Subscription?
-  teamMemberships TeamMember[]
-  ownedTeams      Team[]            @relation("TeamOwner")
-
-  @@map("users")
-}
-
-model Account {
-  id                String  @id @default(cuid())
+model accounts {
+  id                String  @id @default(uuid())
   userId            String
   type              String
   provider          String
@@ -67,230 +21,13 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
-  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  users             users   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
-  @@map("accounts")
 }
 
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("sessions")
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
-  @@map("verification_tokens")
-}
-
-model Subscription {
-  id                     String             @id @default(cuid())
-  userId                 String             @unique
-  stripeCustomerId       String?            @unique
-  stripeSubscriptionId   String?            @unique
-  stripePriceId          String?
-  stripeCurrentPeriodEnd DateTime?
-  status                 SubscriptionStatus @default(FREE)
-  planType               PlanType           @default(FREE)
-  createdAt              DateTime           @default(now())
-  updatedAt              DateTime           @updatedAt
-  trialEndsAt            DateTime?
-  trialSentReminder      Boolean            @default(false)
-  trialStartsAt          DateTime?
-  user                   User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([trialEndsAt])
-  @@map("subscriptions")
-}
-
-model Item {
-  id          String   @id @default(cuid())
-  userId      String
-  name        String
-  description String?
-  sku         String?  @unique
-  unit        String   @default("pcs")
-  price       Float
-  taxRate     Float    @default(11)
-  category    String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  teamId      String?
-  team        Team?    @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([teamId])
-  @@index([sku])
-  @@map("items")
-}
-
-model Client {
-  id        String    @id @default(cuid())
-  userId    String
-  name      String
-  email     String
-  phone     String?
-  address   String?
-  company   String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  teamId    String?
-  team      Team?     @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  invoices  Invoice[]
-
-  @@index([userId])
-  @@index([teamId])
-  @@map("clients")
-}
-
-model Invoice {
-  id                       String        @id @default(cuid())
-  userId                   String
-  invoiceNumber            String        @unique
-  date                     DateTime
-  dueDate                  DateTime?
-  accessToken              String        @unique @default(cuid())
-  companyName              String
-  companyEmail             String
-  companyPhone             String?
-  companyAddress           String?
-  clientName               String
-  clientEmail              String
-  clientPhone              String?
-  clientAddress            String?
-  notes                    String?
-  taxRate                  Float         @default(11)
-  subtotal                 Float
-  taxAmount                Float
-  total                    Float
-  status                   InvoiceStatus @default(DRAFT)
-  paidAt                   DateTime?
-  createdAt                DateTime      @default(now())
-  updatedAt                DateTime      @updatedAt
-  clientId                 String?
-  paymentMethod            String?
-  paymentNotes             String?
-  teamId                   String?
-  settings                 Json?
-  termsAndConditions       String?
-  signatureUrl             String?
-  signatoryName            String?
-  signatoryTitle           String?
-  discountType             String?
-  discountValue            Float?
-  discountAmount           Float?
-  additionalDiscountType   String?
-  additionalDiscountValue  Float?
-  additionalDiscountAmount Float?
-  items                    InvoiceItem[]
-  client                   Client?       @relation(fields: [clientId], references: [id])
-  team                     Team?         @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user                     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([teamId])
-  @@index([status])
-  @@index([accessToken])
-  @@map("invoices")
-}
-
-model InvoiceItem {
-  id          String  @id @default(cuid())
-  invoiceId   String
-  description String
-  quantity    Int
-  price       Float
-  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-
-  @@map("invoice_items")
-}
-
-model InvoiceTemplate {
-  id                      String         @id @default(cuid())
-  userId                  String
-  name                    String
-  description             String?
-  taxRate                 Float          @default(11)
-  notes                   String?
-  settings                Json?
-  defaultClientId         String?
-  termsAndConditions      String?
-  signatureUrl            String?
-  signatoryName           String?
-  signatoryTitle          String?
-  discountType            String?
-  discountValue           Float?
-  additionalDiscountType  String?
-  additionalDiscountValue Float?
-  createdAt               DateTime       @default(now())
-  updatedAt               DateTime       @updatedAt
-  teamId                  String?
-  team                    Team?          @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user                    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items                   TemplateItem[]
-
-  @@index([userId])
-  @@index([teamId])
-  @@map("invoice_templates")
-}
-
-model TemplateItem {
-  id          String          @id @default(cuid())
-  templateId  String
-  description String
-  quantity    Int
-  price       Float
-  template    InvoiceTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
-
-  @@map("template_items")
-}
-
-model Payment {
-  id                    String        @id @default(cuid())
-  userId                String
-  invoiceId             String?
-  stripePaymentId       String?       @unique
-  amount                Float
-  currency              String        @default("IDR")
-  status                PaymentStatus
-  createdAt             DateTime      @default(now())
-  receiptNumber         String?       @unique
-  receiptUrl            String?
-  description           String?
-  stripePaymentIntentId String?       @unique
-  ewalletType           String?
-  expiredAt             DateTime?
-  midtransOrderId       String?       @unique
-  midtransTransactionId String?
-  paymentGateway        String?
-  paymentMethod         String?
-  qrisUrl               String?
-  updatedAt             DateTime      @updatedAt
-  vaBank                String?
-  vaNumber              String?
-  metadata              Json?
-  user                  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([stripePaymentIntentId])
-  @@index([midtransOrderId])
-  @@index([status])
-  @@map("payments")
-}
-
-model ActivityLog {
-  id          String         @id @default(cuid())
+model activity_logs {
+  id          String         @id
   userId      String
   action      ActivityAction
   entityType  String
@@ -299,150 +36,24 @@ model ActivityLog {
   title       String
   description String?
   createdAt   DateTime       @default(now())
-  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  users       users          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId])
-  @@index([entityType, entityId])
   @@index([createdAt])
-  @@map("activity_logs")
-}
-
-model Team {
-  id                     String            @id @default(cuid())
-  name                   String
-  slug                   String            @unique
-  description            String?
-  ownerId                String
-  planType               PlanType          @default(FREE)
-  stripeCustomerId       String?           @unique
-  stripeSubscriptionId   String?           @unique
-  stripePriceId          String?
-  stripeCurrentPeriodEnd DateTime?
-  settings               Json?
-  createdAt              DateTime          @default(now())
-  updatedAt              DateTime          @updatedAt
-  apiKeys                ApiKey[]
-  branding               Branding?
-  clients                Client[]
-  templates              InvoiceTemplate[]
-  invoices               Invoice[]
-  items                  Item[]
-  invitations            TeamInvitation[]
-  members                TeamMember[]
-  owner                  User              @relation("TeamOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  webhooks               Webhook[]
-
-  @@index([ownerId])
-  @@index([slug])
-  @@map("teams")
-}
-
-model TeamMember {
-  id          String   @id @default(cuid())
-  teamId      String
-  userId      String
-  role        TeamRole @default(MEMBER)
-  permissions Json?
-  invitedBy   String?
-  joinedAt    DateTime @default(now())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  team        Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([teamId, userId])
-  @@index([teamId])
+  @@index([entityType, entityId])
   @@index([userId])
-  @@map("team_members")
 }
 
-model TeamInvitation {
-  id        String           @id @default(cuid())
-  teamId    String
-  email     String
-  role      TeamRole         @default(MEMBER)
-  token     String           @unique
-  invitedBy String
-  status    InvitationStatus @default(PENDING)
-  expiresAt DateTime
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
-  team      Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
-
-  @@index([teamId])
-  @@index([email])
-  @@index([token])
-  @@map("team_invitations")
+model admins {
+  id        String   @id
+  name      String?
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime
 }
 
-model ApiKey {
-  id            String    @id @default(cuid())
-  userId        String?
-  teamId        String?
-  name          String
-  key           String    @unique
-  prefix        String
-  scopes        Json?
-  permissions   Json?
-  rateLimit     Int       @default(1000)
-  rateLimitUsed Int       @default(0)
-  isActive      Boolean   @default(true)
-  lastUsedAt    DateTime?
-  expiresAt     DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  team          Team?     @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user          User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([teamId])
-  @@index([key])
-  @@map("api_keys")
-}
-
-model Webhook {
-  id            String    @id @default(cuid())
-  teamId        String
-  name          String
-  url           String
-  secret        String
-  events        Json
-  isActive      Boolean   @default(true)
-  lastTriggered DateTime?
-  failureCount  Int       @default(0)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  team          Team      @relation(fields: [teamId], references: [id], onDelete: Cascade)
-
-  @@index([teamId])
-  @@map("webhooks")
-}
-
-model Branding {
-  id             String   @id @default(cuid())
-  teamId         String   @unique
-  logoUrl        String?
-  primaryColor   String   @default("#F97316")
-  secondaryColor String?  @default("#FFFFFF")
-  accentColor    String?
-  invoicePrefix  String?  @default("INV")
-  receiptPrefix  String?  @default("RCP")
-  showLogo       Boolean  @default(true)
-  showColors     Boolean  @default(true)
-  emailFromName  String?
-  emailReplyTo   String?
-  customDomain   String?  @unique
-  domainVerified Boolean  @default(false)
-  fontFamily     String?  @default("inter")
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  team           Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
-
-  @@map("branding")
-}
-
-model AnalyticsSnapshot {
-  id               String   @id @default(cuid())
+model analytics_snapshots {
+  id               String   @id
   teamId           String?
   userId           String?
   date             DateTime
@@ -464,43 +75,396 @@ model AnalyticsSnapshot {
   @@unique([teamId, userId, date, periodType])
   @@index([teamId, date])
   @@index([userId, date])
-  @@map("analytics_snapshots")
 }
 
-model EmailTemplate {
-  id        String   @id @default(cuid())
+model api_keys {
+  id            String    @id
+  userId        String?
+  teamId        String?
+  name          String
+  key           String    @unique
+  prefix        String
+  scopes        Json?
+  permissions   Json?
+  rateLimit     Int       @default(1000)
+  rateLimitUsed Int       @default(0)
+  isActive      Boolean   @default(true)
+  lastUsedAt    DateTime?
+  expiresAt     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime
+  teams         teams?    @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  users         users?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([key])
+  @@index([teamId])
+  @@index([userId])
+}
+
+model branding {
+  id             String   @id
+  teamId         String   @unique
+  logoUrl        String?
+  primaryColor   String   @default("#F97316")
+  secondaryColor String?  @default("#FFFFFF")
+  accentColor    String?
+  invoicePrefix  String?  @default("INV")
+  receiptPrefix  String?  @default("RCP")
+  showLogo       Boolean  @default(true)
+  showColors     Boolean  @default(true)
+  emailFromName  String?
+  emailReplyTo   String?
+  customDomain   String?  @unique
+  domainVerified Boolean  @default(false)
+  fontFamily     String?  @default("inter")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime
+  teams          teams    @relation(fields: [teamId], references: [id], onDelete: Cascade)
+}
+
+model clients {
+  id        String     @id
+  userId    String
+  name      String
+  email     String
+  phone     String?
+  address   String?
+  company   String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime
+  teamId    String?
+  teams     teams?     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  users     users      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invoices  invoices[]
+
+  @@index([teamId])
+  @@index([userId])
+}
+
+model email_templates {
+  id        String   @id
   name      String   @unique
   subject   String
   body      String
   variables Json?
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("email_templates")
+  updatedAt DateTime
 }
 
-enum SubscriptionStatus {
-  ACTIVE
-  CANCELED
-  PAST_DUE
-  TRIALING
-  INCOMPLETE
-  INCOMPLETE_EXPIRED
-  FREE
+model invoice_items {
+  id          String   @id
+  invoiceId   String
+  description String
+  quantity    Int
+  price       Float
+  invoices    invoices @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 }
 
-enum PlanType {
-  FREE
-  PRO
+model invoice_templates {
+  id                      String           @id
+  userId                  String
+  name                    String
+  description             String?
+  taxRate                 Float            @default(11)
+  notes                   String?
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime
+  teamId                  String?
+  additionalDiscountType  String?
+  additionalDiscountValue Float?
+  defaultClientId         String?
+  discountType            String?
+  discountValue           Float?
+  settings                Json?
+  signatoryName           String?
+  signatoryTitle          String?
+  signatureUrl            String?
+  termsAndConditions      String?
+  teams                   teams?           @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  users                   users            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  template_items          template_items[]
+
+  @@index([teamId])
+  @@index([userId])
 }
 
-enum InvoiceStatus {
-  DRAFT
-  SENT
-  PAID
-  OVERDUE
-  CANCELED
+model invoices {
+  id                       String          @id
+  userId                   String
+  invoiceNumber            String          @unique
+  date                     DateTime
+  dueDate                  DateTime?
+  accessToken              String          @unique
+  companyName              String
+  companyEmail             String
+  companyPhone             String?
+  companyAddress           String?
+  clientName               String
+  clientEmail              String
+  clientPhone              String?
+  clientAddress            String?
+  notes                    String?
+  taxRate                  Float           @default(11)
+  subtotal                 Float
+  taxAmount                Float
+  total                    Float
+  status                   InvoiceStatus   @default(DRAFT)
+  paidAt                   DateTime?
+  createdAt                DateTime        @default(now())
+  updatedAt                DateTime
+  clientId                 String?
+  paymentMethod            String?
+  paymentNotes             String?
+  teamId                   String?
+  additionalDiscountAmount Float?
+  additionalDiscountType   String?
+  additionalDiscountValue  Float?
+  discountAmount           Float?
+  discountType             String?
+  discountValue            Float?
+  settings                 Json?
+  signatoryName            String?
+  signatoryTitle           String?
+  signatureUrl             String?
+  termsAndConditions       String?
+  invoice_items            invoice_items[]
+  clients                  clients?        @relation(fields: [clientId], references: [id])
+  teams                    teams?          @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  users                    users           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([accessToken])
+  @@index([status])
+  @@index([teamId])
+  @@index([userId])
+}
+
+model items {
+  id          String   @id
+  userId      String
+  name        String
+  description String?
+  sku         String?  @unique
+  unit        String   @default("pcs")
+  price       Float
+  taxRate     Float    @default(11)
+  category    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+  teamId      String?
+  teams       teams?   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  users       users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([sku])
+  @@index([teamId])
+  @@index([userId])
+}
+
+model payments {
+  id                    String        @id
+  userId                String
+  invoiceId             String?
+  stripePaymentId       String?       @unique
+  amount                Float
+  currency              String        @default("IDR")
+  status                PaymentStatus
+  createdAt             DateTime      @default(now())
+  receiptNumber         String?       @unique
+  receiptUrl            String?
+  description           String?
+  stripePaymentIntentId String?       @unique
+  ewalletType           String?
+  expiredAt             DateTime?
+  midtransOrderId       String?       @unique
+  midtransTransactionId String?
+  paymentGateway        String?
+  paymentMethod         String?
+  qrisUrl               String?
+  updatedAt             DateTime
+  vaBank                String?
+  vaNumber              String?
+  metadata              Json?
+  users                 users         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([midtransOrderId])
+  @@index([status])
+  @@index([stripePaymentIntentId])
+  @@index([userId])
+}
+
+model rate_limit_entries {
+  id        String   @id
+  key       String   @unique
+  count     Int      @default(1)
+  resetAt   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+
+  @@index([key])
+  @@index([resetAt])
+}
+
+model sessions {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  users        users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model subscriptions {
+  id                     String             @id
+  userId                 String             @unique
+  stripeCustomerId       String?            @unique
+  stripeSubscriptionId   String?            @unique
+  stripePriceId          String?
+  stripeCurrentPeriodEnd DateTime?
+  status                 SubscriptionStatus @default(FREE)
+  planType               PlanType           @default(FREE)
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime
+  trialEndsAt            DateTime?
+  trialSentReminder      Boolean            @default(false)
+  trialStartsAt          DateTime?
+  users                  users              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([trialEndsAt])
+}
+
+model team_invitations {
+  id        String           @id
+  teamId    String
+  email     String
+  role      TeamRole         @default(MEMBER)
+  token     String           @unique
+  invitedBy String
+  status    InvitationStatus @default(PENDING)
+  expiresAt DateTime
+  createdAt DateTime         @default(now())
+  updatedAt DateTime
+  teams     teams            @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@index([email])
+  @@index([teamId])
+  @@index([token])
+}
+
+model team_members {
+  id          String   @id
+  teamId      String
+  userId      String
+  role        TeamRole @default(MEMBER)
+  permissions Json?
+  invitedBy   String?
+  joinedAt    DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+  teams       teams    @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  users       users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+  @@index([teamId])
+  @@index([userId])
+}
+
+model teams {
+  id                     String              @id
+  name                   String
+  slug                   String              @unique
+  description            String?
+  ownerId                String
+  planType               PlanType            @default(FREE)
+  stripeCustomerId       String?             @unique
+  stripeSubscriptionId   String?             @unique
+  stripePriceId          String?
+  stripeCurrentPeriodEnd DateTime?
+  settings               Json?
+  createdAt              DateTime            @default(now())
+  updatedAt              DateTime
+  api_keys               api_keys[]
+  branding               branding?
+  clients                clients[]
+  invoice_templates      invoice_templates[]
+  invoices               invoices[]
+  items                  items[]
+  team_invitations       team_invitations[]
+  team_members           team_members[]
+  users                  users               @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  webhooks               webhooks[]
+
+  @@index([ownerId])
+  @@index([slug])
+}
+
+model template_items {
+  id                String            @id
+  templateId        String
+  description       String
+  quantity          Int
+  price             Float
+  invoice_templates invoice_templates @relation(fields: [templateId], references: [id], onDelete: Cascade)
+}
+
+model users {
+  id                   String              @id @default(uuid())
+  name                 String?
+  email                String              @unique
+  emailVerified        DateTime?
+  image                String?
+  password             String?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime
+  companyAddress       String?
+  companyEmail         String?
+  companyName          String?
+  companyPhone         String?
+  smtpHost             String?
+  smtpPass             String?
+  smtpPort             String?             @default("587")
+  smtpSecure           Boolean?            @default(false)
+  smtpUser             String?
+  activeTeamId         String?
+  twoFactorBackupCodes String?
+  twoFactorEnabled     Boolean             @default(false)
+  twoFactorSecret      String?
+  twoFactorVerifiedAt  DateTime?
+  accounts             accounts[]
+  activity_logs        activity_logs[]
+  api_keys             api_keys[]
+  clients              clients[]
+  invoice_templates    invoice_templates[]
+  invoices             invoices[]
+  items                items[]
+  payments             payments[]
+  sessions             sessions[]
+  subscriptions        subscriptions?
+  team_members         team_members[]
+  teams                teams[]
+}
+
+model verification_tokens {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model webhooks {
+  id            String    @id
+  teamId        String
+  name          String
+  url           String
+  secret        String
+  events        Json
+  isActive      Boolean   @default(true)
+  lastTriggered DateTime?
+  failureCount  Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime
+  teams         teams     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@index([teamId])
 }
 
 enum ActivityAction {
@@ -521,20 +485,6 @@ enum ActivityAction {
   OVERDUE_NOTICE_SENT
 }
 
-enum PaymentStatus {
-  PENDING
-  COMPLETED
-  FAILED
-  REFUNDED
-}
-
-enum TeamRole {
-  OWNER
-  ADMIN
-  MEMBER
-  VIEWER
-}
-
 enum InvitationStatus {
   PENDING
   ACCEPTED
@@ -542,16 +492,39 @@ enum InvitationStatus {
   EXPIRED
 }
 
-// Rate limiting using PostgreSQL
-model RateLimitEntry {
-  id        String   @id @default(cuid())
-  key       String   @unique
-  count     Int      @default(1)
-  resetAt   DateTime
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELED
+}
 
-  @@index([key])
-  @@index([resetAt])
-  @@map("rate_limit_entries")
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum PlanType {
+  FREE
+  PRO
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  TRIALING
+  INCOMPLETE
+  INCOMPLETE_EXPIRED
+  FREE
+}
+
+enum TeamRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
 }
