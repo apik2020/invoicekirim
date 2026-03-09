@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyAdmin } from '@/lib/admin-auth'
+import { requireAdminAuth } from '@/lib/admin-session'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 
@@ -11,20 +11,23 @@ const smtpSettingsSchema = z.object({
   smtpPass: z.string().min(1, 'SMTP password harus diisi'),
   smtpFromName: z.string().min(1, 'Nama pengirim harus diisi'),
   smtpFromEmail: z.string().email('Format email tidak valid'),
+  testOnly: z.boolean().optional(),
 })
 
 // GET - Retrieve SMTP settings
 export async function GET(req: NextRequest) {
-  const admin = await verifyAdmin()
+  const result = await requireAdminAuth()
 
-  // Check if it's an error response
-  if (admin instanceof NextResponse) {
-    return admin
+  if (result.error || !result.admin) {
+    return NextResponse.json(
+      { error: 'Unauthorized' },
+      { status: 401 }
+    )
   }
 
   try {
     const adminData = await prisma.admins.findUnique({
-      where: { id: admin.id },
+      where: { id: result.admin.id },
       select: {
         smtpHost: true,
         smtpPort: true,
@@ -32,7 +35,6 @@ export async function GET(req: NextRequest) {
         smtpUser: true,
         smtpFromName: true,
         smtpFromEmail: true,
-        // Don't return password
       },
     })
 
@@ -55,11 +57,13 @@ export async function GET(req: NextRequest) {
 
 // POST - Save SMTP settings
 export async function POST(req: NextRequest) {
-  const admin = await verifyAdmin()
+  const result = await requireAdminAuth()
 
-  // Check if it's an error response
-  if (admin instanceof NextResponse) {
-    return admin
+  if (result.error || !result.admin) {
+    return NextResponse.json(
+      { error: 'Unauthorized' },
+      { status: 401 }
+    )
   }
 
   try {
@@ -74,13 +78,10 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { smtpHost, smtpPort, smtpSecure, smtpUser, smtpPass, smtpFromName, smtpFromEmail } = validation.data
+    const { smtpHost, smtpPort, smtpSecure, smtpUser, smtpPass, smtpFromName, smtpFromEmail, testOnly } = validation.data
 
     // Check if this is just a test request
-    const testOnly = body.testOnly === true
-
     if (testOnly) {
-      // Test SMTP connection using nodemailer
       const nodemailer = await import('nodemailer')
 
       const transporter = nodemailer.default.createTransport({
@@ -114,7 +115,7 @@ export async function POST(req: NextRequest) {
 
     // Save SMTP settings
     await prisma.admins.update({
-      where: { id: admin.id },
+      where: { id: result.admin.id },
       data: {
         smtpHost,
         smtpPort,
