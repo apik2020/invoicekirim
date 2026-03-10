@@ -111,7 +111,7 @@ export default function ForgotPasswordPage() {
                   Email Terkirim!
                 </h2>
                 <p className="text-text-secondary mb-6">
-                  Jika email terdaftar di sistem kami, kami telah mengirimkan link reset password ke email tersebut. Silakan cek folder spam jika tidak menemukan email di inbox.
+                  Kami telah mengirimkan link reset password ke email Anda. Silakan cek folder spam jika tidak menemukan email di inbox.
                 </p>
                 <Link
                   href="/login"

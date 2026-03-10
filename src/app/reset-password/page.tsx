@@ -90,6 +90,7 @@ export default function ResetPasswordPage() {
         body: JSON.stringify({
           token,
           password: formData.password,
+          confirmPassword: formData.confirmPassword,
         }),
       })
 

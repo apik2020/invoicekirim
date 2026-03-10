@@ -43,28 +43,31 @@ export async function POST(req: NextRequest) {
     // Find user by email
     const user = await findUserByEmail(email)
 
-    // Always return success message to prevent email enumeration
-    // But only send email if user exists
-    if (user) {
-      // Generate reset token
-      const resetData = await createPasswordResetToken(email)
-
-      // Create reset URL
-      const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-      const resetUrl = `${baseUrl}/reset-password?token=${resetData.token}`
-
-      // Send password reset email
-      await sendPasswordResetEmail({
-        to: email,
-        userName: user.name || 'Pengguna',
-        resetUrl,
-        expiresIn: '1 jam',
-      })
+    // Return error if email not registered
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Email tidak terdaftar dalam sistem kami' },
+        { status: 400 }
+      )
     }
 
-    // Always return success to prevent email enumeration attacks
+    // Generate reset token
+    const resetData = await createPasswordResetToken(email)
+
+    // Create reset URL
+    const baseUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const resetUrl = `${baseUrl}/reset-password?token=${resetData.token}`
+
+    // Send password reset email
+    await sendPasswordResetEmail({
+      to: email,
+      userName: user.name || 'Pengguna',
+      resetUrl,
+      expiresIn: '1 jam',
+    })
+
     return NextResponse.json({
-      message: 'Jika email terdaftar, Anda akan menerima link reset password dalam beberapa menit.',
+      message: 'Link reset password telah dikirim ke email Anda',
     })
   } catch (error) {
     console.error('Forgot password error:', error)
