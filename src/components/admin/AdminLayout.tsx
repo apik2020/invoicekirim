@@ -13,11 +13,11 @@ import {
   LayoutDashboard,
   Menu,
   X,
+  Shield,
   ChevronLeft,
   ChevronDown,
   Settings,
   BarChart3,
-  Shield,
   CreditCard,
 } from 'lucide-react'
 import { useAutoLogout } from '@/hooks/useAutoLogout'
@@ -45,6 +45,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
   { name: 'Users', href: '/admin/users', icon: Users },
+  { name: 'Client Access', href: '/admin/client-access', icon: Shield },
   { name: 'Payments', href: '/admin/payments', icon: DollarSign },
   { name: 'Activity Logs', href: '/admin/activity-logs', icon: Activity },
   { name: 'Email Templates', href: '/admin/email-templates', icon: Mail },

@@ -328,14 +328,17 @@ model subscriptions {
   stripeCurrentPeriodEnd DateTime?
   status                 SubscriptionStatus @default(FREE)
   planType               PlanType           @default(FREE)
+  pricingPlanId          String?
   createdAt              DateTime           @default(now())
   updatedAt              DateTime
   trialEndsAt            DateTime?
   trialSentReminder      Boolean            @default(false)
   trialStartsAt          DateTime?
   users                  users              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pricing_plans          pricing_plans?     @relation(fields: [pricingPlanId], references: [id], onDelete: SetNull)
 
   @@index([trialEndsAt])
+  @@index([pricingPlanId])
 }
 
 model team_invitations {
@@ -535,6 +538,7 @@ model pricing_plans {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   features      pricing_plan_features[]
+  subscriptions subscriptions[]
 
   @@index([isActive, sortOrder])
 }
