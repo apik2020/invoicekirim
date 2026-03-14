@@ -1,17 +1,59 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSession } from 'next-auth/react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Check, Star, Loader2, ArrowRight, CheckCircle2, X } from 'lucide-react'
 import Header from '@/components/Header'
 
+interface PlanFeature {
+  id: string
+  name: string
+  key: string
+  included: boolean
+  limitValue: number | null
+}
+
+interface Plan {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  price: number
+  currency: string
+  stripePriceId: string | null
+  trialDays: number
+  isFeatured: boolean
+  ctaText: string | null
+  features: PlanFeature[]
+}
+
 function PricingContent() {
   const { data: session } = useSession()
+  const [plans, setPlans] = useState<Plan[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null)
   const searchParams = useSearchParams()
   const checkout = searchParams.get('checkout')
+
+  useEffect(() => {
+    fetchPlans()
+  }, [])
+
+  const fetchPlans = async () => {
+    try {
+      const res = await fetch('/api/pricing')
+      if (res.ok) {
+        const data = await res.json()
+        setPlans(data.plans)
+      }
+    } catch (err) {
+      console.error('Error fetching plans:', err)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleSubscribe = async (priceId: string, planName: string) => {
     if (!session) {
@@ -44,62 +86,41 @@ function PricingContent() {
     }
   }
 
-  const plans = [
-    {
-      id: 'free',
-      name: 'Gratis',
-      price: 'Rp 0',
-      period: 'selamanya',
-      description: 'Untuk freelancer yang baru mulai',
-      featured: false,
-      priceId: null,
-      cta: 'Mulai Gratis',
-      href: session ? '/dashboard/invoices/create' : '/login',
-      badge: 'Forever Free',
-      badgeClass: 'badge-lime',
-      features: [
-        { name: '10 invoice per bulan', included: true },
-        { name: 'Template invoice profesional', included: true },
-        { name: 'Simpan di cloud', included: true },
-        { name: 'Download PDF', included: true },
-        { name: 'Kirim via WhatsApp', included: true },
-        { name: 'Email support', included: true },
-        { name: 'Invoice tanpa batas', included: false },
-        { name: 'Template premium', included: false },
-        { name: 'Custom branding (logo, warna)', included: false },
-        { name: 'Email otomatis ke klien', included: false },
-        { name: 'Payment reminder otomatis', included: false },
-        { name: 'Priority support', included: false },
-      ],
-    },
-    {
-      id: 'pro',
-      name: 'Pro',
-      price: 'Rp 49K',
-      period: '/bulan',
-      description: 'Untuk bisnis yang berkembang',
-      featured: true,
-      priceId: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID || '',
-      cta: 'Mulai Pro - Gratis 7 Hari',
-      href: session ? '/dashboard/billing' : '/login',
-      badge: 'POPULER',
-      badgeClass: 'badge-pink',
-      features: [
-        { name: 'Invoice tanpa batas', included: true },
-        { name: 'Template premium', included: true },
-        { name: 'Custom branding (logo, warna)', included: true },
-        { name: 'Email otomatis ke klien', included: true },
-        { name: 'Payment reminder otomatis', included: true },
-        { name: 'Priority support', included: true },
-        { name: 'Multi-currency', included: true },
-        { name: 'Ekspor Excel/CSV', included: true },
-        { name: 'Analytics dashboard', included: true },
-        { name: 'API Access', included: false },
-        { name: 'Custom domain', included: false },
-        { name: 'White label', included: false },
-      ],
-    },
-  ]
+  const formatPrice = (price: number) => {
+    if (price === 0) return 'Rp 0'
+    if (price >= 1000) {
+      return new Intl.NumberFormat('id-ID', {
+        notation: 'compact',
+        compactDisplay: 'short',
+      }).format(price).replace('rb', 'rb').replace('jt', ' jt')
+    }
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+    }).format(price)
+  }
+
+  const getFeatureDisplayText = (feature: PlanFeature) => {
+    if (!feature.included) {
+      return feature.name
+    }
+    if (feature.key === 'invoice_limit') {
+      if (feature.limitValue) {
+        return `${feature.limitValue} invoice per bulan`
+      }
+      return 'Invoice tanpa batas'
+    }
+    return feature.name
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-fresh-bg flex items-center justify-center">
+        <Loader2 className="w-16 h-16 text-orange-600 animate-spin" />
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-fresh-bg">
@@ -160,48 +181,48 @@ function PricingContent() {
               <div
                 key={plan.id}
                 className={`relative ${
-                  plan.featured ? 'pricing-card-featured' : 'pricing-card'
+                  plan.isFeatured ? 'pricing-card-featured' : 'pricing-card'
                 }`}
               >
                 {/* Featured Badge */}
-                {plan.featured && (
+                {plan.isFeatured && (
                   <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-10">
-                    <div className={`${plan.badgeClass} shadow-lg flex items-center gap-2 px-6 py-2 rounded-full`}>
+                    <div className="badge-pink shadow-lg flex items-center gap-2 px-6 py-2 rounded-full">
                       <Star className="w-4 h-4" />
-                      <span className="text-sm font-bold">{plan.badge}</span>
+                      <span className="text-sm font-bold">POPULER</span>
                     </div>
                   </div>
                 )}
 
                 {/* Plan Header */}
-                <div className={plan.featured ? 'mt-4' : ''}>
+                <div className={plan.isFeatured ? 'mt-4' : ''}>
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-2xl font-bold text-gray-900">{plan.name}</h3>
-                    {!plan.featured && (
-                      <div className={`${plan.badgeClass} px-3 py-1 rounded-full text-xs font-bold`}>
-                        {plan.badge}
+                    {!plan.isFeatured && (
+                      <div className="badge-lime px-3 py-1 rounded-full text-xs font-bold">
+                        Forever Free
                       </div>
                     )}
                   </div>
-                  <p className="text-gray-600 mb-6">{plan.description}</p>
+                  <p className="text-gray-600 mb-6">{plan.description || ''}</p>
 
                   {/* Price */}
                   <div className="mb-6">
                     <span className={`text-4xl font-bold ${
-                      plan.featured
+                      plan.isFeatured
                         ? 'bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent'
                         : 'text-gray-900'
                     }`}>
-                      {plan.price}
+                      {formatPrice(plan.price)}
                     </span>
-                    <span className="text-gray-600 ml-2">{plan.period}</span>
+                    <span className="text-gray-600 ml-2">/bulan</span>
                   </div>
                 </div>
 
                 {/* Features */}
                 <ul className="space-y-3 mb-8">
-                  {plan.features.map((feature, index) => (
-                    <li key={index} className="flex items-start gap-3">
+                  {(plan.features || []).map((feature) => (
+                    <li key={feature.id} className="flex items-start gap-3">
                       {feature.included ? (
                         <div className="checkmark mt-0.5 flex-shrink-0">
                           <Check className="w-4 h-4 text-white" />
@@ -212,16 +233,16 @@ function PricingContent() {
                         </div>
                       )}
                       <span className={`text-sm ${feature.included ? 'text-gray-700' : 'text-gray-400'}`}>
-                        {feature.name}
+                        {getFeatureDisplayText(feature)}
                       </span>
                     </li>
                   ))}
                 </ul>
 
                 {/* CTA Button */}
-                {plan.featured && plan.priceId ? (
+                {plan.isFeatured && plan.stripePriceId ? (
                   <button
-                    onClick={() => handleSubscribe(plan.priceId, plan.name)}
+                    onClick={() => handleSubscribe(plan.stripePriceId!, plan.name)}
                     disabled={loadingPlan === plan.name}
                     className="block w-full px-6 py-4 btn-primary text-center font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -231,21 +252,21 @@ function PricingContent() {
                         Memproses...
                       </>
                     ) : (
-                      plan.cta
+                      plan.ctaText || 'Mulai Sekarang'
                     )}
                   </button>
                 ) : (
                   <Link
-                    href={plan.href}
+                    href={session ? '/dashboard/invoices/create' : '/login'}
                     className="block w-full px-6 py-4 btn-secondary text-center font-semibold"
                   >
-                    {plan.cta}
+                    {plan.ctaText || 'Mulai Gratis'}
                     <ArrowRight className="w-4 h-4 inline ml-2" />
                   </Link>
                 )}
 
-                {/* Trust Note for Pro plan */}
-                {plan.featured && (
+                {/* Trust Note for featured plan */}
+                {plan.isFeatured && (
                   <p className="text-center text-gray-600 mt-4 text-sm">
                     Tidak perlu kartu kredit • Batalkan kapan saja
                   </p>
