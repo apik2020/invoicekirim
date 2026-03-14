@@ -14,9 +14,11 @@ import {
   Menu,
   X,
   ChevronLeft,
+  ChevronDown,
   Settings,
   BarChart3,
   Shield,
+  CreditCard,
 } from 'lucide-react'
 import { useAutoLogout } from '@/hooks/useAutoLogout'
 import { SessionTimeoutModal } from '@/components/SessionTimeoutModal'
@@ -33,13 +35,27 @@ interface AdminLayoutProps {
   children: React.ReactNode
 }
 
-const navItems = [
+interface NavItem {
+  name: string
+  href?: string
+  icon: React.ComponentType<{ className?: string }>
+  children?: { name: string; href: string }[]
+}
+
+const navItems: NavItem[] = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
   { name: 'Users', href: '/admin/users', icon: Users },
   { name: 'Payments', href: '/admin/payments', icon: DollarSign },
   { name: 'Activity Logs', href: '/admin/activity-logs', icon: Activity },
   { name: 'Email Templates', href: '/admin/email-templates', icon: Mail },
-  { name: 'Email Settings', href: '/admin/settings/email', icon: Settings },
+  {
+    name: 'Settings',
+    icon: Settings,
+    children: [
+      { name: 'Email', href: '/admin/settings/email' },
+      { name: 'Pricing', href: '/admin/settings/pricing' },
+    ],
+  },
 ]
 
 export function AdminLayout({ children }: AdminLayoutProps) {
@@ -49,6 +65,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const [loading, setLoading] = useState(true)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null)
 
   // Auto logout after 30 minutes of inactivity
   const { showWarning, timeRemaining, stayLoggedIn, logout } = useAutoLogout({
@@ -83,10 +100,40 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     setMobileMenuOpen(false)
   }, [pathname])
 
+  // Auto-open dropdown if current path is in its children
+  useEffect(() => {
+    navItems.forEach((item) => {
+      if (item.children) {
+        const isActive = item.children.some((child) => pathname.startsWith(child.href))
+        if (isActive) {
+          setOpenDropdown(item.name)
+        }
+      }
+    })
+  }, [pathname])
+
   const handleLogout = async () => {
     await fetch('/api/admin/logout', { method: 'POST' })
     router.push('/admin/login')
     router.refresh()
+  }
+
+  const isActive = (href: string) => {
+    if (href === '/admin') {
+      return pathname === '/admin'
+    }
+    return pathname.startsWith(href)
+  }
+
+  const isDropdownActive = (item: NavItem) => {
+    if (item.children) {
+      return item.children.some((child) => pathname.startsWith(child.href))
+    }
+    return false
+  }
+
+  const toggleDropdown = (name: string) => {
+    setOpenDropdown(openDropdown === name ? null : name)
   }
 
   if (loading) {
@@ -98,13 +145,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         </div>
       </div>
     )
-  }
-
-  const isActive = (href: string) => {
-    if (href === '/admin') {
-      return pathname === '/admin'
-    }
-    return pathname.startsWith(href)
   }
 
   return (
@@ -149,13 +189,68 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         </div>
 
         {/* Navigation */}
-        <nav className="p-3 space-y-1">
+        <nav className="p-3 space-y-1 overflow-y-auto">
           {navItems.map((item) => {
-            const active = isActive(item.href)
+            const hasChildren = item.children && item.children.length > 0
+            const isDropdownOpen = openDropdown === item.name
+            const isParentActive = hasChildren && isDropdownActive(item)
+
+            if (hasChildren) {
+              return (
+                <div key={item.name}>
+                  <button
+                    onClick={() => toggleDropdown(item.name)}
+                    className={cn(
+                      'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all',
+                      isParentActive
+                        ? 'bg-brand-100 text-brand-600'
+                        : 'text-text-secondary hover:bg-brand-50 hover:text-brand-600',
+                      !sidebarOpen && !mobileMenuOpen && 'justify-center px-0'
+                    )}
+                    title={!sidebarOpen ? item.name : undefined}
+                  >
+                    <item.icon className="w-5 h-5 flex-shrink-0" />
+                    {(sidebarOpen || mobileMenuOpen) && (
+                      <>
+                        <span className="flex-1 text-left">{item.name}</span>
+                        <ChevronDown className={cn(
+                          'w-4 h-4 transition-transform',
+                          isDropdownOpen && 'rotate-180'
+                        )} />
+                      </>
+                    )}
+                  </button>
+                  {isDropdownOpen && (sidebarOpen || mobileMenuOpen) && (
+                    <div className="mt-1 ml-4 pl-4 border-l-2 border-gray-200 space-y-1">
+                      {item.children!.map((child) => {
+                        const childActive = isActive(child.href)
+                        return (
+                          <button
+                            key={child.name}
+                            onClick={() => router.push(child.href)}
+                            className={cn(
+                              'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all',
+                              childActive
+                                ? 'bg-brand-500 text-white'
+                                : 'text-text-secondary hover:bg-brand-50 hover:text-brand-600'
+                            )}
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                            <span>{child.name}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )
+            }
+
+            const active = item.href ? isActive(item.href) : false
             return (
               <button
                 key={item.name}
-                onClick={() => router.push(item.href)}
+                onClick={() => item.href && router.push(item.href)}
                 className={cn(
                   'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all',
                   active

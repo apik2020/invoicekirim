@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
 import {
-  CreditCard,
   Search,
   Download,
   RefreshCw,
@@ -71,12 +70,7 @@ function PaymentsContent() {
     setPage(1)
   }, [status, debouncedSearch])
 
-  // Fetch payments when filters change
-  useEffect(() => {
-    fetchPayments()
-  }, [page, status, debouncedSearch])
-
-  const fetchPayments = async () => {
+  const fetchPayments = useCallback(async () => {
     setLoading(true)
     try {
       const params = new URLSearchParams({
@@ -99,7 +93,12 @@ function PaymentsContent() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [page, status, debouncedSearch])
+
+  // Fetch payments when filters change
+  useEffect(() => {
+    fetchPayments()
+  }, [fetchPayments])
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {

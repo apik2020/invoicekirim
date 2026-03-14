@@ -1,9 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import {
   getRateLimitType,
   getClientIp,
   checkRateLimit,
-  type RateLimitType,
 } from '@/lib/rate-limit'
 
 // Mock environment variables

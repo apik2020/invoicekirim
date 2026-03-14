@@ -33,7 +33,7 @@ const TEMPLATE_NAMES: Record<string, string> = {
 }
 
 export default function AdminEmailTemplatesPage() {
-  const [loading, setLoading] = useState(true)
+  const [, setLoading] = useState(true)
   const [templates, setTemplates] = useState<EmailTemplate[]>([])
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState(false)
@@ -177,7 +177,7 @@ export default function AdminEmailTemplatesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {templates.map((template, index) => (
+            {templates.map((template) => (
               <div
                 key={template.id}
                 className={cn(

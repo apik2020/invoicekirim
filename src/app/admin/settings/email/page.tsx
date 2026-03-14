@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Save, Mail, Server, Lock, TestTube, CheckCircle, XCircle, Settings } from 'lucide-react'
+import { Save, Mail, Server, TestTube, CheckCircle, XCircle, Settings } from 'lucide-react'
 import { AdminLayout } from '@/components/admin/AdminLayout'
 import { cn } from '@/lib/utils'
 
@@ -50,7 +50,7 @@ export default function AdminEmailSettingsPage() {
           smtpFromEmail: data.smtpFromEmail || '',
         })
       }
-    } catch (err) {
+    } catch {
       setError('Gagal memuat pengaturan SMTP')
     } finally {
       setIsLoading(false)
@@ -99,7 +99,7 @@ export default function AdminEmailSettingsPage() {
       } else {
         setTestResult({ success: false, message: data.error || 'Koneksi gagal' })
       }
-    } catch (err) {
+    } catch {
       setTestResult({ success: false, message: 'Terjadi kesalahan saat menguji koneksi' })
     } finally {
       setIsTesting(false)

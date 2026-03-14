@@ -1,18 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-// Security configuration
-const SECURITY_CONFIG = {
-  // Routes that don't require authentication (includes OAuth callback routes)
-  publicRoutes: ['/login', '/register', '/pricing', '/invoice', '/client', '/api/auth/callback'],
-  // Routes that require authentication
-  protectedRoutes: ['/dashboard'],
-  // API routes that need auth
-  protectedAPIRoutes: ['/api/invoices', '/api/templates', '/api/payments', '/api/subscriptions'],
-  // Routes that should never be accessible
-  blockedRoutes: ['/api/admin', '/admin'],
-}
-
 export default async function middleware(req: NextRequest) {
   const { pathname, origin } = req.nextUrl
   const response = NextResponse.next()

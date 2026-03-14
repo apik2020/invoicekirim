@@ -1,56 +1,57 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSession } from 'next-auth/react'
 import { Check, X, Star, Loader2 } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 
-const plans = [
-  {
-    name: 'Gratis',
-    price: 'Rp 0',
-    period: 'selamanya',
-    description: 'Untuk freelancer yang baru mulai',
-    featured: false,
-    priceId: null,
-    cta: 'Mulai Gratis',
-    features: [
-      { name: '10 invoice per bulan', included: true },
-      { name: 'Template invoice dasar', included: true },
-      { name: 'Simpan di cloud', included: true },
-      { name: 'Ekspor PDF', included: true },
-      { name: 'Kirim via WhatsApp', included: true },
-      { name: 'Custom branding', included: false },
-      { name: 'Unlimited invoice', included: false },
-      { name: 'Priority support', included: false },
-    ],
-  },
-  {
-    name: 'Pro',
-    price: 'Rp 49.000',
-    period: '/bulan',
-    description: 'Untuk freelancer profesional',
-    featured: true,
-    priceId: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID || '',
-    cta: 'Mulai Pro - Gratis 7 Hari',
-    features: [
-      { name: '10 invoice per bulan', included: false },
-      { name: 'Template invoice dasar', included: false },
-      { name: 'Simpan di cloud', included: true },
-      { name: 'Ekspor PDF', included: true },
-      { name: 'Kirim via WhatsApp', included: true },
-      { name: 'Custom branding (logo, warna)', included: true },
-      { name: 'Unlimited invoice', included: true },
-      { name: 'Priority support', included: true },
-    ],
-  },
-]
+interface PlanFeature {
+  id: string
+  name: string
+  key: string
+  included: boolean
+  limitValue: number | null
+}
+
+interface Plan {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  price: number
+  currency: string
+  stripePriceId: string | null
+  trialDays: number
+  isFeatured: boolean
+  ctaText: string | null
+  features: PlanFeature[]
+}
 
 function PricingContent() {
   const { data: session } = useSession()
+  const [plans, setPlans] = useState<Plan[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null)
   const searchParams = useSearchParams()
   const checkout = searchParams.get('checkout')
+
+  useEffect(() => {
+    fetchPlans()
+  }, [])
+
+  const fetchPlans = async () => {
+    try {
+      const res = await fetch('/api/pricing')
+      if (res.ok) {
+        const data = await res.json()
+        setPlans(data.plans)
+      }
+    } catch (err) {
+      console.error('Error fetching plans:', err)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const handleSubscribe = async (priceId: string, planName: string) => {
     if (!session) {
@@ -83,6 +84,40 @@ function PricingContent() {
     }
   }
 
+  const formatPrice = (price: number) => {
+    if (price === 0) return 'Rp 0'
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+    }).format(price)
+  }
+
+  const getFeatureDisplayText = (feature: PlanFeature) => {
+    if (!feature.included) {
+      return feature.name
+    }
+    if (feature.key === 'invoice_limit') {
+      if (feature.limitValue) {
+        return `${feature.limitValue} invoice per bulan`
+      }
+      return 'Unlimited invoice'
+    }
+    return feature.name
+  }
+
+  if (isLoading) {
+    return (
+      <section id="pricing" className="py-32 md:py-40 bg-ice-blue/20">
+        <div className="container mx-auto px-4">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto text-arctic-blue" />
+          </div>
+        </div>
+      </section>
+    )
+  }
+
   return (
     <section id="pricing" className="py-32 md:py-40 bg-ice-blue/20">
       <div className="container mx-auto px-4">
@@ -103,7 +138,7 @@ function PricingContent() {
           {checkout === 'success' && (
             <div className="mt-6 p-4 rounded-2xl bg-green-50 border border-green-200 max-w-md mx-auto">
               <p className="font-body text-green-700">
-                🎉 Upgrade berhasil! Selamat menikmati fitur Pro.
+                Upgrade berhasil! Selamat menikmati fitur Pro.
               </p>
             </div>
           )}
@@ -120,15 +155,15 @@ function PricingContent() {
         <div className="grid md:grid-cols-2 gap-12 max-w-5xl mx-auto">
           {plans.map((plan) => (
             <div
-              key={plan.name}
+              key={plan.id}
               className={`relative p-10 transition-all duration-300 ${
-                plan.featured
+                plan.isFeatured
                   ? 'neu-card transform md:-translate-y-4 border-2 border-arctic-blue/20'
                   : 'neu-card hover:-translate-y-2'
               }`}
             >
               {/* Featured Badge */}
-              {plan.featured && (
+              {plan.isFeatured && (
                 <div className="absolute -top-5 left-1/2 transform -translate-x-1/2">
                   <div className="px-6 py-2 bg-arctic-blue text-snow text-sm font-bold rounded-2xl neu-button-primary animate-scale-pulse">
                     POPULER
@@ -148,16 +183,16 @@ function PricingContent() {
               <div className="text-center mb-10 pb-8 border-b border-slate/10">
                 <div className="flex items-baseline justify-center gap-2">
                   <span className="font-display text-5xl md:text-6xl font-extrabold text-slate tracking-tight">
-                    {plan.price}
+                    {formatPrice(plan.price)}
                   </span>
-                  <span className="font-body text-muted text-lg">{plan.period}</span>
+                  <span className="font-body text-muted text-lg">/bulan</span>
                 </div>
               </div>
 
               {/* Features */}
               <div className="space-y-4 mb-10">
-                {plan.features.map((feature, index) => (
-                  <div key={index} className="flex items-start gap-4">
+                {plan.features.map((feature) => (
+                  <div key={feature.id} className="flex items-start gap-4">
                     <div className="flex-shrink-0 mt-0.5">
                       {feature.included ? (
                         <div className="w-6 h-6 rounded-xl shadow-extruded-sm flex items-center justify-center">
@@ -170,16 +205,16 @@ function PricingContent() {
                       )}
                     </div>
                     <span className={`font-body text-sm ${feature.included ? 'text-slate' : 'text-slate/40'}`}>
-                      {feature.name}
+                      {getFeatureDisplayText(feature)}
                     </span>
                   </div>
                 ))}
               </div>
 
               {/* CTA Button */}
-              {plan.featured && plan.priceId ? (
+              {plan.isFeatured && plan.stripePriceId ? (
                 <button
-                  onClick={() => handleSubscribe(plan.priceId, plan.name)}
+                  onClick={() => handleSubscribe(plan.stripePriceId!, plan.name)}
                   disabled={loadingPlan === plan.name}
                   className={`block w-full text-center py-4 font-display font-bold rounded-2xl transition-all duration-300 focus-ring neu-button-primary hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
@@ -189,24 +224,24 @@ function PricingContent() {
                       Memproses...
                     </>
                   ) : (
-                    plan.cta
+                    plan.ctaText || 'Mulai Sekarang'
                   )}
                 </button>
               ) : (
                 <a
                   href={session ? '/dashboard/invoices/create' : '/login'}
                   className={`block w-full text-center py-4 font-display font-bold rounded-2xl transition-all duration-300 focus-ring ${
-                    plan.featured
+                    plan.isFeatured
                       ? 'neu-button-primary hover:-translate-y-1'
                       : 'neu-button hover:text-arctic-blue hover:-translate-y-1'
                   }`}
                 >
-                  {plan.cta}
+                  {plan.ctaText || 'Mulai Gratis'}
                 </a>
               )}
 
-              {/* Note for Pro plan */}
-              {plan.featured && (
+              {/* Note for featured plan */}
+              {plan.isFeatured && (
                 <p className="text-center text-sm text-muted mt-6 font-body">
                   Tidak perlu kartu kredit • Batalkan kapan saja
                 </p>
@@ -235,7 +270,7 @@ export default function Pricing() {
       <section id="pricing" className="py-32 md:py-40 bg-ice-blue/20">
         <div className="container mx-auto px-4">
           <div className="text-center">
-            <p>Loading...</p>
+            <Loader2 className="w-8 h-8 animate-spin mx-auto text-arctic-blue" />
           </div>
         </div>
       </section>

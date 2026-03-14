@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
 import {
   Users,
   FileText,
@@ -70,10 +69,9 @@ interface AnalyticsData {
 }
 
 export default function AdminDashboard() {
-  const router = useRouter()
   const [data, setData] = useState<AnalyticsData | null>(null)
   const [period, setPeriod] = useState('30')
-  const [loading, setLoading] = useState(true)
+  const [, setLoading] = useState(true)
 
   const fetchAnalytics = useCallback(async () => {
     try {
