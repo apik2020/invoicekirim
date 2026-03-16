@@ -89,6 +89,15 @@ export async function POST(
       )
     }
 
+    // Update reminder tracking fields
+    await prisma.invoices.update({
+      where: { id },
+      data: {
+        reminderCount: { increment: 1 },
+        lastReminderAt: new Date(),
+      },
+    })
+
     return NextResponse.json({
       message: 'Payment reminder berhasil dikirim',
       to: invoice.clientEmail,

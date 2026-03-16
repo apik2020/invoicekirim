@@ -292,10 +292,13 @@ export async function POST(
       html: emailHtml,
     })
 
-    // Update invoice status to SENT
+    // Update invoice status to SENT and track sent timestamp
     await prisma.invoices.update({
       where: { id },
-      data: { status: 'SENT' },
+      data: {
+        status: 'SENT',
+        sentAt: new Date(),
+      },
     })
 
     // Log activity

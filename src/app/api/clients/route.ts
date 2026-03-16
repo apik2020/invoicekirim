@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { name, email, phone, address, company } = body
+    const { name, email, phone, address, company, taxId, website } = body
 
     // Validation
     if (!name || !email) {
@@ -74,6 +74,8 @@ export async function POST(req: NextRequest) {
         phone,
         address,
         company,
+        taxId,
+        website,
         updatedAt: new Date(),
       },
     })

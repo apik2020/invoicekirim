@@ -213,6 +213,8 @@ export async function POST(req: NextRequest) {
             description: item.description,
             quantity: item.quantity,
             price: item.price,
+            taxRate: data.taxRate || 11,
+            subtotal: item.quantity * item.price,
           })),
         },
       },

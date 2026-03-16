@@ -18,6 +18,17 @@ export async function GET(
 
     const payment = await prisma.payments.findUnique({
       where: { id },
+      include: {
+        invoices: {
+          select: {
+            id: true,
+            invoiceNumber: true,
+            clientName: true,
+            clientEmail: true,
+            total: true,
+          },
+        },
+      },
     })
 
     if (!payment) {
@@ -78,13 +89,24 @@ export async function PATCH(
       )
     }
 
-    const { status, description, receiptUrl, receiptNumber } = body
+    const { status, description, receiptUrl, receiptNumber, refundReason } = body
 
     const updateData: any = {}
-    if (status) updateData.status = status.toUpperCase()
+    if (status) {
+      const newStatus = status.toUpperCase()
+      updateData.status = newStatus
+      // Track refund timestamp when status changes to REFUNDED
+      if (newStatus === 'REFUNDED') {
+        updateData.refundedAt = new Date()
+        if (refundReason) updateData.refundReason = refundReason
+      }
+    }
     if (description !== undefined) updateData.description = description
     if (receiptUrl !== undefined) updateData.receiptUrl = receiptUrl
     if (receiptNumber !== undefined) updateData.receiptNumber = receiptNumber
+    if (refundReason !== undefined && updateData.status !== 'REFUNDED') {
+      updateData.refundReason = refundReason
+    }
 
     const updatedPayment = await prisma.payments.update({
       where: { id },

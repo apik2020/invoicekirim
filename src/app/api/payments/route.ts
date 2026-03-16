@@ -28,6 +28,17 @@ export async function GET(req: NextRequest) {
     const [payments, total] = await Promise.all([
       prisma.payments.findMany({
         where,
+        include: {
+          invoices: {
+            select: {
+              id: true,
+              invoiceNumber: true,
+              clientName: true,
+              clientEmail: true,
+              total: true,
+            },
+          },
+        },
         orderBy: { createdAt: 'desc' },
         take: limit,
         skip: offset,

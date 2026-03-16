@@ -20,6 +20,8 @@ import {
   X,
   Check,
   User,
+  Globe,
+  FileText,
 } from 'lucide-react'
 
 interface Client {
@@ -29,6 +31,8 @@ interface Client {
   phone?: string | null
   address?: string | null
   company?: string | null
+  taxId?: string | null
+  website?: string | null
   createdAt: string
 }
 
@@ -49,6 +53,8 @@ export default function ClientsPage() {
     phone: '',
     address: '',
     company: '',
+    taxId: '',
+    website: '',
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -141,6 +147,8 @@ export default function ClientsPage() {
       phone: client.phone || '',
       address: client.address || '',
       company: client.company || '',
+      taxId: client.taxId || '',
+      website: client.website || '',
     })
     setShowModal(true)
   }
@@ -197,6 +205,8 @@ export default function ClientsPage() {
       phone: '',
       address: '',
       company: '',
+      taxId: '',
+      website: '',
     })
     setShowModal(true)
   }
@@ -210,6 +220,8 @@ export default function ClientsPage() {
       phone: '',
       address: '',
       company: '',
+      taxId: '',
+      website: '',
     })
   }
 
@@ -453,6 +465,40 @@ export default function ClientsPage() {
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       className="input pl-12"
                       placeholder="+62 812 3456 7890"
+                    />
+                  </div>
+                </div>
+
+                {/* Tax ID (NPWP) */}
+                <div>
+                  <label className="input-label">NPWP / Tax ID</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <FileText className="w-5 h-5 text-text-muted" />
+                    </div>
+                    <input
+                      type="text"
+                      value={formData.taxId}
+                      onChange={(e) => setFormData({ ...formData, taxId: e.target.value })}
+                      className="input pl-12"
+                      placeholder="00.000.000.0-000.000"
+                    />
+                  </div>
+                </div>
+
+                {/* Website */}
+                <div>
+                  <label className="input-label">Website</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <Globe className="w-5 h-5 text-text-muted" />
+                    </div>
+                    <input
+                      type="url"
+                      value={formData.website}
+                      onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                      className="input pl-12"
+                      placeholder="https://www.website.com"
                     />
                   </div>
                 </div>

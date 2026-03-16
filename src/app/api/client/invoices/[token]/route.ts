@@ -23,6 +23,15 @@ export async function GET(
       return NextResponse.json({ error: 'Invoice belum tersedia' }, { status: 403 })
     }
 
+    // Track invoice view - update viewedAt and increment viewCount
+    await prisma.invoices.update({
+      where: { accessToken: token },
+      data: {
+        viewedAt: new Date(),
+        viewCount: { increment: 1 },
+      },
+    })
+
     return NextResponse.json(invoice)
   } catch (error) {
     console.error('Get invoice by token error:', error)

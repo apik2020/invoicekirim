@@ -32,7 +32,7 @@ export async function PUT(
     }
 
     const body = await req.json()
-    const { name, email, phone, address, company } = body
+    const { name, email, phone, address, company, taxId, website } = body
 
     // Check if email is being changed and if it conflicts with another client
     if (email && email !== client.email) {
@@ -60,6 +60,9 @@ export async function PUT(
         phone,
         address,
         company,
+        taxId,
+        website,
+        updatedAt: new Date(),
       },
     })
 
