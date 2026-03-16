@@ -137,6 +137,8 @@ model clients {
   phone     String?
   address   String?
   company   String?
+  taxId     String?
+  website   String?
   createdAt DateTime   @default(now())
   updatedAt DateTime
   teamId    String?
@@ -146,6 +148,7 @@ model clients {
 
   @@index([teamId])
   @@index([userId])
+  @@index([email])
 }
 
 model email_templates {
@@ -165,7 +168,11 @@ model invoice_items {
   description String
   quantity    Int
   price       Float
+  taxRate     Float    @default(11)
+  subtotal    Float
   invoices    invoices @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
 }
 
 model invoice_templates {
@@ -218,6 +225,11 @@ model invoices {
   total                    Float
   status                   InvoiceStatus   @default(DRAFT)
   paidAt                   DateTime?
+  sentAt                   DateTime?
+  viewedAt                 DateTime?
+  viewCount                Int             @default(0)
+  reminderCount            Int             @default(0)
+  lastReminderAt           DateTime?
   createdAt                DateTime        @default(now())
   updatedAt                DateTime
   clientId                 String?
@@ -236,6 +248,7 @@ model invoices {
   signatureUrl             String?
   termsAndConditions       String?
   invoice_items            invoice_items[]
+  payments                 payments[]
   clients                  clients?        @relation(fields: [clientId], references: [id])
   teams                    teams?          @relation(fields: [teamId], references: [id], onDelete: Cascade)
   users                    users           @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -244,6 +257,8 @@ model invoices {
   @@index([status])
   @@index([teamId])
   @@index([userId])
+  @@index([sentAt])
+  @@index([viewedAt])
 }
 
 model items {
@@ -275,6 +290,8 @@ model payments {
   amount                Float
   currency              String        @default("IDR")
   status                PaymentStatus
+  refundedAt            DateTime?
+  refundReason          String?
   createdAt             DateTime      @default(now())
   receiptNumber         String?       @unique
   receiptUrl            String?
@@ -291,8 +308,10 @@ model payments {
   vaBank                String?
   vaNumber              String?
   metadata              Json?
+  invoices              invoices?     @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
   users                 users         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([invoiceId])
   @@index([midtransOrderId])
   @@index([status])
   @@index([stripePaymentIntentId])
