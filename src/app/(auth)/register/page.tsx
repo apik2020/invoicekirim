@@ -25,24 +25,11 @@ export default function RegisterPage() {
   const handleGoogleLogin = async () => {
     setIsGoogleLoading(true)
     setError('')
-    try {
-      const result = await signIn('google', {
-        callbackUrl: '/dashboard',
-        redirect: false
-      })
-
-      if (result?.error) {
-        setError('Gagal login dengan Google. Silakan coba lagi.')
-        console.error('Google OAuth error:', result.error)
-      } else if (result?.ok && result?.url) {
-        window.location.href = result.url
-      }
-    } catch (err: any) {
-      setError('Terjadi kesalahan saat login dengan Google')
-      console.error('Google login exception:', err)
-    } finally {
-      setIsGoogleLoading(false)
-    }
+    // For OAuth providers like Google, we need to use redirect: true
+    // The page will redirect to Google, then back to callback URL
+    signIn('google', {
+      callbackUrl: '/dashboard'
+    })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {

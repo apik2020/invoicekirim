@@ -44,34 +44,11 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     setIsGoogleLoading(true)
     setError('')
-    try {
-      const result = await signIn('google', {
-        callbackUrl: '/dashboard',
-        redirect: false
-      })
-
-      if (result?.error) {
-        // Map error codes to user-friendly messages
-        const errorMessages: Record<string, string> = {
-          OAuthSignin: 'Error saat memulai login dengan Google.',
-          OAuthCallback: 'Error saat menerima callback dari Google.',
-          OAuthCreateAccount: 'Gagal membuat akun dengan Google.',
-          OAuthAccountNotLinked: 'Email sudah terdaftar dengan metode login lain.',
-          AccessDenied: 'Akses ditolak oleh Google.',
-          Configuration: 'Konfigurasi OAuth tidak valid. Hubungi administrator.',
-          Default: 'Gagal login dengan Google. Silakan coba lagi.'
-        }
-        setError(errorMessages[result.error] || errorMessages.Default)
-        console.error('Google OAuth error:', result.error)
-      } else if (result?.ok && result?.url) {
-        window.location.href = result.url
-      }
-    } catch (err: any) {
-      setError('Terjadi kesalahan saat login dengan Google')
-      console.error('Google login exception:', err)
-    } finally {
-      setIsGoogleLoading(false)
-    }
+    // For OAuth providers like Google, we need to use redirect: true
+    // The page will redirect to Google, then back to callback URL
+    signIn('google', {
+      callbackUrl: '/dashboard'
+    })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
