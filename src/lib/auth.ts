@@ -28,6 +28,13 @@ export const authOptions: NextAuthOptions = {
       GoogleProvider({
         clientId: env.googleClientId,
         clientSecret: env.googleClientSecret,
+        authorization: {
+          params: {
+            prompt: "consent",
+            access_type: "offline",
+            scope: "openid email profile"
+          }
+        }
       })
     ] : []),
     CredentialsProvider({
@@ -213,6 +220,17 @@ export const authOptions: NextAuthOptions = {
     signIn: '/login',
   },
   callbacks: {
+    async signIn({ user, account, profile }) {
+      // Log OAuth sign-in attempts for debugging
+      if (account?.provider === 'google') {
+        logger.dev('Auth', 'Google OAuth sign-in attempt:', {
+          email: user.email,
+          provider: account.provider,
+          hasProfile: !!profile
+        })
+      }
+      return true
+    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id
@@ -231,6 +249,18 @@ export const authOptions: NextAuthOptions = {
       return session
     },
   },
+  logger: {
+    error(code, metadata) {
+      logger.error('NextAuth Error:', code, metadata)
+    },
+    warn(code) {
+      logger.dev('Auth', 'NextAuth Warning:', code)
+    },
+    debug(code, metadata) {
+      logger.dev('Auth', 'NextAuth Debug:', code, metadata)
+    },
+  },
+  debug: env.isDevelopment,
   events: {
     async createUser({ user }) {
       if (user.id) {
