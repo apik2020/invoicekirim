@@ -41,13 +41,13 @@ export async function GET(req: NextRequest) {
     if (planFilter || statusFilter) {
       where.subscriptions = {}
       if (planFilter) {
-        // Map plan filter to planType
-        const planTypeMap: Record<string, string> = {
-          'gratis': 'FREE',
-          'free': 'FREE',
-          'pro': 'PRO',
+        // Map plan filter to planType - check if slug contains 'pro'
+        const planFilterLower = planFilter.toLowerCase()
+        if (planFilterLower.includes('pro')) {
+          where.subscriptions.planType = 'PRO'
+        } else {
+          where.subscriptions.planType = 'FREE'
         }
-        where.subscriptions.planType = planTypeMap[planFilter.toLowerCase()] as PlanType
       }
       if (statusFilter) {
         where.subscriptions.status = statusFilter.toUpperCase() as SubscriptionStatus
@@ -176,15 +176,27 @@ export async function PUT(req: NextRequest) {
         where: { id: pricingPlanId },
       })
       if (pricingPlan) {
-        planType = pricingPlan.slug.toUpperCase() === 'PRO' ? 'PRO' : 'FREE'
+        // Check if slug contains 'pro' (flexible for 'pro', 'pro-trial', etc.)
+        planType = pricingPlan.slug.toLowerCase().includes('pro') ? 'PRO' : 'FREE'
       }
     }
 
     // Prepare subscription data
+    // Determine appropriate status based on plan and trial
+    let finalStatus = status
+    if (!finalStatus) {
+      if (planType === 'PRO') {
+        finalStatus = trialDays && trialDays > 0 ? 'TRIALING' : 'ACTIVE'
+      } else {
+        finalStatus = 'FREE'
+      }
+    }
+
     const subscriptionData: any = {
       planType,
-      status: status || 'FREE',
+      status: finalStatus,
       pricingPlanId: pricingPlanId || null,
+      updatedAt: new Date(),
     }
 
     if (trialDays && trialDays > 0) {
@@ -258,6 +270,7 @@ export async function DELETE(req: NextRequest) {
         stripePriceId: null,
         trialEndsAt: null,
         trialStartsAt: null,
+        updatedAt: new Date(),
       },
     })
 
