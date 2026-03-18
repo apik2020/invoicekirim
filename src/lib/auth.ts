@@ -1,5 +1,4 @@
 import { NextAuthOptions } from 'next-auth'
-import { PrismaAdapter } from '@next-auth/prisma-adapter'
 import GoogleProvider from 'next-auth/providers/google'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
@@ -21,22 +20,70 @@ async function isAdminEmail(email: string): Promise<boolean> {
   }
 }
 
+// Helper to create or get user for OAuth
+async function createOrGetOAuthUser(email: string, name?: string | null, image?: string | null) {
+  // Check if user exists
+  let user = await prisma.users.findUnique({
+    where: { email }
+  })
+
+  if (!user) {
+    // Create new user
+    user = await prisma.users.create({
+      data: {
+        id: crypto.randomUUID(),
+        email: email,
+        name: name || email.split('@')[0],
+        image: image || null,
+        emailVerified: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+    })
+    logger.dev('Auth', 'Created new OAuth user:', email)
+
+    // Create subscription for new user
+    try {
+      await prisma.subscriptions.create({
+        data: {
+          id: crypto.randomUUID(),
+          userId: user.id,
+          status: 'FREE',
+          planType: 'FREE',
+          updatedAt: new Date(),
+        }
+      })
+    } catch (error) {
+      logger.error('Failed to create subscription for OAuth user:', error)
+    }
+  } else {
+    // Update user info if needed
+    if (name && name !== user.name) {
+      await prisma.users.update({
+        where: { id: user.id },
+        data: {
+          name: name,
+          image: image || user.image,
+          updatedAt: new Date(),
+        }
+      })
+    }
+  }
+
+  return user
+}
+
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
   providers: [
+    // Google OAuth Provider
     ...(env.googleClientId && env.googleClientSecret ? [
       GoogleProvider({
         clientId: env.googleClientId,
         clientSecret: env.googleClientSecret,
-        authorization: {
-          params: {
-            prompt: "consent",
-            access_type: "offline",
-            scope: "openid email profile"
-          }
-        }
       })
     ] : []),
+
+    // Credentials Provider (Email/Password)
     CredentialsProvider({
       name: 'credentials',
       credentials: {
@@ -220,62 +267,67 @@ export const authOptions: NextAuthOptions = {
     signIn: '/login',
   },
   callbacks: {
-    async signIn({ user, account, profile }) {
-      // Log OAuth sign-in attempts for debugging
-      if (account?.provider === 'google') {
-        logger.dev('Auth', 'Google OAuth sign-in attempt:', {
-          email: user.email,
-          provider: account.provider,
-          hasProfile: !!profile
-        })
+    async signIn({ user, account }) {
+      // Handle Google OAuth sign-in
+      if (account?.provider === 'google' && user.email) {
+        logger.dev('Auth', 'Google OAuth sign-in:', user.email)
+
+        try {
+          const dbUser = await createOrGetOAuthUser(user.email, user.name, user.image)
+          // Update the user object with database ID
+          user.id = dbUser.id
+          logger.dev('Auth', 'Google OAuth successful, user ID:', dbUser.id)
+          return true
+        } catch (error) {
+          logger.error('Google OAuth error:', error)
+          return false
+        }
       }
+
       return true
     },
-    async jwt({ token, user }) {
+
+    async jwt({ token, user, account }) {
+      // Initial sign in
       if (user) {
         token.id = user.id
-        token.email = user.email ?? undefined
-        // Check if user is admin
-        token.isAdmin = await isAdminEmail(user.email as string)
+        token.email = user.email
+        token.name = user.name
+        token.image = user.image
+
+        // Check if admin
+        if (user.email) {
+          token.isAdmin = await isAdminEmail(user.email)
+        }
       }
+
+      // For Google OAuth, ensure we have the correct user ID from database
+      if (account?.provider === 'google' && user?.email) {
+        const dbUser = await prisma.users.findUnique({
+          where: { email: user.email }
+        })
+        if (dbUser) {
+          token.id = dbUser.id
+          token.email = dbUser.email
+          token.name = dbUser.name
+          token.image = dbUser.image
+          token.isAdmin = await isAdminEmail(dbUser.email)
+        }
+      }
+
       return token
     },
+
     async session({ session, token }) {
-      if (session.user && token) {
+      if (session.user) {
         session.user.id = token.id as string
-        session.user.isAdmin = token.isAdmin as boolean
         session.user.email = token.email as string
+        session.user.name = token.name as string
+        session.user.image = token.image as string | null
+        session.user.isAdmin = token.isAdmin as boolean
       }
       return session
     },
   },
-  logger: {
-    error(code, metadata) {
-      logger.error('NextAuth Error:', code, metadata)
-    },
-    warn(code) {
-      logger.dev('Auth', 'NextAuth Warning:', code)
-    },
-    debug(code, metadata) {
-      logger.dev('Auth', 'NextAuth Debug:', code, metadata)
-    },
-  },
   debug: env.isDevelopment,
-  events: {
-    async createUser({ user }) {
-      if (user.id) {
-        await prisma.subscriptions.create({
-          data: {
-            id: crypto.randomUUID(),
-            userId: user.id,
-            status: 'FREE',
-            planType: 'FREE',
-            updatedAt: new Date(),
-          },
-        }).catch(() => {
-          // Ignore if subscription already exists
-        })
-      }
-    },
-  },
 }
