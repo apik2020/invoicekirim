@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import {
   Users,
-  FileText,
   DollarSign,
   Activity,
   Mail,
@@ -18,7 +17,8 @@ import {
   ChevronDown,
   Settings,
   BarChart3,
-  CreditCard,
+  Megaphone,
+  MessageCircle,
 } from 'lucide-react'
 import { useAutoLogout } from '@/hooks/useAutoLogout'
 import { SessionTimeoutModal } from '@/components/SessionTimeoutModal'
@@ -49,6 +49,9 @@ const navItems: NavItem[] = [
   { name: 'Payments', href: '/admin/payments', icon: DollarSign },
   { name: 'Activity Logs', href: '/admin/activity-logs', icon: Activity },
   { name: 'Email Templates', href: '/admin/email-templates', icon: Mail },
+  { name: 'Announcements', href: '/admin/announcements', icon: Megaphone },
+  { name: 'Support', href: '/admin/support', icon: MessageCircle },
+  { name: 'Reports', href: '/admin/reports', icon: BarChart3 },
   {
     name: 'Settings',
     icon: Settings,
@@ -62,12 +65,12 @@ const navItems: NavItem[] = [
 
 export function AdminLayout({ children }: AdminLayoutProps) {
   const router = useRouter()
-  const pathname = usePathname()
-  const [admin, setAdmin] = useState<Admin | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [sidebarOpen, setSidebarOpen] = useState(true)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null)
+    const pathname = usePathname()
+    const [admin, setAdmin] = useState<Admin | null>(null)
+    const [loading, setLoading] = useState(true)
+    const [sidebarOpen, setSidebarOpen] = useState(true)
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+    const [openDropdown, setOpenDropdown] = useState<string | null>(null)
 
   // Auto logout after 30 minutes of inactivity
   const { showWarning, timeRemaining, stayLoggedIn, logout } = useAutoLogout({

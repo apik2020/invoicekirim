@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
         include: {
           subscriptions: {
             include: {
-              pricingPlan: {
+              pricing_plans: {
                 include: {
                   features: {
                     include: { feature: true },
@@ -94,7 +94,7 @@ export async function GET(req: NextRequest) {
       const invoiceCountThisMonth = user._count?.invoices || 0
 
       // Find invoice limit from plan features
-      const invoiceLimitFeature = subscription?.pricingPlan?.features?.find(
+      const invoiceLimitFeature = subscription?.pricing_plans?.features?.find(
         (f: any) => f.feature?.key === 'invoice_limit'
       )
       const monthlyInvoiceLimit = invoiceLimitFeature?.limitValue || null
@@ -109,10 +109,10 @@ export async function GET(req: NextRequest) {
           planType: subscription.planType,
           status: subscription.status,
           trialEndsAt: subscription.trialEndsAt,
-          pricingPlan: subscription.pricingPlan ? {
-            id: subscription.pricingPlan.id,
-            name: subscription.pricingPlan.name,
-            slug: subscription.pricingPlan.slug,
+          pricingPlan: subscription.pricing_plans ? {
+            id: subscription.pricing_plans.id,
+            name: subscription.pricing_plans.name,
+            slug: subscription.pricing_plans.slug,
           } : null,
           monthlyInvoiceLimit,
         } : null,

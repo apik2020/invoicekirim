@@ -291,9 +291,9 @@ export const authOptions: NextAuthOptions = {
       // Initial sign in
       if (user) {
         token.id = user.id
-        token.email = user.email
-        token.name = user.name
-        token.image = user.image
+        token.email = user.email ?? undefined
+        token.name = user.name ?? undefined
+        token.image = user.image ?? undefined
 
         // Check if admin
         if (user.email) {
@@ -308,9 +308,9 @@ export const authOptions: NextAuthOptions = {
         })
         if (dbUser) {
           token.id = dbUser.id
-          token.email = dbUser.email
-          token.name = dbUser.name
-          token.image = dbUser.image
+          token.email = dbUser.email ?? undefined
+          token.name = dbUser.name ?? undefined
+          token.image = dbUser.image ?? undefined
           token.isAdmin = await isAdminEmail(dbUser.email)
         }
       }

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { X, Loader2, Crown, FileText, Activity, CreditCard } from 'lucide-react'
+import { X, Loader2, Crown, FileText, Activity, CreditCard, Users } from 'lucide-react'
 import { formatDate, formatCurrency } from '@/lib/utils'
 
 interface UserDetail {
@@ -20,6 +20,9 @@ export function UserDetailModal({ userId, onClose }: UserDetailModalProps) {
   const [loading, setLoading] = useState(false)
   const [tab, setTab] = useState<'overview' | 'invoices' | 'payments' | 'activity'>('overview')
   const [updatingSubscription, setUpdatingSubscription] = useState(false)
+  const [impersonating, setImpersonating] = useState(false)
+  const [showImpersonateDialog, setShowImpersonateDialog] = useState(false)
+  const [impersonateReason, setImpersonateReason] = useState('')
 
   useEffect(() => {
     if (userId) {
@@ -69,6 +72,38 @@ export function UserDetailModal({ userId, onClose }: UserDetailModalProps) {
     }
   }
 
+  const handleImpersonate = async () => {
+    if (!userId) return
+
+    try {
+      setImpersonating(true)
+      const res = await fetch(`/api/admin/users/${userId}/impersonate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: impersonateReason }),
+      })
+
+      const result = await res.json()
+
+      if (res.ok) {
+        // Store impersonation info in session storage for the banner
+        sessionStorage.setItem('impersonating', 'true')
+        sessionStorage.setItem('impersonatedUser', JSON.stringify(result.user))
+
+        // Redirect to dashboard
+        window.location.href = result.redirectUrl
+      } else {
+        alert(`Error: ${result.error}`)
+      }
+    } catch (error) {
+      console.error('Error impersonating user:', error)
+      alert('Terjadi kesalahan saat impersonasi user')
+    } finally {
+      setImpersonating(false)
+      setShowImpersonateDialog(false)
+    }
+  }
+
   if (!userId) return null
 
   return (
@@ -106,6 +141,14 @@ export function UserDetailModal({ userId, onClose }: UserDetailModalProps) {
 
                 {/* Subscription Quick Action */}
                 <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setShowImpersonateDialog(true)}
+                    className="px-4 py-2 rounded-lg border border-purple-200 text-purple-600 hover:bg-purple-50 text-sm font-medium flex items-center gap-2"
+                    title="Login sebagai user ini"
+                  >
+                    <Users className="w-4 h-4" />
+                    Impersonate
+                  </button>
                   {data.user.subscription?.planType === 'PRO' ? (
                     <button
                       onClick={() => updateSubscription('FREE')}
@@ -343,6 +386,57 @@ export function UserDetailModal({ userId, onClose }: UserDetailModalProps) {
           </div>
         )}
       </div>
+
+      {/* Impersonate Dialog */}
+      {showImpersonateDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">
+              Impersonate User
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Anda akan login sebagai <strong>{data?.user.name || data?.user.email}</strong> untuk membantu troubleshoot.
+              Semua aktivitas akan dicatat.
+            </p>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Alasan (opsional)
+              </label>
+              <textarea
+                value={impersonateReason}
+                onChange={(e) => setImpersonateReason(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:border-brand-500 focus:outline-none"
+                placeholder="Misal: Membantu troubleshoot invoice #123"
+                rows={3}
+              />
+            </div>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+              <p className="text-sm text-yellow-800">
+                <strong>Perhatian:</strong> Sesi impersonasi akan otomatis berakhir dalam 1 jam.
+              </p>
+            </div>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowImpersonateDialog(false)
+                  setImpersonateReason('')
+                }}
+                className="px-4 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleImpersonate}
+                disabled={impersonating}
+                className="px-4 py-2 rounded-lg bg-purple-500 text-white hover:bg-purple-600 disabled:opacity-50 flex items-center gap-2"
+              >
+                {impersonating && <Loader2 className="w-4 h-4 animate-spin" />}
+                {impersonating ? 'Memproses...' : 'Mulai Impersonasi'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

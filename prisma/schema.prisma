@@ -57,6 +57,7 @@ model admins {
   smtpFromEmail   String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime
+  impersonation_sessions impersonation_sessions[]
 }
 
 model analytics_snapshots {
@@ -469,6 +470,11 @@ model users {
   subscriptions        subscriptions?
   team_members         team_members[]
   teams                teams[]
+  // Micro-SaaS relations
+  announcement_reads   announcement_reads[]
+  support_tickets      support_tickets[]
+  support_messages     support_messages[]
+  impersonation_sessions impersonation_sessions[]
 }
 
 model verification_tokens {
@@ -604,4 +610,96 @@ enum TeamRole {
   ADMIN
   MEMBER
   VIEWER
+}
+
+// ==================== Micro-SaaS Tables ====================
+
+model announcements {
+  id           String   @id @default(uuid())
+  title        String
+  message      String
+  type         String   @default("info") // "info", "warning", "success", "error"
+  targetType   String   @default("all")  // "all", "free", "pro", "specific"
+  targetUsers  Json?    // Array of user IDs for specific targeting
+  displayType  String   @default("banner") // "banner", "modal", "toast"
+  isDismissible Boolean @default(true)
+  isActive     Boolean  @default(true)
+  startsAt     DateTime?
+  endsAt       DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  announcement_reads announcement_reads[]
+
+  @@index([isActive, startsAt, endsAt])
+}
+
+model announcement_reads {
+  id             String       @id @default(uuid())
+  announcementId String
+  userId         String
+  readAt         DateTime     @default(now())
+  dismissedAt    DateTime?
+  announcements  announcements @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  users          users        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([announcementId, userId])
+  @@index([announcementId])
+  @@index([userId])
+}
+
+model support_tickets {
+  id          String   @id @default(uuid())
+  userId      String
+  subject     String
+  description String
+  category    String   @default("general") // "general", "billing", "technical", "feature_request"
+  priority    String   @default("normal")  // "low", "normal", "high", "urgent"
+  status      String   @default("open")    // "open", "in_progress", "waiting_customer", "resolved", "closed"
+  assignedTo  String?  // Admin ID
+  lastReplyAt DateTime?
+  resolvedAt  DateTime?
+  closedAt    DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  users       users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  support_messages support_messages[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([assignedTo])
+  @@index([createdAt])
+}
+
+model support_messages {
+  id        String   @id @default(uuid())
+  ticketId  String
+  userId    String?
+  adminId   String?
+  message   String
+  isInternal Boolean @default(false) // For internal notes not visible to user
+  attachments Json?  // Array of attachment URLs
+  createdAt DateTime @default(now())
+  support_tickets support_tickets @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  users     users?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([ticketId])
+  @@index([createdAt])
+}
+
+model impersonation_sessions {
+  id           String   @id @default(uuid())
+  adminId      String
+  targetUserId String
+  token        String   @unique
+  reason       String?
+  endedAt      DateTime?
+  endReason    String?
+  createdAt    DateTime @default(now())
+  admins       admins   @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  users        users    @relation(fields: [targetUserId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([targetUserId])
+  @@index([token])
+  @@index([createdAt])
 }

@@ -146,6 +146,7 @@ export async function PUT(
               description: item.description,
               quantity: item.quantity,
               price: item.price,
+              subtotal: item.quantity * item.price,
             })),
           },
         }),

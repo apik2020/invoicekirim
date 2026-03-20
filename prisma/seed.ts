@@ -97,6 +97,7 @@ async function main() {
       description: 'Web Development Service',
       quantity: 1,
       price: 1000000,
+      subtotal: 1000000,
     },
   })
 
