@@ -160,9 +160,9 @@ export async function getTwoFactorBackupCodes(userId: string): Promise<string[] 
 }
 
 /**
- * Use a backup code (remove it from the list)
+ * Consume a backup code (remove it from the list)
  */
-export async function useBackupCode(
+export async function consumeBackupCode(
   userId: string,
   code: string
 ): Promise<boolean> {
@@ -218,7 +218,7 @@ export async function verifyTwoFactor(
     const { valid } = verifyBackupCode(code, hashedCodes)
     if (valid) {
       // Remove the used backup code
-      await useBackupCode(userId, code)
+      await consumeBackupCode(userId, code)
       return { success: true, isBackupCode: true }
     }
   }
