@@ -9,6 +9,17 @@ import {
 vi.stubEnv('UPSTASH_REDIS_REST_URL', '')
 vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', '')
 
+// Mock prisma to throw error for fail-open test
+vi.mock('@/lib/prisma', () => ({
+  prisma: {
+    rate_limit_entries: {
+      findUnique: () => { throw new Error('Database not available') },
+      upsert: () => { throw new Error('Database not available') },
+    },
+    $transaction: () => { throw new Error('Database not available') },
+  },
+}))
+
 describe('Rate Limiting', () => {
   describe('getRateLimitType', () => {
     it('should return auth for auth routes', () => {
@@ -72,10 +83,12 @@ describe('Rate Limiting', () => {
   })
 
   describe('checkRateLimit', () => {
-    it('should fail open when Redis is not configured', async () => {
+    it('should fail open when database is not available', async () => {
       const result = await checkRateLimit('test-ip', 'api')
+      // When database fails, the function should still succeed (fail-open)
       expect(result.success).toBe(true)
-      expect(result.limit).toBe(0)
+      // It returns the configured limit even on error (to inform the client)
+      expect(result.limit).toBe(30) // api rate limit is 30
     })
   })
 })
