@@ -204,10 +204,8 @@ export const authOptions: NextAuthOptions = {
           token.email = user.email ?? undefined
           token.name = user.name ?? undefined
           token.image = user.image ?? undefined
-
-          if (user.email) {
-            token.isAdmin = await isAdminEmail(user.email)
-          }
+          // Skip admin check temporarily
+          token.isAdmin = false
         }
 
         if (account?.provider === 'google' && user?.email) {
@@ -219,7 +217,7 @@ export const authOptions: NextAuthOptions = {
             token.email = dbUser.email ?? undefined
             token.name = dbUser.name ?? undefined
             token.image = dbUser.image ?? undefined
-            token.isAdmin = await isAdminEmail(dbUser.email)
+            token.isAdmin = false
           }
         }
 
