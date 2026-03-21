@@ -293,45 +293,55 @@ export const authOptions: NextAuthOptions = {
     },
 
     async jwt({ token, user, account }) {
-      // Initial sign in
-      if (user) {
-        token.id = user.id
-        token.email = user.email ?? undefined
-        token.name = user.name ?? undefined
-        token.image = user.image ?? undefined
+      try {
+        // Initial sign in
+        if (user) {
+          token.id = user.id
+          token.email = user.email ?? undefined
+          token.name = user.name ?? undefined
+          token.image = user.image ?? undefined
 
-        // Check if admin
-        if (user.email) {
-          token.isAdmin = await isAdminEmail(user.email)
+          // Check if admin
+          if (user.email) {
+            token.isAdmin = await isAdminEmail(user.email)
+          }
         }
-      }
 
-      // For Google OAuth, ensure we have the correct user ID from database
-      if (account?.provider === 'google' && user?.email) {
-        const dbUser = await prisma.users.findUnique({
-          where: { email: user.email }
-        })
-        if (dbUser) {
-          token.id = dbUser.id
-          token.email = dbUser.email ?? undefined
-          token.name = dbUser.name ?? undefined
-          token.image = dbUser.image ?? undefined
-          token.isAdmin = await isAdminEmail(dbUser.email)
+        // For Google OAuth, ensure we have the correct user ID from database
+        if (account?.provider === 'google' && user?.email) {
+          const dbUser = await prisma.users.findUnique({
+            where: { email: user.email }
+          })
+          if (dbUser) {
+            token.id = dbUser.id
+            token.email = dbUser.email ?? undefined
+            token.name = dbUser.name ?? undefined
+            token.image = dbUser.image ?? undefined
+            token.isAdmin = await isAdminEmail(dbUser.email)
+          }
         }
-      }
 
-      return token
+        return token
+      } catch (error) {
+        logger.error('JWT callback error:', error)
+        return token
+      }
     },
 
     async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id as string
-        session.user.email = token.email as string
-        session.user.name = token.name as string
-        session.user.image = token.image as string | null
-        session.user.isAdmin = token.isAdmin as boolean
+      try {
+        if (session.user) {
+          session.user.id = token.id as string
+          session.user.email = token.email as string
+          session.user.name = token.name as string
+          session.user.image = token.image as string | null
+          session.user.isAdmin = token.isAdmin as boolean
+        }
+        return session
+      } catch (error) {
+        logger.error('Session callback error:', error)
+        return session
       }
-      return session
     },
   },
   debug: true, // Enable debug mode temporarily to troubleshoot production issues
