@@ -135,7 +135,7 @@ export const authOptions: NextAuthOptions = {
           logger.dev('Auth', 'Admin password valid:', isPasswordValid)
 
           if (isPasswordValid) {
-            await clearLoginAttempts(credentials.email)
+            // await clearLoginAttempts(credentials.email)
             logger.dev('Auth', 'Admin login successful')
             return {
               id: admin.id,
