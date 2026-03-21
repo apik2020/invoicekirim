@@ -329,5 +329,5 @@ export const authOptions: NextAuthOptions = {
       return session
     },
   },
-  debug: env.isDevelopment,
+  debug: true, // Enable debug mode temporarily to troubleshoot production issues
 }
