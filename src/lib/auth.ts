@@ -91,28 +91,29 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        logger.dev('Auth', 'Login attempt:', credentials?.email)
+        try {
+          logger.dev('Auth', 'Login attempt:', credentials?.email)
 
-        if (!credentials?.email || !credentials?.password) {
-          logger.dev('Auth', 'Missing email or password')
-          throw new Error('Email dan password harus diisi')
-        }
-
-        // Check rate limiting for this email
-        const attemptCheck = await checkLoginAttempts(credentials.email)
-        if (!attemptCheck.success) {
-          if (attemptCheck.lockoutUntil) {
-            const remaining = Math.ceil((attemptCheck.lockoutUntil.getTime() - Date.now()) / 1000)
-            const minutes = Math.floor(remaining / 60)
-            const seconds = remaining % 60
-            throw new Error(
-              `Terlalu banyak percobaan gagal. Akun dikunci sementara. Silakan coba lagi dalam ${minutes} menit ${seconds} detik.`
-            )
+          if (!credentials?.email || !credentials?.password) {
+            logger.dev('Auth', 'Missing email or password')
+            throw new Error('Email dan password harus diisi')
           }
-        }
 
-        // Check Admin table first
-        logger.dev('Auth', 'Checking Admin table for:', credentials.email)
+          // Check rate limiting for this email
+          const attemptCheck = await checkLoginAttempts(credentials.email)
+          if (!attemptCheck.success) {
+            if (attemptCheck.lockoutUntil) {
+              const remaining = Math.ceil((attemptCheck.lockoutUntil.getTime() - Date.now()) / 1000)
+              const minutes = Math.floor(remaining / 60)
+              const seconds = remaining % 60
+              throw new Error(
+                `Terlalu banyak percobaan gagal. Akun dikunci sementara. Silakan coba lagi dalam ${minutes} menit ${seconds} detik.`
+              )
+            }
+          }
+
+          // Check Admin table first
+          logger.dev('Auth', 'Checking Admin table for:', credentials.email)
         const admin = await prisma.admins.findUnique({
           where: { email: credentials.email },
           select: {
@@ -256,6 +257,10 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           image: user.image,
+        }
+        } catch (error) {
+          logger.error('Auth error:', error)
+          throw error
         }
       },
     }),
