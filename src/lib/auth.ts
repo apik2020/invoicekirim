@@ -72,15 +72,7 @@ async function createOrGetOAuthUser(email: string, name?: string | null, image?:
 
 export const authOptions: NextAuthOptions = {
   providers: [
-    // Google OAuth Provider
-    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET ? [
-      GoogleProvider({
-        clientId: process.env.GOOGLE_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      })
-    ] : []),
-
-    // Credentials Provider (Email/Password)
+    // Credentials Provider (Email/Password) - only provider for now
     CredentialsProvider({
       name: 'credentials',
       credentials: {
@@ -181,46 +173,15 @@ export const authOptions: NextAuthOptions = {
     signIn: '/login',
   },
   callbacks: {
-    async signIn({ user, account }) {
-      if (account?.provider === 'google' && user.email) {
-        log('Google OAuth sign-in:', user.email)
-        try {
-          const dbUser = await createOrGetOAuthUser(user.email, user.name, user.image)
-          user.id = dbUser.id
-          log('Google OAuth successful, user ID:', dbUser.id)
-          return true
-        } catch (error) {
-          logError('Google OAuth error:', error)
-          return false
-        }
-      }
-      return true
-    },
-
-    async jwt({ token, user, account }) {
+    async jwt({ token, user }) {
       try {
         if (user) {
           token.id = user.id
           token.email = user.email ?? undefined
           token.name = user.name ?? undefined
           token.image = user.image ?? undefined
-          // Skip admin check temporarily
           token.isAdmin = false
         }
-
-        if (account?.provider === 'google' && user?.email) {
-          const dbUser = await prisma.users.findUnique({
-            where: { email: user.email }
-          })
-          if (dbUser) {
-            token.id = dbUser.id
-            token.email = dbUser.email ?? undefined
-            token.name = dbUser.name ?? undefined
-            token.image = dbUser.image ?? undefined
-            token.isAdmin = false
-          }
-        }
-
         return token
       } catch (error) {
         logError('JWT callback error:', error)
