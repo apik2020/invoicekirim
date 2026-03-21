@@ -3,9 +3,22 @@ import GoogleProvider from 'next-auth/providers/google'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
 import { prisma } from './prisma'
-import { checkLoginAttempts, recordFailedAttempt, clearLoginAttempts } from './login-attempts'
-import { env } from './env'
-import { logger } from './logger'
+// import { checkLoginAttempts, recordFailedAttempt, clearLoginAttempts } from './login-attempts'
+// import { env } from './env'
+// import { logger } from './logger'
+
+// Temporary logger for debugging
+const logger = {
+  dev: (...args: any[]) => console.log('[AUTH]', ...args),
+  error: (...args: any[]) => console.error('[AUTH ERROR]', ...args),
+}
+
+// Temporary env helper
+const env = {
+  googleClientId: process.env.GOOGLE_CLIENT_ID,
+  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  isDevelopment: process.env.NODE_ENV === 'development',
+}
 
 // Helper to check if user is admin
 async function isAdminEmail(email: string): Promise<boolean> {
