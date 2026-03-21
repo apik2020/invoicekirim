@@ -1,6 +1,5 @@
 import NextAuth from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
-import GoogleProvider from 'next-auth/providers/google'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
 
@@ -21,14 +20,6 @@ async function isAdminEmail(email: string): Promise<boolean> {
 
 const handler = NextAuth({
   providers: [
-    // Google OAuth Provider
-    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET ? [
-      GoogleProvider({
-        clientId: process.env.GOOGLE_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      })
-    ] : []),
-
     // Credentials Provider
     CredentialsProvider({
       name: 'credentials',
