@@ -133,9 +133,9 @@ const handler = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id
-        token.email = user.email
-        token.name = user.name
-        token.image = user.image
+        token.email = user.email ?? undefined
+        token.name = user.name ?? undefined
+        token.image = user.image ?? undefined
         token.isAdmin = user.email ? await isAdminEmail(user.email) : false
       }
       return token
