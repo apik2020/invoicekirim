@@ -96,22 +96,8 @@ export const authOptions: NextAuthOptions = {
 
           if (!credentials?.email || !credentials?.password) {
             logger.dev('Auth', 'Missing email or password')
-            throw new Error('Email dan password harus diisi')
+            return null
           }
-
-          // Skip rate limiting in production temporarily to debug
-          // Check rate limiting for this email
-          // const attemptCheck = await checkLoginAttempts(credentials.email)
-          // if (!attemptCheck.success) {
-          //   if (attemptCheck.lockoutUntil) {
-          //     const remaining = Math.ceil((attemptCheck.lockoutUntil.getTime() - Date.now()) / 1000)
-          //     const minutes = Math.floor(remaining / 60)
-          //     const seconds = remaining % 60
-          //     throw new Error(
-          //       `Terlalu banyak percobaan gagal. Akun dikunci sementara. Silakan coba lagi dalam ${minutes} menit ${seconds} detik.`
-          //     )
-          //   }
-          // }
 
           // Check Admin table first
           logger.dev('Auth', 'Checking Admin table for:', credentials.email)
@@ -183,24 +169,7 @@ export const authOptions: NextAuthOptions = {
         // Record failed attempt if user not found or no password
         if (!user || !user.password) {
           logger.dev('Auth', 'User not found or no password')
-          // Skip rate limiting temporarily
-          // const failedAttempt = await recordFailedAttempt(credentials.email)
-          // if (failedAttempt.lockoutUntil) {
-          //   const remaining = Math.ceil((failedAttempt.lockoutUntil.getTime() - Date.now()) / 1000)
-          //   const minutes = Math.floor(remaining / 60)
-          //   const seconds = remaining % 60
-          //   throw new Error(
-          //     `Terlalu banyak percobaan gagal. Akun dikunci sementara. Silakan coba lagi dalam ${minutes} menit ${seconds} detik.`
-          //   )
-          // }
-
-          // if (failedAttempt.remainingAttempts !== undefined && failedAttempt.remainingAttempts <= 2) {
-          //   throw new Error(
-          //     `Email atau password salah. ${failedAttempt.remainingAttempts} percobaan lagi sebelum akun dikunci sementara.`
-          //   )
-          // }
-
-          throw new Error('Email atau password salah')
+          return null
         }
 
         const isPasswordValid = await bcrypt.compare(
@@ -213,24 +182,7 @@ export const authOptions: NextAuthOptions = {
         // Record failed attempt if password is invalid
         if (!isPasswordValid) {
           logger.dev('Auth', 'Invalid password')
-          // Skip rate limiting temporarily
-          // const failedAttempt = await recordFailedAttempt(credentials.email)
-          // if (failedAttempt.lockoutUntil) {
-          //   const remaining = Math.ceil((failedAttempt.lockoutUntil.getTime() - Date.now()) / 1000)
-          //   const minutes = Math.floor(remaining / 60)
-          //   const seconds = remaining % 60
-          //   throw new Error(
-          //     `Terlalu banyak percobaan gagal. Akun dikunci sementara. Silakan coba lagi dalam ${minutes} menit ${seconds} detik.`
-          //   )
-          // }
-
-          // if (failedAttempt.remainingAttempts !== undefined && failedAttempt.remainingAttempts <= 2) {
-          //   throw new Error(
-          //     `Email atau password salah. ${failedAttempt.remainingAttempts} percobaan lagi sebelum akun dikunci sementara.`
-          //   )
-          // }
-
-          throw new Error('Email atau password salah')
+          return null
         }
 
         // Clear login attempts on successful login
