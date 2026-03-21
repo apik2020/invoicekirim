@@ -3,22 +3,10 @@ import GoogleProvider from 'next-auth/providers/google'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
 import { prisma } from './prisma'
-// import { checkLoginAttempts, recordFailedAttempt, clearLoginAttempts } from './login-attempts'
-// import { env } from './env'
-// import { logger } from './logger'
 
-// Temporary logger for debugging
-const logger = {
-  dev: (...args: any[]) => console.log('[AUTH]', ...args),
-  error: (...args: any[]) => console.error('[AUTH ERROR]', ...args),
-}
-
-// Temporary env helper
-const env = {
-  googleClientId: process.env.GOOGLE_CLIENT_ID,
-  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  isDevelopment: process.env.NODE_ENV === 'development',
-}
+// Simple logger
+const log = (...args: any[]) => console.log('[AUTH]', ...args)
+const logError = (...args: any[]) => console.error('[AUTH ERROR]', ...args)
 
 // Helper to check if user is admin
 async function isAdminEmail(email: string): Promise<boolean> {
@@ -35,13 +23,11 @@ async function isAdminEmail(email: string): Promise<boolean> {
 
 // Helper to create or get user for OAuth
 async function createOrGetOAuthUser(email: string, name?: string | null, image?: string | null) {
-  // Check if user exists
   let user = await prisma.users.findUnique({
     where: { email }
   })
 
   if (!user) {
-    // Create new user
     user = await prisma.users.create({
       data: {
         id: crypto.randomUUID(),
@@ -53,9 +39,8 @@ async function createOrGetOAuthUser(email: string, name?: string | null, image?:
         updatedAt: new Date(),
       }
     })
-    logger.dev('Auth', 'Created new OAuth user:', email)
+    log('Created new OAuth user:', email)
 
-    // Create subscription for new user
     try {
       await prisma.subscriptions.create({
         data: {
@@ -67,10 +52,9 @@ async function createOrGetOAuthUser(email: string, name?: string | null, image?:
         }
       })
     } catch (error) {
-      logger.error('Failed to create subscription for OAuth user:', error)
+      logError('Failed to create subscription for OAuth user:', error)
     }
   } else {
-    // Update user info if needed
     if (name && name !== user.name) {
       await prisma.users.update({
         where: { id: user.id },
@@ -89,10 +73,10 @@ async function createOrGetOAuthUser(email: string, name?: string | null, image?:
 export const authOptions: NextAuthOptions = {
   providers: [
     // Google OAuth Provider
-    ...(env.googleClientId && env.googleClientSecret ? [
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET ? [
       GoogleProvider({
-        clientId: env.googleClientId,
-        clientSecret: env.googleClientSecret,
+        clientId: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       })
     ] : []),
 
@@ -105,51 +89,48 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         try {
-          logger.dev('Auth', 'Login attempt:', credentials?.email)
+          log('Login attempt:', credentials?.email)
 
           if (!credentials?.email || !credentials?.password) {
-            logger.dev('Auth', 'Missing email or password')
+            log('Missing email or password')
             return null
           }
 
           // Check Admin table first
-          logger.dev('Auth', 'Checking Admin table for:', credentials.email)
-        const admin = await prisma.admins.findUnique({
-          where: { email: credentials.email },
-          select: {
-            id: true,
-            email: true,
-            name: true,
-            password: true,
-          },
-        })
+          log('Checking Admin table for:', credentials.email)
+          const admin = await prisma.admins.findUnique({
+            where: { email: credentials.email },
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              password: true,
+            },
+          })
 
-        logger.dev('Auth', 'Admin found:', !!admin)
+          log('Admin found:', !!admin)
 
-        if (admin && admin.password) {
-          const isPasswordValid = await bcrypt.compare(
-            credentials.password,
-            admin.password
-          )
+          if (admin && admin.password) {
+            const isPasswordValid = await bcrypt.compare(
+              credentials.password,
+              admin.password
+            )
 
-          logger.dev('Auth', 'Admin password valid:', isPasswordValid)
+            log('Admin password valid:', isPasswordValid)
 
-          if (isPasswordValid) {
-            // await clearLoginAttempts(credentials.email)
-            logger.dev('Auth', 'Admin login successful')
-            return {
-              id: admin.id,
-              email: admin.email,
-              name: admin.name,
+            if (isPasswordValid) {
+              log('Admin login successful')
+              return {
+                id: admin.id,
+                email: admin.email,
+                name: admin.name,
+              }
             }
           }
-        }
 
-        // Check User table
-        logger.dev('Auth', 'Checking User table for:', credentials.email)
-        let user
-        try {
-          user = await prisma.users.findUnique({
+          // Check User table
+          log('Checking User table for:', credentials.email)
+          const user = await prisma.users.findUnique({
             where: { email: credentials.email },
             select: {
               id: true,
@@ -159,76 +140,36 @@ export const authOptions: NextAuthOptions = {
               password: true,
             },
           })
-        } catch (error) {
-          logger.error('Database error:', error)
-          throw new Error('Database error')
-        }
 
-        logger.dev('Auth', 'User found:', !!user, 'Has password:', !!user?.password)
+          log('User found:', !!user, 'Has password:', !!user?.password)
 
-        // Get subscription separately to avoid potential errors
-        let subscription = null
-        if (user) {
-          try {
-            subscription = await prisma.subscriptions.findUnique({
-              where: { userId: user.id },
-            })
-          } catch (error) {
-            logger.error('Subscription query error:', error)
-            // Continue without subscription
+          if (!user || !user.password) {
+            log('User not found or no password')
+            return null
           }
-        }
 
-        // Record failed attempt if user not found or no password
-        if (!user || !user.password) {
-          logger.dev('Auth', 'User not found or no password')
-          return null
-        }
+          const isPasswordValid = await bcrypt.compare(
+            credentials.password,
+            user.password
+          )
 
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        )
+          log('User password valid:', isPasswordValid)
 
-        logger.dev('Auth', 'User password valid:', isPasswordValid)
-
-        // Record failed attempt if password is invalid
-        if (!isPasswordValid) {
-          logger.dev('Auth', 'Invalid password')
-          return null
-        }
-
-        // Clear login attempts on successful login
-        // await clearLoginAttempts(credentials.email)
-
-        // Create subscription if doesn't exist
-        if (!subscription) {
-          try {
-            await prisma.subscriptions.create({
-              data: {
-                id: crypto.randomUUID(),
-                userId: user.id,
-                status: 'FREE',
-                planType: 'FREE',
-                updatedAt: new Date(),
-              },
-            })
-          } catch (error) {
-            logger.error('Failed to create subscription:', error)
-            // Continue anyway
+          if (!isPasswordValid) {
+            log('Invalid password')
+            return null
           }
-        }
 
-        logger.dev('Auth', 'User login successful')
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          image: user.image,
-        }
+          log('User login successful')
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            image: user.image,
+          }
         } catch (error) {
-          logger.error('Auth error:', error)
-          throw error
+          logError('Auth error:', error)
+          return null
         }
       },
     }),
@@ -241,41 +182,34 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async signIn({ user, account }) {
-      // Handle Google OAuth sign-in
       if (account?.provider === 'google' && user.email) {
-        logger.dev('Auth', 'Google OAuth sign-in:', user.email)
-
+        log('Google OAuth sign-in:', user.email)
         try {
           const dbUser = await createOrGetOAuthUser(user.email, user.name, user.image)
-          // Update the user object with database ID
           user.id = dbUser.id
-          logger.dev('Auth', 'Google OAuth successful, user ID:', dbUser.id)
+          log('Google OAuth successful, user ID:', dbUser.id)
           return true
         } catch (error) {
-          logger.error('Google OAuth error:', error)
+          logError('Google OAuth error:', error)
           return false
         }
       }
-
       return true
     },
 
     async jwt({ token, user, account }) {
       try {
-        // Initial sign in
         if (user) {
           token.id = user.id
           token.email = user.email ?? undefined
           token.name = user.name ?? undefined
           token.image = user.image ?? undefined
 
-          // Check if admin
           if (user.email) {
             token.isAdmin = await isAdminEmail(user.email)
           }
         }
 
-        // For Google OAuth, ensure we have the correct user ID from database
         if (account?.provider === 'google' && user?.email) {
           const dbUser = await prisma.users.findUnique({
             where: { email: user.email }
@@ -291,7 +225,7 @@ export const authOptions: NextAuthOptions = {
 
         return token
       } catch (error) {
-        logger.error('JWT callback error:', error)
+        logError('JWT callback error:', error)
         return token
       }
     },
@@ -307,10 +241,10 @@ export const authOptions: NextAuthOptions = {
         }
         return session
       } catch (error) {
-        logger.error('Session callback error:', error)
+        logError('Session callback error:', error)
         return session
       }
     },
   },
-  debug: true, // Enable debug mode temporarily to troubleshoot production issues
+  debug: true,
 }
