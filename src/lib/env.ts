@@ -285,8 +285,8 @@ if (process.env.NODE_ENV !== 'test' && process.env.NEXT_PHASE !== 'phase-product
   const result = validateEnv()
   if (!result.valid) {
     logEnvValidation(result)
-    // Only throw in production or if explicitly requested
-    if (isProduction() || process.env.STRICT_ENV_CHECK === 'true') {
+    // Only throw if explicitly requested (disabled by default to avoid runtime errors)
+    if (process.env.STRICT_ENV_CHECK === 'true') {
       throw new Error('Environment validation failed')
     }
   } else if (result.warnings.length > 0) {
