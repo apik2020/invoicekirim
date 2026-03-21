@@ -42,8 +42,9 @@ export default async function middleware(req: NextRequest) {
 
     // Skip CSRF for API webhooks (they have their own signature verification)
     // Also skip for OAuth callbacks (Google, GitHub, etc.) and NextAuth endpoints
-    if (pathname.includes('/webhooks/') || pathname.includes('/api/auth/')) {
-      // Continue to auth check
+    // Also skip for auth-simple test endpoint
+    if (pathname.includes('/webhooks/') || pathname.includes('/api/auth') || pathname.includes('/api/auth-simple')) {
+      // Continue without CSRF check
     } else if (pathname.startsWith('/api/')) {
       // For API routes, check Origin/Referer matches host
       const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [`https://${host}`, `http://${host}`]
