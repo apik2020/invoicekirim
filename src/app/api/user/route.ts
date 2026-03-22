@@ -29,7 +29,7 @@ export async function GET(_req: NextRequest) {
     })
 
     if (!user) {
-      return NextResponse.json({ user: session.user, subscription: null })
+      return NextResponse.json({ user: session, subscription: null })
     }
 
     // Get subscription
