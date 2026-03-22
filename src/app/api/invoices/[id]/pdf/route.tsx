@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getUserSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
 import { renderToBuffer } from '@react-pdf/renderer'
 import { InvoicePDF } from '@/components/pdf/InvoicePDF'
@@ -10,8 +9,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
+    const session = await getUserSession()
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -21,7 +20,7 @@ export async function GET(
     const invoice = await prisma.invoices.findFirst({
       where: {
         id,
-        userId: session.user.id,
+        userId: session.id,
       },
       include: { invoice_items: true },
     })
