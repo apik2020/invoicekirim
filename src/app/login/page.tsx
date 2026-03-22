@@ -57,16 +57,28 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      const result = await signIn('credentials', {
-        email: formData.email,
-        password: formData.password,
-        redirect: false,
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
       })
 
-      if (result?.error) {
-        setError('Email atau password salah')
+      const data = await response.json()
+
+      if (!response.ok || !data.success) {
+        setError(data.error || 'Email atau password salah')
       } else {
-        router.push('/dashboard')
+        // Redirect based on user type
+        if (data.user?.isAdmin) {
+          router.push('/admin')
+        } else {
+          router.push('/dashboard')
+        }
         router.refresh()
       }
     } catch {
