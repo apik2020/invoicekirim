@@ -1,6 +1,5 @@
+import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { generateReceiptPDF } from '@/lib/receipt-pdf'
 
@@ -13,9 +12,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getUserSession()
 
-    if (!session?.user?.id) {
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -23,7 +22,7 @@ export async function GET(
     const payment = await prisma.payments.findFirst({
       where: {
         id,
-        userId: session.user.id,
+        userId: session.id,
       },
       include: {
         users: {

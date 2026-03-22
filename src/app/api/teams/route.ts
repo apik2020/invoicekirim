@@ -1,6 +1,5 @@
+import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { createTeam, getUserTeams } from '@/lib/teams'
 import { z } from 'zod'
 
@@ -12,12 +11,12 @@ const createTeamSchema = z.object({
 // GET /api/teams - List all teams for the current user
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const session = await getUserSession()
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const teams = await getUserTeams(session.user.id)
+    const teams = await getUserTeams(session.id)
 
     return NextResponse.json({ teams })
   } catch (error) {
@@ -32,8 +31,8 @@ export async function GET() {
 // POST /api/teams - Create a new team
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const session = await getUserSession()
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -48,7 +47,7 @@ export async function POST(req: NextRequest) {
     }
 
     const team = await createTeam(
-      session.user.id,
+      session.id,
       validated.data.name,
       validated.data.description
     )

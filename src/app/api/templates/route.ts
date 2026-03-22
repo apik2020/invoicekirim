@@ -1,18 +1,17 @@
+import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { templateSchema } from '@/lib/validations/invoice'
 
 export async function GET(_req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
+    const session = await getUserSession()
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const templates = await prisma.invoice_templates.findMany({
-      where: { userId: session.user.id },
+      where: { userId: session.id },
       include: { template_items: true },
       orderBy: { createdAt: 'desc' },
     })
@@ -35,8 +34,8 @@ export async function GET(_req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
+    const session = await getUserSession()
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -69,7 +68,7 @@ export async function POST(req: NextRequest) {
       data: {
         id: crypto.randomUUID(),
         ...data,
-        userId: session.user.id,
+        userId: session.id,
         settings: settings ? JSON.parse(JSON.stringify(settings)) : {
           showClientInfo: true,
           showDiscount: false,

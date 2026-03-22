@@ -1,6 +1,5 @@
+import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { disableTwoFactor, verifyTwoFactor } from '@/lib/two-factor'
 
 // Force dynamic rendering
@@ -9,8 +8,8 @@ export const dynamic = 'force-dynamic'
 // POST /api/user/2fa/disable - Disable 2FA
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const session = await getUserSession()
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -27,7 +26,7 @@ export async function POST(req: NextRequest) {
 
     // If code is provided, verify it
     if (code) {
-      const result = await verifyTwoFactor(session.user.id, code)
+      const result = await verifyTwoFactor(session.id, code)
       if (!result.success) {
         return NextResponse.json(
           { error: 'Kode 2FA tidak valid' },
@@ -40,7 +39,7 @@ export async function POST(req: NextRequest) {
       const bcrypt = await import('bcryptjs')
 
       const user = await prisma.users.findUnique({
-        where: { id: session.user.id },
+        where: { id: session.id },
         select: { password: true },
       })
 
@@ -53,7 +52,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Disable 2FA
-    await disableTwoFactor(session.user.id)
+    await disableTwoFactor(session.id)
 
     return NextResponse.json({
       success: true,

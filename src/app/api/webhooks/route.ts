@@ -1,6 +1,5 @@
+import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { createWebhook, listWebhooks, WEBHOOK_EVENTS } from '@/lib/webhooks'
 import { z } from 'zod'
 
@@ -14,8 +13,8 @@ const createWebhookSchema = z.object({
 // GET /api/webhooks - List webhooks
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const session = await getUserSession()
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -41,8 +40,8 @@ export async function GET(req: NextRequest) {
 // POST /api/webhooks - Create a new webhook
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const session = await getUserSession()
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

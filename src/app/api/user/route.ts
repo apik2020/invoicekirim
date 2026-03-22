@@ -1,6 +1,5 @@
+import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 // Force dynamic rendering
@@ -8,15 +7,15 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(_req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getUserSession()
 
-    if (!session?.user) {
+    if (!session) {
       return NextResponse.json({ user: null, subscription: null })
     }
 
     // Check if user exists in database
     const user = await prisma.users.findUnique({
-      where: { id: session.user.id },
+      where: { id: session.id },
       select: {
         id: true,
         name: true,

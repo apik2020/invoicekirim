@@ -1,6 +1,5 @@
+import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { sendInvoiceSent, sendInvoicePaid, sendInvoiceOverdue } from '@/lib/email'
 import { formatCurrency, formatDate } from '@/lib/utils'
@@ -10,8 +9,8 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
+    const session = await getUserSession()
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -26,7 +25,7 @@ export async function PATCH(
     const invoice = await prisma.invoices.findFirst({
       where: {
         id,
-        userId: session.user.id,
+        userId: session.id,
       },
     })
 
@@ -83,7 +82,7 @@ export async function PATCH(
         companyName: invoice.companyName,
         total: formatCurrency(invoice.total),
         paidDate: formatDate(new Date()),
-        userId: session.user.id,
+        userId: session.id,
       }).catch((error) => {
         console.error('Failed to send payment confirmation email:', error)
       })
@@ -104,7 +103,7 @@ export async function PATCH(
         dueDate: invoice.dueDate ? formatDate(invoice.dueDate) : '-',
         daysOverdue,
         invoiceUrl,
-        userId: session.user.id,
+        userId: session.id,
       }).catch((error) => {
         console.error('Failed to send overdue email:', error)
       })

@@ -1,6 +1,5 @@
+import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 // Force dynamic rendering
@@ -9,14 +8,14 @@ export const dynamic = 'force-dynamic'
 // GET - Get all clients for current user
 export async function GET(_req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getUserSession()
 
-    if (!session?.user?.id) {
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const clients = await prisma.clients.findMany({
-      where: { userId: session.user.id },
+      where: { userId: session.id },
       orderBy: { createdAt: 'desc' },
     })
 
@@ -33,9 +32,9 @@ export async function GET(_req: NextRequest) {
 // POST - Create new client
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getUserSession()
 
-    if (!session?.user?.id) {
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -53,7 +52,7 @@ export async function POST(req: NextRequest) {
     // Check if client with same email already exists for this user
     const existingClient = await prisma.clients.findFirst({
       where: {
-        userId: session.user.id,
+        userId: session.id,
         email,
       },
     })
@@ -68,7 +67,7 @@ export async function POST(req: NextRequest) {
     const client = await prisma.clients.create({
       data: {
         id: crypto.randomUUID(),
-        userId: session.user.id,
+        userId: session.id,
         name,
         email,
         phone,

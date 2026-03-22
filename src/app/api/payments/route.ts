@@ -1,14 +1,13 @@
+import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { createReceipt } from '@/lib/receipt-generator'
 
 // GET - List all payments for the authenticated user
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const session = await getUserSession()
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -18,7 +17,7 @@ export async function GET(req: NextRequest) {
     const offset = parseInt(searchParams.get('offset') || '0')
 
     const where: any = {
-      userId: session.user.id,
+      userId: session.id,
     }
 
     if (status) {
@@ -64,8 +63,8 @@ export async function GET(req: NextRequest) {
 // POST - Create a new payment
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const session = await getUserSession()
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -104,7 +103,7 @@ export async function POST(req: NextRequest) {
     const payment = await prisma.payments.create({
       data: {
         id: crypto.randomUUID(),
-        userId: session.user.id,
+        userId: session.id,
         stripePaymentId,
         stripePaymentIntentId: stripePaymentIntentId || null,
         invoiceId: invoiceId || null,

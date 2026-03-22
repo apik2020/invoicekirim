@@ -1,6 +1,5 @@
+import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { invoiceSchema } from '@/lib/validations/invoice'
 import { generateInvoiceNumber } from '@/lib/utils'
@@ -22,8 +21,8 @@ function calculateDiscount(
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
+    const session = await getUserSession()
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -34,7 +33,7 @@ export async function GET(req: NextRequest) {
     const search = searchParams.get('search')
 
     const where: any = {
-      userId: session.user.id,
+      userId: session.id,
     }
 
     if (status && status !== 'ALL') {
@@ -80,13 +79,13 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
+    const session = await getUserSession()
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Rate limiting check (per user)
-    const rateLimit = await checkRateLimit(`invoice:create:${session.user.id}`, apiRateLimit)
+    const rateLimit = await checkRateLimit(`invoice:create:${session.id}`, apiRateLimit)
 
     if (!rateLimit.success) {
       return NextResponse.json(
@@ -108,13 +107,13 @@ export async function POST(req: NextRequest) {
 
     // Check subscription limits
     const subscription = await prisma.subscriptions.findUnique({
-      where: { userId: session.user.id },
+      where: { userId: session.id },
     })
 
     if (subscription?.planType === 'FREE') {
       const invoiceCount = await prisma.invoices.count({
         where: {
-          userId: session.user.id,
+          userId: session.id,
           createdAt: {
             gte: new Date(new Date().setDate(1)), // Start of current month
           },
@@ -187,7 +186,7 @@ export async function POST(req: NextRequest) {
         ...data,
         invoiceNumber,
         accessToken: crypto.randomUUID(), // Generate access token for public viewing
-        userId: session.user.id,
+        userId: session.id,
         date: new Date(data.date),
         dueDate: data.dueDate ? new Date(data.dueDate) : null,
         subtotal,
@@ -222,7 +221,7 @@ export async function POST(req: NextRequest) {
     })
 
     // Log activity
-    await logInvoiceCreated(session.user.id, invoiceNumber, total)
+    await logInvoiceCreated(session.id, invoiceNumber, total)
 
     return NextResponse.json(
       invoice,

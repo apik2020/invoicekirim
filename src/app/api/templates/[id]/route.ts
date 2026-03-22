@@ -1,6 +1,5 @@
+import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { templateSchema } from '@/lib/validations/invoice'
 
@@ -9,8 +8,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
+    const session = await getUserSession()
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -18,7 +17,7 @@ export async function GET(
     const template = await prisma.invoice_templates.findFirst({
       where: {
         id,
-        userId: session.user.id,
+        userId: session.id,
       },
       include: { template_items: true },
     })
@@ -48,8 +47,8 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
+    const session = await getUserSession()
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -58,7 +57,7 @@ export async function PUT(
     const existingTemplate = await prisma.invoice_templates.findFirst({
       where: {
         id,
-        userId: session.user.id,
+        userId: session.id,
       },
     })
 
@@ -151,8 +150,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
+    const session = await getUserSession()
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -161,7 +160,7 @@ export async function DELETE(
     const template = await prisma.invoice_templates.findFirst({
       where: {
         id,
-        userId: session.user.id,
+        userId: session.id,
       },
     })
 

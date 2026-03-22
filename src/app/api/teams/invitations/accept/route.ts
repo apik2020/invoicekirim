@@ -1,6 +1,5 @@
+import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { acceptInvitation } from '@/lib/teams'
 
 // GET /api/teams/invitations/accept - Accept a team invitation
@@ -16,9 +15,9 @@ export async function GET(req: NextRequest) {
     }
 
     // Check if user is logged in
-    const session = await getServerSession(authOptions)
+    const session = await getUserSession()
 
-    if (!session?.user?.id) {
+    if (!session?.id) {
       // Redirect to login with the invitation token stored in URL
       const loginUrl = new URL('/login', req.url)
       loginUrl.searchParams.set('callbackUrl', req.url)
@@ -28,7 +27,7 @@ export async function GET(req: NextRequest) {
 
     // Accept the invitation
     try {
-      const membership = await acceptInvitation(token, session.user.id)
+      const membership = await acceptInvitation(token, session.id)
 
       // Redirect to teams page with success message
       const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'

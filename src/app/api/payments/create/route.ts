@@ -1,6 +1,5 @@
+import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import {
   createTransaction,
@@ -17,8 +16,8 @@ const PRICING = {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const session = await getUserSession()
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -39,11 +38,11 @@ export async function POST(req: NextRequest) {
       billingCycle === 'yearly' ? PRICING.PRO_YEARLY : PRICING.PRO_MONTHLY
 
     // Generate order ID
-    const orderId = `IK-${Date.now()}-${session.user.id.slice(-6)}`
+    const orderId = `IK-${Date.now()}-${session.id.slice(-6)}`
 
     // Get user info
     const user = await prisma.users.findUnique({
-      where: { id: session.user.id },
+      where: { id: session.id },
       select: { name: true, email: true },
     })
 
@@ -55,7 +54,7 @@ export async function POST(req: NextRequest) {
     const payment = await prisma.payments.create({
       data: {
         id: crypto.randomUUID(),
-        userId: session.user.id,
+        userId: session.id,
         midtransOrderId: orderId,
         amount,
         currency: 'IDR',

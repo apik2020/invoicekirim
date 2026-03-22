@@ -1,6 +1,5 @@
+import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 // Force dynamic rendering
@@ -9,16 +8,16 @@ export const dynamic = 'force-dynamic'
 // GET - Get all items for current user
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getUserSession()
 
-    if (!session?.user?.id) {
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { searchParams } = new URL(req.url)
     const category = searchParams.get('category')
 
-    const where: any = { userId: session.user.id }
+    const where: any = { userId: session.id }
 
     if (category) {
       where.category = category
@@ -42,9 +41,9 @@ export async function GET(req: NextRequest) {
 // POST - Create new item
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getUserSession()
 
-    if (!session?.user?.id) {
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -63,7 +62,7 @@ export async function POST(req: NextRequest) {
     if (sku) {
       const existingItem = await prisma.items.findFirst({
         where: {
-          userId: session.user.id,
+          userId: session.id,
           sku,
         },
       })
@@ -79,7 +78,7 @@ export async function POST(req: NextRequest) {
     const item = await prisma.items.create({
       data: {
         id: crypto.randomUUID(),
-        userId: session.user.id,
+        userId: session.id,
         name,
         description,
         sku,

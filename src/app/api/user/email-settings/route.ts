@@ -1,6 +1,5 @@
+import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 // Force dynamic rendering
@@ -9,9 +8,9 @@ export const dynamic = 'force-dynamic'
 // PUT - Update email settings
 export async function PUT(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getUserSession()
 
-    if (!session?.user?.id) {
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -39,7 +38,7 @@ export async function PUT(req: NextRequest) {
     }
 
     const updatedUser = await prisma.users.update({
-      where: { id: session.user.id },
+      where: { id: session.id },
       data: updateData,
       select: {
         id: true,

@@ -1,6 +1,5 @@
+import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import {
   createApiKey,
   listApiKeys,
@@ -18,8 +17,8 @@ const createApiKeySchema = z.object({
 // GET /api/api-keys - List API keys
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const session = await getUserSession()
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -27,7 +26,7 @@ export async function GET(req: NextRequest) {
     const teamId = searchParams.get('teamId') || undefined
 
     const keys = await listApiKeys({
-      userId: teamId ? undefined : session.user.id,
+      userId: teamId ? undefined : session.id,
       teamId,
     })
 
@@ -44,8 +43,8 @@ export async function GET(req: NextRequest) {
 // POST /api/api-keys - Create a new API key
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const session = await getUserSession()
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -61,7 +60,7 @@ export async function POST(req: NextRequest) {
 
     const apiKey = await createApiKey({
       name: validated.data.name,
-      userId: validated.data.teamId ? undefined : session.user.id,
+      userId: validated.data.teamId ? undefined : session.id,
       teamId: validated.data.teamId,
       scopes: validated.data.scopes,
       expiresAt: validated.data.expiresAt ? new Date(validated.data.expiresAt) : undefined,

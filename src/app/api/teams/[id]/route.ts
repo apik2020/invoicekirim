@@ -1,6 +1,5 @@
+import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getUserTeamRole, deleteTeam } from '@/lib/teams'
 import { TeamRole } from '@/lib/permissions'
@@ -18,13 +17,13 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const session = await getUserSession()
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { id: teamId } = await params
-    const role = await getUserTeamRole(session.user.id, teamId)
+    const role = await getUserTeamRole(session.id, teamId)
 
     if (!role) {
       return NextResponse.json({ error: 'Team not found' }, { status: 404 })
@@ -73,13 +72,13 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const session = await getUserSession()
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { id: teamId } = await params
-    const role = await getUserTeamRole(session.user.id, teamId)
+    const role = await getUserTeamRole(session.id, teamId)
 
     if (!role || ![TeamRole.OWNER, TeamRole.ADMIN].includes(role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -120,14 +119,14 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const session = await getUserSession()
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { id: teamId } = await params
 
-    await deleteTeam(teamId, session.user.id)
+    await deleteTeam(teamId, session.id)
 
     return NextResponse.json({ success: true })
   } catch (error) {

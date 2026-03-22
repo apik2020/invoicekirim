@@ -1,6 +1,5 @@
+import { getUserSession } from '@/lib/session'
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import {
   generateTwoFactorSecret,
   generateQRCode,
@@ -13,13 +12,13 @@ export const dynamic = 'force-dynamic'
 // POST /api/user/2fa/setup - Generate 2FA secret and QR code
 export async function POST() {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id || !session?.user?.email) {
+    const session = await getUserSession()
+    if (!session?.id || !session?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Generate secret
-    const { secret, uri } = generateTwoFactorSecret(session.user.email)
+    const { secret, uri } = generateTwoFactorSecret(session.email)
 
     // Generate QR code
     const qrCodeDataUrl = await generateQRCode(uri)

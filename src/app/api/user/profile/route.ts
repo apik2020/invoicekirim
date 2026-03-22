@@ -1,6 +1,5 @@
+import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/lib/logger'
 
@@ -10,16 +9,16 @@ export const dynamic = 'force-dynamic'
 // GET - Get user profile
 export async function GET(_req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getUserSession()
 
-    logger.dev('Profile', 'Session:', session?.user?.email, 'ID:', session?.user?.id)
+    logger.dev('Profile', 'Session:', session?.email, 'ID:', session?.id)
 
-    if (!session?.user?.id) {
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const user = await prisma.users.findUnique({
-      where: { id: session.user.id },
+      where: { id: session.id },
       select: {
         id: true,
         name: true,
@@ -54,9 +53,9 @@ export async function GET(_req: NextRequest) {
 // PUT - Update user profile (company info)
 export async function PUT(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getUserSession()
 
-    if (!session?.user?.id) {
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -65,7 +64,7 @@ export async function PUT(req: NextRequest) {
 
     // Update user profile
     const updatedUser = await prisma.users.update({
-      where: { id: session.user.id },
+      where: { id: session.id },
       data: {
         name,
         companyName,

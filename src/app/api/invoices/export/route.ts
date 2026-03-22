@@ -1,6 +1,5 @@
+import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { generateInvoicesCSV, generateInvoicesExcel, InvoiceExportData } from '@/lib/export-invoices'
 
@@ -10,8 +9,8 @@ export const dynamic = 'force-dynamic'
 // GET /api/invoices/export - Export invoices to CSV or Excel
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const session = await getUserSession()
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -24,7 +23,7 @@ export async function GET(req: NextRequest) {
 
     // Build where clause
     const where: any = {
-      userId: session.user.id,
+      userId: session.id,
     }
 
     if (status && status !== 'ALL') {

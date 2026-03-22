@@ -1,6 +1,5 @@
+import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import {
   getAnalytics,
   getRevenueByMonth,
@@ -11,8 +10,8 @@ import {
 // GET /api/analytics - Get comprehensive analytics
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const session = await getUserSession()
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -22,7 +21,7 @@ export async function GET(req: NextRequest) {
     const months = parseInt(searchParams.get('months') || '12')
 
     // If teamId is provided, use team analytics; otherwise use user analytics
-    const params = teamId ? { teamId } : { userId: session.user.id }
+    const params = teamId ? { teamId } : { userId: session.id }
 
     const [metrics, revenueByMonth, invoiceBreakdown] = await Promise.all([
       getAnalytics(params),

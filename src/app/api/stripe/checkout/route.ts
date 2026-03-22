@@ -1,18 +1,17 @@
+import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { stripe, getStripeCustomerId } from '@/lib/stripe'
 import { checkRateLimit, apiRateLimit } from '@/lib/rate-limit'
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
+    const session = await getUserSession()
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Rate limiting check (per user)
-    const rateLimit = await checkRateLimit(`checkout:${session.user.id}`, apiRateLimit)
+    const rateLimit = await checkRateLimit(`checkout:${session.id}`, apiRateLimit)
 
     if (!rateLimit.success) {
       return NextResponse.json(
@@ -40,8 +39,8 @@ export async function POST(req: NextRequest) {
 
     // Get or create Stripe customer
     const customerId = await getStripeCustomerId(
-      session.user.id,
-      session.user.email!
+      session.id,
+      session.email!
     )
 
     // Create checkout session
@@ -58,7 +57,7 @@ export async function POST(req: NextRequest) {
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?checkout=success`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing?checkout=canceled`,
       metadata: {
-        userId: session.user.id,
+        userId: session.id,
       },
     })
 

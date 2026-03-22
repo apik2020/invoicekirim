@@ -1,6 +1,5 @@
+import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { verifyTwoFactorCode, enableTwoFactor } from '@/lib/two-factor'
 
 // Force dynamic rendering
@@ -9,8 +8,8 @@ export const dynamic = 'force-dynamic'
 // POST /api/user/2fa/verify - Verify 2FA code and enable 2FA
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const session = await getUserSession()
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -33,7 +32,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Enable 2FA for the user
-    await enableTwoFactor(session.user.id, secret, backupCodes)
+    await enableTwoFactor(session.id, secret, backupCodes)
 
     return NextResponse.json({
       success: true,

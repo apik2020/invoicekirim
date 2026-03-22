@@ -1,6 +1,5 @@
+import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { stripe } from '@/lib/stripe'
 
@@ -9,15 +8,15 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(_req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getUserSession()
 
-    if (!session?.user?.id) {
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Get user's subscription
     const subscription = await prisma.subscriptions.findUnique({
-      where: { userId: session.user.id },
+      where: { userId: session.id },
     })
 
     if (!subscription?.stripeSubscriptionId) {
@@ -37,7 +36,7 @@ export async function POST(_req: NextRequest) {
 
     // Update in database
     await prisma.subscriptions.update({
-      where: { userId: session.user.id },
+      where: { userId: session.id },
       data: {
         status: 'CANCELED',
       },

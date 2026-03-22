@@ -1,6 +1,5 @@
+import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 // GET - Get a single payment by ID
@@ -9,8 +8,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const session = await getUserSession()
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -39,7 +38,7 @@ export async function GET(
     }
 
     // Check if user owns this payment
-    if (payment.userId !== session.user.id) {
+    if (payment.userId !== session.id) {
       return NextResponse.json(
         { error: 'Tidak memiliki akses ke pembayaran ini' },
         { status: 403 }
@@ -62,8 +61,8 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const session = await getUserSession()
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -82,7 +81,7 @@ export async function PATCH(
     }
 
     // Check if user owns this payment
-    if (payment.userId !== session.user.id) {
+    if (payment.userId !== session.id) {
       return NextResponse.json(
         { error: 'Tidak memiliki akses ke pembayaran ini' },
         { status: 403 }
@@ -132,8 +131,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const session = await getUserSession()
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -151,7 +150,7 @@ export async function DELETE(
     }
 
     // Check if user owns this payment
-    if (payment.userId !== session.user.id) {
+    if (payment.userId !== session.id) {
       return NextResponse.json(
         { error: 'Tidak memiliki akses ke pembayaran ini' },
         { status: 403 }

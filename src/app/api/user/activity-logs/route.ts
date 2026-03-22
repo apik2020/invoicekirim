@@ -1,12 +1,11 @@
+import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const session = await getUserSession()
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -16,13 +15,13 @@ export async function GET(req: NextRequest) {
 
     const [logs, total] = await Promise.all([
       prisma.activity_logs.findMany({
-        where: { userId: session.user.id },
+        where: { userId: session.id },
         orderBy: { createdAt: 'desc' },
         take: limit,
         skip: offset,
       }),
       prisma.activity_logs.count({
-        where: { userId: session.user.id },
+        where: { userId: session.id },
       }),
     ])
 

@@ -1,6 +1,5 @@
+import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 // Force dynamic rendering
@@ -12,10 +11,10 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getUserSession()
     const { id } = await params
 
-    if (!session?.user?.id) {
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -23,7 +22,7 @@ export async function PUT(
     const client = await prisma.clients.findFirst({
       where: {
         id,
-        userId: session.user.id,
+        userId: session.id,
       },
     })
 
@@ -38,7 +37,7 @@ export async function PUT(
     if (email && email !== client.email) {
       const existingClient = await prisma.clients.findFirst({
         where: {
-          userId: session.user.id,
+          userId: session.id,
           email,
           id: { not: id },
         },
@@ -82,10 +81,10 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getUserSession()
     const { id } = await params
 
-    if (!session?.user?.id) {
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -93,7 +92,7 @@ export async function DELETE(
     const client = await prisma.clients.findFirst({
       where: {
         id,
-        userId: session.user.id,
+        userId: session.id,
       },
     })
 

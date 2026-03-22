@@ -1,6 +1,5 @@
+import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import nodemailer from 'nodemailer'
 import { logInvoiceSent } from '@/lib/activity-log'
@@ -14,10 +13,10 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await getUserSession()
     const { id } = await params
 
-    if (!session?.user?.id) {
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -25,7 +24,7 @@ export async function POST(
     const invoice = await prisma.invoices.findFirst({
       where: {
         id,
-        userId: session.user.id,
+        userId: session.id,
       },
       include: {
         invoice_items: true,
@@ -256,7 +255,7 @@ export async function POST(
 
     // Fetch user to get SMTP settings
     const user = await prisma.users.findUnique({
-      where: { id: session.user.id },
+      where: { id: session.id },
       select: {
         smtpHost: true,
         smtpPort: true,
@@ -302,7 +301,7 @@ export async function POST(
     })
 
     // Log activity
-    await logInvoiceSent(session.user.id, invoice.invoiceNumber, invoice.clientEmail)
+    await logInvoiceSent(session.id, invoice.invoiceNumber, invoice.clientEmail)
 
     return NextResponse.json({
       success: true,

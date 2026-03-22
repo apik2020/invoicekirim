@@ -1,6 +1,5 @@
+import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { revokeApiKey, deleteApiKey } from '@/lib/api-keys'
 
 // PUT /api/api-keys/[id] - Revoke/regenerate API key
@@ -9,8 +8,8 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const session = await getUserSession()
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -19,7 +18,7 @@ export async function PUT(
     const teamId = searchParams.get('teamId') || undefined
 
     const success = await revokeApiKey(keyId, {
-      userId: teamId ? undefined : session.user.id,
+      userId: teamId ? undefined : session.id,
       teamId,
     })
 
@@ -43,8 +42,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const session = await getUserSession()
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -53,7 +52,7 @@ export async function DELETE(
     const teamId = searchParams.get('teamId') || undefined
 
     const success = await deleteApiKey(keyId, {
-      userId: teamId ? undefined : session.user.id,
+      userId: teamId ? undefined : session.id,
       teamId,
     })
 

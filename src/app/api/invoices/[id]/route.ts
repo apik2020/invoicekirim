@@ -1,6 +1,5 @@
+import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { invoiceUpdateSchema } from '@/lib/validations/invoice'
 import { logInvoiceUpdated, logInvoiceDeleted } from '@/lib/activity-log'
@@ -10,8 +9,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
+    const session = await getUserSession()
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -19,7 +18,7 @@ export async function GET(
     const invoice = await prisma.invoices.findFirst({
       where: {
         id,
-        userId: session.user.id,
+        userId: session.id,
       },
       include: {
         invoice_items: true,
@@ -45,8 +44,8 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
+    const session = await getUserSession()
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -55,7 +54,7 @@ export async function PUT(
     const existingInvoice = await prisma.invoices.findFirst({
       where: {
         id,
-        userId: session.user.id,
+        userId: session.id,
       },
     })
 
@@ -156,7 +155,7 @@ export async function PUT(
 
     // Log activity
     if (changes.length > 0) {
-      await logInvoiceUpdated(session.user.id, existingInvoice.invoiceNumber, changes)
+      await logInvoiceUpdated(session.id, existingInvoice.invoiceNumber, changes)
     }
 
     return NextResponse.json(invoice)
@@ -174,8 +173,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
+    const session = await getUserSession()
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -184,7 +183,7 @@ export async function DELETE(
     const invoice = await prisma.invoices.findFirst({
       where: {
         id,
-        userId: session.user.id,
+        userId: session.id,
       },
     })
 
@@ -213,7 +212,7 @@ export async function DELETE(
     })
 
     // Log activity
-    await logInvoiceDeleted(session.user.id, invoice.invoiceNumber)
+    await logInvoiceDeleted(session.id, invoice.invoiceNumber)
 
     return NextResponse.json({ message: 'Invoice berhasil dihapus' })
   } catch (error) {
