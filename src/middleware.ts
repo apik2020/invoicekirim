@@ -64,9 +64,10 @@ export default async function middleware(req: NextRequest) {
   // 3. Authentication check
   const sessionToken = req.cookies.get('next-auth.session-token') ||
                       req.cookies.get('__Secure-next-auth.session-token')
+  const userSessionToken = req.cookies.get('user_session')
   const adminSessionToken = req.cookies.get('admin_session')
 
-  const isAuth = !!sessionToken
+  const isAuth = !!sessionToken || !!userSessionToken
   const isAdminAuth = !!adminSessionToken
   const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/register')
   const isDashboardPage = pathname.startsWith('/dashboard')
