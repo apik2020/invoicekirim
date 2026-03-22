@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSession } from 'next-auth/react'
+import { useAppSession } from '@/hooks/useAppSession'
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { MessageBox } from '@/components/ui/MessageBox'
 import { useMessageBox } from '@/hooks/useMessageBox'
@@ -45,7 +45,7 @@ interface Item {
 
 export default function ItemsPage() {
   const router = useRouter()
-  const { data: session } = useSession()
+  const { data: session } = useAppSession()
   const [items, setItems] = useState<Item[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')

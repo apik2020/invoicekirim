@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { useSession } from 'next-auth/react'
+import { useAppSession } from '@/hooks/useAppSession'
 import { FileText, Save, Plus, Trash2, Loader2, Package, X, UserPlus, Check, Users, ChevronDown, PackagePlus } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import { DashboardLayout } from '@/components/DashboardLayout'
@@ -47,7 +47,7 @@ export default function EditInvoicePage() {
   const router = useRouter()
   const params = useParams()
   const { id } = params as { id: string }
-  const sessionResult = useSession()
+  const sessionResult = useAppSession()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [notFound, setNotFound] = useState(false)

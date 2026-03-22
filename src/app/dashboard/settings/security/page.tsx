@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
+import { useAppSession } from '@/hooks/useAppSession'
 import { useRouter } from 'next/navigation'
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { TwoFactorSetup } from '@/components/settings/TwoFactorSetup'
@@ -17,7 +17,7 @@ import {
 } from 'lucide-react'
 
 export default function SecurityPage() {
-  const { data: session } = useSession()
+  const { data: session } = useAppSession()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)

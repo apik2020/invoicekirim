@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useSession } from 'next-auth/react'
+import { useAppSession } from '@/hooks/useAppSession'
 import { Save, Plus, Trash2, Loader2, Users, ChevronDown, Package, UserPlus, X, Check, PackagePlus } from 'lucide-react'
 import { generateInvoiceNumber } from '@/lib/utils'
 import { formatCurrency } from '@/lib/utils'
@@ -46,7 +46,7 @@ interface TemplateSettings {
 function NewInvoicePageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const sessionResult = useSession()
+  const sessionResult = useAppSession()
   const [saving, setSaving] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [loadingTemplate, setLoadingTemplate] = useState(false)

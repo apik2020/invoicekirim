@@ -3,7 +3,7 @@
 import { useState, useEffect, use, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { useSession } from 'next-auth/react'
+import { useAppSession } from '@/hooks/useAppSession'
 import { useReactToPrint } from 'react-to-print'
 import {
   FileText,
@@ -68,7 +68,7 @@ export default function InvoiceDetailPage({
 }) {
   const router = useRouter()
   const { id } = use(params)
-  const { data: session, status } = useSession()
+  const { data: session, status } = useAppSession()
   const [invoice, setInvoice] = useState<Invoice | null>(null)
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState(false)

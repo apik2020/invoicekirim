@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { useSession, signOut } from 'next-auth/react'
+import { useAppSession } from '@/hooks/useAppSession'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { LogOut, User, Settings, ChevronDown, CreditCard, ChevronLeft } from 'lucide-react'
 import DarkModeToggle from './DarkModeToggle'
 
@@ -19,13 +20,16 @@ export default function DashboardHeader({
   backHref = '/dashboard',
   actions,
 }: DashboardHeaderProps) {
-  const { data: session } = useSession()
+  const { data: session } = useAppSession()
+  const router = useRouter()
   const [showUserMenu, setShowUserMenu] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
 
   const handleLogout = async () => {
     setShowUserMenu(false)
-    await signOut({ callbackUrl: '/login' })
+    // Clear session cookie by calling logout API
+    await fetch('/api/logout', { method: 'POST' })
+    router.push('/login')
   }
 
   // Close dropdown when clicking outside

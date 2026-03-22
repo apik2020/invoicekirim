@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
+import { useAppSession } from '@/hooks/useAppSession'
 import { useRouter } from 'next/navigation'
 import { DashboardLayout } from '@/components/DashboardLayout'
 import {
@@ -20,7 +20,7 @@ import {
 } from 'lucide-react'
 
 export default function SettingsPage() {
-  const { data: session, update } = useSession()
+  const { data: session, update } = useAppSession()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<'company' | 'email'>('company')
   const [loading, setLoading] = useState(false)
@@ -95,7 +95,7 @@ export default function SettingsPage() {
 
       if (res.ok) {
         setMessage({ type: 'success', text: 'Informasi perusahaan berhasil disimpan!' })
-        await update({ name: companyInfo.name })
+        await update()
       } else {
         setMessage({ type: 'error', text: data.error || 'Gagal menyimpan informasi' })
       }

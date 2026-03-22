@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { useSession } from 'next-auth/react'
+import { useAppSession } from '@/hooks/useAppSession'
 import { FileText, Plus, Search, Trash2, Eye, Loader2, Download, LayoutTemplate } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { DashboardLayout } from '@/components/DashboardLayout'
@@ -73,7 +73,7 @@ const getEffectiveStatus = (invoice: Invoice): 'DRAFT' | 'SENT' | 'PAID' | 'OVER
 
 export default function InvoicesPage() {
   const router = useRouter()
-  const sessionResult = useSession()
+  const sessionResult = useAppSession()
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')

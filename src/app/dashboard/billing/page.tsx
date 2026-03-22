@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSession } from 'next-auth/react'
+import { useAppSession } from '@/hooks/useAppSession'
 import { CreditCard, FileText, Crown, Clock, AlertTriangle, Loader2 } from 'lucide-react'
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { SubscriptionManager } from '@/components/billing/SubscriptionManager'
@@ -21,7 +21,7 @@ interface Subscription {
 
 export default function BillingPage() {
   const router = useRouter()
-  const { data: session, status } = useSession()
+  const { data: session, status } = useAppSession()
   const [subscription, setSubscription] = useState<Subscription | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'subscription' | 'payments'>('subscription')
@@ -240,7 +240,7 @@ export default function BillingPage() {
       )}
 
       {activeTab === 'payments' && (
-        <PaymentHistory userId={session.user?.id} />
+        <PaymentHistory userId={session?.user?.id} />
       )}
     </DashboardLayout>
   )

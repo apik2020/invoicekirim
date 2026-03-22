@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useSession } from 'next-auth/react'
+import { useAppSession } from '@/hooks/useAppSession'
 import { FileText, Save, Plus, Trash2, Loader2, Package, Upload, X } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import { DashboardLayout } from '@/components/DashboardLayout'
@@ -28,7 +28,7 @@ interface TemplateSettings {
 
 export default function NewTemplatePage() {
   const router = useRouter()
-  const sessionResult = useSession()
+  const sessionResult = useAppSession()
   const [saving, setSaving] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [catalogItems, setCatalogItems] = useState<any[]>([])

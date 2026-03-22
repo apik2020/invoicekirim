@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { useSession } from 'next-auth/react'
+import { useAppSession } from '@/hooks/useAppSession'
 import { FileText, Plus, Search, Edit, Trash2, Loader2, Copy } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import { DashboardLayout } from '@/components/DashboardLayout'
@@ -30,7 +30,7 @@ interface Template {
 
 export default function TemplatesPage() {
   const router = useRouter()
-  const { data: session, status } = useSession()
+  const { data: session, status } = useAppSession()
   const [templates, setTemplates] = useState<Template[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')

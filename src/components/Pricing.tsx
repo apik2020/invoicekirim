@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
-import { useSession } from 'next-auth/react'
+import { useAppSession } from '@/hooks/useAppSession'
 import { Check, X, Star, Loader2 } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 
@@ -28,7 +28,7 @@ interface Plan {
 }
 
 function PricingContent() {
-  const { data: session } = useSession()
+  const { data: session } = useAppSession()
   const [plans, setPlans] = useState<Plan[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null)
