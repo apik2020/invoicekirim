@@ -1,23 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getUserSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
 
 export async function GET(_req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
+    const session = await getUserSession()
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const subscription = await prisma.subscriptions.findUnique({
-      where: { userId: session.user.id },
+      where: { userId: session.id },
     })
 
     if (!subscription) {
       // Check if user exists first
       const user = await prisma.users.findUnique({
-        where: { id: session.user.id },
+        where: { id: session.id },
         select: { id: true },
       })
 
@@ -26,7 +25,7 @@ export async function GET(_req: NextRequest) {
         // Return default free subscription without creating DB record
         return NextResponse.json({
           id: 'default',
-          userId: session.user.id,
+          userId: session.id,
           planType: 'FREE',
           status: 'FREE',
           invoiceLimit: 10,
@@ -90,7 +89,7 @@ export async function GET(_req: NextRequest) {
     if (subscription.planType === 'FREE' && subscription.status !== 'TRIALING') {
       invoiceCount = await prisma.invoices.count({
         where: {
-          userId: session.user.id,
+          userId: session.id,
           createdAt: {
             gte: new Date(new Date().setDate(1)), // Start of current month
           },

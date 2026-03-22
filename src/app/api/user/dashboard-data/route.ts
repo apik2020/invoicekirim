@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 
 // Retry helper for database queries
@@ -27,25 +26,29 @@ async function withRetry<T>(
 
 export async function GET(_req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    // Get session from user_session cookie
+    const cookieStore = await cookies()
+    const userSessionCookie = cookieStore.get('user_session')
+
+    if (!userSessionCookie?.value) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const session = JSON.parse(userSessionCookie.value)
+
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Check if user is admin - block access to user dashboard
-    const admin = await prisma.admins.findUnique({
-      where: { email: session.user.email! },
-      select: { id: true },
-    })
-
-    if (admin) {
+    if (session.isAdmin) {
       return NextResponse.json(
         { error: 'Akses ditolak. Admin harus menggunakan dashboard admin di /admin' },
         { status: 403 }
       )
     }
 
-    const userId = session.user.id
+    const userId = session.id
 
     const [invoices, subscription, activityLogs, dueInvoices] = await Promise.all([
       withRetry(() => prisma.invoices.findMany({

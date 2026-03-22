@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getUserSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
+    const session = await getUserSession()
+    if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -21,7 +20,7 @@ export async function GET(req: NextRequest) {
     // Fetch all invoices in date range
     const invoices = await prisma.invoices.findMany({
       where: {
-        userId: session.user.id,
+        userId: session.id,
         date: {
           gte: startDate,
           lte: endDate,
@@ -74,7 +73,7 @@ export async function GET(req: NextRequest) {
     // Revenue by status
     const statusData = await prisma.invoices.groupBy({
       by: ['status'],
-      where: { userId: session.user.id },
+      where: { userId: session.id },
       _sum: { total: true },
       _count: { id: true },
     })
