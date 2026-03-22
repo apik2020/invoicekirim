@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAppSession } from '@/hooks/useAppSession'
+import { useRouter } from 'next/navigation'
 import { DashboardLayout } from '@/components/DashboardLayout'
 import {
   User,
@@ -10,8 +11,9 @@ import {
   AlertCircle,
 } from 'lucide-react'
 
-export default function SettingsPage() {
+export default function ProfilPage() {
   const { data: session, update } = useAppSession()
+  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
