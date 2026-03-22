@@ -1,21 +1,23 @@
 import { NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    // Get user_session cookie
-    const cookieHeader = request.headers.get('cookie') || ''
-    const cookies = Object.fromEntries(
-      cookieHeader.split(';').map(c => c.trim().split('=')).filter(([k, v]) => k && v)
-    )
+    const cookieStore = await cookies()
+    const userSessionCookie = cookieStore.get('user_session')
 
-    const userSession = cookies['user_session']
+    if (!userSessionCookie) {
+      return NextResponse.json({ authenticated: false, user: null }, { status: 401 })
+    }
+
+    const userSession = userSessionCookie.value
 
     if (!userSession) {
       return NextResponse.json({ authenticated: false, user: null }, { status: 401 })
     }
 
     // Parse the session data
-    const user = JSON.parse(decodeURIComponent(userSession))
+    const user = JSON.parse(userSession)
 
     return NextResponse.json({
       authenticated: true,

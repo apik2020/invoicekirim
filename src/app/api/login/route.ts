@@ -37,8 +37,9 @@ export async function POST(request: Request) {
           isAdmin: true
         }), {
           httpOnly: true,
-          secure: true,
+          secure: process.env.NODE_ENV === 'production',
           sameSite: 'lax',
+          path: '/',
           maxAge: 60 * 60 * 24 * 7 // 7 days
         })
         return response
@@ -88,8 +89,9 @@ export async function POST(request: Request) {
       isAdmin
     }), {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
+      path: '/',
       maxAge: 60 * 60 * 24 * 7 // 7 days
     })
 
