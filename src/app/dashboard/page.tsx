@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import {
   FileText, Plus, Users, Package, Loader2, Crown, Sparkles, Clock, X,
@@ -17,6 +16,7 @@ import { DueDateSummary } from '@/components/dashboard/DueDateSummary'
 import { DashboardStatusSummary } from '@/components/dashboard/DashboardStatusSummary'
 import { useAutoLogout } from '@/hooks/useAutoLogout'
 import { SessionTimeoutModal } from '@/components/SessionTimeoutModal'
+import { useAppSession } from '@/hooks/useAppSession'
 
 interface Subscription {
   id: string
@@ -29,7 +29,7 @@ interface Subscription {
 
 export default function DashboardPage() {
   const router = useRouter()
-  const { data: session, status } = useSession()
+  const { data: session, status } = useAppSession()
   const [loading, setLoading] = useState(true)
   const [data, setData] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
