@@ -11,9 +11,15 @@ interface Message {
   createdAt: string
   userId: string | null
   adminId: string | null
+  clientId: string | null
   users: {
     id: string
     name: string | null
+    email: string
+  } | null
+  client: {
+    id: string
+    name: string
     email: string
   } | null
 }
@@ -29,11 +35,18 @@ interface Ticket {
   createdAt: string
   resolvedAt: string | null
   closedAt: string | null
+  userId: string | null
+  clientId: string | null
   users: {
     id: string
     name: string | null
     email: string
-  }
+  } | null
+  client: {
+    id: string
+    name: string
+    email: string
+  } | null
   support_messages: Message[]
 }
 
@@ -163,10 +176,22 @@ export function SupportTicketDetailModal({ ticketId, onClose, onUpdate }: Suppor
             <div className="flex items-center gap-3 mt-2">
               {ticket && getStatusBadge(ticket.status)}
               {ticket && (
-                <span className="text-sm text-gray-500">
-                  <User className="w-4 h-4 inline mr-1" />
-                  {ticket.users.name || ticket.users.email}
-                </span>
+                <>
+                  {ticket.client ? (
+                    <span className="text-sm text-gray-500">
+                      <User className="w-4 h-4 inline mr-1" />
+                      {ticket.client.name}
+                      <span className="ml-1 px-1.5 py-0.5 rounded text-[10px] bg-teal-100 text-teal-700 font-medium">
+                        CLIENT
+                      </span>
+                    </span>
+                  ) : ticket.users ? (
+                    <span className="text-sm text-gray-500">
+                      <User className="w-4 h-4 inline mr-1" />
+                      {ticket.users.name || ticket.users.email}
+                    </span>
+                  ) : null}
+                </>
               )}
             </div>
           </div>
@@ -189,9 +214,16 @@ export function SupportTicketDetailModal({ ticketId, onClose, onUpdate }: Suppor
               {/* Original Message */}
               <div className="p-4 bg-gray-50 rounded-xl">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-medium text-gray-900">
-                    {ticket.users.name || ticket.users.email}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-gray-900">
+                      {ticket.client?.name || ticket.users?.name || ticket.users?.email || 'Unknown'}
+                    </span>
+                    {ticket.client && (
+                      <span className="px-1.5 py-0.5 rounded text-[10px] bg-teal-100 text-teal-700 font-medium">
+                        CLIENT
+                      </span>
+                    )}
+                  </div>
                   <span className="text-xs text-gray-500">
                     {formatDate(ticket.createdAt)}
                   </span>
@@ -208,13 +240,15 @@ export function SupportTicketDetailModal({ ticketId, onClose, onUpdate }: Suppor
                       ? 'bg-yellow-50 border border-yellow-200'
                       : msg.adminId
                       ? 'bg-purple-50 border border-purple-200'
+                      : msg.clientId
+                      ? 'bg-teal-50 border border-teal-200'
                       : 'bg-gray-50'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-gray-900">
-                        {msg.users?.name || msg.users?.email || 'Admin'}
+                        {msg.client?.name || msg.users?.name || msg.users?.email || 'Admin'}
                       </span>
                       {msg.isInternal && (
                         <span className="px-2 py-0.5 rounded text-xs bg-yellow-200 text-yellow-800">
@@ -224,6 +258,11 @@ export function SupportTicketDetailModal({ ticketId, onClose, onUpdate }: Suppor
                       {msg.adminId && !msg.isInternal && (
                         <span className="px-2 py-0.5 rounded text-xs bg-purple-200 text-purple-800">
                           Support
+                        </span>
+                      )}
+                      {msg.clientId && (
+                        <span className="px-2 py-0.5 rounded text-xs bg-teal-200 text-teal-800">
+                          Client
                         </span>
                       )}
                     </div>

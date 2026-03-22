@@ -25,11 +25,18 @@ interface Ticket {
   status: string
   lastReplyAt: string | null
   createdAt: string
+  userId: string | null
+  clientId: string | null
   users: {
     id: string
     name: string | null
     email: string
-  }
+  } | null
+  client: {
+    id: string
+    name: string
+    email: string
+  } | null
   _count: {
     support_messages: number
   }
@@ -289,10 +296,28 @@ export function SupportTicketTable({ onTicketSelect }: SupportTicketTableProps) 
                   </td>
                   <td className="py-4">
                     <div>
-                      <p className="font-medium text-gray-900">
-                        {ticket.users.name || 'Tanpa Nama'}
-                      </p>
-                      <p className="text-sm text-gray-500">{ticket.users.email}</p>
+                      {ticket.client ? (
+                        <>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-gray-900">
+                              {ticket.client.name}
+                            </p>
+                            <span className="px-1.5 py-0.5 rounded text-[10px] bg-teal-100 text-teal-700 font-medium">
+                              CLIENT
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-500">{ticket.client.email}</p>
+                        </>
+                      ) : ticket.users ? (
+                        <>
+                          <p className="font-medium text-gray-900">
+                            {ticket.users.name || 'Tanpa Nama'}
+                          </p>
+                          <p className="text-sm text-gray-500">{ticket.users.email}</p>
+                        </>
+                      ) : (
+                        <p className="text-sm text-gray-500">Unknown</p>
+                      )}
                     </div>
                   </td>
                   <td className="py-4">

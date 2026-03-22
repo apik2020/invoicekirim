@@ -31,6 +31,8 @@ export async function GET(req: NextRequest) {
         { description: { contains: search, mode: 'insensitive' } },
         { users: { email: { contains: search, mode: 'insensitive' } } },
         { users: { name: { contains: search, mode: 'insensitive' } } },
+        { client: { email: { contains: search, mode: 'insensitive' } } },
+        { client: { name: { contains: search, mode: 'insensitive' } } },
       ]
     }
 
@@ -43,6 +45,13 @@ export async function GET(req: NextRequest) {
         where,
         include: {
           users: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          client: {
             select: {
               id: true,
               name: true,

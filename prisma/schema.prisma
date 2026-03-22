@@ -253,6 +253,8 @@ model invoices {
   clients                  clients?        @relation(fields: [clientId], references: [id])
   teams                    teams?          @relation(fields: [teamId], references: [id], onDelete: Cascade)
   users                    users           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  client_invoice_access    client_invoice_access[]
+  invoice_messages         invoice_messages[]
 
   @@index([accessToken])
   @@index([status])
@@ -649,7 +651,8 @@ model announcement_reads {
 
 model support_tickets {
   id          String   @id @default(uuid())
-  userId      String
+  userId      String?  // Optional - for vendor/user tickets
+  clientId    String?  // For client tickets
   subject     String
   description String
   category    String   @default("general") // "general", "billing", "technical", "feature_request"
@@ -661,10 +664,12 @@ model support_tickets {
   closedAt    DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  users       users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  users       users?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  client      client_accounts? @relation(fields: [clientId], references: [id], onDelete: Cascade)
   support_messages support_messages[]
 
   @@index([userId])
+  @@index([clientId])
   @@index([status])
   @@index([assignedTo])
   @@index([createdAt])
@@ -675,14 +680,17 @@ model support_messages {
   ticketId  String
   userId    String?
   adminId   String?
+  clientId  String?  // For client replies
   message   String
   isInternal Boolean @default(false) // For internal notes not visible to user
   attachments Json?  // Array of attachment URLs
   createdAt DateTime @default(now())
   support_tickets support_tickets @relation(fields: [ticketId], references: [id], onDelete: Cascade)
   users     users?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  client    client_accounts? @relation(fields: [clientId], references: [id], onDelete: SetNull)
 
   @@index([ticketId])
+  @@index([clientId])
   @@index([createdAt])
 }
 
@@ -702,4 +710,96 @@ model impersonation_sessions {
   @@index([targetUserId])
   @@index([token])
   @@index([createdAt])
+}
+
+// ==================== Client Dashboard Tables ====================
+
+// Client Account - for clients who want to register for dashboard access
+model client_accounts {
+  id                     String                     @id @default(uuid())
+  email                  String                     @unique
+  name                   String
+  phone                  String?
+  password               String?                    // hashed password (optional for magic link)
+  magicLinkToken         String?                    @unique
+  magicLinkExpires       DateTime?
+  createdAt              DateTime                   @default(now())
+  updatedAt              DateTime                   @updatedAt
+  client_invoice_access      client_invoice_access[]
+  client_notifications       client_notifications[]
+  client_notification_preferences client_notification_preferences?
+  invoice_messages           invoice_messages[]
+  support_tickets            support_tickets[]
+  support_messages           support_messages[]
+
+  @@index([email])
+  @@index([magicLinkToken])
+}
+
+// Link between invoice and client account for access tracking
+model client_invoice_access {
+  id          String         @id @default(uuid())
+  clientId    String
+  invoiceId   String
+  accessToken String         @unique // token unik untuk akses
+  lastViewed  DateTime?
+  viewCount   Int            @default(0)
+  client      client_accounts @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  invoice     invoices       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  createdAt   DateTime       @default(now())
+
+  @@unique([clientId, invoiceId])
+  @@index([clientId])
+  @@index([invoiceId])
+  @@index([accessToken])
+}
+
+// Notifications for clients
+model client_notifications {
+  id          String         @id @default(uuid())
+  clientId    String
+  type        String         // "invoice_sent", "payment_reminder", "payment_received", "overdue", "message", "system"
+  title       String
+  message     String
+  data        Json?          // data tambahan (invoice id, dll)
+  isRead      Boolean        @default(false)
+  readAt      DateTime?
+  client      client_accounts @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  createdAt   DateTime       @default(now())
+
+  @@index([clientId, isRead])
+  @@index([clientId, createdAt])
+  @@index([type])
+}
+
+// Client notification preferences
+model client_notification_preferences {
+  id                String         @id @default(uuid())
+  clientId          String         @unique
+  emailNotification Boolean        @default(true)
+  invoiceSent       Boolean        @default(true)
+  paymentReminder   Boolean        @default(true)
+  paymentReceived   Boolean        @default(true)
+  overdueAlert      Boolean        @default(true)
+  newMessage        Boolean        @default(true)
+  client            client_accounts @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+}
+
+// Messages/Comments on invoices
+model invoice_messages {
+  id          String         @id @default(uuid())
+  invoiceId   String
+  senderType  String         // "vendor" atau "client"
+  senderId    String         // user id atau client id
+  message     String
+  attachments Json?          // array of URLs
+  isRead      Boolean        @default(false)
+  invoice     invoices       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  sender      client_accounts? @relation(fields: [senderId], references: [id], onDelete: SetNull)
+  createdAt   DateTime       @default(now())
+
+  @@index([invoiceId, createdAt])
+  @@index([senderType, senderId])
 }
