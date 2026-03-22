@@ -13,6 +13,12 @@ interface InvoiceItem {
   price: number
 }
 
+interface Branding {
+  logoUrl: string | null
+  primaryColor: string
+  showLogo: boolean
+}
+
 interface Invoice {
   id: string
   invoiceNumber: string
@@ -34,6 +40,7 @@ interface Invoice {
   total: number
   status: 'DRAFT' | 'SENT' | 'PAID' | 'OVERDUE' | 'CANCELED'
   paidAt: string | null
+  branding?: Branding | null
 }
 
 export default function ClientInvoicePage({
@@ -92,6 +99,11 @@ export default function ClientInvoicePage({
       const html2canvas = await import('html2canvas')
       const { jsPDF } = await import('jspdf')
 
+      // Get branding colors
+      const pdfPrimaryColor = invoice.branding?.primaryColor || '#F97316'
+      const pdfShowLogo = invoice.branding?.showLogo ?? true
+      const pdfLogoUrl = invoice.branding?.logoUrl
+
       // Build simple HTML string with inline hex colors only
       const buildInvoiceHTML = () => {
         const items = invoice.items.map(item => `
@@ -103,15 +115,22 @@ export default function ClientInvoicePage({
           </tr>
         `).join('')
 
+        const logoHtml = pdfShowLogo && pdfLogoUrl
+          ? `<img src="${pdfLogoUrl}" alt="Logo" style="width: 56px; height: 56px; object-fit: contain; border-radius: 12px;" />`
+          : `<div style="width: 56px; height: 56px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background-color: ${pdfPrimaryColor};"><span style="color: white; font-weight: bold; font-size: 20px;">${invoice.companyName?.charAt(0)?.toUpperCase() || 'I'}</span></div>`
+
         return `
           <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 800px; margin: 0 auto; padding: 48px; background: #FFFFFF; color: #333333;">
             <!-- Header -->
-            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 40px; padding-bottom: 32px; border-bottom: 2px solid #E2E8F0;">
-              <div>
-                <h1 style="font-size: 24px; font-weight: bold; color: #333333; margin: 0 0 8px 0;">${invoice.companyName}</h1>
-                <p style="font-size: 14px; color: #333333; margin: 0;">${invoice.companyEmail}</p>
-                ${invoice.companyPhone ? `<p style="font-size: 14px; color: #333333; margin: 0;">${invoice.companyPhone}</p>` : ''}
-                ${invoice.companyAddress ? `<p style="font-size: 14px; color: #333333; margin: 0;">${invoice.companyAddress}</p>` : ''}
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 40px; padding-bottom: 32px; border-bottom: 2px solid ${pdfPrimaryColor}40;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                ${logoHtml}
+                <div>
+                  <h1 style="font-size: 24px; font-weight: bold; color: #333333; margin: 0 0 8px 0;">${invoice.companyName}</h1>
+                  <p style="font-size: 14px; color: #333333; margin: 0;">${invoice.companyEmail}</p>
+                  ${invoice.companyPhone ? `<p style="font-size: 14px; color: #333333; margin: 0;">${invoice.companyPhone}</p>` : ''}
+                  ${invoice.companyAddress ? `<p style="font-size: 14px; color: #333333; margin: 0;">${invoice.companyAddress}</p>` : ''}
+                </div>
               </div>
               <div style="text-align: right;">
                 <p style="font-size: 12px; color: #333333; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">Invoice</p>
@@ -149,7 +168,7 @@ export default function ClientInvoicePage({
               <h3 style="font-size: 12px; color: #333333; margin: 0 0 16px 0; text-transform: uppercase; letter-spacing: 0.5px; font-weight: bold;">Item Invoice</h3>
               <table style="width: 100%; border-collapse: collapse;">
                 <thead>
-                  <tr style="border-bottom: 2px solid #E2E8F0;">
+                  <tr style="border-bottom: 2px solid ${pdfPrimaryColor}40;">
                     <th style="padding: 16px 8px; text-align: left; font-weight: bold; color: #333333; font-size: 14px;">Deskripsi</th>
                     <th style="padding: 16px 8px; text-align: center; font-weight: bold; color: #333333; font-size: 14px;">Qty</th>
                     <th style="padding: 16px 8px; text-align: right; font-weight: bold; color: #333333; font-size: 14px;">Harga</th>
@@ -173,7 +192,7 @@ export default function ClientInvoicePage({
                   <span>Pajak (${invoice.taxRate}%)</span>
                   <span style="font-weight: 600;">${formatCurrency(invoice.taxAmount)}</span>
                 </div>
-                <div style="display: flex; justify-content: space-between; padding: 16px 0; border-top: 2px solid #E2E8F0; margin-top: 16px; font-size: 24px; font-weight: bold; color: #00D4C5;">
+                <div style="display: flex; justify-content: space-between; padding: 16px 0; border-top: 2px solid ${pdfPrimaryColor}40; margin-top: 16px; font-size: 24px; font-weight: bold; color: ${pdfPrimaryColor};">
                   <span>Total</span>
                   <span>${formatCurrency(invoice.total)}</span>
                 </div>
@@ -182,16 +201,16 @@ export default function ClientInvoicePage({
 
             ${invoice.notes ? `
             <!-- Notes -->
-            <div style="margin-top: 40px; padding-top: 32px; border-top: 1px solid #E2E8F0;">
+            <div style="margin-top: 40px; padding-top: 32px; border-top: 1px solid ${pdfPrimaryColor}30;">
               <h3 style="font-size: 12px; color: #333333; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.5px; font-weight: bold;">Catatan</h3>
               <p style="font-size: 14px; color: #333333; margin: 0; white-space: pre-line;">${invoice.notes}</p>
             </div>
             ` : ''}
 
             <!-- Footer -->
-            <div style="margin-top: 48px; padding-top: 32px; border-top: 1px solid #E2E8F0; text-align: center;">
+            <div style="margin-top: 48px; padding-top: 32px; border-top: 1px solid ${pdfPrimaryColor}30; text-align: center;">
               <p style="font-size: 12px; color: #333333; margin: 0;">
-                Invoice dibuat dengan <a href="https://invoicekirim.com" style="color: #00D4C5; text-decoration: none; font-weight: 600;">InvoiceKirim</a>
+                Invoice dibuat dengan <a href="https://invoicekirim.com" style="color: ${pdfPrimaryColor}; text-decoration: none; font-weight: 600;">InvoiceKirim</a>
               </p>
             </div>
           </div>
@@ -259,6 +278,11 @@ export default function ClientInvoicePage({
       const html2canvas = await import('html2canvas')
       const { jsPDF } = await import('jspdf')
 
+      // Get branding colors
+      const pdfPrimaryColor = invoice.branding?.primaryColor || '#F97316'
+      const pdfShowLogo = invoice.branding?.showLogo ?? true
+      const pdfLogoUrl = invoice.branding?.logoUrl
+
       // Build simple HTML string with inline hex colors only
       const buildInvoiceHTML = () => {
         const items = invoice.items.map(item => `
@@ -270,15 +294,22 @@ export default function ClientInvoicePage({
           </tr>
         `).join('')
 
+        const logoHtml = pdfShowLogo && pdfLogoUrl
+          ? `<img src="${pdfLogoUrl}" alt="Logo" style="width: 56px; height: 56px; object-fit: contain; border-radius: 12px;" />`
+          : `<div style="width: 56px; height: 56px; border-radius: 12px; display: flex; align-items: center; justify-content: center; background-color: ${pdfPrimaryColor};"><span style="color: white; font-weight: bold; font-size: 20px;">${invoice.companyName?.charAt(0)?.toUpperCase() || 'I'}</span></div>`
+
         return `
           <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 800px; margin: 0 auto; padding: 48px; background: #FFFFFF; color: #333333;">
             <!-- Header -->
-            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 40px; padding-bottom: 32px; border-bottom: 2px solid #E2E8F0;">
-              <div>
-                <h1 style="font-size: 24px; font-weight: bold; color: #333333; margin: 0 0 8px 0;">${invoice.companyName}</h1>
-                <p style="font-size: 14px; color: #333333; margin: 0;">${invoice.companyEmail}</p>
-                ${invoice.companyPhone ? `<p style="font-size: 14px; color: #333333; margin: 0;">${invoice.companyPhone}</p>` : ''}
-                ${invoice.companyAddress ? `<p style="font-size: 14px; color: #333333; margin: 0;">${invoice.companyAddress}</p>` : ''}
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 40px; padding-bottom: 32px; border-bottom: 2px solid ${pdfPrimaryColor}40;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                ${logoHtml}
+                <div>
+                  <h1 style="font-size: 24px; font-weight: bold; color: #333333; margin: 0 0 8px 0;">${invoice.companyName}</h1>
+                  <p style="font-size: 14px; color: #333333; margin: 0;">${invoice.companyEmail}</p>
+                  ${invoice.companyPhone ? `<p style="font-size: 14px; color: #333333; margin: 0;">${invoice.companyPhone}</p>` : ''}
+                  ${invoice.companyAddress ? `<p style="font-size: 14px; color: #333333; margin: 0;">${invoice.companyAddress}</p>` : ''}
+                </div>
               </div>
               <div style="text-align: right;">
                 <p style="font-size: 12px; color: #333333; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">Invoice</p>
@@ -316,7 +347,7 @@ export default function ClientInvoicePage({
               <h3 style="font-size: 12px; color: #333333; margin: 0 0 16px 0; text-transform: uppercase; letter-spacing: 0.5px; font-weight: bold;">Item Invoice</h3>
               <table style="width: 100%; border-collapse: collapse;">
                 <thead>
-                  <tr style="border-bottom: 2px solid #E2E8F0;">
+                  <tr style="border-bottom: 2px solid ${pdfPrimaryColor}40;">
                     <th style="padding: 16px 8px; text-align: left; font-weight: bold; color: #333333; font-size: 14px;">Deskripsi</th>
                     <th style="padding: 16px 8px; text-align: center; font-weight: bold; color: #333333; font-size: 14px;">Qty</th>
                     <th style="padding: 16px 8px; text-align: right; font-weight: bold; color: #333333; font-size: 14px;">Harga</th>
@@ -340,7 +371,7 @@ export default function ClientInvoicePage({
                   <span>Pajak (${invoice.taxRate}%)</span>
                   <span style="font-weight: 600;">${formatCurrency(invoice.taxAmount)}</span>
                 </div>
-                <div style="display: flex; justify-content: space-between; padding: 16px 0; border-top: 2px solid #E2E8F0; margin-top: 16px; font-size: 24px; font-weight: bold; color: #00D4C5;">
+                <div style="display: flex; justify-content: space-between; padding: 16px 0; border-top: 2px solid ${pdfPrimaryColor}40; margin-top: 16px; font-size: 24px; font-weight: bold; color: ${pdfPrimaryColor};">
                   <span>Total</span>
                   <span>${formatCurrency(invoice.total)}</span>
                 </div>
@@ -349,16 +380,16 @@ export default function ClientInvoicePage({
 
             ${invoice.notes ? `
             <!-- Notes -->
-            <div style="margin-top: 40px; padding-top: 32px; border-top: 1px solid #E2E8F0;">
+            <div style="margin-top: 40px; padding-top: 32px; border-top: 1px solid ${pdfPrimaryColor}30;">
               <h3 style="font-size: 12px; color: #333333; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.5px; font-weight: bold;">Catatan</h3>
               <p style="font-size: 14px; color: #333333; margin: 0; white-space: pre-line;">${invoice.notes}</p>
             </div>
             ` : ''}
 
             <!-- Footer -->
-            <div style="margin-top: 48px; padding-top: 32px; border-top: 1px solid #E2E8F0; text-align: center;">
+            <div style="margin-top: 48px; padding-top: 32px; border-top: 1px solid ${pdfPrimaryColor}30; text-align: center;">
               <p style="font-size: 12px; color: #333333; margin: 0;">
-                Invoice dibuat dengan <a href="https://invoicekirim.com" style="color: #00D4C5; text-decoration: none; font-weight: 600;">InvoiceKirim</a>
+                Invoice dibuat dengan <a href="https://invoicekirim.com" style="color: ${pdfPrimaryColor}; text-decoration: none; font-weight: 600;">InvoiceKirim</a>
               </p>
             </div>
           </div>
@@ -556,10 +587,15 @@ Terima kasih!`
 
   const isPaid = invoice.status === 'PAID'
 
+  // Get branding colors with fallback
+  const primaryColor = invoice.branding?.primaryColor || '#F97316'
+  const showLogo = invoice.branding?.showLogo ?? true
+  const logoUrl = invoice.branding?.logoUrl
+
   return (
     <div className="min-h-screen bg-fresh-bg">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b border-orange-200 sticky top-0 z-50">
+      <header className="bg-white/80 backdrop-blur-sm border-b sticky top-0 z-50" style={{ borderColor: primaryColor + '40' }}>
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -644,12 +680,25 @@ Terima kasih!`
             </div>
 
             {/* Invoice Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start mb-10 pb-8 border-b border-orange-200">
+            <div className="flex flex-col md:flex-row justify-between items-start mb-10 pb-8 border-b" style={{ borderColor: primaryColor + '40' }}>
               <div>
                 <div className="flex items-center gap-3 mb-5">
-                  <div className="w-14 h-14 rounded-xl bg-charcoal flex items-center justify-center">
-                    <FileText className="w-7 h-7 text-white" />
-                  </div>
+                  {showLogo && logoUrl ? (
+                    <img
+                      src={logoUrl}
+                      alt={invoice.companyName}
+                      className="w-14 h-14 object-contain rounded-xl"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none'
+                      }}
+                    />
+                  ) : (
+                    <div className="w-14 h-14 rounded-xl flex items-center justify-center" style={{ backgroundColor: primaryColor }}>
+                      <span className="text-white font-bold text-lg">
+                        {invoice.companyName?.charAt(0)?.toUpperCase() || 'I'}
+                      </span>
+                    </div>
+                  )}
                   <div>
                     <h1 className="font-bold text-2xl text-gray-900 tracking-tight">
                       {invoice.companyName}
@@ -713,7 +762,7 @@ Terima kasih!`
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b-2 border-orange-200">
+                    <tr className="border-b-2" style={{ borderColor: primaryColor + '40' }}>
                       <th className="text-left py-4 font-bold text-gray-900">
                         Deskripsi
                       </th>
@@ -730,7 +779,7 @@ Terima kasih!`
                   </thead>
                   <tbody>
                     {invoice.items.map((item) => (
-                      <tr key={item.id} className="border-b border-orange-200">
+                      <tr key={item.id} className="border-b" style={{ borderColor: primaryColor + '20' }}>
                         <td className="py-4 text-gray-900">
                           {item.description || '-'}
                         </td>
@@ -765,7 +814,7 @@ Terima kasih!`
                     {formatCurrency(invoice.taxAmount)}
                   </span>
                 </div>
-                <div className="flex justify-between py-4 border-t-2 border-orange-200 text-2xl font-extrabold text-gray-900 mt-4">
+                <div className="flex justify-between py-4 border-t-2 text-2xl font-extrabold mt-4" style={{ borderColor: primaryColor + '40', color: primaryColor }}>
                   <span>Total</span>
                   <span>{formatCurrency(invoice.total)}</span>
                 </div>
@@ -774,7 +823,7 @@ Terima kasih!`
 
             {/* Notes */}
             {invoice.notes && (
-              <div className="border-t border-orange-200 pt-8">
+              <div className="border-t pt-8" style={{ borderColor: primaryColor + '30' }}>
                 <h3 className="font-bold text-gray-900 mb-3 text-sm uppercase tracking-wide text-gray-600">
                   Catatan
                 </h3>
@@ -786,7 +835,7 @@ Terima kasih!`
 
             {/* Payment Info */}
             {!isPaid && (
-              <div className="mt-10 p-6 rounded-xl bg-gray border-2 border-orange-200">
+              <div className="mt-10 p-6 rounded-xl bg-gray border-2" style={{ borderColor: primaryColor + '40' }}>
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-charcoal flex items-center justify-center flex-shrink-0">
                     <CreditCard className="w-6 h-6 text-white" />
@@ -822,7 +871,7 @@ Terima kasih!`
             )}
 
             {/* Footer */}
-            <div className="mt-12 pt-8 border-t border-orange-200 text-center">
+            <div className="mt-12 pt-8 border-t text-center" style={{ borderColor: primaryColor + '30' }}>
               <p className="text-sm text-gray-600">
                 Invoice dibuat dengan{' '}
                 <a

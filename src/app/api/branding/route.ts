@@ -1,6 +1,7 @@
 import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { getBranding, updateBranding } from '@/lib/branding'
+import { getUserTeams } from '@/lib/teams'
 import { z } from 'zod'
 
 const updateBrandingSchema = z.object({
@@ -26,10 +27,15 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url)
-    const teamId = searchParams.get('teamId')
+    let teamId = searchParams.get('teamId')
 
+    // If no teamId provided, get the user's first team
     if (!teamId) {
-      return NextResponse.json({ error: 'teamId is required' }, { status: 400 })
+      const teams = await getUserTeams(session.id)
+      if (teams.length === 0) {
+        return NextResponse.json({ error: 'User has no teams' }, { status: 400 })
+      }
+      teamId = teams[0].id
     }
 
     const branding = await getBranding(teamId)
@@ -53,10 +59,15 @@ export async function PUT(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url)
-    const teamId = searchParams.get('teamId')
+    let teamId = searchParams.get('teamId')
 
+    // If no teamId provided, get the user's first team
     if (!teamId) {
-      return NextResponse.json({ error: 'teamId is required' }, { status: 400 })
+      const teams = await getUserTeams(session.id)
+      if (teams.length === 0) {
+        return NextResponse.json({ error: 'User has no teams' }, { status: 400 })
+      }
+      teamId = teams[0].id
     }
 
     const body = await req.json()
