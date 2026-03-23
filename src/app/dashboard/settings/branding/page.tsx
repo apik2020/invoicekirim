@@ -1,13 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAppSession } from '@/hooks/useAppSession'
 import { DashboardLayout } from '@/components/DashboardLayout'
 import {
   Palette,
   Check,
   Loader2,
-  Image,
   Eye,
   EyeOff,
   Building2,
@@ -18,6 +17,8 @@ import {
   Server,
   Lock,
   AlertCircle,
+  Upload,
+  X,
 } from 'lucide-react'
 
 type TabType = 'company' | 'appearance' | 'email'
@@ -55,6 +56,10 @@ export default function BrandingSettingsPage() {
   })
   const [showEmailPassword, setShowEmailPassword] = useState(false)
   const [testingEmail, setTestingEmail] = useState(false)
+
+  // Logo Upload State
+  const [uploadingLogo, setUploadingLogo] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (session?.user) {
@@ -126,6 +131,59 @@ export default function BrandingSettingsPage() {
     } finally {
       setSaving(false)
     }
+  }
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp']
+    if (!allowedTypes.includes(file.type)) {
+      setMessage({ type: 'error', text: 'Tipe file tidak didukung. Gunakan PNG, JPG, atau WebP.' })
+      return
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      setMessage({ type: 'error', text: 'Ukuran file terlalu besar. Maksimal 2MB.' })
+      return
+    }
+
+    setUploadingLogo(true)
+    setMessage(null)
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const data = await res.json()
+
+      if (res.ok && data.url) {
+        setBranding(prev => ({ ...prev, logoUrl: data.url }))
+        setMessage({ type: 'success', text: 'Logo berhasil diupload!' })
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Gagal mengupload logo' })
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Terjadi kesalahan saat mengupload logo' })
+    } finally {
+      setUploadingLogo(false)
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
+  const handleRemoveLogo = () => {
+    setBranding(prev => ({ ...prev, logoUrl: '' }))
+    setMessage(null)
   }
 
   const handleSubmitBranding = async (e: React.FormEvent) => {
@@ -464,23 +522,70 @@ export default function BrandingSettingsPage() {
                 </div>
 
                 <form onSubmit={handleSubmitBranding} className="space-y-6">
-                  {/* Logo URL */}
+                  {/* Logo Upload */}
                   <div>
-                    <label className="input-label">URL Logo</label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <Image className="w-5 h-5 text-text-muted" />
+                    <label className="input-label">Logo Perusahaan</label>
+
+                    {/* Current Logo Preview */}
+                    {branding.logoUrl ? (
+                      <div className="mt-3 mb-4 relative inline-block">
+                        <img
+                          src={branding.logoUrl}
+                          alt="Logo"
+                          className="w-32 h-32 object-contain rounded-xl border border-gray-200"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleRemoveLogo}
+                          className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                          title="Hapus logo"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
                       </div>
-                      <input
-                        type="url"
-                        value={branding.logoUrl}
-                        onChange={(e) => setBranding({ ...branding, logoUrl: e.target.value })}
-                        className="input pl-12"
-                        placeholder="https://example.com/logo.png"
-                      />
-                    </div>
-                    <p className="text-xs text-text-muted mt-1">
-                      Masukkan URL logo Anda (format PNG, JPG, atau SVG)
+                    ) : (
+                      <div className="mt-3 mb-4">
+                        <div
+                          onClick={() => fileInputRef.current?.click()}
+                          className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-brand-500 hover:bg-brand-50 transition-colors"
+                        >
+                          <Upload className="w-8 h-8 text-gray-400" />
+                          <span className="text-xs text-gray-500 mt-1">Upload Logo</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Hidden File Input */}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/jpg,image/webp"
+                      onChange={handleLogoUpload}
+                      className="hidden"
+                    />
+
+                    {/* Upload Button */}
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingLogo}
+                      className="flex items-center gap-2 px-4 py-2.5 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {uploadingLogo ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Mengupload...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-4 h-4" />
+                          <span>{branding.logoUrl ? 'Ganti Logo' : 'Upload Logo'}</span>
+                        </>
+                      )}
+                    </button>
+
+                    <p className="text-xs text-text-muted mt-2">
+                      Format: PNG, JPG, WebP. Maksimal 2MB. Disarankan format PNG dengan background transparan.
                     </p>
                   </div>
 
