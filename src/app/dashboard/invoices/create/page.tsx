@@ -155,6 +155,12 @@ function NewInvoicePageContent() {
       if (res.ok) {
         const data = await res.json()
         setClients(data)
+      } else {
+        console.error('Failed to load clients:', res.status, res.statusText)
+        // If unauthorized, redirect to login
+        if (res.status === 401) {
+          router.push('/login')
+        }
       }
     } catch (error) {
       console.error('Failed to load clients:', error)
@@ -627,7 +633,7 @@ function NewInvoicePageContent() {
       : Math.min(formData.additionalDiscountValue, afterFirstDiscount))
     : 0
   const taxableAmount = afterFirstDiscount - additionalDiscountAmount
-  const taxAmount = templateSettings.showTax ? taxableAmount * (formData.taxRate / 100) : 0
+  const taxAmount = templateSettings.showTax ? taxableAmount * ((formData.taxRate ?? 0) / 100) : 0
   const total = taxableAmount + taxAmount
 
   return (
@@ -677,8 +683,8 @@ function NewInvoicePageContent() {
                 <label className="input-label">Tarif Pajak (%)</label>
                 <input
                   type="number"
-                  value={formData.taxRate}
-                  onChange={(e) => setFormData({ ...formData, taxRate: parseFloat(e.target.value) })}
+                  value={formData.taxRate ?? 0}
+                  onChange={(e) => setFormData({ ...formData, taxRate: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0 })}
                   className="input"
                   min="0"
                   max="100"
@@ -1003,7 +1009,7 @@ function NewInvoicePageContent() {
                 </div>
                 {templateSettings.showDiscount && discountAmount > 0 && (
                   <div className="flex justify-between text-green-600">
-                    <span>Diskon {formData.discountType === 'percentage' ? `(${formData.discountValue}%)` : ''}</span>
+                    <span>Diskon {formData.discountType === 'percentage' ? `(${formData.discountValue ?? 0}%)` : ''}</span>
                     <span className="font-semibold">-{formatCurrency(discountAmount)}</span>
                   </div>
                 )}
@@ -1015,7 +1021,7 @@ function NewInvoicePageContent() {
                 )}
                 {templateSettings.showTax && (
                   <div className="flex justify-between text-text-secondary">
-                    <span>Pajak ({formData.taxRate}%)</span>
+                    <span>Pajak ({formData.taxRate ?? 0}%)</span>
                     <span className="font-semibold">{formatCurrency(taxAmount)}</span>
                   </div>
                 )}

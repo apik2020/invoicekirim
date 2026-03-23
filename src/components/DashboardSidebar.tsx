@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import {
   LayoutDashboard,
@@ -32,6 +32,7 @@ interface NavItem {
   badge?: string | number
 }
 
+// Main Navigation Items
 const mainNavItems: NavItem[] = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Invoice', href: '/dashboard/invoices', icon: Receipt },
@@ -40,6 +41,7 @@ const mainNavItems: NavItem[] = [
   { name: 'Template', href: '/dashboard/templates', icon: FileText },
 ]
 
+// Settings Navigation Items
 const settingsNavItems: NavItem[] = [
   { name: 'Profil', href: '/dashboard/settings', icon: Settings },
   { name: 'Branding', href: '/dashboard/settings/branding', icon: Palette },
@@ -63,6 +65,7 @@ export function DashboardSidebar({
   onMobileOpenChange,
 }: DashboardSidebarProps) {
   const pathname = usePathname()
+  const router = useRouter()
   const [isCollapsed, setIsCollapsed] = useState(collapsed)
 
   useEffect(() => {
@@ -93,7 +96,7 @@ export function DashboardSidebar({
         href={item.href}
         onClick={() => onMobileOpenChange?.(false)}
         className={cn(
-          'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group',
+          'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative',
           active
             ? 'bg-white/15 text-white font-semibold'
             : 'text-white/70 hover:bg-white/10 hover:text-white'
@@ -109,6 +112,11 @@ export function DashboardSidebar({
               </span>
             )}
           </>
+        )}
+        {isCollapsed && !mobileOpen && item.badge && (
+          <span className="absolute -top-1 -right-1 w-5 h-5 flex items-center justify-center text-xs bg-primary-500 rounded-full">
+            {item.badge}
+          </span>
         )}
       </Link>
     )
@@ -138,7 +146,7 @@ export function DashboardSidebar({
       >
         {/* Sidebar Header */}
         <div className="h-16 px-4 border-b border-white/10 flex items-center justify-between flex-shrink-0">
-          <Link href="/" className="flex items-center gap-2.5">
+          <Link href="/dashboard" className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-primary flex-shrink-0">
               <span className="font-bold text-white text-xs tracking-tight">[iK]</span>
             </div>

@@ -6,18 +6,15 @@ export async function GET() {
     const cookieStore = await cookies()
     const userSessionCookie = cookieStore.get('user_session')
 
-    if (!userSessionCookie) {
+    if (!userSessionCookie?.value) {
       return NextResponse.json({ authenticated: false, user: null }, { status: 401 })
     }
 
-    const userSession = userSessionCookie.value
+    const user = JSON.parse(userSessionCookie.value)
 
-    if (!userSession) {
+    if (!user?.id) {
       return NextResponse.json({ authenticated: false, user: null }, { status: 401 })
     }
-
-    // Parse the session data
-    const user = JSON.parse(userSession)
 
     return NextResponse.json({
       authenticated: true,

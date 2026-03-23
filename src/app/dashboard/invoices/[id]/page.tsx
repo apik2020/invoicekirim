@@ -977,7 +977,7 @@ Terima kasih!`
                     </tr>
                   </thead>
                   <tbody>
-                    {invoice.items.map((item) => (
+                    {(invoice.items || []).map((item) => (
                       <tr key={item.id} className="border-b border-gray-100">
                         <td className="py-4 px-4 sm:px-6 text-text-primary">
                           {item.description || '-'}

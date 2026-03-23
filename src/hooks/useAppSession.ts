@@ -29,7 +29,7 @@ export function useAppSession(): UseAppSessionReturn {
 
   const fetchSession = useCallback(async () => {
     try {
-      const response = await fetch('/api/session', {
+    const response = await fetch('/api/session', {
         credentials: 'include',
       })
 
