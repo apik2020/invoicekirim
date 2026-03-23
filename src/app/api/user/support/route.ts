@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from '@/lib/custom-session'
+import { getUserSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 // GET - List all tickets for authenticated user
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession()
+    const session = await getUserSession()
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
 // POST - Create new ticket
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession()
+    const session = await getUserSession()
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
