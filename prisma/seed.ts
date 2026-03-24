@@ -6,68 +6,133 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('Start seeding...')
 
-  // Create pricing features
-  const invoiceLimitFeature = await prisma.pricing_features.upsert({
-    where: { id: 'feature-invoice-limit' },
+  // Create pricing features with standardized uppercase keys
+  const invoiceCreateFeature = await prisma.pricing_features.upsert({
+    where: { id: 'feat-invoice-create' },
     update: {},
     create: {
-      id: 'feature-invoice-limit',
-      name: 'Batas Invoice',
-      key: 'invoice_limit',
-      description: 'Jumlah invoice yang dapat dibuat per bulan',
+      id: 'feat-invoice-create',
+      name: 'Buat Invoice',
+      key: 'INVOICE_CREATE',
+      description: 'Membuat invoice baru per bulan',
       sortOrder: 1,
       isActive: true,
     },
   })
 
-  const customBrandingFeature = await prisma.pricing_features.upsert({
-    where: { id: 'feature-custom-branding' },
+  const invoiceTemplateFeature = await prisma.pricing_features.upsert({
+    where: { id: 'feat-invoice-template' },
     update: {},
     create: {
-      id: 'feature-custom-branding',
-      name: 'Custom Branding',
-      key: 'custom_branding',
-      description: 'Kustomisasi logo dan warna brand',
+      id: 'feat-invoice-template',
+      name: 'Template Custom',
+      key: 'INVOICE_TEMPLATE',
+      description: 'Template invoice kustom',
       sortOrder: 2,
       isActive: true,
     },
   })
 
-  const unlimitedClientsFeature = await prisma.pricing_features.upsert({
-    where: { id: 'feature-unlimited-clients' },
+  const customBrandingFeature = await prisma.pricing_features.upsert({
+    where: { id: 'feat-custom-branding' },
     update: {},
     create: {
-      id: 'feature-unlimited-clients',
-      name: 'Klien Unlimited',
-      key: 'unlimited_clients',
-      description: 'Tidak ada batasan jumlah klien',
+      id: 'feat-custom-branding',
+      name: 'Custom Branding',
+      key: 'CUSTOM_BRANDING',
+      description: 'Logo dan warna kustom',
       sortOrder: 3,
       isActive: true,
     },
   })
 
   const exportPdfFeature = await prisma.pricing_features.upsert({
-    where: { id: 'feature-export-pdf' },
+    where: { id: 'feat-export-pdf' },
     update: {},
     create: {
-      id: 'feature-export-pdf',
+      id: 'feat-export-pdf',
       name: 'Export PDF',
-      key: 'export_pdf',
+      key: 'EXPORT_PDF',
       description: 'Export invoice ke PDF',
       sortOrder: 4,
       isActive: true,
     },
   })
 
-  const prioritySupportFeature = await prisma.pricing_features.upsert({
-    where: { id: 'feature-priority-support' },
+  const emailSendFeature = await prisma.pricing_features.upsert({
+    where: { id: 'feat-email-send' },
     update: {},
     create: {
-      id: 'feature-priority-support',
-      name: 'Prioritas Support',
-      key: 'priority_support',
-      description: 'Dukungan prioritas via email',
+      id: 'feat-email-send',
+      name: 'Kirim Email',
+      key: 'EMAIL_SEND',
+      description: 'Kirim invoice via email',
       sortOrder: 5,
+      isActive: true,
+    },
+  })
+
+  const clientManagementFeature = await prisma.pricing_features.upsert({
+    where: { id: 'feat-client-management' },
+    update: {},
+    create: {
+      id: 'feat-client-management',
+      name: 'Klien',
+      key: 'CLIENT_MANAGEMENT',
+      description: 'Manage client database',
+      sortOrder: 6,
+      isActive: true,
+    },
+  })
+
+  const analyticsViewFeature = await prisma.pricing_features.upsert({
+    where: { id: 'feat-analytics-view' },
+    update: {},
+    create: {
+      id: 'feat-analytics-view',
+      name: 'Analitik',
+      key: 'ANALYTICS_VIEW',
+      description: 'Lihat analitik bisnis',
+      sortOrder: 7,
+      isActive: true,
+    },
+  })
+
+  const teamMembersFeature = await prisma.pricing_features.upsert({
+    where: { id: 'feat-team-members' },
+    update: {},
+    create: {
+      id: 'feat-team-members',
+      name: 'Tim',
+      key: 'TEAM_MEMBERS',
+      description: 'Tambah anggota tim',
+      sortOrder: 8,
+      isActive: true,
+    },
+  })
+
+  const prioritySupportFeature = await prisma.pricing_features.upsert({
+    where: { id: 'feat-priority-support' },
+    update: {},
+    create: {
+      id: 'feat-priority-support',
+      name: 'Prioritas Support',
+      key: 'PRIORITY_SUPPORT',
+      description: 'Dukungan prioritas via email',
+      sortOrder: 9,
+      isActive: true,
+    },
+  })
+
+  const apiAccessFeature = await prisma.pricing_features.upsert({
+    where: { id: 'feat-api-access' },
+    update: {},
+    create: {
+      id: 'feat-api-access',
+      name: 'Akses API',
+      key: 'API_ACCESS',
+      description: 'Akses API untuk integrasi',
+      sortOrder: 10,
       isActive: true,
     },
   })
@@ -116,13 +181,23 @@ async function main() {
 
   // Create plan features for FREE plan
   await prisma.pricing_plan_features.upsert({
-    where: { planId_featureId: { planId: freePlan.id, featureId: invoiceLimitFeature.id } },
+    where: { planId_featureId: { planId: freePlan.id, featureId: invoiceCreateFeature.id } },
     update: { included: true, limitValue: 10 },
     create: {
       planId: freePlan.id,
-      featureId: invoiceLimitFeature.id,
+      featureId: invoiceCreateFeature.id,
       included: true,
       limitValue: 10,
+    },
+  })
+
+  await prisma.pricing_plan_features.upsert({
+    where: { planId_featureId: { planId: freePlan.id, featureId: invoiceTemplateFeature.id } },
+    update: { included: false },
+    create: {
+      planId: freePlan.id,
+      featureId: invoiceTemplateFeature.id,
+      included: false,
     },
   })
 
@@ -137,22 +212,55 @@ async function main() {
   })
 
   await prisma.pricing_plan_features.upsert({
-    where: { planId_featureId: { planId: freePlan.id, featureId: unlimitedClientsFeature.id } },
+    where: { planId_featureId: { planId: freePlan.id, featureId: exportPdfFeature.id } },
+    update: { included: true, limitValue: 5 },
+    create: {
+      planId: freePlan.id,
+      featureId: exportPdfFeature.id,
+      included: true,
+      limitValue: 5,
+    },
+  })
+
+  await prisma.pricing_plan_features.upsert({
+    where: { planId_featureId: { planId: freePlan.id, featureId: emailSendFeature.id } },
+    update: { included: true, limitValue: 10 },
+    create: {
+      planId: freePlan.id,
+      featureId: emailSendFeature.id,
+      included: true,
+      limitValue: 10,
+    },
+  })
+
+  await prisma.pricing_plan_features.upsert({
+    where: { planId_featureId: { planId: freePlan.id, featureId: clientManagementFeature.id } },
+    update: { included: true, limitValue: 10 },
+    create: {
+      planId: freePlan.id,
+      featureId: clientManagementFeature.id,
+      included: true,
+      limitValue: 10,
+    },
+  })
+
+  await prisma.pricing_plan_features.upsert({
+    where: { planId_featureId: { planId: freePlan.id, featureId: analyticsViewFeature.id } },
     update: { included: false },
     create: {
       planId: freePlan.id,
-      featureId: unlimitedClientsFeature.id,
+      featureId: analyticsViewFeature.id,
       included: false,
     },
   })
 
   await prisma.pricing_plan_features.upsert({
-    where: { planId_featureId: { planId: freePlan.id, featureId: exportPdfFeature.id } },
-    update: { included: true },
+    where: { planId_featureId: { planId: freePlan.id, featureId: teamMembersFeature.id } },
+    update: { included: false },
     create: {
       planId: freePlan.id,
-      featureId: exportPdfFeature.id,
-      included: true,
+      featureId: teamMembersFeature.id,
+      included: false,
     },
   })
 
@@ -166,15 +274,35 @@ async function main() {
     },
   })
 
-  // Create plan features for PRO plan
   await prisma.pricing_plan_features.upsert({
-    where: { planId_featureId: { planId: proPlan.id, featureId: invoiceLimitFeature.id } },
+    where: { planId_featureId: { planId: freePlan.id, featureId: apiAccessFeature.id } },
+    update: { included: false },
+    create: {
+      planId: freePlan.id,
+      featureId: apiAccessFeature.id,
+      included: false,
+    },
+  })
+
+  // Create plan features for PRO plan (unlimited)
+  await prisma.pricing_plan_features.upsert({
+    where: { planId_featureId: { planId: proPlan.id, featureId: invoiceCreateFeature.id } },
     update: { included: true, limitValue: null },
     create: {
       planId: proPlan.id,
-      featureId: invoiceLimitFeature.id,
+      featureId: invoiceCreateFeature.id,
       included: true,
       limitValue: null, // Unlimited
+    },
+  })
+
+  await prisma.pricing_plan_features.upsert({
+    where: { planId_featureId: { planId: proPlan.id, featureId: invoiceTemplateFeature.id } },
+    update: { included: true },
+    create: {
+      planId: proPlan.id,
+      featureId: invoiceTemplateFeature.id,
+      included: true,
     },
   })
 
@@ -189,22 +317,56 @@ async function main() {
   })
 
   await prisma.pricing_plan_features.upsert({
-    where: { planId_featureId: { planId: proPlan.id, featureId: unlimitedClientsFeature.id } },
+    where: { planId_featureId: { planId: proPlan.id, featureId: exportPdfFeature.id } },
+    update: { included: true, limitValue: null },
+    create: {
+      planId: proPlan.id,
+      featureId: exportPdfFeature.id,
+      included: true,
+      limitValue: null,
+    },
+  })
+
+  await prisma.pricing_plan_features.upsert({
+    where: { planId_featureId: { planId: proPlan.id, featureId: emailSendFeature.id } },
+    update: { included: true, limitValue: null },
+    create: {
+      planId: proPlan.id,
+      featureId: emailSendFeature.id,
+      included: true,
+      limitValue: null,
+    },
+  })
+
+  await prisma.pricing_plan_features.upsert({
+    where: { planId_featureId: { planId: proPlan.id, featureId: clientManagementFeature.id } },
+    update: { included: true, limitValue: null },
+    create: {
+      planId: proPlan.id,
+      featureId: clientManagementFeature.id,
+      included: true,
+      limitValue: null,
+    },
+  })
+
+  await prisma.pricing_plan_features.upsert({
+    where: { planId_featureId: { planId: proPlan.id, featureId: analyticsViewFeature.id } },
     update: { included: true },
     create: {
       planId: proPlan.id,
-      featureId: unlimitedClientsFeature.id,
+      featureId: analyticsViewFeature.id,
       included: true,
     },
   })
 
   await prisma.pricing_plan_features.upsert({
-    where: { planId_featureId: { planId: proPlan.id, featureId: exportPdfFeature.id } },
-    update: { included: true },
+    where: { planId_featureId: { planId: proPlan.id, featureId: teamMembersFeature.id } },
+    update: { included: true, limitValue: 5 },
     create: {
       planId: proPlan.id,
-      featureId: exportPdfFeature.id,
+      featureId: teamMembersFeature.id,
       included: true,
+      limitValue: 5,
     },
   })
 
@@ -214,6 +376,16 @@ async function main() {
     create: {
       planId: proPlan.id,
       featureId: prioritySupportFeature.id,
+      included: true,
+    },
+  })
+
+  await prisma.pricing_plan_features.upsert({
+    where: { planId_featureId: { planId: proPlan.id, featureId: apiAccessFeature.id } },
+    update: { included: true },
+    create: {
+      planId: proPlan.id,
+      featureId: apiAccessFeature.id,
       included: true,
     },
   })
@@ -237,7 +409,7 @@ async function main() {
     },
   })
 
-  console.log('Created admin user:', admin)
+  console.log('Created admin user:', admin.email)
 
   // Create test user
   const hashedPassword = await bcrypt.hash('password123', 12)
@@ -269,16 +441,20 @@ async function main() {
     },
   })
 
-  console.log('Created test user:', user)
+  console.log('Created test user:', user.email)
 
-  // Create sample invoice
+  // Create sample invoice (upsert to avoid duplicate error)
   const now = new Date()
   const year = now.getFullYear()
   const month = String(now.getMonth() + 1).padStart(2, '0')
   const invoiceNumber = `INV-${year}-${month}-001`
 
-  const invoice = await prisma.invoices.create({
-    data: {
+  const invoice = await prisma.invoices.upsert({
+    where: { invoiceNumber },
+    update: {
+      updatedAt: new Date(),
+    },
+    create: {
       id: crypto.randomUUID(),
       userId: user.id,
       invoiceNumber,
@@ -303,17 +479,22 @@ async function main() {
     },
   })
 
-  // Create invoice item
-  await prisma.invoice_items.create({
-    data: {
-      id: crypto.randomUUID(),
-      invoiceId: invoice.id,
-      description: 'Web Development Service',
-      quantity: 1,
-      price: 1000000,
-      subtotal: 1000000,
-    },
+  // Create invoice item (skip if already exists)
+  const existingItem = await prisma.invoice_items.findFirst({
+    where: { invoiceId: invoice.id },
   })
+  if (!existingItem) {
+    await prisma.invoice_items.create({
+      data: {
+        id: crypto.randomUUID(),
+        invoiceId: invoice.id,
+        description: 'Web Development Service',
+        quantity: 1,
+        price: 1000000,
+        subtotal: 1000000,
+      },
+    })
+  }
 
   console.log('Created sample invoice:', invoice.invoiceNumber)
 

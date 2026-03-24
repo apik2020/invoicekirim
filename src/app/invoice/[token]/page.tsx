@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { InvoicePrintView } from '@/components/InvoicePrintView'
+import { getBranding, type BrandingSettings } from '@/lib/branding'
 
 // Disable static generation for this page
 export const dynamic = 'force-dynamic'
@@ -18,6 +19,17 @@ interface InvoiceSettings {
   showSignature?: boolean
 }
 
+// Default InvoiceKirim branding
+const DEFAULT_INVOICEKIRIM_BRANDING: Partial<BrandingSettings> = {
+  primaryColor: '#F97316',
+  secondaryColor: '#FFFFFF',
+  accentColor: '#276874',
+  showLogo: true,
+  showColors: true,
+  fontFamily: 'inter',
+  logoUrl: null,
+}
+
 export default async function InvoicePage({ params }: PageProps) {
   const { token } = await params
 
@@ -28,6 +40,48 @@ export default async function InvoicePage({ params }: PageProps) {
 
   if (!invoice) {
     notFound()
+  }
+
+  // Get user's team to fetch branding
+  let branding: BrandingSettings | null = null
+
+  // Try to get team via user's activeTeamId first
+  const user = await prisma.users.findUnique({
+    where: { id: invoice.userId },
+    select: { activeTeamId: true },
+  })
+
+  if (user?.activeTeamId) {
+    branding = await getBranding(user.activeTeamId)
+  } else {
+    // Fallback: find team where user is the owner
+    const team = await prisma.teams.findFirst({
+      where: { ownerId: invoice.userId },
+      select: { id: true },
+    })
+
+    if (team) {
+      branding = await getBranding(team.id)
+    }
+  }
+
+  // Use custom branding if showColors is enabled, otherwise use default InvoiceKirim branding
+  const effectiveBranding: BrandingSettings = {
+    id: branding?.id || 'default',
+    teamId: branding?.teamId || 'default',
+    logoUrl: branding?.showLogo ? (branding?.logoUrl || null) : null,
+    primaryColor: branding?.showColors ? (branding?.primaryColor || DEFAULT_INVOICEKIRIM_BRANDING.primaryColor!) : DEFAULT_INVOICEKIRIM_BRANDING.primaryColor!,
+    secondaryColor: branding?.showColors ? (branding?.secondaryColor || DEFAULT_INVOICEKIRIM_BRANDING.secondaryColor!) : DEFAULT_INVOICEKIRIM_BRANDING.secondaryColor!,
+    accentColor: branding?.showColors ? (branding?.accentColor || DEFAULT_INVOICEKIRIM_BRANDING.accentColor!) : DEFAULT_INVOICEKIRIM_BRANDING.accentColor!,
+    invoicePrefix: branding?.invoicePrefix || 'INV',
+    receiptPrefix: branding?.receiptPrefix || 'RCP',
+    showLogo: branding?.showLogo ?? true,
+    showColors: branding?.showColors ?? true,
+    emailFromName: branding?.emailFromName || null,
+    emailReplyTo: branding?.emailReplyTo || null,
+    customDomain: branding?.customDomain || null,
+    domainVerified: branding?.domainVerified || false,
+    fontFamily: branding?.fontFamily || 'inter',
   }
 
   // Parse settings from JSON
@@ -47,5 +101,5 @@ export default async function InvoicePage({ params }: PageProps) {
     })),
   }
 
-  return <InvoicePrintView invoice={invoiceData} />
+  return <InvoicePrintView invoice={invoiceData} branding={effectiveBranding} />
 }

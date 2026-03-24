@@ -66,7 +66,7 @@ async function sendViaSMTP(
 
 // Email templates with new InvoiceKirim theme
 // Brand/Deep Teal: #276874
-// Primary/Bright Orange: #EF3F0A
+// Primary/Bright Orange: #F97316 (brand-500), #EA580C (brand-600)
 // Success/Lime Green: #C5E151
 export const emailTemplates = {
   invoiceSent: (data: {
@@ -123,7 +123,7 @@ export const emailTemplates = {
 
               <!-- CTA Button -->
               <div style="text-align: center; margin: 30px 0;">
-                <a href="${data.invoiceUrl}" style="display: inline-block; background: linear-gradient(145deg, #EF3F0A, #d63509); color: white; text-decoration: none; padding: 14px 32px; border-radius: 12px; font-weight: 600; font-size: 16px;">
+                <a href="${data.invoiceUrl}" style="display: inline-block; background: linear-gradient(145deg, #F97316, #EA580C); color: white; text-decoration: none; padding: 14px 32px; border-radius: 12px; font-weight: 600; font-size: 16px;">
                   Lihat Invoice
                 </a>
               </div>
@@ -166,7 +166,7 @@ export const emailTemplates = {
           <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
             <!-- Header -->
             <div style="text-align: center; margin-bottom: 40px;">
-              <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #EF3F0A, #d63509); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
+              <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #F97316, #EA580C); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
                 <span style="color: white; font-size: 24px;">⏰</span>
               </div>
               <h1 style="color: #c2410c; font-size: 24px; font-weight: bold; margin: 0;">Payment Reminder</h1>
@@ -189,13 +189,13 @@ export const emailTemplates = {
                 </div>
                 <div style="display: flex; justify-content: space-between;">
                   <span style="color: #9a3412;">Jatuh Tempo</span>
-                  <span style="color: #EF3F0A; font-weight: 600;">${data.dueDate}</span>
+                  <span style="color: #F97316; font-weight: 600;">${data.dueDate}</span>
                 </div>
               </div>
 
               <!-- CTA Button -->
               <div style="text-align: center; margin: 30px 0;">
-                <a href="${data.invoiceUrl}" style="display: inline-block; background: linear-gradient(145deg, #EF3F0A, #d63509); color: white; text-decoration: none; padding: 14px 32px; border-radius: 12px; font-weight: 600; font-size: 16px;">
+                <a href="${data.invoiceUrl}" style="display: inline-block; background: linear-gradient(145deg, #F97316, #EA580C); color: white; text-decoration: none; padding: 14px 32px; border-radius: 12px; font-weight: 600; font-size: 16px;">
                   Bayar Sekarang
                 </a>
               </div>
@@ -408,7 +408,7 @@ export const emailTemplates = {
 
               <!-- CTA Button -->
               <div style="text-align: center; margin: 30px 0;">
-                <a href="${data.dashboardUrl}" style="display: inline-block; background: linear-gradient(145deg, #EF3F0A, #d63509); color: white; text-decoration: none; padding: 14px 32px; border-radius: 12px; font-weight: 600; font-size: 16px;">
+                <a href="${data.dashboardUrl}" style="display: inline-block; background: linear-gradient(145deg, #F97316, #EA580C); color: white; text-decoration: none; padding: 14px 32px; border-radius: 12px; font-weight: 600; font-size: 16px;">
                   Upgrade ke PRO
                 </a>
               </div>
@@ -448,7 +448,7 @@ export const emailTemplates = {
           <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
             <!-- Header -->
             <div style="text-align: center; margin-bottom: 40px;">
-              <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #EF3F0A, #d63509); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
+              <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #F97316, #EA580C); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
                 <span style="color: white; font-size: 24px;">⏰</span>
               </div>
               <h1 style="color: #c2410c; font-size: 24px; font-weight: bold; margin: 0;">Trial Akan Berakhir</h1>
@@ -476,7 +476,7 @@ export const emailTemplates = {
 
               <!-- CTA Button -->
               <div style="text-align: center; margin: 30px 0;">
-                <a href="${data.dashboardUrl}" style="display: inline-block; background: linear-gradient(145deg, #EF3F0A, #d63509); color: white; text-decoration: none; padding: 14px 32px; border-radius: 12px; font-weight: 600; font-size: 16px;">
+                <a href="${data.dashboardUrl}" style="display: inline-block; background: linear-gradient(145deg, #F97316, #EA580C); color: white; text-decoration: none; padding: 14px 32px; border-radius: 12px; font-weight: 600; font-size: 16px;">
                   Upgrade Sekarang
                 </a>
               </div>
@@ -619,7 +619,7 @@ export const emailTemplates = {
 
               <!-- CTA Button -->
               <div style="text-align: center; margin: 30px 0;">
-                <a href="${data.acceptUrl}" style="display: inline-block; background: linear-gradient(145deg, #EF3F0A, #d63509); color: white; text-decoration: none; padding: 14px 32px; border-radius: 12px; font-weight: 600; font-size: 16px;">
+                <a href="${data.acceptUrl}" style="display: inline-block; background: linear-gradient(145deg, #F97316, #EA580C); color: white; text-decoration: none; padding: 14px 32px; border-radius: 12px; font-weight: 600; font-size: 16px;">
                   Terima Undangan
                 </a>
               </div>
@@ -679,7 +679,7 @@ export const emailTemplates = {
 
               <!-- CTA Button -->
               <div style="text-align: center; margin: 30px 0;">
-                <a href="${data.resetUrl}" style="display: inline-block; background: linear-gradient(145deg, #EF3F0A, #d63509); color: white; text-decoration: none; padding: 14px 32px; border-radius: 12px; font-weight: 600; font-size: 16px;">
+                <a href="${data.resetUrl}" style="display: inline-block; background: linear-gradient(145deg, #F97316, #EA580C); color: white; text-decoration: none; padding: 14px 32px; border-radius: 12px; font-weight: 600; font-size: 16px;">
                   Reset Password
                 </a>
               </div>
