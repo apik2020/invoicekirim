@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
+import { getUserSubscriptionLimits } from '@/lib/subscription-limits'
 
 export async function GET(_req: NextRequest) {
   try {
@@ -80,24 +81,10 @@ export async function GET(_req: NextRequest) {
       }
     }
 
-    // Calculate current month's invoice count for free users
-    let invoiceCount = 0
-    let invoiceLimit = 10
+    // Get dynamic subscription limits from pricing_plans
+    const limits = await getUserSubscriptionLimits(session.id)
     const isTrial = subscription.status === 'TRIALING'
     let trialDaysLeft = 0
-
-    if (subscription.planType === 'FREE' && subscription.status !== 'TRIALING') {
-      invoiceCount = await prisma.invoices.count({
-        where: {
-          userId: session.id,
-          createdAt: {
-            gte: new Date(new Date().setDate(1)), // Start of current month
-          },
-        },
-      })
-    } else {
-      invoiceLimit = -1 // Unlimited for PRO and TRIALING
-    }
 
     // Calculate trial days left
     if (isTrial && subscription.trialEndsAt) {
@@ -106,10 +93,24 @@ export async function GET(_req: NextRequest) {
       trialDaysLeft = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)))
     }
 
+    // Calculate current month's invoice count
+    let invoiceCount = 0
+    if (limits.invoiceLimit !== -1) {
+      invoiceCount = await prisma.invoices.count({
+        where: {
+          userId: session.id,
+          createdAt: {
+            gte: new Date(new Date().setDate(1)), // Start of current month
+          },
+        },
+      })
+    }
+
     return NextResponse.json({
       ...subscription,
       invoiceCount,
-      invoiceLimit,
+      invoiceLimit: limits.invoiceLimit,
+      planName: limits.planName,
       isTrial,
       trialDaysLeft,
     })

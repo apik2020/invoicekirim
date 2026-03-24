@@ -5,6 +5,7 @@ import { invoiceSchema } from '@/lib/validations/invoice'
 import { generateInvoiceNumber } from '@/lib/utils'
 import { checkRateLimit, apiRateLimit } from '@/lib/rate-limit'
 import { logInvoiceCreated } from '@/lib/activity-log'
+import { canUserCreateInvoice } from '@/lib/subscription-limits'
 
 // Helper function to calculate discount
 function calculateDiscount(
@@ -105,29 +106,14 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Check subscription limits
-    const subscription = await prisma.subscriptions.findUnique({
-      where: { userId: session.id },
-    })
+    // Check subscription limits (dynamic from pricing_plans)
+    const invoiceCheck = await canUserCreateInvoice(session.id)
 
-    if (subscription?.planType === 'FREE') {
-      const invoiceCount = await prisma.invoices.count({
-        where: {
-          userId: session.id,
-          createdAt: {
-            gte: new Date(new Date().setDate(1)), // Start of current month
-          },
-        },
-      })
-
-      if (invoiceCount >= 10) {
-        return NextResponse.json(
-          {
-            error: 'Batas gratis tercapai (10 invoice/bulan). Upgrade ke Pro untuk invoice tanpa batas.',
-          },
-          { status: 403 }
-        )
-      }
+    if (!invoiceCheck.allowed) {
+      return NextResponse.json(
+        { error: invoiceCheck.message || 'Batas invoice tercapai' },
+        { status: 403 }
+      )
     }
 
     const body = await req.json()
