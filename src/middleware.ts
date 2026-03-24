@@ -43,7 +43,8 @@ export default async function middleware(req: NextRequest) {
     // Skip CSRF for API webhooks (they have their own signature verification)
     // Also skip for OAuth callbacks (Google, GitHub, etc.) and NextAuth endpoints
     // Also skip for auth-simple test endpoint
-    if (pathname.includes('/webhooks/') || pathname.includes('/api/auth') || pathname.includes('/api/auth-simple')) {
+    // Also skip for file upload endpoint (uses multipart/form-data)
+    if (pathname.includes('/webhooks/') || pathname.includes('/api/auth') || pathname.includes('/api/auth-simple') || pathname === '/api/upload') {
       // Continue without CSRF check
     } else if (pathname.startsWith('/api/')) {
       // For API routes, check Origin/Referer matches host
@@ -51,8 +52,9 @@ export default async function middleware(req: NextRequest) {
       const isValidOrigin = allowedOrigins.some(allowed => origin === allowed)
       const isValidReferer = allowedOrigins.some(allowed => referer.startsWith(allowed))
 
-      // Allow if origin or referer is valid, or if it's a JSON API request from same origin
-      if (!isValidOrigin && !isValidReferer && !contentType.includes('application/json')) {
+      // Allow if origin or referer is valid, or if it's a JSON/multipart API request from same origin
+      const isValidContentType = contentType.includes('application/json') || contentType.includes('multipart/form-data')
+      if (!isValidOrigin && !isValidReferer && !isValidContentType) {
         return new NextResponse(
           JSON.stringify({ error: 'CSRF validation failed' }),
           { status: 403, headers: { 'Content-Type': 'application/json' } }
