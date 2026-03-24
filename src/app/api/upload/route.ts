@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserSession } from '@/lib/session'
-import { writeFile, existsSync, mkdirSync } from 'fs'
+import { writeFileSync, existsSync, mkdirSync } from 'fs'
 import { join } from 'path'
 
 const UPLOAD_DIR = join(process.cwd(), 'public', 'uploads', 'logos')
@@ -10,6 +10,7 @@ function ensureUploadDir(): void {
   try {
     if (!existsSync(UPLOAD_DIR)) {
       mkdirSync(UPLOAD_DIR, { recursive: true })
+    }
   } catch (error) {
     console.error('[UPLOAD] Error creating directory:', error)
   }
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    writeFile(filePath, buffer)
+    writeFileSync(filePath, buffer)
     console.log('[UPLOAD] File saved successfully:', fileName)
 
     // Return public URL
