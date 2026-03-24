@@ -32,6 +32,7 @@ export async function GET(_req: NextRequest) {
           invoiceLimit: 10,
           invoiceCount: 0,
           isTrial: false,
+          trialExpired: false,
           trialDaysLeft: 0,
         })
       }
@@ -60,30 +61,24 @@ export async function GET(_req: NextRequest) {
         invoiceLimit: -1, // Unlimited during trial
         invoiceCount: 0,
         isTrial: true,
+        trialExpired: false,
         trialDaysLeft,
       })
     }
 
-    // Check if trial has expired
-    if (subscription.status === 'TRIALING' && subscription.trialEndsAt) {
+    // Check if trial has expired (but don't auto-downgrade)
+    let trialExpired = false
+    const isTrial = subscription.status === 'TRIALING'
+
+    if (isTrial && subscription.trialEndsAt) {
       const now = new Date()
       if (now > subscription.trialEndsAt) {
-        // Trial expired, downgrade to FREE
-        const updatedSubscription = await prisma.subscriptions.update({
-          where: { id: subscription.id },
-          data: {
-            status: 'FREE',
-            planType: 'FREE',
-          },
-        })
-        subscription.status = updatedSubscription.status
-        subscription.planType = updatedSubscription.planType
+        trialExpired = true
       }
     }
 
     // Get dynamic subscription limits from pricing_plans
     const limits = await getUserSubscriptionLimits(session.id)
-    const isTrial = subscription.status === 'TRIALING'
     let trialDaysLeft = 0
 
     // Calculate trial days left
@@ -112,6 +107,7 @@ export async function GET(_req: NextRequest) {
       invoiceLimit: limits.invoiceLimit,
       planName: limits.planName,
       isTrial,
+      trialExpired,
       trialDaysLeft,
     })
   } catch (error) {
