@@ -80,6 +80,10 @@ export default function EditTemplatePage() {
     try {
       const res = await fetch(`/api/templates/${id}`)
       if (!res.ok) {
+        if (res.status === 401) {
+          router.push('/login')
+          return
+        }
         if (res.status === 404) {
           setNotFound(true)
         }

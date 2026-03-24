@@ -51,6 +51,13 @@ export default function TemplatesPage() {
   const fetchTemplates = async () => {
     try {
       const res = await fetch('/api/templates')
+
+      // Handle 401 Unauthorized - redirect to login
+      if (res.status === 401) {
+        router.push('/login')
+        return
+      }
+
       if (!res.ok) throw new Error('Gagal mengambil template')
 
       const data = await res.json()

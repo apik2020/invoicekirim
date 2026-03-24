@@ -145,6 +145,10 @@ export default function EditInvoicePage() {
     try {
       const res = await fetch(`/api/invoices/${id}`)
       if (!res.ok) {
+        if (res.status === 401) {
+          router.push('/login')
+          return
+        }
         if (res.status === 404) {
           setNotFound(true)
         }

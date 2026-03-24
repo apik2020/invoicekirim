@@ -108,6 +108,12 @@ export default function InvoicesPage() {
 
       const allRes = await fetch('/api/invoices')
 
+      // Handle 401 Unauthorized - redirect to login
+      if (invoicesRes.status === 401 || allRes.status === 401) {
+        router.push('/login')
+        return
+      }
+
       if (!invoicesRes.ok || !allRes.ok) throw new Error('Gagal mengambil invoice')
 
       const invoicesData = await invoicesRes.json()
