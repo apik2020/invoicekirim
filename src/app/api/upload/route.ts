@@ -5,7 +5,6 @@ import { join } from 'path'
 
 const UPLOAD_DIR = join(process.cwd(), 'public', 'uploads', 'logos')
 
-// Ensure upload directory exists
 function ensureUploadDir(): void {
   try {
     if (!existsSync(UPLOAD_DIR)) {
@@ -16,7 +15,6 @@ function ensureUploadDir(): void {
   }
 }
 
-// Run once at startup
 ensureUploadDir()
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -27,13 +25,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     const formData = await req.formData()
-    const file = formData.get('file') as File
+    const file = formData.get('file') as File | null
 
     if (!file) {
-      return NextResponse.json({ error: 'File tidak ditemukan' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'File tidak ditemukan' },
+        { status: 400 }
+      )
     }
 
-    // Validate file type
     const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp']
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
@@ -42,8 +42,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       )
     }
 
-    // Validate file size (max 2MB)
-    const maxSize = 2 * 1024 * 1024 // 2MB
+    const maxSize = 2 * 1024 * 1024
     if (file.size > maxSize) {
       return NextResponse.json(
         { error: 'Ukuran file terlalu besar. Maksimal 2MB.' },
@@ -51,27 +50,20 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       )
     }
 
-    // Generate unique filename
     const timestamp = Date.now()
     const randomStr = Math.random().toString(36).substring(2, 8)
     const ext = file.name.split('.').pop() || 'png'
     const fileName = `logo-${timestamp}-${randomStr}.${ext}`
     const filePath = join(UPLOAD_DIR, fileName)
 
-    console.log('[UPLOAD] Saving file to:', filePath)
-
-    // Convert file to buffer and save
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
-
     writeFileSync(filePath, buffer)
-    console.log('[UPLOAD] File saved successfully:', fileName)
 
-    // Return public URL
-    const publicUrl = `/uploads/logos/${fileName}`
+    console.log('[UPLOAD] File saved:', fileName)
 
     return NextResponse.json({
-      url: publicUrl,
+      url: `/uploads/logos/${fileName}`,
       fileName: fileName,
     })
   } catch (error) {
