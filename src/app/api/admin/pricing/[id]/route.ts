@@ -80,6 +80,11 @@ export async function PUT(
 
     const { features: planFeatures, ...planData } = validation.data
 
+    // Convert empty strings to null for nullable unique fields
+    if (planData.stripePriceId === '') {
+      planData.stripePriceId = null
+    }
+
     // Check if plan exists
     const existingPlan = await prisma.pricing_plans.findUnique({
       where: { id },
