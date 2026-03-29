@@ -10,12 +10,17 @@ const updateBrandingSchema = z.object({
     // Convert empty string to null
     if (val === '' || val === null || val === undefined) return null
     if (typeof val !== 'string') return null
-    // Validate URL
+    // Check if it's a valid URL (absolute or relative) or path
     try {
+      // Try absolute URL
       new URL(val)
       return val
     } catch {
-      return null
+      // If absolute URL fails, try as a relative URL/path
+      if (val.startsWith('/') || val.startsWith('./') || val.startsWith('../')) {
+        return val // Accept relative URLs and paths
+      }
+      return null // Invalid URL
     }
   }).nullable(),
   primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),

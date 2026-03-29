@@ -28,6 +28,7 @@ import { MessageBox } from '@/components/ui/MessageBox'
 import { useMessageBox } from '@/hooks/useMessageBox'
 import { useFeatureAccess } from '@/hooks/useFeatureAccess'
 import { cn } from '@/lib/utils'
+import type { BrandingSettings } from '@/lib/branding'
 
 interface InvoiceItem {
   id: string
@@ -82,6 +83,10 @@ export default function InvoiceDetailPage({
   const printRef = useRef<HTMLDivElement>(null)
   const messageBox = useMessageBox()
 
+  // Branding state
+  const [branding, setBranding] = useState<BrandingSettings | null>(null)
+  const { hasAccess: hasBrandingAccess } = useFeatureAccess('branding')
+
   // 🔒 Feature access check for email sending
   const { hasAccess: canSendEmail, isLoading: emailCheckLoading, showUpgradeModal } = useFeatureAccess('EMAIL_SEND')
 
@@ -99,13 +104,45 @@ export default function InvoiceDetailPage({
     documentTitle: invoice ? `Invoice-${invoice.invoiceNumber}` : 'Invoice',
   })
 
+  // Get effective branding colors based on feature access
+  const getEffectiveBranding = () => {
+    const defaultBranding = {
+      primaryColor: '#F97316',
+      accentColor: '#276874',
+      logoUrl: null,
+    }
+
+    if (!hasBrandingAccess || !branding) {
+      return defaultBranding
+    }
+
+    return {
+      primaryColor: branding.showColors ? branding.primaryColor : defaultBranding.primaryColor,
+      accentColor: branding.showColors ? branding.accentColor || branding.primaryColor : defaultBranding.accentColor,
+      logoUrl: branding.showLogo ? branding.logoUrl : null,
+    }
+  }
+
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login')
     } else if (status === 'authenticated' && id) {
       fetchInvoice()
+      fetchBranding()
     }
   }, [status, router, id])
+
+  const fetchBranding = async () => {
+    try {
+      const res = await fetch('/api/branding')
+      if (res.ok) {
+        const data = await res.json()
+        setBranding(data.branding)
+      }
+    } catch (error) {
+      console.error('Error fetching branding:', error)
+    }
+  }
 
   const fetchInvoice = async () => {
     try {
@@ -361,6 +398,11 @@ Terima kasih!`
 
       // Build simple HTML string
       const buildInvoiceHTML = () => {
+        // Get effective branding colors
+        const effectiveBranding = getEffectiveBranding()
+        const primaryColor = effectiveBranding.primaryColor
+        const accentColor = effectiveBranding.accentColor
+
         const items = invoice.items.map(item => `
           <tr style="border-bottom: 1px solid #E2E8F0;">
             <td style="padding: 16px 8px; color: #333333;">${item.description || '-'}</td>
@@ -375,6 +417,11 @@ Terima kasih!`
             <!-- Header -->
             <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 40px; padding-bottom: 32px; border-bottom: 2px solid #E2E8F0;">
               <div>
+                ${effectiveBranding.logoUrl ? `
+                  <div style="margin-bottom: 12px;">
+                    <img src="${effectiveBranding.logoUrl}" alt="Logo" style="max-width: 120px; max-height: 48px; object-fit: contain;" />
+                  </div>
+                ` : ''}
                 <h1 style="font-size: 24px; font-weight: bold; color: #333333; margin: 0 0 8px 0;">${invoice.companyName}</h1>
                 <p style="font-size: 14px; color: #333333; margin: 0;">${invoice.companyEmail}</p>
                 ${invoice.companyPhone ? `<p style="font-size: 14px; color: #333333; margin: 0;">${invoice.companyPhone}</p>` : ''}
@@ -382,7 +429,7 @@ Terima kasih!`
               </div>
               <div style="text-align: right;">
                 <p style="font-size: 12px; color: #333333; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">Invoice</p>
-                <p style="font-size: 20px; font-weight: bold; color: #333333; margin: 8px 0 0 0;">${invoice.invoiceNumber}</p>
+                <p style="font-size: 20px; font-weight: bold; color: ${accentColor}; margin: 8px 0 0 0;">${invoice.invoiceNumber}</p>
               </div>
             </div>
 
@@ -416,7 +463,7 @@ Terima kasih!`
               <h3 style="font-size: 12px; color: #333333; margin: 0 0 16px 0; text-transform: uppercase; letter-spacing: 0.5px; font-weight: bold;">Item Invoice</h3>
               <table style="width: 100%; border-collapse: collapse;">
                 <thead>
-                  <tr style="border-bottom: 2px solid #E2E8F0;">
+                  <tr style="border-bottom: 2px solid ${primaryColor};">
                     <th style="padding: 16px 8px; text-align: left; font-weight: bold; color: #333333; font-size: 14px;">Deskripsi</th>
                     <th style="padding: 16px 8px; text-align: center; font-weight: bold; color: #333333; font-size: 14px;">Qty</th>
                     <th style="padding: 16px 8px; text-align: right; font-weight: bold; color: #333333; font-size: 14px;">Harga</th>
@@ -440,7 +487,7 @@ Terima kasih!`
                   <span>Pajak (${invoice.taxRate}%)</span>
                   <span style="font-weight: 600;">${formatCurrency(invoice.taxAmount)}</span>
                 </div>
-                <div style="display: flex; justify-content: space-between; padding: 16px 0; border-top: 2px solid #E2E8F0; margin-top: 16px; font-size: 24px; font-weight: bold; color: #276874;">
+                <div style="display: flex; justify-content: space-between; padding: 16px 0; border-top: 2px solid ${primaryColor}; margin-top: 16px; font-size: 24px; font-weight: bold; color: ${primaryColor};">
                   <span>Total</span>
                   <span>${formatCurrency(invoice.total)}</span>
                 </div>
@@ -458,7 +505,10 @@ Terima kasih!`
             <!-- Footer -->
             <div style="margin-top: 48px; padding-top: 32px; border-top: 1px solid #E2E8F0; text-align: center;">
               <p style="font-size: 12px; color: #333333; margin: 0;">
-                Invoice dibuat dengan <a href="https://invoicekirim.com" style="color: #276874; text-decoration: none; font-weight: 600;">InvoiceKirim</a>
+                ${effectiveBranding.logoUrl
+                  ? `Invoice ini dikirim oleh ${invoice.companyName}`
+                  : `Invoice dibuat dengan <a href="https://invoicekirim.com" style="color: ${accentColor}; text-decoration: none; font-weight: 600;">InvoiceKirim</a>`
+                }
               </p>
             </div>
           </div>
@@ -615,6 +665,8 @@ Terima kasih!`
   }
 
   const getStatusStamp = (status: Invoice['status']) => {
+    const effectiveBranding = getEffectiveBranding()
+
     const stamps = {
       DRAFT: {
         text: 'DRAFT',
@@ -623,8 +675,7 @@ Terima kasih!`
       },
       SENT: {
         text: 'TERKIRIM',
-        color: 'border-secondary-500 text-secondary-600',
-        bgColor: 'bg-secondary-50',
+        useBranding: true, // Use branding colors for SENT
       },
       PAID: {
         text: 'LUNAS',
@@ -644,6 +695,27 @@ Terima kasih!`
     }
 
     const stamp = stamps[status] || stamps.DRAFT
+
+    // For SENT status with branding
+    if (stamp.useBranding) {
+      return (
+        <div className="relative">
+          <div
+            className="inline-flex items-center justify-center px-6 py-3 border-4 rounded-lg transform -rotate-12 shadow-sm"
+            style={{
+              fontFamily: 'system-ui, sans-serif',
+              borderColor: effectiveBranding.primaryColor,
+              color: effectiveBranding.primaryColor,
+              backgroundColor: effectiveBranding.primaryColor + '1A', // 10% opacity
+            }}
+          >
+            <span className="text-xl font-black tracking-widest uppercase">
+              {stamp.text}
+            </span>
+          </div>
+        </div>
+      )
+    }
 
     return (
       <div className="relative">
@@ -902,9 +974,22 @@ Terima kasih!`
             <div className="flex justify-between items-start mb-8 pb-8 border-b border-gray-200">
               <div>
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-brand-500 flex items-center justify-center">
-                    <FileText className="w-6 h-6 text-white" />
-                  </div>
+                  {getEffectiveBranding().logoUrl ? (
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden bg-surface-light">
+                      <img
+                        src={getEffectiveBranding().logoUrl!}
+                        alt="Logo"
+                        className="max-w-full max-h-full object-contain"
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      className="w-12 h-12 rounded-xl flex items-center justify-center"
+                      style={{ backgroundColor: getEffectiveBranding().primaryColor }}
+                    >
+                      <FileText className="w-6 h-6 text-white" />
+                    </div>
+                  )}
                   <div>
                     <h1 className="font-bold text-xl text-text-primary">
                       {invoice.companyName}
@@ -917,7 +1002,10 @@ Terima kasih!`
 
             {/* Invoice Title */}
             <div className="mb-8">
-              <h2 className="text-3xl font-extrabold text-text-primary tracking-tight mb-2">
+              <h2
+                className="text-3xl font-extrabold tracking-tight mb-2"
+                style={{ color: getEffectiveBranding().accentColor }}
+              >
                 INVOICE
               </h2>
               <p className="text-text-secondary font-mono">{invoice.invoiceNumber}</p>
@@ -1039,7 +1127,10 @@ Terima kasih!`
                     {formatCurrency(invoice.taxAmount)}
                   </span>
                 </div>
-                <div className="flex justify-between py-4 border-t-2 border-gray-200 text-2xl font-extrabold text-brand-500 mt-4">
+                <div
+                  className="flex justify-between py-4 border-t-2 text-2xl font-extrabold mt-4"
+                  style={{ borderColor: getEffectiveBranding().primaryColor + '33', color: getEffectiveBranding().primaryColor }}
+                >
                   <span>Total</span>
                   <span>{formatCurrency(invoice.total)}</span>
                 </div>
