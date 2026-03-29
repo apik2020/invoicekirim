@@ -675,7 +675,8 @@ Terima kasih!`
       },
       SENT: {
         text: 'TERKIRIM',
-        useBranding: true, // Use branding colors for SENT
+        color: 'border-secondary-500 text-secondary-600',
+        bgColor: 'bg-secondary-50',
       },
       PAID: {
         text: 'LUNAS',
@@ -697,7 +698,7 @@ Terima kasih!`
     const stamp = stamps[status] || stamps.DRAFT
 
     // For SENT status with branding
-    if (stamp.useBranding) {
+    if (status === 'SENT' && hasBrandingAccess) {
       return (
         <div className="relative">
           <div
