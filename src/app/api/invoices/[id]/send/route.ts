@@ -2,6 +2,7 @@ import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import nodemailer from 'nodemailer'
+import { checkFeatureAccess, trackEmailSend } from '@/lib/feature-access'
 import { logInvoiceSent } from '@/lib/activity-log'
 
 // Force dynamic rendering
@@ -18,6 +19,21 @@ export async function POST(
 
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // 🔒 FEATURE ACCESS CHECK: Email Send
+    const emailAccess = await checkFeatureAccess(session.id, 'EMAIL_SEND')
+
+    if (!emailAccess.allowed) {
+      return NextResponse.json(
+        {
+          error: 'FEATURE_LOCKED',
+          message: getEmailLockedMessage(emailAccess.reason, emailAccess.limit, emailAccess.currentUsage),
+          upgradeUrl: emailAccess.upgradeUrl || '/checkout',
+          planRequired: emailAccess.planName,
+        },
+        { status: 403 }
+      )
     }
 
     // Fetch invoice with items
@@ -303,6 +319,9 @@ export async function POST(
     // Log activity
     await logInvoiceSent(session.id, invoice.invoiceNumber, invoice.clientEmail)
 
+    // 🔍 Track email usage
+    await trackEmailSend(session.id)
+
     return NextResponse.json({
       success: true,
       message: 'Invoice berhasil dikirim ke ' + invoice.clientEmail
@@ -313,6 +332,29 @@ export async function POST(
       { error: 'Failed to send invoice' },
       { status: 500 }
     )
+  }
+}
+
+/**
+ * Get user-friendly message for locked email feature
+ */
+function getEmailLockedMessage(
+  reason?: string,
+  limit?: number | null,
+  currentUsage?: number
+): string {
+  switch (reason) {
+    case 'trial_expired':
+      return 'Masa trial Anda telah berakhir. Upgrade ke Pro untuk melanjutkan pengiriman invoice.'
+    case 'usage_exceeded':
+      if (limit !== null && currentUsage !== undefined) {
+        return `Anda telah mencapai batas pengiriman bulanan (${currentUsage}/${limit}). Upgrade ke Pro untuk kiriman tanpa batas.`
+      }
+      return 'Anda telah mencapai batas pengiriman bulanan. Upgrade ke Pro untuk melanjutkan.'
+    case 'feature_locked':
+      return 'Fitur kirim invoice via email hanya tersedia untuk pengguna Pro. Upgrade sekarang.'
+    default:
+      return 'Kirim invoice tersedia dalam paket Pro. Upgrade untuk membuka fitur ini.'
   }
 }
 

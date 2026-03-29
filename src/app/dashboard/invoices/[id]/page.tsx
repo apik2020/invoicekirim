@@ -19,11 +19,14 @@ import {
   DollarSign,
   Calendar,
   X,
+  Lock,
+  Crown,
 } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { MessageBox } from '@/components/ui/MessageBox'
 import { useMessageBox } from '@/hooks/useMessageBox'
+import { useFeatureAccess } from '@/hooks/useFeatureAccess'
 import { cn } from '@/lib/utils'
 
 interface InvoiceItem {
@@ -68,7 +71,7 @@ export default function InvoiceDetailPage({
 }) {
   const router = useRouter()
   const { id } = use(params)
-  const { data: session, status } = useAppSession()
+  const { status } = useAppSession()
   const [invoice, setInvoice] = useState<Invoice | null>(null)
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState(false)
@@ -78,6 +81,9 @@ export default function InvoiceDetailPage({
   const [generatingPDF, setGeneratingPDF] = useState(false)
   const printRef = useRef<HTMLDivElement>(null)
   const messageBox = useMessageBox()
+
+  // 🔒 Feature access check for email sending
+  const { hasAccess: canSendEmail, isLoading: emailCheckLoading, showUpgradeModal } = useFeatureAccess('EMAIL_SEND')
 
   // Payment confirmation modal state
   const [showPaymentModal, setShowPaymentModal] = useState(false)
@@ -542,6 +548,12 @@ Terima kasih!`
   const handleSendEmail = async () => {
     if (!invoice) return
 
+    // 🔒 Check feature access before sending
+    if (!canSendEmail) {
+      showUpgradeModal()
+      return
+    }
+
     setSendingEmail(true)
     try {
       const res = await fetch(`/api/invoices/${invoice.id}/send`, {
@@ -549,11 +561,18 @@ Terima kasih!`
       })
 
       if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Gagal mengirim invoice')
-      }
+        const errorData = await res.json()
 
-      const data = await res.json()
+        // Handle feature locked response
+        if (errorData.error === 'FEATURE_LOCKED') {
+          setSendingEmail(false)
+          // Redirect to checkout
+          window.location.href = errorData.upgradeUrl || '/checkout'
+          return
+        }
+
+        throw new Error(errorData.error || 'Gagal mengirim invoice')
+      }
 
       // Refresh invoice data to get updated status
       await fetchInvoice()

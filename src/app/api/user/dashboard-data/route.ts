@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 
 // Retry helper for database queries
 async function withRetry<T>(
@@ -24,28 +26,66 @@ async function withRetry<T>(
   throw lastError
 }
 
-export async function GET(_req: NextRequest) {
-  try {
-    // Get session from user_session cookie
-    const cookieStore = await cookies()
-    const userSessionCookie = cookieStore.get('user_session')
+// Helper to get authenticated user from either NextAuth or custom session
+async function getAuthenticatedUser() {
+  // First, try NextAuth session (for Google OAuth users)
+  const nextAuthSession = await getServerSession(authOptions)
 
-    if (!userSessionCookie?.value) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (nextAuthSession?.user?.id) {
+    // Check if user is admin
+    if (nextAuthSession.user.isAdmin) {
+      return null // Admin should use admin dashboard
     }
 
+    // Get fresh user data from database
+    const dbUser = await prisma.users.findUnique({
+      where: { id: nextAuthSession.user.id },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        image: true,
+      }
+    })
+
+    if (dbUser) {
+      return {
+        id: dbUser.id,
+        email: dbUser.email,
+        name: dbUser.name,
+        image: dbUser.image,
+        isAdmin: false // Regular user from NextAuth
+      }
+    }
+  }
+
+  // Fallback: Check custom user_session cookie (for credentials login)
+  const cookieStore = await cookies()
+  const userSessionCookie = cookieStore.get('user_session')
+
+  if (userSessionCookie?.value) {
     const session = JSON.parse(userSessionCookie.value)
+
+    if (session?.id) {
+      // Check if user is admin
+      if (session.isAdmin) {
+        return null // Admin should use admin dashboard
+      }
+
+      return session
+    }
+  }
+
+  return null
+}
+
+export async function GET(_req: NextRequest) {
+  try {
+    // Get authenticated user from either session type
+    const session = await getAuthenticatedUser()
 
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    // Check if user is admin - block access to user dashboard
-    if (session.isAdmin) {
-      return NextResponse.json(
-        { error: 'Akses ditolak. Admin harus menggunakan dashboard admin di /admin' },
-        { status: 403 }
-      )
     }
 
     const userId = session.id

@@ -2,6 +2,8 @@ import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe, getStripeCustomerId } from '@/lib/stripe'
 import { checkRateLimit, apiRateLimit } from '@/lib/rate-limit'
+import { validateUpgradeRequest } from '@/lib/subscription-upgrade'
+import { prisma } from '@/lib/prisma'
 
 export async function POST(req: NextRequest) {
   try {
@@ -37,13 +39,51 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Price ID is required' }, { status: 400 })
     }
 
+    // Get pricing plan details for the priceId
+    const pricingPlan = await prisma.pricing_plans.findFirst({
+      where: { stripePriceId: priceId },
+    })
+
+    if (!pricingPlan) {
+      return NextResponse.json({ error: 'Invalid plan' }, { status: 400 })
+    }
+
+    // Validate upgrade eligibility before creating checkout session
+    const validation = await validateUpgradeRequest(session.id, pricingPlan.slug)
+
+    if (!validation.allowed) {
+      // Log failed upgrade attempt
+      await prisma.activity_logs.create({
+        data: {
+          id: crypto.randomUUID(),
+          userId: session.id,
+          action: 'CREATED',
+          entityType: 'Checkout',
+          entityId: pricingPlan.id,
+          title: 'Checkout Ditolak - Upgrade Tidak Valid',
+          description: validation.reason || 'Alasan tidak diketahui',
+          metadata: {
+            targetPlan: pricingPlan.slug,
+            targetPriceId: priceId,
+            currentPlan: validation.currentStatus?.plan,
+            currentStatus: validation.currentStatus?.status,
+          },
+        },
+      })
+
+      return NextResponse.json(
+        { error: validation.reason || 'Upgrade tidak diizinkan' },
+        { status: 400 }
+      )
+    }
+
     // Get or create Stripe customer
     const customerId = await getStripeCustomerId(
       session.id,
       session.email!
     )
 
-    // Create checkout session
+    // Create checkout session with metadata for webhook processing
     const checkoutSession = await stripe().checkout.sessions.create({
       customer: customerId,
       mode: 'subscription',
@@ -58,6 +98,8 @@ export async function POST(req: NextRequest) {
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing?checkout=canceled`,
       metadata: {
         userId: session.id,
+        pricingPlanId: pricingPlan.id,
+        targetPlanSlug: pricingPlan.slug,
       },
     })
 

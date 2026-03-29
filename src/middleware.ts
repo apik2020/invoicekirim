@@ -69,6 +69,7 @@ export default async function middleware(req: NextRequest) {
   const userSessionToken = req.cookies.get('user_session')
   const adminSessionToken = req.cookies.get('admin_session')
 
+  // Check if user has any valid authentication (NextAuth OR custom session)
   const isAuth = !!sessionToken || !!userSessionToken
   const isAdminAuth = !!adminSessionToken
   const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/register')

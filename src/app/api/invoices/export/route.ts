@@ -1,6 +1,8 @@
 import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { checkFeatureAccess } from '@/lib/feature-access'
+import { trackPdfExport } from '@/lib/feature-access'
 import { generateInvoicesCSV, generateInvoicesExcel, InvoiceExportData } from '@/lib/export-invoices'
 
 // Force dynamic rendering
@@ -12,6 +14,21 @@ export async function GET(req: NextRequest) {
     const session = await getUserSession()
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // 🔒 FEATURE ACCESS CHECK: PDF Export
+    const exportAccess = await checkFeatureAccess(session.id, 'PDF_EXPORT')
+
+    if (!exportAccess.allowed) {
+      return NextResponse.json(
+        {
+          error: 'FEATURE_LOCKED',
+          message: getExportLockedMessage(exportAccess.reason, exportAccess.limit, exportAccess.currentUsage),
+          upgradeUrl: exportAccess.upgradeUrl || '/checkout',
+          planRequired: exportAccess.planName,
+        },
+        { status: 403 }
+      )
     }
 
     const { searchParams } = new URL(req.url)
@@ -109,6 +126,9 @@ export async function GET(req: NextRequest) {
       // Generate Excel file
       const buffer = await generateInvoicesExcel(exportData)
 
+      // 🔍 Track export usage
+      await trackPdfExport(session.id)
+
       return new NextResponse(new Uint8Array(buffer), {
         status: 200,
         headers: {
@@ -119,6 +139,9 @@ export async function GET(req: NextRequest) {
     } else {
       // Generate CSV
       const csv = generateInvoicesCSV(exportData)
+
+      // 🔍 Track export usage
+      await trackPdfExport(session.id)
 
       return new NextResponse(csv, {
         status: 200,
@@ -134,5 +157,28 @@ export async function GET(req: NextRequest) {
       { error: 'Gagal mengekspor invoice' },
       { status: 500 }
     )
+  }
+}
+
+/**
+ * Get user-friendly message for locked export feature
+ */
+function getExportLockedMessage(
+  reason?: string,
+  limit?: number | null,
+  currentUsage?: number
+): string {
+  switch (reason) {
+    case 'trial_expired':
+      return 'Masa trial Anda telah berakhir. Upgrade ke Pro untuk melanjutkan ekspor invoice.'
+    case 'usage_exceeded':
+      if (limit !== null && currentUsage !== undefined) {
+        return `Anda telah mencapai batas ekspor bulanan (${currentUsage}/${limit}). Upgrade ke Pro untuk ekspor tanpa batas.`
+      }
+      return 'Anda telah mencapai batas ekspor bulanan. Upgrade ke Pro untuk melanjutkan.'
+    case 'feature_locked':
+      return 'Fitur ekspor invoice hanya tersedia untuk pengguna Pro. Upgrade sekarang untuk mengekspor data invoice Anda.'
+    default:
+      return 'Ekspor invoice tersedia dalam paket Pro. Upgrade untuk membuka fitur ini.'
   }
 }

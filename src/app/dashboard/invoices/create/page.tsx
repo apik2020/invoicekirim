@@ -3,7 +3,8 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAppSession } from '@/hooks/useAppSession'
-import { Save, Plus, Trash2, Loader2, Users, ChevronDown, Package, UserPlus, X, Check, PackagePlus } from 'lucide-react'
+import { useFeatureAccess } from '@/hooks/useFeatureAccess'
+import { Save, Plus, Trash2, Loader2, Users, ChevronDown, Package, UserPlus, X, Check, PackagePlus, Lock } from 'lucide-react'
 import { generateInvoiceNumber } from '@/lib/utils'
 import { formatCurrency } from '@/lib/utils'
 import { DashboardLayout } from '@/components/DashboardLayout'
@@ -55,6 +56,10 @@ function NewInvoicePageContent() {
   const [catalogItems, setCatalogItems] = useState<any[]>([])
   const [showItemCatalog, setShowItemCatalog] = useState(false)
   const messageBox = useMessageBox()
+
+  // Check feature access for templates and branding
+  const { hasAccess: hasTemplateAccess, isLoading: checkingTemplateAccess } = useFeatureAccess('INVOICE_TEMPLATE')
+  const { hasAccess: hasBrandingAccess } = useFeatureAccess('branding')
 
   // Template settings state
   const [templateSettings, setTemplateSettings] = useState<TemplateSettings>({
@@ -143,39 +148,73 @@ function NewInvoicePageContent() {
       loadCatalogItems()
     }
 
-    // Load template if templateId is provided
-    if (templateId && sessionResult.status === 'authenticated') {
-      loadTemplate(templateId)
+    // Load template if templateId is provided (only if user has template access)
+    if (templateId && sessionResult.status === 'authenticated' && !checkingTemplateAccess) {
+      // Check if user has access to templates before loading
+      if (hasTemplateAccess) {
+        loadTemplate(templateId)
+      } else {
+        // Show message that templates are Pro only
+        messageBox.showWarning({
+          title: 'Fitur Template Pro',
+          message: 'Template invoice kustom hanya tersedia untuk pengguna Pro. Upgrade untuk menggunakan template dan mempercepat pembuatan invoice.',
+          confirmText: 'Mengerti',
+          onConfirm: () => {
+            messageBox.close()
+            // Remove template from URL and redirect to clean create page
+            router.push('/dashboard/invoices/create')
+          },
+        })
+      }
     }
-  }, [sessionResult, router, templateId])
+  }, [sessionResult, router, templateId, hasTemplateAccess, checkingTemplateAccess])
 
   const loadClients = async () => {
     try {
-      const res = await fetch('/api/clients')
+      const res = await fetch('/api/clients', {
+        credentials: 'include',
+      })
+
+      if (res.status === 401) {
+        // Unauthorized - redirect to login
+        router.push('/login')
+        return
+      }
+
       if (res.ok) {
         const data = await res.json()
         setClients(data)
       } else {
-        console.error('Failed to load clients:', res.status, res.statusText)
-        // If unauthorized, redirect to login
-        if (res.status === 401) {
-          router.push('/login')
-        }
+        console.warn('Clients API returned status:', res.status)
       }
     } catch (error) {
-      console.error('Failed to load clients:', error)
+      // Network error - log warning but don't break the UI
+      console.warn('Failed to load clients (network error):', error)
     }
   }
 
   const loadCatalogItems = async () => {
     try {
-      const res = await fetch('/api/items')
+      const res = await fetch('/api/items', {
+        credentials: 'include',
+      })
+
+      if (res.status === 401) {
+        // Unauthorized - session might be expired
+        console.warn('Catalog items: Unauthorized, skipping load')
+        return
+      }
+
       if (res.ok) {
         const data = await res.json()
         setCatalogItems(data)
+      } else {
+        // Non-OK response but not an auth error
+        console.warn('Catalog items API returned status:', res.status)
       }
     } catch (error) {
-      console.error('Failed to load catalog items:', error)
+      // Network error or other issue - silently fail since catalog items are optional
+      console.warn('Failed to load catalog items (non-critical):', error)
     }
   }
 
@@ -697,7 +736,15 @@ function NewInvoicePageContent() {
 
           {/* Dari (Company Info) */}
           <div className="card p-6 sm:p-8 animate-fade-in-up animation-delay-100">
-            <h2 className="text-lg font-bold text-text-primary mb-6">Dari (Info Perusahaan)</h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-bold text-text-primary">Dari (Info Perusahaan)</h2>
+              {!hasBrandingAccess && (
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-200">
+                  <Lock size={14} className="text-amber-600" />
+                  <span className="text-xs font-semibold text-amber-700">Isi Manual</span>
+                </div>
+              )}
+            </div>
 
             <div className="grid md:grid-cols-2 gap-4">
               <div>
@@ -706,10 +753,10 @@ function NewInvoicePageContent() {
                   type="text"
                   value={formData.companyName}
                   onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                  className="input bg-surface-light cursor-not-allowed"
+                  className={hasBrandingAccess ? 'input bg-surface-light cursor-not-allowed' : 'input'}
                   placeholder="Nama perusahaan Anda"
                   required
-                  readOnly
+                  readOnly={hasBrandingAccess}
                 />
               </div>
               <div>
@@ -718,10 +765,10 @@ function NewInvoicePageContent() {
                   type="email"
                   value={formData.companyEmail}
                   onChange={(e) => setFormData({ ...formData, companyEmail: e.target.value })}
-                  className="input bg-surface-light cursor-not-allowed"
+                  className={hasBrandingAccess ? 'input bg-surface-light cursor-not-allowed' : 'input'}
                   placeholder="email@perusahaan.com"
                   required
-                  readOnly
+                  readOnly={hasBrandingAccess}
                 />
               </div>
               <div>
@@ -730,9 +777,9 @@ function NewInvoicePageContent() {
                   type="tel"
                   value={formData.companyPhone}
                   onChange={(e) => setFormData({ ...formData, companyPhone: e.target.value })}
-                  className="input bg-surface-light cursor-not-allowed"
+                  className={hasBrandingAccess ? 'input bg-surface-light cursor-not-allowed' : 'input'}
                   placeholder="+62 812-3456-7890"
-                  readOnly
+                  readOnly={hasBrandingAccess}
                 />
               </div>
               <div className="md:col-span-2">
@@ -741,21 +788,33 @@ function NewInvoicePageContent() {
                   type="text"
                   value={formData.companyAddress}
                   onChange={(e) => setFormData({ ...formData, companyAddress: e.target.value })}
-                  className="input bg-surface-light cursor-not-allowed"
+                  className={hasBrandingAccess ? 'input bg-surface-light cursor-not-allowed' : 'input'}
                   placeholder="Alamat lengkap"
-                  readOnly
+                  readOnly={hasBrandingAccess}
                 />
               </div>
             </div>
 
-            <div className="mt-4 p-4 rounded-xl bg-brand-50 border border-brand-200">
-              <p className="text-sm text-brand-700">
-                Info perusahaan diambil dari pengaturan profil. Untuk mengubah, silakan ke{' '}
-                <a href="/dashboard/settings" className="font-bold underline hover:text-brand-800">
-                  Pengaturan
-                </a>
-              </p>
-            </div>
+            {hasBrandingAccess ? (
+              <div className="mt-4 p-4 rounded-xl bg-brand-50 border border-brand-200">
+                <p className="text-sm text-brand-700">
+                  Info perusahaan diambil dari pengaturan profil. Untuk mengubah, silakan ke{' '}
+                  <a href="/dashboard/settings/branding" className="font-bold underline hover:text-brand-800">
+                    Pengaturan Branding
+                  </a>
+                </p>
+              </div>
+            ) : (
+              <div className="mt-4 p-4 rounded-xl bg-amber-50 border border-amber-200">
+                <p className="text-sm text-amber-700">
+                  <span className="font-semibold">Plan Free:</span> Isi info perusahaan secara manual setiap kali membuat invoice.{' '}
+                  <a href="/checkout" className="font-bold underline hover:text-amber-800">
+                    Upgrade ke Pro
+                  </a>
+                  {' '}untuk menyimpan profil perusahaan dan auto-fill di invoice selanjutnya.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Kepada (Client Info) */}

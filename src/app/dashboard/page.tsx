@@ -219,7 +219,7 @@ export default function DashboardPage() {
               </p>
             </div>
             <Link
-              href="/dashboard/billing"
+              href="/checkout"
               className="px-4 py-2 btn-primary text-white font-bold rounded-xl whitespace-nowrap"
             >
               Upgrade PRO
@@ -435,7 +435,7 @@ export default function DashboardPage() {
                 </p>
               </div>
               <Link
-                href="/pricing"
+                href="/checkout"
                 className="inline-flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl btn-primary whitespace-nowrap"
               >
                 Upgrade ke Pro

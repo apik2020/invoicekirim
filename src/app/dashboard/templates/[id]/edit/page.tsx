@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
+import Link from 'next/link'
 import { useAppSession } from '@/hooks/useAppSession'
 import { FileText, Save, Plus, Trash2, Loader2, Upload, X } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
@@ -9,6 +10,7 @@ import { DashboardLayout } from '@/components/DashboardLayout'
 import { MessageBox } from '@/components/ui/MessageBox'
 import { useMessageBox } from '@/hooks/useMessageBox'
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch'
+import { FeatureGate } from '@/components/FeatureGate'
 
 interface TemplateItem {
   id: string
@@ -316,7 +318,39 @@ export default function EditTemplatePage() {
       showBackButton
       backHref="/dashboard/templates"
     >
-      <form onSubmit={handleSubmit} className="max-w-4xl mx-auto space-y-8">
+      <FeatureGate
+        featureKey="INVOICE_TEMPLATE"
+        fallback={
+          <div className="max-w-4xl mx-auto">
+            <div className="card p-12 text-center">
+              <div className="w-20 h-20 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <FileText className="w-10 h-10 text-white" />
+              </div>
+              <h2 className="text-2xl font-bold text-brand-500 mb-3">
+                Template Invoice Custom
+              </h2>
+              <p className="text-text-secondary mb-6 max-w-md mx-auto">
+                Simpan dan gunakan template invoice kustom untuk mempercepat pembuatan invoice. Fitur ini hanya tersedia untuk pengguna Pro.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Link
+                  href="/checkout"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                >
+                  Upgrade ke Pro Sekarang
+                </Link>
+                <Link
+                  href="/pricing"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors"
+                >
+                  Pelajari Lebih
+                </Link>
+              </div>
+            </div>
+          </div>
+        }
+      >
+        <form onSubmit={handleSubmit} className="max-w-4xl mx-auto space-y-8">
         {/* Template Info */}
         <div className="card p-8">
           <h2 className="text-lg font-bold text-gray-900 mb-6">Informasi Template</h2>
@@ -718,6 +752,7 @@ export default function EditTemplatePage() {
         onCancel={messageBox.state.onCancel}
         loading={messageBox.state.loading}
       />
+      </FeatureGate>
     </DashboardLayout>
   )
 }

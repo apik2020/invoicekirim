@@ -1,7 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { Download, FileSpreadsheet, FileText, Loader2, ChevronDown } from 'lucide-react'
+import { Download, FileSpreadsheet, FileText, Loader2, ChevronDown, Lock, Crown } from 'lucide-react'
+import { useFeatureAccess } from '@/hooks/useFeatureAccess'
+import Link from 'next/link'
 
 interface InvoiceExportButtonProps {
   status?: string
@@ -19,7 +21,16 @@ export function InvoiceExportButton({
   const [isExporting, setIsExporting] = useState(false)
   const [showDropdown, setShowDropdown] = useState(false)
 
+  // Check feature access for PDF export
+  const { hasAccess, isLoading, reason, limit, usage, showUpgradeModal } = useFeatureAccess('PDF_EXPORT')
+
   const handleExport = async (format: 'csv' | 'excel') => {
+    // Check access before exporting
+    if (!hasAccess) {
+      showUpgradeModal()
+      return
+    }
+
     setIsExporting(true)
     setShowDropdown(false)
 
@@ -45,6 +56,13 @@ export function InvoiceExportButton({
 
       if (!response.ok) {
         const error = await response.json()
+        // Handle feature locked response
+        if (error.error === 'FEATURE_LOCKED') {
+          setShowDropdown(false)
+          // Redirect to checkout
+          window.location.href = error.upgradeUrl || '/checkout'
+          return
+        }
         throw new Error(error.error || 'Gagal mengekspor invoice')
       }
 
@@ -74,6 +92,51 @@ export function InvoiceExportButton({
     } finally {
       setIsExporting(false)
     }
+  }
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <button disabled className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-400 rounded-xl font-medium cursor-not-allowed">
+        <Loader2 size={18} className="animate-spin" />
+        <span>Loading...</span>
+      </button>
+    )
+  }
+
+  // Show locked state
+  if (!hasAccess) {
+    return (
+      <div className="relative">
+        <button
+          onClick={showUpgradeModal}
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-50 border border-amber-200 text-amber-700 rounded-xl font-medium hover:bg-amber-100 transition-colors"
+        >
+          <Download size={18} />
+          <span>Export</span>
+          <Lock className="w-4 h-4 ml-1" />
+          <span className="ml-1 px-2 py-0.5 bg-amber-200 text-amber-800 rounded-full text-xs font-semibold">
+            PRO
+          </span>
+        </button>
+
+        {/* Usage info tooltip */}
+        {(reason === 'usage_exceeded' && limit && usage) && (
+          <div className="absolute right-0 mt-2 w-64 p-3 bg-white rounded-xl border border-gray-200 shadow-lg z-30">
+            <p className="text-sm text-gray-700">
+              Anda telah menggunakan <strong>{usage}</strong> dari <strong>{limit}</strong> ekspor bulanan.
+            </p>
+            <Link
+              href="/checkout"
+              className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-brand-500 hover:text-brand-600"
+            >
+              <Crown className="w-4 h-4" />
+              Upgrade untuk unlimited
+            </Link>
+          </div>
+        )}
+      </div>
+    )
   }
 
   return (

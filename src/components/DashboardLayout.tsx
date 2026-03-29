@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { DashboardSidebar, MobileMenuButton } from './DashboardSidebar'
 import DashboardHeader from './DashboardHeader'
 import { SubscriptionGuard } from '@/hooks/useSubscriptionGuard'
+import { AnnouncementBanner } from './AnnouncementBanner'
 import { cn } from '@/lib/utils'
 
 interface DashboardLayoutProps {
@@ -27,6 +28,9 @@ export function DashboardLayout({
   return (
     <SubscriptionGuard>
       <div className="min-h-screen bg-surface-light">
+        {/* Modal and Toast Announcements - Global */}
+        <AnnouncementBanner displayType="modal" />
+        <AnnouncementBanner displayType="toast" />
         {/* Mobile Menu Button - Fixed position */}
         <div className="fixed top-4 left-4 z-30 lg:hidden">
           <MobileMenuButton onClick={() => setMobileOpen(true)} />
@@ -55,6 +59,11 @@ export function DashboardLayout({
             actions={actions}
           />
           <main className="p-4 sm:p-6 lg:p-8">
+            {/* Announcement Banner */}
+            <div className="mb-6 -mt-2 -mx-2 sm:mx-0">
+              <AnnouncementBanner displayType="banner" />
+            </div>
+
             {children}
           </main>
         </div>

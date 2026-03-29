@@ -306,6 +306,7 @@ model payments {
   midtransTransactionId String?
   paymentGateway        String?
   paymentMethod         String?
+  pricingPlanId         String?
   qrisUrl               String?
   updatedAt             DateTime
   vaBank                String?
@@ -316,6 +317,7 @@ model payments {
 
   @@index([invoiceId])
   @@index([midtransOrderId])
+  @@index([pricingPlanId])
   @@index([status])
   @@index([stripePaymentIntentId])
   @@index([userId])

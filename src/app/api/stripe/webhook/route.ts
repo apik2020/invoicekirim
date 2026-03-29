@@ -45,18 +45,57 @@ export async function POST(req: NextRequest) {
       case 'checkout.session.completed': {
         const session = event.data.object as any
         const userId = session.metadata?.userId
+        const pricingPlanId = session.metadata?.pricingPlanId
+        const targetPlanSlug = session.metadata?.targetPlanSlug
 
         if (userId) {
+          // Get existing subscription to check if upgrading from trial
+          const existingSubscription = await prisma.subscriptions.findUnique({
+            where: { userId },
+            select: {
+              status: true,
+              trialStartsAt: true,
+              trialEndsAt: true,
+            },
+          })
+
+          // Determine if we need to clear trial fields
+          const wasTrialing = existingSubscription?.status === 'TRIALING'
+          const shouldClearTrialFields = wasTrialing
+
           await prisma.subscriptions.update({
             where: { userId },
             data: {
               stripeSubscriptionId: session.subscription,
               stripePriceId: session.display_items?.[0]?.price?.id,
+              pricingPlanId: pricingPlanId, // Link to pricing plan
               stripeCurrentPeriodEnd: new Date(
                 session.subscription_details?.current_period_end * 1000
               ),
               status: 'ACTIVE',
               planType: 'PRO',
+              // Clear trial fields if upgrading from trial
+              trialStartsAt: shouldClearTrialFields ? null : existingSubscription?.trialStartsAt,
+              trialEndsAt: shouldClearTrialFields ? null : existingSubscription?.trialEndsAt,
+            },
+          })
+
+          // Log successful subscription activation
+          await prisma.activity_logs.create({
+            data: {
+              id: crypto.randomUUID(),
+              userId,
+              action: 'CREATED',
+              entityType: 'Subscription',
+              entityId: session.subscription,
+              title: 'Langganan PRO Diaktifkan',
+              description: `Pembayaran berhasil, langganan PRO diaktifkan${wasTrialing ? ' setelah trial' : ''}`,
+              metadata: {
+                checkoutSessionId: session.id,
+                pricingPlanId,
+                targetPlanSlug,
+                upgradedFromTrial: wasTrialing,
+              },
             },
           })
         }

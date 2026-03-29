@@ -1,12 +1,25 @@
 import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { checkRateLimit, apiRateLimit } from '@/lib/rate-limit'
 
 export async function POST(_req: NextRequest) {
   try {
     const session = await getUserSession()
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Rate limiting check for trial activation
+    const rateLimit = await checkRateLimit(`trial-start:${session.id}`, apiRateLimit)
+
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        {
+          error: 'Terlalu banyak percobaan. Silakan coba lagi dalam 1 jam.',
+        },
+        { status: 429 }
+      )
     }
 
     // Check if user already has a subscription
@@ -31,6 +44,23 @@ export async function POST(_req: NextRequest) {
         },
       })
 
+      // Log successful trial activation
+      await prisma.activity_logs.create({
+        data: {
+          id: crypto.randomUUID(),
+          userId: session.id,
+          action: 'CREATED',
+          entityType: 'Subscription',
+          entityId: subscription.id,
+          title: 'Trial PRO Dimulai',
+          description: 'Memulai trial PRO 7 hari gratis',
+          metadata: {
+            trialStartsAt: now.toISOString(),
+            trialEndsAt: trialEndsAt.toISOString(),
+          },
+        },
+      })
+
       return NextResponse.json({
         success: true,
         subscription,
@@ -40,6 +70,24 @@ export async function POST(_req: NextRequest) {
 
     // Check if user is currently on FREE plan
     if (existingSubscription.planType !== 'FREE' || existingSubscription.status !== 'FREE') {
+      // Log failed trial attempt (already has active subscription)
+      await prisma.activity_logs.create({
+        data: {
+          id: crypto.randomUUID(),
+          userId: session.id,
+          action: 'CREATED',
+          entityType: 'Subscription',
+          entityId: existingSubscription.id,
+          title: 'Percobaan Trial Gagal - Langganan Aktif',
+          description: `Pengguna dengan ${existingSubscription.planType}/${existingSubscription.status} mencoba mulai trial`,
+          metadata: {
+            currentPlan: existingSubscription.planType,
+            currentStatus: existingSubscription.status,
+            attempted: 'start_trial',
+          },
+        },
+      })
+
       return NextResponse.json({
         error: 'Anda sudah memiliki langganan aktif atau sedang dalam masa trial',
       }, { status: 400 })
@@ -47,6 +95,23 @@ export async function POST(_req: NextRequest) {
 
     // Check if user has already used trial before
     if (existingSubscription.trialStartsAt) {
+      // Log failed trial attempt (trial already used)
+      await prisma.activity_logs.create({
+        data: {
+          id: crypto.randomUUID(),
+          userId: session.id,
+          action: 'CREATED',
+          entityType: 'Subscription',
+          entityId: existingSubscription.id,
+          title: 'Percobaan Trial Gagal - Sudah Digunakan',
+          description: 'Pengguna mencoba mulai trial kedua kali',
+          metadata: {
+            trialStartsAt: existingSubscription.trialStartsAt.toISOString(),
+            trialEndsAt: existingSubscription.trialEndsAt?.toISOString(),
+          },
+        },
+      })
+
       return NextResponse.json({
         error: 'Anda sudah pernah menggunakan trial. Silakan upgrade ke PRO untuk melanjutkan.',
       }, { status: 400 })
@@ -77,6 +142,10 @@ export async function POST(_req: NextRequest) {
         entityId: subscription.id,
         title: 'Trial PRO Dimulai',
         description: 'Memulai trial PRO 7 hari gratis',
+        metadata: {
+          trialStartsAt: now.toISOString(),
+          trialEndsAt: trialEndsAt.toISOString(),
+        },
       },
     })
 

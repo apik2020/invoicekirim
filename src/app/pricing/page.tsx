@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useSession } from 'next-auth/react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Check, Star, Loader2, ArrowRight, CheckCircle2, X } from 'lucide-react'
+import { Check, Star, Loader2, ArrowRight, CheckCircle2, X, Info } from 'lucide-react'
 import Header from '@/components/Header'
 
 interface PlanFeature {
@@ -29,9 +29,36 @@ interface Plan {
   features: PlanFeature[]
 }
 
+interface AvailableUpgradePlan {
+  id: string
+  name: string
+  slug: string
+  price: number
+  currency: string
+  trialDays: number
+  isTrial: boolean
+  isFeatured: boolean
+  ctaText: string | null
+  canUpgrade: boolean
+  reason?: string
+}
+
+interface AvailablePlansResponse {
+  currentPlan: {
+    name: string
+    slug: string
+    status: string
+    trialDaysLeft: number
+  }
+  availableUpgrades: AvailableUpgradePlan[]
+  canStartTrial: boolean
+  trialUsed: boolean
+}
+
 function PricingContent() {
   const { data: session } = useSession()
   const [plans, setPlans] = useState<Plan[]>([])
+  const [availablePlansData, setAvailablePlansData] = useState<AvailablePlansResponse | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null)
   const searchParams = useSearchParams()
@@ -39,7 +66,10 @@ function PricingContent() {
 
   useEffect(() => {
     fetchPlans()
-  }, [])
+    if (session) {
+      fetchAvailablePlans()
+    }
+  }, [session])
 
   const fetchPlans = async () => {
     try {
@@ -52,6 +82,18 @@ function PricingContent() {
       console.error('Error fetching plans:', err)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const fetchAvailablePlans = async () => {
+    try {
+      const res = await fetch('/api/subscription/available-plans')
+      if (res.ok) {
+        const data = await res.json()
+        setAvailablePlansData(data)
+      }
+    } catch (err) {
+      console.error('Error fetching available plans:', err)
     }
   }
 
@@ -84,6 +126,46 @@ function PricingContent() {
     } finally {
       setLoadingPlan(null)
     }
+  }
+
+  const handleStartTrial = async () => {
+    if (!session) {
+      window.location.href = `/login?redirect=/pricing`
+      return
+    }
+
+    setLoadingPlan('Trial')
+
+    try {
+      const res = await fetch('/api/subscription/start-trial', {
+        method: 'POST',
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Gagal memulai trial')
+      }
+
+      window.location.href = '/dashboard?trial=started'
+    } catch (error: unknown) {
+      alert(error instanceof Error ? error.message : 'Gagal memulai trial')
+    } finally {
+      setLoadingPlan(null)
+    }
+  }
+
+  // Check if a plan is available for upgrade
+  const canUpgradeToPlan = (planSlug: string): boolean => {
+    if (!availablePlansData) return true // Show all plans if not logged in
+    const plan = availablePlansData.availableUpgrades.find(p => p.slug === planSlug)
+    return plan?.canUpgrade ?? false
+  }
+
+  // Get reason why plan is not available
+  const getPlanRestrictionReason = (planSlug: string): string | undefined => {
+    if (!availablePlansData) return undefined
+    const plan = availablePlansData.availableUpgrades.find(p => p.slug === planSlug)
+    return plan?.reason
   }
 
   const formatPrice = (price: number) => {
@@ -122,6 +204,8 @@ function PricingContent() {
     )
   }
 
+  const currentPlanSlug = availablePlansData?.currentPlan.slug
+
   return (
     <div className="min-h-screen bg-fresh-bg">
       <Header />
@@ -134,12 +218,20 @@ function PricingContent() {
               <Star className="w-4 h-4" />
               Simple, Transparent Pricing
             </div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-text-primary mb-6">
               Pilih Paket yang Tepat
             </h1>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-xl text-text-secondary max-w-2xl mx-auto">
               Mulai gratis, upgrade kapan saja bisnis Anda berkembang. Tidak ada biaya tersembunyi.
             </p>
+
+            {/* Current Plan Badge */}
+            {availablePlansData && currentPlanSlug !== 'plan-free' && (
+              <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold">
+                <Info className="w-4 h-4" />
+                Paket saat ini: {availablePlansData.currentPlan.name}
+              </div>
+            )}
 
             {/* Checkout Status Messages */}
             {checkout === 'canceled' && (
@@ -173,173 +265,246 @@ function PricingContent() {
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section className="py-20 bg-gradient-to-br from-orange-50 via-lemon-50/30 to-lime-50/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-            {plans.map((plan) => (
-              <div
-                key={plan.id}
-                className={`relative ${
-                  plan.isFeatured ? 'pricing-card-featured' : 'pricing-card'
-                }`}
-              >
-                {/* Featured Badge */}
-                {plan.isFeatured && (
-                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-10">
-                    <div className="badge-pink shadow-lg flex items-center gap-2 px-6 py-2 rounded-full">
-                      <Star className="w-4 h-4" />
-                      <span className="text-sm font-bold">POPULER</span>
-                    </div>
-                  </div>
-                )}
+          {/* Pricing Section */}
+          <section className="py-20 bg-gradient-to-br from-orange-50 via-lemon-50/30 to-lime-50/30">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+                {plans.map((plan) => {
+                  const canUpgrade = canUpgradeToPlan(plan.slug)
+                  const restrictionReason = getPlanRestrictionReason(plan.slug)
+                  const isCurrentPlan = plan.slug === currentPlanSlug
 
-                {/* Plan Header */}
-                <div className={plan.isFeatured ? 'mt-4' : ''}>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-2xl font-bold text-gray-900">{plan.name}</h3>
-                    {!plan.isFeatured && (
-                      <div className="badge-lime px-3 py-1 rounded-full text-xs font-bold">
-                        Forever Free
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-gray-600 mb-6">{plan.description || ''}</p>
-
-                  {/* Price */}
-                  <div className="mb-6">
-                    <span className={`text-4xl font-bold ${
-                      plan.isFeatured
-                        ? 'bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent'
-                        : 'text-gray-900'
-                    }`}>
-                      {formatPrice(plan.price)}
-                    </span>
-                    <span className="text-gray-600 ml-2">/bulan</span>
-                  </div>
-                </div>
-
-                {/* Features */}
-                <ul className="space-y-3 mb-8">
-                  {(plan.features || []).map((feature) => (
-                    <li key={feature.id} className="flex items-start gap-3">
-                      {feature.included ? (
-                        <div className="checkmark mt-0.5 flex-shrink-0">
-                          <Check className="w-4 h-4 text-white" />
-                        </div>
-                      ) : (
-                        <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center mt-0.5 flex-shrink-0">
-                          <X className="w-3 h-3 text-gray-400" />
+                  return (
+                    <div
+                      key={plan.id}
+                      className={`card p-6 relative ${
+                        plan.isFeatured ? 'ring-2 ring-brand-200' : ''
+                      } ${!canUpgrade && !isCurrentPlan ? 'opacity-60' : ''}`}
+                    >
+                      {/* Featured Badge */}
+                      {plan.isFeatured && (
+                        <div className="absolute -top-3 left-6">
+                          <span className="px-3 py-1 bg-brand-500 text-white text-xs font-bold rounded-full">
+                            POPULER
+                          </span>
                         </div>
                       )}
-                      <span className={`text-sm ${feature.included ? 'text-gray-700' : 'text-gray-400'}`}>
-                        {getFeatureDisplayText(feature)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
 
-                {/* CTA Button */}
-                {plan.isFeatured && plan.stripePriceId ? (
-                  <button
-                    onClick={() => handleSubscribe(plan.stripePriceId!, plan.name)}
-                    disabled={loadingPlan === plan.name}
-                    className="block w-full px-6 py-4 btn-primary text-center font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {loadingPlan === plan.name ? (
-                      <>
-                        <Loader2 className="w-5 h-5 inline mr-2 animate-spin" />
-                        Memproses...
-                      </>
-                    ) : (
-                      plan.ctaText || 'Mulai Sekarang'
-                    )}
-                  </button>
-                ) : (
-                  <Link
-                    href={session ? '/dashboard/invoices/create' : '/login'}
-                    className="block w-full px-6 py-4 btn-secondary text-center font-semibold"
-                  >
-                    {plan.ctaText || 'Mulai Gratis'}
-                    <ArrowRight className="w-4 h-4 inline ml-2" />
-                  </Link>
-                )}
+                      {/* Trial Used Badge */}
+                      {plan.slug === 'plan-pro-trial' && availablePlansData?.trialUsed && (
+                        <div className="absolute -top-3 left-6">
+                          <span className="px-3 py-1 bg-gray-500 text-white text-xs font-bold rounded-full">
+                            Trial Sudah Digunakan
+                          </span>
+                        </div>
+                      )}
 
-                {/* Trust Note for featured plan */}
-                {plan.isFeatured && (
-                  <p className="text-center text-gray-600 mt-4 text-sm">
-                    Tidak perlu kartu kredit • Batalkan kapan saja
-                  </p>
-                )}
+                      {/* Current Plan Badge */}
+                      {isCurrentPlan && (
+                        <div className="absolute -top-3 left-6">
+                          <span className="px-3 py-1 bg-blue-500 text-white text-xs font-bold rounded-full">
+                            Paket Saat Ini
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Plan Header */}
+                      <div className="mb-4">
+                        <h3 className="text-xl font-bold text-text-primary">{plan.name}</h3>
+                        <p className="text-sm text-text-secondary">{plan.description || ''}</p>
+                      </div>
+
+                      {/* Price */}
+                      <div className="mb-4">
+                        <span className="text-3xl font-bold text-text-primary">
+                          {formatPrice(plan.price)}
+                        </span>
+                        <span className="text-text-secondary text-sm"> /bulan</span>
+                      </div>
+
+                      {/* Status Tags */}
+                      <div className="flex items-center gap-4 mb-4 text-sm">
+                        {!plan.isFeatured && (
+                          <span className="px-2 py-1 bg-lime-100 text-lime-700 rounded-full text-xs font-bold">
+                            Forever Free
+                          </span>
+                        )}
+                        {plan.trialDays > 0 && !availablePlansData?.trialUsed && (
+                          <span className="text-text-muted">Trial {plan.trialDays} hari</span>
+                        )}
+                      </div>
+
+                      {/* Features */}
+                      <div className="space-y-2 mb-6 border-t border-gray-100 pt-4">
+                        {(plan.features || []).map((feature) => (
+                          <div key={feature.id} className="flex items-center gap-2 text-sm">
+                            {feature.included ? (
+                              <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
+                            ) : (
+                              <X className="w-4 h-4 text-gray-300 flex-shrink-0" />
+                            )}
+                            <span className={feature.included ? 'text-text-primary' : 'text-text-muted'}>
+                              {getFeatureDisplayText(feature)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* CTA Button */}
+                      {isCurrentPlan ? (
+                        <div className="block w-full px-6 py-4 bg-gray-100 text-gray-500 text-center font-semibold rounded-xl cursor-not-allowed">
+                          Paket Aktif
+                        </div>
+                      ) : plan.slug === 'plan-pro-trial' && plan.trialDays > 0 ? (
+                        canUpgrade ? (
+                          <button
+                            onClick={handleStartTrial}
+                            disabled={loadingPlan === 'Trial'}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl btn-primary font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {loadingPlan === 'Trial' ? (
+                              <>
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                                Memproses...
+                              </>
+                            ) : (
+                              plan.ctaText || 'Mulai Trial Gratis'
+                            )}
+                          </button>
+                        ) : (
+                          <div className="relative group">
+                            <button
+                              disabled
+                              className="block w-full px-6 py-4 bg-gray-100 text-gray-500 text-center font-semibold rounded-xl cursor-not-allowed"
+                            >
+                              {availablePlansData?.trialUsed ? 'Trial Sudah Digunakan' : 'Tidak Tersedia'}
+                            </button>
+                            {restrictionReason && (
+                              <div className="absolute bottom-full left-0 right-0 mb-2 p-3 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                {restrictionReason}
+                                <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-gray-900"></div>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      ) : plan.isFeatured && plan.stripePriceId ? (
+                        canUpgrade ? (
+                          <button
+                            onClick={() => handleSubscribe(plan.stripePriceId!, plan.name)}
+                            disabled={loadingPlan === plan.name}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl btn-primary font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {loadingPlan === plan.name ? (
+                              <>
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                                Memproses...
+                              </>
+                            ) : (
+                              plan.ctaText || 'Mulai Sekarang'
+                            )}
+                          </button>
+                        ) : (
+                          <div className="relative group">
+                            <button
+                              disabled
+                              className="block w-full px-6 py-4 bg-gray-100 text-gray-500 text-center font-semibold rounded-xl cursor-not-allowed"
+                            >
+                              {restrictionReason || 'Tidak Tersedia'}
+                            </button>
+                            {restrictionReason && (
+                              <div className="absolute bottom-full left-0 right-0 mb-2 p-3 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                {restrictionReason}
+                                <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-gray-900"></div>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      ) : (
+                        <Link
+                          href={session ? '/dashboard/invoices/create' : '/login'}
+                          className="block w-full px-6 py-4 btn-secondary text-center font-semibold"
+                        >
+                          {plan.ctaText || 'Mulai Gratis'}
+                          <ArrowRight className="w-4 h-4 inline ml-2" />
+                        </Link>
+                      )}
+
+                      {/* Trust Note for featured plan */}
+                      {plan.isFeatured && canUpgrade && (
+                        <p className="text-center text-text-secondary mt-4 text-sm">
+                          Tidak perlu kartu kredit • Batalkan kapan saja
+                        </p>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
-            ))}
-          </div>
 
-          {/* Enterprise CTA */}
-          <div className="mt-12 text-center">
-            <p className="text-gray-600">
-              Butuh paket enterprise untuk tim?{' '}
-              <a href="mailto:hello@invoicekirim.com" className="text-orange-600 font-semibold hover:text-orange-700">
-                Hubungi kami
-              </a>
-            </p>
-          </div>
-
-          {/* FAQ Section */}
-          <div className="mt-20 max-w-3xl mx-auto">
-            <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">
-              Pertanyaan yang Sering Diajukan
-            </h2>
-            <div className="space-y-6">
-              <div className="card p-6">
-                <h3 className="font-bold text-gray-900 mb-2">Apakah ada masa percobaan gratis?</h3>
-                <p className="text-gray-600">
-                  Ya! Paket Pro memiliki masa percobaan gratis 7 hari. Anda tidak perlu memasukkan kartu kredit saat mendaftar.
+              {/* Enterprise CTA */}
+              <div className="mt-12 text-center">
+                <p className="text-text-secondary">
+                  Butuh paket enterprise untuk tim?{' '}
+                  <a href="mailto:hello@invoicekirim.com" className="text-brand-600 font-semibold hover:text-brand-700">
+                    Hubungi kami
+                  </a>
                 </p>
               </div>
-              <div className="card p-6">
-                <h3 className="font-bold text-gray-900 mb-2">Bagaimana cara membatalkan langganan?</h3>
-                <p className="text-gray-600">
-                  Anda dapat membatalkan langganan kapan saja dari dashboard. Tidak ada biaya penalti atau tersembunyi.
-                </p>
-              </div>
-              <div className="card p-6">
-                <h3 className="font-bold text-gray-900 mb-2">Apa yang terjadi setelah masa percobaan berakhir?</h3>
-                <p className="text-gray-600">
-                  Setelah 7 hari, Anda akan dialihkan ke paket Gratis secara otomatis. Data invoice Anda tetap aman.
-                </p>
-              </div>
-              <div className="card p-6">
-                <h3 className="font-bold text-gray-900 mb-2">Apakah saya bisa mengubah paket kapan saja?</h3>
-                <p className="text-gray-600">
-                  Ya, Anda dapat upgrade atau downgrade kapan saja dari dashboard billing.
-                </p>
+
+              {/* FAQ Section */}
+              <div className="mt-20 max-w-3xl mx-auto">
+                <h2 className="text-3xl font-bold text-text-primary text-center mb-12">
+                  Pertanyaan yang Sering Diajukan
+                </h2>
+                <div className="space-y-6">
+                  <div className="card p-6">
+                    <h3 className="font-bold text-text-primary mb-2">Apakah ada masa percobaan gratis?</h3>
+                    <p className="text-text-secondary">
+                      Ya! Paket Pro memiliki masa percobaan gratis 7 hari. Trial hanya dapat digunakan satu kali per akun.
+                    </p>
+                  </div>
+                  <div className="card p-6">
+                    <h3 className="font-bold text-text-primary mb-2">Bagaimana cara membatalkan langganan?</h3>
+                    <p className="text-text-secondary">
+                      Anda dapat membatalkan langganan kapan saja dari dashboard. Tidak ada biaya penalti atau tersembunyi.
+                    </p>
+                  </div>
+                  <div className="card p-6">
+                    <h3 className="font-bold text-text-primary mb-2">Apa yang terjadi setelah masa percobaan berakhir?</h3>
+                    <p className="text-text-secondary">
+                      Setelah 7 hari, Anda akan dialihkan ke paket Gratis secara otomatis. Data invoice Anda tetap aman.
+                    </p>
+                  </div>
+                  <div className="card p-6">
+                    <h3 className="font-bold text-text-primary mb-2">Apakah saya bisa mengubah paket kapan saja?</h3>
+                    <p className="text-text-secondary">
+                      Ya, Anda dapat upgrade kapan saja dari dashboard billing. Upgrade hanya tersedia dari paket yang lebih rendah ke lebih tinggi.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
+          </section>
 
-      {/* Final CTA */}
-      <section className="py-20 bg-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
-            Siap Membuat Invoice Profesional?
-          </h2>
-          <p className="text-xl text-gray-600 mb-8">
-            Bergabung dengan ribuan freelancer Indonesia yang sudah menggunakan InvoiceKirim
-          </p>
-          <Link
-            href={session ? '/dashboard/invoices/create' : '/login'}
-            className="inline-flex items-center gap-2 px-8 py-4 btn-primary font-semibold text-lg"
-          >
-            {session ? 'Buat Invoice Sekarang' : 'Mulai Gratis'}
-            <ArrowRight className="w-5 h-5" />
-          </Link>
+          {/* Final CTA */}
+          <section className="py-20 bg-white">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+              <h2 className="text-3xl md:text-4xl font-bold text-text-primary mb-6">
+                Siap Membuat Invoice Profesional?
+              </h2>
+              <p className="text-xl text-text-secondary mb-8">
+                Bergabung dengan ribuan freelancer Indonesia yang sudah menggunakan InvoiceKirim
+              </p>
+              <Link
+                href={session ? '/dashboard/invoices/create' : '/login'}
+                className="inline-flex items-center gap-2 px-8 py-4 btn-primary font-semibold text-lg"
+              >
+                {session ? 'Buat Invoice Sekarang' : 'Mulai Gratis'}
+                <ArrowRight className="w-5 h-5" />
+              </Link>
+            </div>
+          </section>
         </div>
-      </section>
-    </div>
-  )
+      )
 }
 
 export default function PricingPage() {

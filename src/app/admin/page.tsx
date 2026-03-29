@@ -279,11 +279,11 @@ export default function AdminDashboard() {
         <div className="card p-5">
           <h2 className="text-lg font-bold text-text-primary mb-5">Pendapatan per Bulan</h2>
           <div className="space-y-3">
-            {data?.revenueByMonth?.slice(0, 6).map((item) => {
+            {data?.revenueByMonth?.slice(0, 6).map((item, index) => {
               const revenue = Number(item.revenue)
               const month = new Date(item.month as string).toLocaleDateString('id-ID', { month: 'short', year: '2-digit' })
               return (
-                <div key={item.month as string}>
+                <div key={`revenue-${item.month as string}-${index}`}>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-text-secondary">{month}</span>
                     <div className="flex items-center gap-3">
@@ -307,11 +307,11 @@ export default function AdminDashboard() {
         <div className="card p-5">
           <h2 className="text-lg font-bold text-text-primary mb-5">Pertumbuhan User</h2>
           <div className="space-y-3">
-            {data?.usersByMonth?.slice(0, 6).map((item) => {
+            {data?.usersByMonth?.slice(0, 6).map((item, index) => {
               const count = Number(item.count)
               const month = new Date(item.month as string).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })
               return (
-                <div key={item.month as string}>
+                <div key={`users-${item.month as string}-${index}`}>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-text-secondary">{month}</span>
                     <span className="font-bold text-text-primary text-sm">{count} user baru</span>

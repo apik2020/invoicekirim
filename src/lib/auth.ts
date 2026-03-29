@@ -72,7 +72,20 @@ async function createOrGetOAuthUser(email: string, name?: string | null, image?:
 
 export const authOptions: NextAuthOptions = {
   providers: [
-    // Credentials Provider (Email/Password) - only provider for now
+    // Google OAuth Provider
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+      authorization: {
+        params: {
+          prompt: 'consent',
+          access_type: 'offline',
+          response_type: 'code',
+        },
+      },
+    }),
+
+    // Credentials Provider (Email/Password)
     CredentialsProvider({
       name: 'credentials',
       credentials: {
@@ -173,6 +186,35 @@ export const authOptions: NextAuthOptions = {
     signIn: '/login',
   },
   callbacks: {
+    async signIn({ user, account, profile }) {
+      try {
+        if (account?.provider === 'google' && user.email) {
+          log('Google OAuth sign-in:', user.email)
+
+          // Check if user is admin
+          const isAdmin = await isAdminEmail(user.email)
+
+          // Create or get user with subscription
+          const dbUser = await createOrGetOAuthUser(
+            user.email,
+            user.name,
+            user.image
+          )
+
+          // Attach admin status and database user ID to user object
+          user.id = dbUser.id
+          user.isAdmin = isAdmin
+
+          log('Google OAuth successful, user ID:', dbUser.id, 'isAdmin:', isAdmin)
+          return true
+        }
+        return true
+      } catch (error) {
+        logError('SignIn callback error:', error)
+        return false
+      }
+    },
+
     async jwt({ token, user }) {
       try {
         if (user) {
@@ -180,7 +222,7 @@ export const authOptions: NextAuthOptions = {
           token.email = user.email ?? undefined
           token.name = user.name ?? undefined
           token.image = user.image ?? undefined
-          token.isAdmin = false
+          token.isAdmin = user.isAdmin ?? false
         }
         return token
       } catch (error) {

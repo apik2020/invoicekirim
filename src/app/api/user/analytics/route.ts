@@ -1,12 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
+import { checkFeatureAccess } from '@/lib/feature-access'
 
 export async function GET(req: NextRequest) {
   try {
     const session = await getUserSession()
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // 🔒 FEATURE ACCESS CHECK: Analytics View
+    const analyticsAccess = await checkFeatureAccess(session.id, 'ANALYTICS_VIEW')
+
+    if (!analyticsAccess.allowed) {
+      return NextResponse.json(
+        {
+          error: 'FEATURE_LOCKED',
+          message: getAnalyticsLockedMessage(analyticsAccess.reason),
+          upgradeUrl: analyticsAccess.upgradeUrl || '/checkout',
+          planRequired: analyticsAccess.planName,
+        },
+        { status: 403 }
+      )
     }
 
     const searchParams = req.nextUrl.searchParams
@@ -116,5 +132,21 @@ export async function GET(req: NextRequest) {
       { error: 'Gagal mengambil analytics' },
       { status: 500 }
     )
+  }
+}
+
+/**
+ * Get user-friendly message for locked analytics
+ */
+function getAnalyticsLockedMessage(reason?: string): string {
+  switch (reason) {
+    case 'trial_expired':
+      return 'Masa trial Anda telah berakhir. Upgrade ke Pro untuk melanjutkan akses analitik.'
+    case 'feature_locked':
+      return 'Analitik bisnis mendalam hanya tersedia untuk pengguna Pro. Upgrade sekarang untuk melihat performa bisnis Anda.'
+    case 'plan_limit':
+      return 'Paket Anda saat ini tidak termasuk analitik. Upgrade ke Pro untuk akses fitur analitik.'
+    default:
+      return 'Analitik tersedia dalam paket Pro. Upgrade untuk melihat statistik bisnis Anda.'
   }
 }

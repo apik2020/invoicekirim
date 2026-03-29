@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAppSession } from '@/hooks/useAppSession'
 import { DashboardLayout } from '@/components/DashboardLayout'
+import { FeatureGate } from '@/components/FeatureGate'
+import Link from 'next/link'
 import {
   Palette,
   Check,
@@ -16,6 +18,7 @@ import {
   User,
   Server,
   Lock,
+  Crown,
   AlertCircle,
   Upload,
   X,
@@ -137,6 +140,8 @@ export default function BrandingSettingsPage() {
     const file = e.target.files?.[0]
     if (!file) return
 
+    console.log('[Logo Upload] File selected:', file.name, file.type, file.size)
+
     // Validate file type
     const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp']
     if (!allowedTypes.includes(file.type)) {
@@ -157,12 +162,15 @@ export default function BrandingSettingsPage() {
       const formData = new FormData()
       formData.append('file', file)
 
+      console.log('[Logo Upload] Uploading to /api/upload...')
       const res = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
       })
 
       const data = await res.json()
+
+      console.log('[Logo Upload] Response:', res.status, data)
 
       if (res.ok && data.url) {
         setBranding(prev => ({ ...prev, logoUrl: data.url }))
@@ -171,6 +179,7 @@ export default function BrandingSettingsPage() {
         setMessage({ type: 'error', text: data.error || 'Gagal mengupload logo' })
       }
     } catch (error) {
+      console.error('[Logo Upload] Error:', error)
       setMessage({ type: 'error', text: 'Terjadi kesalahan saat mengupload logo' })
     } finally {
       setUploadingLogo(false)
@@ -179,6 +188,11 @@ export default function BrandingSettingsPage() {
         fileInputRef.current.value = ''
       }
     }
+  }
+
+  const triggerFileInput = () => {
+    console.log('[Logo Upload] Trigger clicked, ref:', fileInputRef.current)
+    fileInputRef.current?.click()
   }
 
   const handleRemoveLogo = () => {
@@ -192,24 +206,39 @@ export default function BrandingSettingsPage() {
     setMessage(null)
 
     try {
+      const payload = {
+        logoUrl: branding.logoUrl || null,
+        primaryColor: branding.primaryColor,
+        showLogo: branding.showLogo,
+      }
+      console.log('[Branding Submit] Sending payload:', payload)
+
       const res = await fetch('/api/branding', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          logoUrl: branding.logoUrl || null,
-          primaryColor: branding.primaryColor,
-          showLogo: branding.showLogo,
-        }),
+        body: JSON.stringify(payload),
       })
 
       const data = await res.json()
 
+      console.log('[Branding Submit] Response status:', res.status)
+      console.log('[Branding Submit] Response data:', JSON.stringify(data, null, 2))
+
+      if (!res.ok) {
+        const errorMessage = data.error || data.details?.formErrors?.[0] || 'Gagal menyimpan pengaturan tampilan'
+        console.error('[Branding Submit] Error:', errorMessage)
+        setMessage({
+          type: 'error',
+          text: typeof errorMessage === 'string' ? errorMessage : JSON.stringify(errorMessage)
+        })
+        return
+      }
+
       if (res.ok) {
         setMessage({ type: 'success', text: 'Pengaturan tampilan berhasil disimpan!' })
-      } else {
-        setMessage({ type: 'error', text: data.error || 'Gagal menyimpan pengaturan tampilan' })
       }
     } catch (error) {
+      console.error('[Branding Submit] Exception:', error)
       setMessage({ type: 'error', text: 'Terjadi kesalahan' })
     } finally {
       setSaving(false)
@@ -377,7 +406,38 @@ export default function BrandingSettingsPage() {
         <>
           {/* Tab 1: Info Perusahaan */}
           {activeTab === 'company' && (
-            <div className="card p-8">
+            <FeatureGate
+              featureKey="branding"
+              fallback={
+                <div className="card p-12 text-center">
+                  <div className="w-20 h-20 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                    <Building2 className="w-10 h-10 text-white" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-brand-500 mb-3">
+                    Informasi Perusahaan
+                  </h2>
+                  <p className="text-text-secondary mb-6 max-w-md mx-auto">
+                    Simpan informasi perusahaan profesional (nama, logo, alamat) yang akan tampil di invoice Anda. Fitur ini hanya tersedia untuk pengguna Pro.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    <Link
+                      href="/checkout"
+                      className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                    >
+                      <Crown className="w-5 h-5" />
+                      Upgrade ke Pro Sekarang
+                    </Link>
+                    <Link
+                      href="/pricing"
+                      className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors"
+                    >
+                      Pelajari Lebih
+                    </Link>
+                  </div>
+                </div>
+              }
+            >
+              <div className="card p-8">
               <div className="mb-8">
                 <h2 className="text-xl font-bold text-brand-500 mb-2">
                   Informasi Perusahaan
@@ -505,11 +565,43 @@ export default function BrandingSettingsPage() {
                 </div>
               </form>
             </div>
+            </FeatureGate>
           )}
 
           {/* Tab 2: Tampilan */}
           {activeTab === 'appearance' && (
-            <div className="grid lg:grid-cols-2 gap-8">
+            <FeatureGate featureKey="branding"
+              fallback={
+                <div className="card p-12 text-center">
+                  <div className="w-20 h-20 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                    <Lock className="w-10 h-10 text-white" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-brand-500 mb-3">
+                    Kustomisasi Tampilan
+                  </h2>
+                  <p className="text-text-secondary mb-6 max-w-md mx-auto">
+                    Fitur kustomisasi logo dan warna invoice hanya tersedia untuk pengguna Pro.
+                    Upgrade untuk branding profesional pada invoice Anda.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    <Link
+                      href="/checkout"
+                      className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                    >
+                      <Crown className="w-5 h-5" />
+                      Upgrade ke Pro Sekarang
+                    </Link>
+                    <Link
+                      href="/pricing"
+                      className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors"
+                    >
+                      Pelajari Lebih
+                    </Link>
+                  </div>
+                </div>
+              }
+            >
+              <div className="grid lg:grid-cols-2 gap-8">
               {/* Form Section */}
               <div className="card p-8">
                 <div className="mb-8">
@@ -546,7 +638,7 @@ export default function BrandingSettingsPage() {
                     ) : (
                       <div className="mt-3 mb-4">
                         <div
-                          onClick={() => fileInputRef.current?.click()}
+                          onClick={triggerFileInput}
                           className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-brand-500 hover:bg-brand-50 transition-colors"
                         >
                           <Upload className="w-8 h-8 text-gray-400" />
@@ -567,7 +659,7 @@ export default function BrandingSettingsPage() {
                     {/* Upload Button */}
                     <button
                       type="button"
-                      onClick={() => fileInputRef.current?.click()}
+                      onClick={triggerFileInput}
                       disabled={uploadingLogo}
                       className="flex items-center gap-2 px-4 py-2.5 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
@@ -640,14 +732,43 @@ export default function BrandingSettingsPage() {
                     <label className="input-label">Preset Warna</label>
                     <div className="flex flex-wrap gap-2">
                       {[
+                        // Original Colors
                         { color: '#F97316', name: 'Orange' },
                         { color: '#3B82F6', name: 'Blue' },
                         { color: '#10B981', name: 'Green' },
                         { color: '#8B5CF6', name: 'Purple' },
                         { color: '#EC4899', name: 'Pink' },
                         { color: '#EF4444', name: 'Red' },
-                        { color: '#6366F1', name: 'Indigo' },
                         { color: '#14B8A6', name: 'Teal' },
+                        // Additional Bright Colors
+                        { color: '#F59E0B', name: 'Amber' },
+                        { color: '#EAB308', name: 'Yellow' },
+                        { color: '#84CC16', name: 'Lime' },
+                        { color: '#06B6D4', name: 'Cyan' },
+                        { color: '#0EA5E9', name: 'Sky' },
+                        { color: '#6366F1', name: 'Indigo' },
+                        { color: '#A855F7', name: 'Fuchsia' },
+                        { color: '#F43F5E', name: 'Rose' },
+                        // Darker Shades
+                        { color: '#DC2626', name: 'Dark Red' },
+                        { color: '#EA580C', name: 'Dark Orange' },
+                        { color: '#D97706', name: 'Dark Amber' },
+                        { color: '#059669', name: 'Dark Green' },
+                        { color: '#0891B2', name: 'Dark Cyan' },
+                        { color: '#2563EB', name: 'Dark Blue' },
+                        { color: '#7C3AED', name: 'Dark Purple' },
+                        { color: '#BE185D', name: 'Dark Pink' },
+                        // Neutral Colors
+                        { color: '#1F2937', name: 'Charcoal' },
+                        { color: '#374151', name: 'Gray 700' },
+                        { color: '#6B7280', name: 'Gray 500' },
+                        { color: '#9CA3AF', name: 'Gray 400' },
+                        // Business Professional
+                        { color: '#1E40AF', name: 'Navy' },
+                        { color: '#065F46', name: 'Forest' },
+                        { color: '#991B1B', name: 'Burgundy' },
+                        { color: '#7C2D12', name: 'Sienna' },
+                        { color: '#4338CA', name: 'Royal Blue' },
                       ].map((preset) => (
                         <button
                           key={preset.color}
@@ -663,6 +784,9 @@ export default function BrandingSettingsPage() {
                         />
                       ))}
                     </div>
+                    <p className="text-xs text-text-muted mt-2">
+                      Klik warna untuk menerapkan tema brand Anda
+                    </p>
                   </div>
 
                   {/* Submit Button */}
@@ -804,11 +928,43 @@ export default function BrandingSettingsPage() {
                 </div>
               </div>
             </div>
+            </FeatureGate>
           )}
 
           {/* Tab 3: Email */}
           {activeTab === 'email' && (
-            <div className="card p-8">
+            <FeatureGate
+              featureKey="EMAIL_SEND"
+              fallback={
+                <div className="card p-12 text-center">
+                  <div className="w-20 h-20 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                    <Mail className="w-10 h-10 text-white" />
+                  </div>
+                  <h2 className="text-2xl font-bold text-brand-500 mb-3">
+                    Pengaturan Email SMTP
+                  </h2>
+                  <p className="text-text-secondary mb-6 max-w-md mx-auto">
+                    Konfigurasi SMTP untuk mengirim invoice langsung ke email klien. Fitur ini hanya tersedia untuk pengguna Pro.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                    <Link
+                      href="/checkout"
+                      className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                    >
+                      <Crown className="w-5 h-5" />
+                      Upgrade ke Pro Sekarang
+                    </Link>
+                    <Link
+                      href="/pricing"
+                      className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors"
+                    >
+                      Pelajari Lebih
+                    </Link>
+                  </div>
+                </div>
+              }
+            >
+              <div className="card p-8">
               <div className="mb-8">
                 <h2 className="text-xl font-bold text-brand-500 mb-2">
                   Pengaturan Email
@@ -964,6 +1120,7 @@ export default function BrandingSettingsPage() {
                 </div>
               </form>
             </div>
+            </FeatureGate>
           )}
         </>
       )}

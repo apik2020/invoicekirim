@@ -57,7 +57,6 @@ export function FeatureGate({
       reason={reason}
       limit={limit}
       usage={usage}
-      onUpgrade={showUpgradeModal}
     />
   )
 }

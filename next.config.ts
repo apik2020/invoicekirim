@@ -169,6 +169,5 @@ const sentryConfig = {
 // Export with Sentry wrapper if DSN is configured
 const SENTRY_DSN = process.env.NEXT_PUBLIC_SENTRY_DSN
 
-export default SENTRY_DSN
-  ? withSentryConfig(nextConfig, sentryConfig)
-  : nextConfig
+// Temporarily disable Sentry wrapper for development to fix Turbopack issue
+export default nextConfig

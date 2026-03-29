@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import {
   LayoutDashboard,
@@ -16,8 +16,6 @@ import {
   ChevronLeft,
   ChevronRight,
   HelpCircle,
-  Bell,
-  Users,
   Palette,
   Shield,
   Menu,
@@ -46,8 +44,6 @@ const settingsNavItems: NavItem[] = [
   { name: 'Profil', href: '/dashboard/settings', icon: Settings },
   { name: 'Branding', href: '/dashboard/settings/branding', icon: Palette },
   { name: 'Billing', href: '/dashboard/billing', icon: CreditCard },
-  { name: 'Notifikasi', href: '/dashboard/settings/notifications', icon: Bell },
-  { name: 'Tim', href: '/dashboard/teams', icon: Users },
   { name: 'Keamanan', href: '/dashboard/settings/security', icon: Shield },
 ]
 
@@ -65,7 +61,6 @@ export function DashboardSidebar({
   onMobileOpenChange,
 }: DashboardSidebarProps) {
   const pathname = usePathname()
-  const router = useRouter()
   const [isCollapsed, setIsCollapsed] = useState(collapsed)
 
   useEffect(() => {

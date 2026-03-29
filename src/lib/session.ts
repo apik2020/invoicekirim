@@ -1,4 +1,7 @@
 import { cookies } from 'next/headers'
+import { getServerSession } from 'next-auth'
+import { authOptions } from './auth'
+import { prisma } from './prisma'
 
 export interface UserSession {
   id: string
@@ -9,11 +12,38 @@ export interface UserSession {
 }
 
 /**
- * Get the current user session from the user_session cookie
- * Use this instead of getServerSession(authOptions) for API routes
+ * Get the current user session from either NextAuth (OAuth) or custom user_session cookie
+ * This provides a unified session interface for all API routes
  */
 export async function getUserSession(): Promise<UserSession | null> {
   try {
+    // First, try NextAuth session (for Google OAuth, etc.)
+    const nextAuthSession = await getServerSession(authOptions)
+
+    if (nextAuthSession?.user?.id) {
+      // Get fresh user data from database
+      const dbUser = await prisma.users.findUnique({
+        where: { id: nextAuthSession.user.id },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          image: true,
+        }
+      })
+
+      if (dbUser) {
+        return {
+          id: dbUser.id,
+          email: dbUser.email,
+          name: dbUser.name || '',
+          image: dbUser.image,
+          isAdmin: nextAuthSession.user.isAdmin || false
+        }
+      }
+    }
+
+    // Fallback: Check custom user_session cookie (for credentials login)
     const cookieStore = await cookies()
     const userSessionCookie = cookieStore.get('user_session')
 

@@ -5,7 +5,7 @@ import { invoiceSchema } from '@/lib/validations/invoice'
 import { generateInvoiceNumber } from '@/lib/utils'
 import { checkRateLimit, apiRateLimit } from '@/lib/rate-limit'
 import { logInvoiceCreated } from '@/lib/activity-log'
-import { canUserCreateInvoice } from '@/lib/subscription-limits'
+import { checkFeatureAccess, FEATURE_KEYS } from '@/lib/feature-access'
 
 // Helper function to calculate discount
 function calculateDiscount(
@@ -106,12 +106,20 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Check subscription limits (dynamic from pricing_plans)
-    const invoiceCheck = await canUserCreateInvoice(session.id)
+    // 🔒 FEATURE ACCESS CHECK: Invoice Creation
+    const invoiceAccess = await checkFeatureAccess(session.id, FEATURE_KEYS.INVOICE_CREATE)
 
-    if (!invoiceCheck.allowed) {
+    if (!invoiceAccess.allowed) {
+      const message = getInvoiceLimitMessage(invoiceAccess.reason, invoiceAccess.limit, invoiceAccess.currentUsage)
       return NextResponse.json(
-        { error: invoiceCheck.message || 'Batas invoice tercapai' },
+        {
+          error: 'FEATURE_LOCKED',
+          message,
+          upgradeUrl: invoiceAccess.upgradeUrl || '/checkout',
+          planRequired: invoiceAccess.planName,
+          currentUsage: invoiceAccess.currentUsage,
+          limit: invoiceAccess.limit,
+        },
         { status: 403 }
       )
     }
@@ -226,5 +234,28 @@ export async function POST(req: NextRequest) {
       { error: 'Gagal membuat invoice' },
       { status: 500 }
     )
+  }
+}
+
+/**
+ * Get user-friendly message for invoice limit errors
+ */
+function getInvoiceLimitMessage(
+  reason?: string,
+  limit?: number | null,
+  currentUsage?: number
+): string {
+  switch (reason) {
+    case 'trial_expired':
+      return 'Masa trial Anda telah berakhir. Upgrade ke Pro untuk membuat invoice tanpa batas.'
+    case 'usage_exceeded':
+      if (limit !== null && currentUsage !== undefined) {
+        return `Batas invoice bulanan Anda telah tercapai (${currentUsage}/${limit}). Upgrade ke Pro untuk membuat invoice tanpa batas.`
+      }
+      return 'Batas invoice bulanan Anda telah tercapai. Upgrade ke Pro untuk melanjutkan.'
+    case 'feature_locked':
+      return 'Membuat invoice dalam jumlah terbatas hanya tersedia untuk pengguna Pro. Upgrade sekarang.'
+    default:
+      return 'Anda telah mencapai batas pembuatan invoice. Upgrade ke Pro untuk melanjutkan.'
   }
 }

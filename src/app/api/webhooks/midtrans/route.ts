@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { verifyNotificationSignature } from '@/lib/midtrans'
 import { createReceipt } from '@/lib/receipt-generator'
 import { logger } from '@/lib/logger'
+import { PlanType, SubscriptionStatus } from '@prisma/client'
 
 export async function POST(req: NextRequest) {
   try {
@@ -60,21 +61,74 @@ export async function POST(req: NextRequest) {
           },
         })
 
-        // Update or create subscription
+        // Get pricing plan info if available
+        const pricingPlan = payment.pricingPlanId
+          ? await prisma.pricing_plans.findUnique({
+              where: { id: payment.pricingPlanId },
+              select: {
+                id: true,
+                slug: true,
+                name: true,
+                price: true,
+                trialDays: true,
+              },
+            })
+          : null
+
+        // Get existing subscription to check if upgrading from trial
         const existingSubscription = await prisma.subscriptions.findFirst({
           where: { userId: payment.userId },
+          select: {
+            id: true,
+            status: true,
+            trialStartsAt: true,
+            trialEndsAt: true,
+            pricingPlanId: true,
+          },
         })
 
-        const periodEndDate = new Date()
-        periodEndDate.setMonth(periodEndDate.getMonth() + 1)
+        // Determine if we need to clear trial fields
+        const wasTrialing = existingSubscription?.status === 'TRIALING'
+        const shouldClearTrialFields = wasTrialing
 
+        // Calculate period end date (1 month from now for paid plans)
+        let periodEndDate: Date | null = null
+        let planType: PlanType = 'PRO'
+        let subscriptionStatus: SubscriptionStatus = 'ACTIVE'
+
+        if (pricingPlan?.slug === 'plan-pro-trial') {
+          // Trial plan - set trial dates
+          const trialStartsAt = new Date()
+          const trialEndsAt = new Date(trialStartsAt)
+          trialEndsAt.setDate(trialEndsAt.getDate() + (pricingPlan.trialDays || 7))
+
+          periodEndDate = trialEndsAt
+          planType = 'PRO'
+          subscriptionStatus = 'TRIALING'
+        } else {
+          // Paid plan - set period end to 1 month from now
+          periodEndDate = new Date()
+          periodEndDate.setMonth(periodEndDate.getMonth() + 1)
+          planType = 'PRO'
+          subscriptionStatus = 'ACTIVE'
+        }
+
+        // Update or create subscription
         if (existingSubscription) {
           await prisma.subscriptions.update({
             where: { id: existingSubscription.id },
             data: {
-              planType: 'PRO',
-              status: 'ACTIVE',
+              planType,
+              status: subscriptionStatus,
+              pricingPlanId: pricingPlan?.id || existingSubscription.pricingPlanId,
               stripeCurrentPeriodEnd: periodEndDate,
+              // Set trial dates for trial plan
+              trialStartsAt: pricingPlan?.slug === 'plan-pro-trial'
+                ? new Date()
+                : (shouldClearTrialFields ? null : existingSubscription.trialStartsAt),
+              trialEndsAt: pricingPlan?.slug === 'plan-pro-trial'
+                ? periodEndDate
+                : (shouldClearTrialFields ? null : existingSubscription.trialEndsAt),
             },
           })
         } else {
@@ -82,9 +136,12 @@ export async function POST(req: NextRequest) {
             data: {
               id: crypto.randomUUID(),
               userId: payment.userId,
-              planType: 'PRO',
-              status: 'ACTIVE',
+              planType,
+              status: subscriptionStatus,
+              pricingPlanId: pricingPlan?.id || null,
               stripeCurrentPeriodEnd: periodEndDate,
+              trialStartsAt: pricingPlan?.slug === 'plan-pro-trial' ? new Date() : null,
+              trialEndsAt: pricingPlan?.slug === 'plan-pro-trial' ? periodEndDate : null,
               updatedAt: new Date(),
             },
           })
@@ -105,8 +162,13 @@ export async function POST(req: NextRequest) {
             action: 'UPDATED',
             entityType: 'Subscription',
             entityId: payment.userId,
-            title: 'Berlangganan Pro',
-            description: `Pembayaran berhasil via ${payment_type}`,
+            title: pricingPlan?.slug === 'plan-pro-trial' ? 'Trial PRO Dimulai' : 'Berlangganan Pro',
+            description: `Pembayaran berhasil via ${payment_type}${wasTrialing ? ' setelah trial' : ''}`,
+            metadata: {
+              pricingPlanId: pricingPlan?.id,
+              pricingPlanSlug: pricingPlan?.slug,
+              upgradedFromTrial: wasTrialing,
+            },
           },
         })
 

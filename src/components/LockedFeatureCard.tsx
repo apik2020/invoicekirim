@@ -10,7 +10,6 @@ interface LockedFeatureCardProps {
   reason?: 'plan_limit' | 'feature_locked' | 'usage_exceeded' | 'trial_expired' | 'no_subscription'
   limit?: number | null
   usage?: number
-  onUpgrade?: () => void
 }
 
 // Feature descriptions
@@ -60,7 +59,6 @@ export function LockedFeatureCard({
   reason,
   limit,
   usage,
-  onUpgrade,
 }: LockedFeatureCardProps) {
   const featureInfo = FEATURE_INFO[featureKey] || {
     name: featureName || featureKey,
@@ -107,7 +105,7 @@ export function LockedFeatureCard({
       )}
 
       <Link
-        href="/dashboard/billing"
+        href="/checkout"
         className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-500 text-white font-semibold rounded-xl hover:bg-brand-600 transition-colors"
       >
         <Crown className="w-4 h-4" />

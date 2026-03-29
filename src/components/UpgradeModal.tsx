@@ -52,7 +52,7 @@ export function UpgradeModal({ isOpen, onClose, featureKey, reason }: UpgradeMod
 
   useEffect(() => {
     // Register callback for hook to trigger modal
-    setUpgradeModalCallback((feature) => {
+    setUpgradeModalCallback(() => {
       setShowModal(true)
     })
 
@@ -166,12 +166,12 @@ export function UpgradeModal({ isOpen, onClose, featureKey, reason }: UpgradeMod
             {/* Actions */}
             <div className="space-y-3">
               <Link
-                href="/dashboard/billing"
+                href="/checkout"
                 onClick={onClose}
                 className="flex items-center justify-center gap-2 w-full py-3 bg-brand-500 hover:bg-brand-600 text-white font-semibold rounded-xl transition-colors"
               >
                 <Sparkles className="w-4 h-4" />
-                Lihat Paket Pro
+                Upgrade ke Pro Sekarang
               </Link>
               <button
                 onClick={onClose}

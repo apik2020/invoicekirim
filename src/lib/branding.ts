@@ -68,19 +68,27 @@ export async function updateBranding(
   teamId: string,
   data: Partial<Omit<BrandingSettings, 'id' | 'teamId'>>
 ): Promise<BrandingSettings> {
-  const branding = await prisma.branding.upsert({
-    where: { teamId },
-    update: { ...data, updatedAt: new Date() },
-    create: {
-      id: crypto.randomUUID(),
-      teamId,
-      ...DEFAULT_BRANDING,
-      ...data,
-      updatedAt: new Date(),
-    },
-  })
+  console.log('[Branding] Updating for teamId:', teamId, 'with data:', data)
 
-  return branding
+  try {
+    const branding = await prisma.branding.upsert({
+      where: { teamId },
+      update: { ...data, updatedAt: new Date() },
+      create: {
+        id: crypto.randomUUID(),
+        teamId,
+        ...DEFAULT_BRANDING,
+        ...data,
+        updatedAt: new Date(),
+      },
+    })
+
+    console.log('[Branding] Update successful:', branding)
+    return branding
+  } catch (error) {
+    console.error('[Branding] Update failed:', error)
+    throw error
+  }
 }
 
 /**

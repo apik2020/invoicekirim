@@ -1,17 +1,24 @@
 import { prisma } from '@/lib/prisma'
 
 // Feature keys as constants for type safety
+// These map the code's constant names to database feature keys
 export const FEATURE_KEYS = {
-  INVOICE_CREATE: 'INVOICE_CREATE',
+  INVOICE_CREATE: 'invoice_limit',
+  INVOICE_LIMIT: 'invoice_limit',
+  TEMPLATES: 'templates',
   INVOICE_TEMPLATE: 'INVOICE_TEMPLATE',
-  CUSTOM_BRANDING: 'CUSTOM_BRANDING',
-  EXPORT_PDF: 'EXPORT_PDF',
+  CLOUD_STORAGE: 'cloud_storage',
+  PDF_EXPORT: 'pdf_export',
+  EXPORT_PDF: 'pdf_export', // Alias for compatibility
+  WHATSAPP: 'whatsapp',
+  BRANDING: 'branding',
+  CUSTOM_BRANDING: 'branding', // Maps to branding for now
   EMAIL_SEND: 'EMAIL_SEND',
   CLIENT_MANAGEMENT: 'CLIENT_MANAGEMENT',
   ANALYTICS_VIEW: 'ANALYTICS_VIEW',
   TEAM_MEMBERS: 'TEAM_MEMBERS',
-  PRIORITY_SUPPORT: 'PRIORITY_SUPPORT',
   API_ACCESS: 'API_ACCESS',
+  PRIORITY_SUPPORT: 'priority_support',
 } as const
 
 export type FeatureKey = (typeof FEATURE_KEYS)[keyof typeof FEATURE_KEYS]
@@ -114,32 +121,31 @@ async function getFeatureUsage(userId: string, featureKey: string): Promise<numb
       })
 
     case FEATURE_KEYS.EXPORT_PDF:
-      // Track via activity_logs for now
-      // In production, you'd want a dedicated usage tracking table
-      const exportLogs = await prisma.activity_logs.findMany({
+      // Track PDF exports via activity_logs
+      // Look for logs where entityType is 'feature_usage' and entityId is 'pdf_export'
+      const exportLogs = await prisma.activity_logs.count({
         where: {
           userId,
-          action: 'UPDATED', // Using UPDATED for export action
-          entityType: 'invoice',
-          metadata: {
-            path: ['$.*', 'action'],
-            array_contains: 'export_pdf',
-          },
+          entityType: 'feature_usage',
+          entityId: 'pdf_export',
+          action: 'CREATED',
           createdAt: { gte: startOfMonth },
         },
       })
-      return exportLogs.length
+      return exportLogs
 
-    case FEATURE_KEYS.EMAIL_SEND:
-      const emailLogs = await prisma.activity_logs.findMany({
+    case 'EMAIL_SEND':
+      // Track email sends via activity_logs
+      const emailLogs = await prisma.activity_logs.count({
         where: {
           userId,
-          action: 'SENT',
-          entityType: 'invoice',
+          entityType: 'feature_usage',
+          entityId: 'email_send',
+          action: 'CREATED',
           createdAt: { gte: startOfMonth },
         },
       })
-      return emailLogs.length
+      return emailLogs
 
     case FEATURE_KEYS.CLIENT_MANAGEMENT:
       return prisma.clients.count({
@@ -178,7 +184,7 @@ export async function checkFeatureAccess(
   if (!subscription) {
     // Try to get free plan features
     const freePlan = await prisma.pricing_plans.findFirst({
-      where: { slug: 'free', isActive: true },
+      where: { slug: 'plan-free', isActive: true },
       include: {
         features: {
           where: {
@@ -262,7 +268,7 @@ export async function checkFeatureAccess(
     const freePlanFeature = await prisma.pricing_plan_features.findFirst({
       where: {
         feature: { key: featureKey },
-        plan: { slug: 'free', isActive: true },
+        plan: { slug: 'plan-free', isActive: true },
         included: true,
       },
       include: { feature: true, plan: true },
@@ -428,4 +434,57 @@ export async function getUserFeatures(userId: string): Promise<
   }
 
   return result
+}
+
+/**
+ * Track PDF export usage for limiting purposes
+ * Call this whenever a user exports an invoice to PDF
+ */
+export async function trackPdfExport(userId: string): Promise<void> {
+  try {
+    await prisma.activity_logs.create({
+      data: {
+        id: crypto.randomUUID(),
+        userId,
+        action: 'CREATED',
+        entityType: 'feature_usage',
+        entityId: 'pdf_export',
+        title: 'PDF Exported',
+        description: 'User exported invoice to PDF',
+        metadata: {
+          featureKey: 'pdf_export',
+          timestamp: new Date().toISOString(),
+        },
+      },
+    })
+  } catch (error) {
+    // Log error but don't throw - tracking should not break functionality
+    console.error('Failed to track PDF export:', error)
+  }
+}
+
+/**
+ * Track email send usage for limiting purposes
+ * Call this whenever an invoice is sent via email
+ */
+export async function trackEmailSend(userId: string): Promise<void> {
+  try {
+    await prisma.activity_logs.create({
+      data: {
+        id: crypto.randomUUID(),
+        userId,
+        action: 'CREATED',
+        entityType: 'feature_usage',
+        entityId: 'email_send',
+        title: 'Email Sent',
+        description: 'User sent invoice via email',
+        metadata: {
+          featureKey: 'EMAIL_SEND',
+          timestamp: new Date().toISOString(),
+        },
+      },
+    })
+  } catch (error) {
+    console.error('Failed to track email send:', error)
+  }
 }

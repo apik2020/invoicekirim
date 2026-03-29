@@ -64,17 +64,34 @@ export function useFeatureAccess(
     }
 
     try {
-      const res = await fetch(`/api/feature-access?feature=${encodeURIComponent(featureKey)}`)
+      const res = await fetch(`/api/features/${encodeURIComponent(featureKey)}/check`)
 
-      if (!res.ok) {
-        throw new Error('Failed to check feature access')
+      const data = await res.json()
+
+      // Handle 403 (feature locked) - this is expected behavior
+      if (res.status === 403) {
+        setResult({
+          allowed: false,
+          reason: data.reason,
+          limit: data.limit,
+          currentUsage: data.currentUsage,
+          upgradeUrl: data.upgradeUrl,
+          planName: data.planName,
+        })
+
+        // Still cache denied access to avoid repeated checks
+        featureCache.set(featureKey, { result: data, timestamp: Date.now() })
+        setIsLoading(false)
+        return
       }
 
-      const data: FeatureAccessResult = await res.json()
+      // Handle other errors
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}: ${data.error || 'Unknown error'}`)
+      }
 
-      // Update cache
+      // Update cache and set result
       featureCache.set(featureKey, { result: data, timestamp: Date.now() })
-
       setResult(data)
     } catch (error) {
       console.error('Error checking feature access:', error)

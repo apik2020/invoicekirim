@@ -34,6 +34,7 @@ export async function GET(_req: NextRequest) {
           isTrial: false,
           trialExpired: false,
           trialDaysLeft: 0,
+          pricingPlanId: 'plan-free',
         })
       }
 
@@ -109,6 +110,7 @@ export async function GET(_req: NextRequest) {
       isTrial,
       trialExpired,
       trialDaysLeft,
+      pricingPlanId: subscription.pricingPlanId,
     })
   } catch (error) {
     console.error('Get subscription error:', error)

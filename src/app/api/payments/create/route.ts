@@ -7,12 +7,7 @@ import {
   createQRISPayment,
   VABankCode,
 } from '@/lib/midtrans'
-
-// Subscription pricing
-const PRICING = {
-  PRO_MONTHLY: 49000,
-  PRO_YEARLY: 490000, // ~17% discount
-}
+import { validateUpgradeRequest } from '@/lib/subscription-upgrade'
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,7 +17,64 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { paymentMethod, bankCode, billingCycle } = body
+    const { paymentMethod, bankCode, pricingPlanId, planSlug } = body
+
+    // Validate required fields
+    if (!pricingPlanId || !planSlug) {
+      return NextResponse.json(
+        { error: 'Paket tidak valid' },
+        { status: 400 }
+      )
+    }
+
+    // Get pricing plan details
+    const pricingPlan = await prisma.pricing_plans.findUnique({
+      where: { id: pricingPlanId },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        price: true,
+        currency: true,
+        trialDays: true,
+      },
+    })
+
+    if (!pricingPlan) {
+      return NextResponse.json({ error: 'Paket tidak ditemukan' }, { status: 404 })
+    }
+
+    // Verify plan slug matches
+    if (pricingPlan.slug !== planSlug) {
+      return NextResponse.json({ error: 'Paket tidak cocok' }, { status: 400 })
+    }
+
+    // Validate upgrade eligibility
+    const validation = await validateUpgradeRequest(session.id, planSlug)
+    if (!validation.allowed) {
+      // Log failed attempt
+      await prisma.activity_logs.create({
+        data: {
+          id: crypto.randomUUID(),
+          userId: session.id,
+          action: 'CREATED',
+          entityType: 'Checkout',
+          entityId: pricingPlanId,
+          title: 'Checkout Ditolak - Upgrade Tidak Valid',
+          description: validation.reason || 'Upgrade tidak diizinkan',
+          metadata: {
+            targetPlanSlug: planSlug,
+            pricingPlanId,
+            attemptedAt: new Date().toISOString(),
+          },
+        },
+      })
+
+      return NextResponse.json(
+        { error: validation.reason || 'Upgrade tidak diizinkan' },
+        { status: 400 }
+      )
+    }
 
     // Validate payment method
     const validMethods = ['VA', 'QRIS', 'SNAP']
@@ -33,9 +85,8 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Calculate amount
-    const amount =
-      billingCycle === 'yearly' ? PRICING.PRO_YEARLY : PRICING.PRO_MONTHLY
+    // Calculate amount - use pricing plan price
+    const amount = pricingPlan.price
 
     // Generate order ID
     const orderId = `IK-${Date.now()}-${session.id.slice(-6)}`
@@ -50,18 +101,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'User tidak ditemukan' }, { status: 404 })
     }
 
-    // Create pending payment record
+    // Create pending payment record with pricing plan link
     const payment = await prisma.payments.create({
       data: {
         id: crypto.randomUUID(),
         userId: session.id,
         midtransOrderId: orderId,
         amount,
-        currency: 'IDR',
-        description: `InvoiceKirim Pro - ${billingCycle === 'yearly' ? 'Tahunan' : 'Bulanan'}`,
+        currency: pricingPlan.currency,
+        description: `InvoiceKirim ${pricingPlan.name}`,
         status: 'PENDING',
         paymentMethod,
         paymentGateway: 'MIDTRANS',
+        pricingPlanId, // Link to pricing plan for webhook processing
         updatedAt: new Date(),
       },
     })
@@ -75,7 +127,7 @@ export async function POST(req: NextRequest) {
         amount,
         customerName: user.name || 'Customer',
         customerEmail: user.email,
-        description: `InvoiceKirim Pro ${billingCycle === 'yearly' ? 'Tahunan' : 'Bulanan'}`,
+        description: `InvoiceKirim ${pricingPlan.name}`,
       })
 
       // Update payment with VA details
@@ -108,7 +160,7 @@ export async function POST(req: NextRequest) {
         amount,
         customerName: user.name || 'Customer',
         customerEmail: user.email,
-        description: `InvoiceKirim Pro ${billingCycle === 'yearly' ? 'Tahunan' : 'Bulanan'}`,
+        description: `InvoiceKirim ${pricingPlan.name}`,
       })
 
       // Update payment with QRIS details
@@ -139,7 +191,7 @@ export async function POST(req: NextRequest) {
       amount,
       customerName: user.name || 'Customer',
       customerEmail: user.email,
-      description: `InvoiceKirim Pro ${billingCycle === 'yearly' ? 'Tahunan' : 'Bulanan'}`,
+      description: `InvoiceKirim ${pricingPlan.name}`,
     })
 
     return NextResponse.json({
