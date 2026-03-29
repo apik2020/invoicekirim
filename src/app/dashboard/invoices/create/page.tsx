@@ -632,14 +632,31 @@ function NewInvoicePageContent() {
   }
 
   const addItem = () => {
-    setItems([
-      ...items,
-      { id: Date.now().toString(), description: '', quantity: 1, price: 0, priceFormatted: '' }
-    ])
+    // Check if there's an empty item (description is empty)
+    const emptyItemIndex = items.findIndex(item => !item.description || item.description.trim() === '')
+
+    if (emptyItemIndex !== -1) {
+      // Replace the first empty item
+      setItems(items.map((item, index) =>
+        index === emptyItemIndex
+          ? { id: Date.now().toString(), description: '', quantity: 1, price: 0, priceFormatted: '' }
+          : item
+      ))
+    } else {
+      // Add new item at the end if no empty item exists
+      setItems([
+        ...items,
+        { id: Date.now().toString(), description: '', quantity: 1, price: 0, priceFormatted: '' }
+      ])
+    }
   }
 
   const removeItem = (id: string) => {
-    if (items.length > 1) {
+    if (items.length === 1) {
+      // If only 1 item, reset it to empty state instead of removing
+      setItems([{ id: Date.now().toString(), description: '', quantity: 1, price: 0, priceFormatted: '' }])
+    } else {
+      // Remove the item if there are multiple items
       setItems(items.filter((item) => item.id !== id))
     }
   }
@@ -1046,8 +1063,7 @@ function NewInvoicePageContent() {
                         <button
                           type="button"
                           onClick={() => removeItem(item.id)}
-                          disabled={items.length === 1}
-                          className="p-2 text-text-muted hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                          className="p-2 text-text-muted hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           title="Hapus item"
                         >
                           <Trash2 size={16} />
