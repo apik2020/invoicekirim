@@ -191,20 +191,28 @@ function PricingContent() {
 
               {/* Features */}
               <div className="space-y-4 mb-10">
-                {plan.features.map((feature) => (
+                {/* Included features first */}
+                {plan.features.filter(f => f.included).map((feature) => (
                   <div key={feature.id} className="flex items-start gap-4">
                     <div className="flex-shrink-0 mt-0.5">
-                      {feature.included ? (
-                        <div className="w-6 h-6 rounded-xl shadow-extruded-sm flex items-center justify-center">
-                          <Check className="w-4 h-4 text-navy" />
-                        </div>
-                      ) : (
-                        <div className="w-6 h-6 rounded-xl shadow-inset-sm flex items-center justify-center">
-                          <X className="w-4 h-4 text-slate/30" />
-                        </div>
-                      )}
+                      <div className="w-6 h-6 rounded-xl shadow-extruded-sm flex items-center justify-center">
+                        <Check className="w-4 h-4 text-navy" />
+                      </div>
                     </div>
-                    <span className={`font-body text-sm ${feature.included ? 'text-slate' : 'text-slate/40'}`}>
+                    <span className="font-body text-sm text-slate">
+                      {getFeatureDisplayText(feature)}
+                    </span>
+                  </div>
+                ))}
+                {/* Not included features below */}
+                {plan.features.filter(f => !f.included).map((feature) => (
+                  <div key={feature.id} className="flex items-start gap-4">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <div className="w-6 h-6 rounded-xl shadow-inset-sm flex items-center justify-center">
+                        <X className="w-4 h-4 text-slate/30" />
+                      </div>
+                    </div>
+                    <span className="font-body text-sm text-slate/40">
                       {getFeatureDisplayText(feature)}
                     </span>
                   </div>

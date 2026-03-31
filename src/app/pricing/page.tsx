@@ -336,14 +336,20 @@ function PricingContent() {
 
                       {/* Features */}
                       <div className="space-y-2 mb-6 border-t border-gray-100 pt-4">
-                        {(plan.features || []).map((feature) => (
+                        {/* Included features first */}
+                        {(plan.features || []).filter(f => f.included).map((feature) => (
                           <div key={feature.id} className="flex items-center gap-2 text-sm">
-                            {feature.included ? (
-                              <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
-                            ) : (
-                              <X className="w-4 h-4 text-gray-300 flex-shrink-0" />
-                            )}
-                            <span className={feature.included ? 'text-text-primary' : 'text-text-muted'}>
+                            <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
+                            <span className="text-text-primary">
+                              {getFeatureDisplayText(feature)}
+                            </span>
+                          </div>
+                        ))}
+                        {/* Not included features below */}
+                        {(plan.features || []).filter(f => !f.included).map((feature) => (
+                          <div key={feature.id} className="flex items-center gap-2 text-sm">
+                            <X className="w-4 h-4 text-gray-300 flex-shrink-0" />
+                            <span className="text-text-muted">
                               {getFeatureDisplayText(feature)}
                             </span>
                           </div>

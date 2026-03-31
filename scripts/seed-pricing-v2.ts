@@ -75,18 +75,11 @@ const features = [
     sortOrder: 10,
   },
   {
-    id: 'feat-api-access',
-    key: 'API_ACCESS',
-    name: 'Akses API',
-    description: 'Akses API untuk integrasi',
-    sortOrder: 11,
-  },
-  {
     id: 'feat-support',
     key: 'priority_support',
     name: 'Priority Support',
     description: 'Dukungan prioritas',
-    sortOrder: 12,
+    sortOrder: 11,
   },
 ]
 
@@ -116,7 +109,6 @@ const plans = [
       { featureId: 'feat-email-send', included: true },
       { featureId: 'feat-client-management', included: true },
       { featureId: 'feat-analytics-view', included: true },
-      { featureId: 'feat-api-access', included: false },
       { featureId: 'feat-support', included: true },
     ],
   },
@@ -145,8 +137,6 @@ const plans = [
       { featureId: 'feat-email-send', included: true },
       { featureId: 'feat-client-management', included: true },
       { featureId: 'feat-analytics-view', included: true },
-      { featureId: 'feat-team-members', included: false },
-      { featureId: 'feat-api-access', included: true },
       { featureId: 'feat-support', included: true },
     ],
   },
@@ -175,8 +165,6 @@ const plans = [
       { featureId: 'feat-email-send', included: true },
       { featureId: 'feat-client-management', included: true },
       { featureId: 'feat-analytics-view', included: true },
-      { featureId: 'feat-team-members', included: false },
-      { featureId: 'feat-api-access', included: true },
       { featureId: 'feat-support', included: true },
     ],
   },
@@ -185,7 +173,7 @@ const plans = [
 async function seedPricing() {
   console.log('=== Seeding Pricing Features ===')
 
-  // Create features
+  // Create features - still using upsert for features (safe to update)
   for (const feature of features) {
     await prisma.pricing_features.upsert({
       where: { id: feature.id },
@@ -202,38 +190,62 @@ async function seedPricing() {
 
   console.log('\n=== Seeding Pricing Plans ===')
 
-  // Create plans with features
+  // Create plans with features - ONLY CREATE if not exists
   for (const plan of plans) {
     const { features: planFeatures, ...planData } = plan
 
-    // Create plan
-    await prisma.pricing_plans.upsert({
+    // Check if plan already exists
+    const existingPlan = await prisma.pricing_plans.findUnique({
       where: { id: plan.id },
-      update: planData,
-      create: planData,
-    })
-    console.log(`✓ Created/Updated plan: ${plan.name}`)
-
-    // Delete existing plan features
-    await prisma.pricing_plan_features.deleteMany({
-      where: { planId: plan.id },
     })
 
-    // Create plan features
-    for (const pf of planFeatures) {
-      await prisma.pricing_plan_features.create({
-        data: {
-          planId: plan.id,
-          featureId: pf.featureId,
-          included: pf.included,
-          limitValue: pf.limitValue,
-        },
+    if (existingPlan) {
+      console.log(`⊙ Plan already exists, skipping: ${plan.name} (Price: ${existingPlan.price}, Trial: ${existingPlan.trialDays} days)`)
+
+      // Only add missing features if any
+      const existingFeatures = await prisma.pricing_plan_features.findMany({
+        where: { planId: plan.id },
       })
+      const existingFeatureIds = existingFeatures.map(f => f.featureId)
+
+      for (const pf of planFeatures) {
+        if (!existingFeatureIds.includes(pf.featureId)) {
+          await prisma.pricing_plan_features.create({
+            data: {
+              planId: plan.id,
+              featureId: pf.featureId,
+              included: pf.included,
+              limitValue: pf.limitValue,
+            },
+          })
+          console.log(`  ✓ Added missing feature to ${plan.name}: ${pf.featureId}`)
+        }
+      }
+    } else {
+      // Create new plan
+      await prisma.pricing_plans.create({
+        data: planData,
+      })
+      console.log(`✓ Created new plan: ${plan.name} (Price: ${planData.price}, Trial: ${planData.trialDays} days)`)
+
+      // Create plan features for new plan
+      for (const pf of planFeatures) {
+        await prisma.pricing_plan_features.create({
+          data: {
+            planId: plan.id,
+            featureId: pf.featureId,
+            included: pf.included,
+            limitValue: pf.limitValue,
+          },
+        })
+      }
+      console.log(`  ✓ Added ${planFeatures.length} features to ${plan.name}`)
     }
-    console.log(`  ✓ Added ${planFeatures.length} features to ${plan.name}`)
   }
 
   console.log('\n=== Seeding Complete ===')
+  console.log('💡 Tip: Untuk mengubah harga/trial days, update langsung di database atau melalui admin panel.')
+  console.log('   Nilai di database tidak akan ditimpa oleh seed ini.')
 }
 
 seedPricing()

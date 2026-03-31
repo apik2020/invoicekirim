@@ -135,18 +135,24 @@ export default function LandingPricing() {
 
               {/* Features */}
               <ul className="space-y-4 mb-8">
-                {(plan.features || []).map((feature) => (
+                {/* Included features first */}
+                {(plan.features || []).filter(f => f.included).map((feature) => (
                   <li key={feature.id} className="flex items-start gap-3">
-                    {feature.included ? (
-                      <div className="checkmark mt-0.5">
-                        <Check className="w-4 h-4 text-white" />
-                      </div>
-                    ) : (
-                      <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center mt-0.5">
-                        <X className="w-3 h-3 text-gray-400" />
-                      </div>
-                    )}
-                    <span className={`text-sm ${feature.included ? 'text-text-secondary' : 'text-gray-400'}`}>
+                    <div className="checkmark mt-0.5">
+                      <Check className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="text-sm text-text-secondary">
+                      {getFeatureDisplayText(feature)}
+                    </span>
+                  </li>
+                ))}
+                {/* Not included features below */}
+                {(plan.features || []).filter(f => !f.included).map((feature) => (
+                  <li key={feature.id} className="flex items-start gap-3">
+                    <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center mt-0.5">
+                      <X className="w-3 h-3 text-gray-400" />
+                    </div>
+                    <span className="text-sm text-gray-400">
                       {getFeatureDisplayText(feature)}
                     </span>
                   </li>

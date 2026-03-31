@@ -42,12 +42,19 @@ async function createOrGetOAuthUser(email: string, name?: string | null, image?:
     log('Created new OAuth user:', email)
 
     try {
+      // Get the free plan ID
+      const freePlan = await prisma.pricing_plans.findFirst({
+        where: { slug: 'plan-free', isActive: true },
+        select: { id: true },
+      })
+
       await prisma.subscriptions.create({
         data: {
           id: crypto.randomUUID(),
           userId: user.id,
           status: 'FREE',
           planType: 'FREE',
+          pricingPlanId: freePlan?.id || null,
           updatedAt: new Date(),
         }
       })
