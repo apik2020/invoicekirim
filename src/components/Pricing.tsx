@@ -250,10 +250,10 @@ function PricingContent() {
           ))}
         </div>
 
-        {/* Trust Note */}
+        {/* Contact Note */}
         <div className="mt-20 text-center max-w-2xl mx-auto">
           <p className="font-body text-muted">
-            Butuh paket enterprise untuk tim?{' '}
+            Butuh bantuan atau ada pertanyaan?{' '}
             <a href="mailto:hello@invoicekirim.com" className="text-arctic-blue font-bold hover:underline">
               Hubungi kami
             </a>

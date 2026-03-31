@@ -440,10 +440,10 @@ function PricingContent() {
                 })}
               </div>
 
-              {/* Enterprise CTA */}
+              {/* Contact CTA */}
               <div className="mt-12 text-center">
                 <p className="text-text-secondary">
-                  Butuh paket enterprise untuk tim?{' '}
+                  Butuh bantuan atau ada pertanyaan?{' '}
                   <a href="mailto:hello@invoicekirim.com" className="text-brand-600 font-semibold hover:text-brand-700">
                     Hubungi kami
                   </a>

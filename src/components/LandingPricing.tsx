@@ -175,7 +175,7 @@ export default function LandingPricing() {
 
         <div className="mt-12 text-center">
           <p className="text-text-secondary">
-            Butuh paket enterprise untuk tim?{' '}
+            Butuh bantuan atau ada pertanyaan?{' '}
             <a href="mailto:hello@invoicekirim.com" className="text-primary-500 font-semibold hover:text-primary-600">
               Hubungi kami
             </a>
