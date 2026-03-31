@@ -16,7 +16,6 @@ export const FEATURE_KEYS = {
   EMAIL_SEND: 'EMAIL_SEND',
   CLIENT_MANAGEMENT: 'CLIENT_MANAGEMENT',
   ANALYTICS_VIEW: 'ANALYTICS_VIEW',
-  TEAM_MEMBERS: 'TEAM_MEMBERS',
   API_ACCESS: 'API_ACCESS',
   PRIORITY_SUPPORT: 'priority_support',
 } as const
@@ -151,18 +150,6 @@ async function getFeatureUsage(userId: string, featureKey: string): Promise<numb
       return prisma.clients.count({
         where: { userId },
       })
-
-    case FEATURE_KEYS.TEAM_MEMBERS:
-      // Get team member count if user owns a team
-      const team = await prisma.teams.findFirst({
-        where: { ownerId: userId },
-        include: {
-          _count: {
-            select: { team_members: true },
-          },
-        },
-      })
-      return team?._count.team_members || 0
 
     default:
       return 0

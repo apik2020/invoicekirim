@@ -75,25 +75,18 @@ const features = [
     sortOrder: 10,
   },
   {
-    id: 'feat-team-members',
-    key: 'TEAM_MEMBERS',
-    name: 'Tim',
-    description: 'Kolaborasi dengan anggota tim',
-    sortOrder: 11,
-  },
-  {
     id: 'feat-api-access',
     key: 'API_ACCESS',
     name: 'Akses API',
     description: 'Akses API untuk integrasi',
-    sortOrder: 12,
+    sortOrder: 11,
   },
   {
     id: 'feat-support',
     key: 'priority_support',
     name: 'Priority Support',
     description: 'Dukungan prioritas',
-    sortOrder: 13,
+    sortOrder: 12,
   },
 ]
 
@@ -123,7 +116,6 @@ const plans = [
       { featureId: 'feat-email-send', included: true },
       { featureId: 'feat-client-management', included: true },
       { featureId: 'feat-analytics-view', included: true },
-      { featureId: 'feat-team-members', included: false },
       { featureId: 'feat-api-access', included: false },
       { featureId: 'feat-support', included: true },
     ],
