@@ -326,7 +326,7 @@ function PricingContent() {
                       <div className="flex items-center gap-4 mb-4 text-sm">
                         {!plan.isFeatured && (
                           <span className="px-2 py-1 bg-lime-100 text-lime-700 rounded-full text-xs font-bold">
-                            Forever Free
+                            FREE
                           </span>
                         )}
                         {plan.trialDays > 0 && !availablePlansData?.trialUsed && (

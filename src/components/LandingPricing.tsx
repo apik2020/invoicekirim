@@ -119,7 +119,7 @@ export default function LandingPricing() {
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-2xl font-bold text-brand-500">{plan.name}</h3>
                   {!plan.isFeatured && (
-                    <div className="badge-paid">Forever Free</div>
+                    <div className="badge-paid">FREE</div>
                   )}
                 </div>
                 <p className="text-text-secondary mb-6">{plan.description || ''}</p>
