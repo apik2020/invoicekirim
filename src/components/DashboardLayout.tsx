@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { DashboardSidebar, MobileMenuButton } from './DashboardSidebar'
+import { DashboardSidebar, MobileMenuButton, MobileBottomNav } from './DashboardSidebar'
 import DashboardHeader from './DashboardHeader'
 import { SubscriptionGuard } from '@/hooks/useSubscriptionGuard'
 import { AnnouncementBanner } from './AnnouncementBanner'
@@ -27,7 +27,7 @@ export function DashboardLayout({
 
   return (
     <SubscriptionGuard>
-      <div className="min-h-screen bg-surface-light">
+      <div className="min-h-screen bg-surface-light pb-20 lg:pb-0"> {/* Add bottom padding for mobile nav */}
         {/* Modal and Toast Announcements - Global */}
         <AnnouncementBanner displayType="modal" />
         <AnnouncementBanner displayType="toast" />
@@ -67,6 +67,9 @@ export function DashboardLayout({
             {children}
           </main>
         </div>
+
+        {/* Mobile Bottom Navigation */}
+        <MobileBottomNav />
       </div>
     </SubscriptionGuard>
   )

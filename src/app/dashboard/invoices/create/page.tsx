@@ -1002,8 +1002,80 @@ function NewInvoicePageContent() {
               </div>
             )}
 
-            {/* Items Table */}
-            <div className="overflow-x-auto">
+            {/* Items - Mobile Card View */}
+            <div className="md:hidden divide-y divide-gray-100">
+              {items.map((item, index) => (
+                <div key={item.id} className="p-4 space-y-4">
+                  {/* Item Number & Delete */}
+                  <div className="flex items-center justify-between">
+                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-brand-100 text-brand-600 font-bold text-sm">
+                      {index + 1}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeItem(item.id)}
+                      className="p-2 text-text-muted hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      title="Hapus item"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+
+                  {/* Description */}
+                  <div>
+                    <label className="block text-xs font-semibold text-text-muted mb-1.5">Deskripsi *</label>
+                    <input
+                      type="text"
+                      value={item.description}
+                      onChange={(e) => updateItem(item.id, 'description', e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 text-text-primary placeholder:text-text-muted focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 transition-all"
+                      placeholder="Deskripsi item/jasa"
+                      required
+                    />
+                  </div>
+
+                  {/* Qty & Price Row */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-text-muted mb-1.5">Qty *</label>
+                      <input
+                        type="number"
+                        value={item.quantity || 1}
+                        onChange={(e) => updateItem(item.id, 'quantity', parseInt(e.target.value) || 1)}
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 text-text-primary text-center focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 transition-all"
+                        min="1"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-text-muted mb-1.5">Harga *</label>
+                      <input
+                        type="text"
+                        value={item.priceFormatted || ''}
+                        onChange={(e) => {
+                          const formatted = formatCurrencyInput(e.target.value)
+                          updateItem(item.id, 'price', parseCurrencyInput(formatted), formatted)
+                        }}
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 text-text-primary focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200 transition-all"
+                        placeholder="Rp 0"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* Subtotal */}
+                  <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                    <span className="text-sm text-text-muted">Subtotal</span>
+                    <span className="text-lg font-bold text-brand-500">
+                      {formatCurrency(item.quantity * item.price)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Items - Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full min-w-[600px]">
                 <thead>
                   <tr className="bg-surface-light border-b border-gray-100">

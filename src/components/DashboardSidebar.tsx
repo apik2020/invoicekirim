@@ -20,6 +20,7 @@ import {
   Shield,
   Menu,
   X,
+  Plus,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -45,6 +46,15 @@ const settingsNavItems: NavItem[] = [
   { name: 'Branding', href: '/dashboard/settings/branding', icon: Palette },
   { name: 'Billing', href: '/dashboard/billing', icon: CreditCard },
   { name: 'Keamanan', href: '/dashboard/settings/security', icon: Shield },
+]
+
+// Mobile Bottom Navigation Items
+const mobileNavItems: NavItem[] = [
+  { name: 'Beranda', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Invoice', href: '/dashboard/invoices', icon: Receipt },
+  { name: 'Buat', href: '/dashboard/invoices/create', icon: Plus },
+  { name: 'Klien', href: '/dashboard/clients', icon: UserCircle },
+  { name: 'Lainnya', href: '#more', icon: Menu },
 ]
 
 interface DashboardSidebarProps {
@@ -247,5 +257,172 @@ export function MobileMenuButton({ onClick }: { onClick: () => void }) {
     >
       <Menu className="w-6 h-6" />
     </button>
+  )
+}
+
+// Mobile Bottom Navigation Bar
+export function MobileBottomNav() {
+  const pathname = usePathname()
+  const [showMoreMenu, setShowMoreMenu] = useState(false)
+
+  const isActive = (href: string) => {
+    if (href === '/dashboard') {
+      return pathname === '/dashboard'
+    }
+    if (href === '#more') {
+      return false
+    }
+    return pathname.startsWith(href)
+  }
+
+  return (
+    <>
+      {/* More Menu Modal */}
+      {showMoreMenu && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 lg:hidden"
+            onClick={() => setShowMoreMenu(false)}
+          />
+          <div className="fixed bottom-20 left-4 right-4 bg-white rounded-2xl shadow-2xl z-50 lg:hidden animate-fade-in-up overflow-hidden">
+            <div className="p-4 grid grid-cols-3 gap-3">
+              {/* Items */}
+              <Link
+                href="/dashboard/items"
+                onClick={() => setShowMoreMenu(false)}
+                className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                <div className="w-12 h-12 rounded-xl bg-brand-100 flex items-center justify-center">
+                  <Package className="w-6 h-6 text-brand-600" />
+                </div>
+                <span className="text-xs font-medium text-text-primary">Item</span>
+              </Link>
+
+              {/* Templates */}
+              <Link
+                href="/dashboard/templates"
+                onClick={() => setShowMoreMenu(false)}
+                className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                <div className="w-12 h-12 rounded-xl bg-secondary-100 flex items-center justify-center">
+                  <FileText className="w-6 h-6 text-secondary-600" />
+                </div>
+                <span className="text-xs font-medium text-text-primary">Template</span>
+              </Link>
+
+              {/* Billing */}
+              <Link
+                href="/dashboard/billing"
+                onClick={() => setShowMoreMenu(false)}
+                className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                <div className="w-12 h-12 rounded-xl bg-success-100 flex items-center justify-center">
+                  <CreditCard className="w-6 h-6 text-success-600" />
+                </div>
+                <span className="text-xs font-medium text-text-primary">Billing</span>
+              </Link>
+
+              {/* Settings */}
+              <Link
+                href="/dashboard/settings"
+                onClick={() => setShowMoreMenu(false)}
+                className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center">
+                  <Settings className="w-6 h-6 text-gray-600" />
+                </div>
+                <span className="text-xs font-medium text-text-primary">Pengaturan</span>
+              </Link>
+
+              {/* Branding */}
+              <Link
+                href="/dashboard/settings/branding"
+                onClick={() => setShowMoreMenu(false)}
+                className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                <div className="w-12 h-12 rounded-xl bg-highlight-100 flex items-center justify-center">
+                  <Palette className="w-6 h-6 text-highlight-600" />
+                </div>
+                <span className="text-xs font-medium text-text-primary">Branding</span>
+              </Link>
+
+              {/* Logout */}
+              <button
+                onClick={() => {
+                  setShowMoreMenu(false)
+                  signOut({ callbackUrl: '/login' })
+                }}
+                className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-red-50 transition-colors"
+              >
+                <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center">
+                  <LogOut className="w-6 h-6 text-red-600" />
+                </div>
+                <span className="text-xs font-medium text-red-600">Logout</span>
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Bottom Navigation Bar */}
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 lg:hidden safe-bottom">
+        <div className="flex items-center justify-around h-16 px-2">
+          {mobileNavItems.map((item) => {
+            const active = isActive(item.href)
+
+            if (item.href === '#more') {
+              return (
+                <button
+                  key={item.name}
+                  onClick={() => setShowMoreMenu(true)}
+                  className={cn(
+                    'flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl transition-colors min-w-[60px]',
+                    'text-text-muted hover:text-text-primary'
+                  )}
+                >
+                  <item.icon className="w-6 h-6" />
+                  <span className="text-[10px] font-medium">{item.name}</span>
+                </button>
+              )
+            }
+
+            // Special styling for "Buat" (Create) button
+            if (item.name === 'Buat') {
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="flex flex-col items-center justify-center -mt-6"
+                >
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-lg shadow-primary-500/30">
+                    <Plus className="w-7 h-7 text-white" />
+                  </div>
+                  <span className="text-[10px] font-semibold text-primary-500 mt-1">{item.name}</span>
+                </Link>
+              )
+            }
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  'flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl transition-colors min-w-[60px]',
+                  active
+                    ? 'text-brand-500'
+                    : 'text-text-muted hover:text-text-primary'
+                )}
+              >
+                <item.icon className={cn('w-6 h-6', active && 'stroke-[2.5]')} />
+                <span className={cn('text-[10px] font-medium', active && 'font-semibold')}>{item.name}</span>
+                {active && (
+                  <div className="absolute bottom-0 w-8 h-0.5 bg-brand-500 rounded-full" />
+                )}
+              </Link>
+            )
+          })}
+        </div>
+      </nav>
+    </>
   )
 }

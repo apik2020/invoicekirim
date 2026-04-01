@@ -1,9 +1,14 @@
+'use client'
+
+import { useState } from 'react'
 import Link from 'next/link'
-import { Sparkles, Check, ArrowRight, Menu, Zap, Shield, TrendingUp, FileText, Send, CreditCard, Clock, Users, BarChart3, Bell } from 'lucide-react'
+import { Sparkles, Check, ArrowRight, Menu, X, Zap, Shield, TrendingUp, FileText, Send, CreditCard, Clock, Users, BarChart3, Bell } from 'lucide-react'
 import { Logo } from '@/components/Logo'
 import LandingPricing from '@/components/LandingPricing'
 
 export default function Home() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
   return (
     <div className="min-h-screen bg-white">
       {/* Header - Deep Teal */}
@@ -30,12 +35,98 @@ export default function Home() {
             </nav>
 
             {/* Mobile Menu Button */}
-            <button className="md:hidden p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors">
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="md:hidden p-2 rounded-xl bg-white/10 hover:bg-white/20 transition-colors"
+            >
               <Menu className="w-5 h-5 text-white" />
             </button>
           </div>
         </div>
       </header>
+
+      {/* Mobile Navigation Drawer */}
+      {mobileMenuOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+
+          {/* Drawer */}
+          <div className="fixed top-0 right-0 h-full w-72 bg-white shadow-2xl z-50 animate-slide-in-right">
+            <div className="p-6">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-8">
+                <Logo size="sm" />
+                <button
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="p-2 rounded-xl hover:bg-gray-100 transition-colors"
+                >
+                  <X className="w-5 h-5 text-text-primary" />
+                </button>
+              </div>
+
+              {/* Navigation Links */}
+              <nav className="space-y-2">
+                <Link
+                  href="#features"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-text-primary hover:bg-brand-50 hover:text-brand-600 transition-colors font-medium"
+                >
+                  <Zap className="w-5 h-5" />
+                  Fitur
+                </Link>
+                <Link
+                  href="#pricing"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-text-primary hover:bg-brand-50 hover:text-brand-600 transition-colors font-medium"
+                >
+                  <CreditCard className="w-5 h-5" />
+                  Harga
+                </Link>
+              </nav>
+
+              {/* CTA Buttons */}
+              <div className="mt-8 space-y-3">
+                <Link
+                  href="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block w-full text-center px-6 py-3 border-2 border-brand-500 text-brand-500 font-bold rounded-xl hover:bg-brand-50 transition-colors"
+                >
+                  Masuk
+                </Link>
+                <Link
+                  href="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block w-full text-center px-6 py-3 bg-gradient-to-br from-primary-500 to-primary-600 text-white font-bold rounded-xl shadow-lg shadow-primary-500/30"
+                >
+                  Mulai Gratis
+                </Link>
+              </div>
+
+              {/* Trust Badges */}
+              <div className="mt-8 pt-6 border-t border-gray-100">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center gap-2 text-text-secondary text-sm">
+                    <div className="w-5 h-5 rounded-full bg-success-400 flex items-center justify-center">
+                      <Check className="w-3 h-3 text-white" />
+                    </div>
+                    <span>Gratis</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-text-secondary text-sm">
+                    <div className="w-5 h-5 rounded-full bg-success-400 flex items-center justify-center">
+                      <Check className="w-3 h-3 text-white" />
+                    </div>
+                    <span>Tanpa CC</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Hero Section */}
       <section className="py-20 md:py-28 hero-gradient">
