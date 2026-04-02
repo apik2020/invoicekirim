@@ -19,9 +19,9 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "InvoiceKirim - Platform Invoice Profesional untuk Freelancer Indonesia",
-  description: "Buat invoice profesional dalam hitungan detik. Kelola invoice bisnis Anda dengan mudah, kirim via WhatsApp, dan lacak pembayaran.",
-  keywords: "invoice, faktur, invoice template, buat invoice, invoice gratis, invoice indonesia",
+  title: "NotaBener - Platform Invoice Gratis untuk UMKM & Freelancer Indonesia",
+  description: "Bikin invoice tanpa ribet, langsung terkirim! Platform invoice gratis untuk UMKM, pebisnis pemula, dan freelancer Indonesia. Kirim via WhatsApp, lacak pembayaran dengan mudah.",
+  keywords: "invoice, faktur, nota, invoice gratis, invoice UMKM, invoice freelancer, buat invoice, invoice indonesia, nota digital",
   robots: {
     index: true,
     follow: true,

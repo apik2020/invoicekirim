@@ -64,7 +64,7 @@ async function sendViaSMTP(
   }
 }
 
-// Email templates with new InvoiceKirim theme
+// Email templates with new NotaBener theme
 // Brand/Deep Teal: #276874
 // Primary/Bright Orange: #F97316 (brand-500), #EA580C (brand-600)
 // Success/Lime Green: #C5E151
@@ -91,9 +91,9 @@ export const emailTemplates = {
             <!-- Header -->
             <div style="text-align: center; margin-bottom: 40px;">
               <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #276874, #2d7d8a); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
-                <span style="color: white; font-weight: bold; font-size: 16px;">[iK]</span>
+                <span style="color: white; font-weight: bold; font-size: 16px;">[nB]</span>
               </div>
-              <h1 style="color: #276874; font-size: 24px; font-weight: bold; margin: 0;">InvoiceKirim</h1>
+              <h1 style="color: #276874; font-size: 24px; font-weight: bold; margin: 0;">NotaBener</h1>
               <p style="color: #64748b; margin: 8px 0 0;">Platform Invoice untuk Freelancer</p>
             </div>
 
@@ -135,8 +135,8 @@ export const emailTemplates = {
 
             <!-- Footer -->
             <div style="text-align: center; margin-top: 40px; color: #94a3b8; font-size: 14px;">
-              <p style="margin: 0 0 8px;">Invoice dibuat dengan InvoiceKirim</p>
-              <p style="margin: 0;">&copy; ${new Date().getFullYear()} InvoiceKirim. All rights reserved.</p>
+              <p style="margin: 0 0 8px;">Invoice dibuat dengan NotaBener</p>
+              <p style="margin: 0;">&copy; ${new Date().getFullYear()} NotaBener. All rights reserved.</p>
             </div>
           </div>
         </body>
@@ -207,8 +207,8 @@ export const emailTemplates = {
 
             <!-- Footer -->
             <div style="text-align: center; margin-top: 40px; color: #9a3412; font-size: 14px;">
-              <p style="margin: 0 0 8px;">Invoice dibuat dengan InvoiceKirim</p>
-              <p style="margin: 0;">&copy; ${new Date().getFullYear()} InvoiceKirim. All rights reserved.</p>
+              <p style="margin: 0 0 8px;">Invoice dibuat dengan NotaBener</p>
+              <p style="margin: 0;">&copy; ${new Date().getFullYear()} NotaBener. All rights reserved.</p>
             </div>
           </div>
         </body>
@@ -283,8 +283,8 @@ export const emailTemplates = {
 
             <!-- Footer -->
             <div style="text-align: center; margin-top: 40px; color: #991b1b; font-size: 14px;">
-              <p style="margin: 0 0 8px;">Invoice dibuat dengan InvoiceKirim</p>
-              <p style="margin: 0;">&copy; ${new Date().getFullYear()} InvoiceKirim. All rights reserved.</p>
+              <p style="margin: 0 0 8px;">Invoice dibuat dengan NotaBener</p>
+              <p style="margin: 0;">&copy; ${new Date().getFullYear()} NotaBener. All rights reserved.</p>
             </div>
           </div>
         </body>
@@ -350,8 +350,8 @@ export const emailTemplates = {
 
             <!-- Footer -->
             <div style="text-align: center; margin-top: 40px; color: #3f6212; font-size: 14px;">
-              <p style="margin: 0 0 8px;">Invoice dibuat dengan InvoiceKirim</p>
-              <p style="margin: 0;">&copy; ${new Date().getFullYear()} InvoiceKirim. All rights reserved.</p>
+              <p style="margin: 0 0 8px;">Invoice dibuat dengan NotaBener</p>
+              <p style="margin: 0;">&copy; ${new Date().getFullYear()} NotaBener. All rights reserved.</p>
             </div>
           </div>
         </body>
@@ -364,23 +364,23 @@ export const emailTemplates = {
     userName: string
     dashboardUrl: string
   }) => ({
-    subject: `Masa Trial InvoiceKirim Telah Berakhir`,
+    subject: `Masa Trial NotaBener Telah Berakhir`,
     html: `
       <!DOCTYPE html>
       <html>
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Trial Berakhir - InvoiceKirim</title>
+          <title>Trial Berakhir - NotaBener</title>
         </head>
         <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f7f7f7;">
           <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
             <!-- Header -->
             <div style="text-align: center; margin-bottom: 40px;">
               <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #276874, #2d7d8a); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
-                <span style="color: white; font-weight: bold; font-size: 16px;">[iK]</span>
+                <span style="color: white; font-weight: bold; font-size: 16px;">[nB]</span>
               </div>
-              <h1 style="color: #276874; font-size: 24px; font-weight: bold; margin: 0;">InvoiceKirim</h1>
+              <h1 style="color: #276874; font-size: 24px; font-weight: bold; margin: 0;">NotaBener</h1>
               <p style="color: #64748b; margin: 8px 0 0;">Platform Invoice untuk Freelancer</p>
             </div>
 
@@ -393,7 +393,7 @@ export const emailTemplates = {
                 Halo ${data.userName},
               </p>
               <p style="color: #334155; line-height: 1.6; margin: 0 0 20px;">
-                Masa trial gratis Anda di InvoiceKirim telah berakhir. Akun Anda telah diturunkan ke <strong>plan FREE</strong>.
+                Masa trial gratis Anda di NotaBener telah berakhir. Akun Anda telah diturunkan ke <strong>plan FREE</strong>.
               </p>
 
               <!-- Info Box -->
@@ -414,14 +414,14 @@ export const emailTemplates = {
               </div>
 
               <p style="color: #64748b; font-size: 14px; margin: 20px 0 0;">
-                Upgrade ke plan PRO untuk mendapatkan akses penuh ke semua fitur InvoiceKirim.
+                Upgrade ke plan PRO untuk mendapatkan akses penuh ke semua fitur NotaBener.
               </p>
             </div>
 
             <!-- Footer -->
             <div style="text-align: center; margin-top: 40px; color: #94a3b8; font-size: 14px;">
-              <p style="margin: 0 0 8px;">Invoice dibuat dengan InvoiceKirim</p>
-              <p style="margin: 0;">&copy; ${new Date().getFullYear()} InvoiceKirim. All rights reserved.</p>
+              <p style="margin: 0 0 8px;">Invoice dibuat dengan NotaBener</p>
+              <p style="margin: 0;">&copy; ${new Date().getFullYear()} NotaBener. All rights reserved.</p>
             </div>
           </div>
         </body>
@@ -435,14 +435,14 @@ export const emailTemplates = {
     expiryDate: string
     dashboardUrl: string
   }) => ({
-    subject: `⚠️ Trial InvoiceKirim Akan Berakhir dalam ${data.daysLeft} Hari`,
+    subject: `⚠️ Trial NotaBener Akan Berakhir dalam ${data.daysLeft} Hari`,
     html: `
       <!DOCTYPE html>
       <html>
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Trial Akan Berakhir - InvoiceKirim</title>
+          <title>Trial Akan Berakhir - NotaBener</title>
         </head>
         <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #fff7ed;">
           <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
@@ -488,8 +488,8 @@ export const emailTemplates = {
 
             <!-- Footer -->
             <div style="text-align: center; margin-top: 40px; color: #9a3412; font-size: 14px;">
-              <p style="margin: 0 0 8px;">Invoice dibuat dengan InvoiceKirim</p>
-              <p style="margin: 0;">&copy; ${new Date().getFullYear()} InvoiceKirim. All rights reserved.</p>
+              <p style="margin: 0 0 8px;">Invoice dibuat dengan NotaBener</p>
+              <p style="margin: 0;">&copy; ${new Date().getFullYear()} NotaBener. All rights reserved.</p>
             </div>
           </div>
         </body>
@@ -503,23 +503,23 @@ export const emailTemplates = {
     expiryDate: string
     dashboardUrl: string
   }) => ({
-    subject: `Pengingat: Trial InvoiceKirim Berakhir dalam ${data.daysLeft} Hari`,
+    subject: `Pengingat: Trial NotaBener Berakhir dalam ${data.daysLeft} Hari`,
     html: `
       <!DOCTYPE html>
       <html>
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Trial Reminder - InvoiceKirim</title>
+          <title>Trial Reminder - NotaBener</title>
         </head>
         <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f7f7f7;">
           <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
             <!-- Header -->
             <div style="text-align: center; margin-bottom: 40px;">
               <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #276874, #2d7d8a); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
-                <span style="color: white; font-weight: bold; font-size: 16px;">[iK]</span>
+                <span style="color: white; font-weight: bold; font-size: 16px;">[nB]</span>
               </div>
-              <h1 style="color: #276874; font-size: 24px; font-weight: bold; margin: 0;">InvoiceKirim</h1>
+              <h1 style="color: #276874; font-size: 24px; font-weight: bold; margin: 0;">NotaBener</h1>
               <p style="color: #64748b; margin: 8px 0 0;">Platform Invoice untuk Freelancer</p>
             </div>
 
@@ -560,8 +560,8 @@ export const emailTemplates = {
 
             <!-- Footer -->
             <div style="text-align: center; margin-top: 40px; color: #94a3b8; font-size: 14px;">
-              <p style="margin: 0 0 8px;">Invoice dibuat dengan InvoiceKirim</p>
-              <p style="margin: 0;">&copy; ${new Date().getFullYear()} InvoiceKirim. All rights reserved.</p>
+              <p style="margin: 0 0 8px;">Invoice dibuat dengan NotaBener</p>
+              <p style="margin: 0;">&copy; ${new Date().getFullYear()} NotaBener. All rights reserved.</p>
             </div>
           </div>
         </body>
@@ -576,23 +576,23 @@ export const emailTemplates = {
     acceptUrl: string
     expiresIn: string
   }) => ({
-    subject: `Anda Diundang ke Tim ${data.teamName} di InvoiceKirim`,
+    subject: `Anda Diundang ke Tim ${data.teamName} di NotaBener`,
     html: `
       <!DOCTYPE html>
       <html>
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Undangan Tim - InvoiceKirim</title>
+          <title>Undangan Tim - NotaBener</title>
         </head>
         <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f7f7f7;">
           <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
             <!-- Header -->
             <div style="text-align: center; margin-bottom: 40px;">
               <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #276874, #2d7d8a); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
-                <span style="color: white; font-weight: bold; font-size: 16px;">[iK]</span>
+                <span style="color: white; font-weight: bold; font-size: 16px;">[nB]</span>
               </div>
-              <h1 style="color: #276874; font-size: 24px; font-weight: bold; margin: 0;">InvoiceKirim</h1>
+              <h1 style="color: #276874; font-size: 24px; font-weight: bold; margin: 0;">NotaBener</h1>
               <p style="color: #64748b; margin: 8px 0 0;">Platform Invoice untuk Freelancer</p>
             </div>
 
@@ -602,7 +602,7 @@ export const emailTemplates = {
                 Undangan Tim
               </h2>
               <p style="color: #334155; line-height: 1.6; margin: 0 0 20px;">
-                <strong>${data.inviterName}</strong> telah mengundang Anda untuk bergabung dengan tim <strong>"${data.teamName}"</strong> di InvoiceKirim.
+                <strong>${data.inviterName}</strong> telah mengundang Anda untuk bergabung dengan tim <strong>"${data.teamName}"</strong> di NotaBener.
               </p>
 
               <!-- Invitation Details -->
@@ -631,8 +631,8 @@ export const emailTemplates = {
 
             <!-- Footer -->
             <div style="text-align: center; margin-top: 40px; color: #94a3b8; font-size: 14px;">
-              <p style="margin: 0 0 8px;">Invoice dibuat dengan InvoiceKirim</p>
-              <p style="margin: 0;">&copy; ${new Date().getFullYear()} InvoiceKirim. All rights reserved.</p>
+              <p style="margin: 0 0 8px;">Invoice dibuat dengan NotaBener</p>
+              <p style="margin: 0;">&copy; ${new Date().getFullYear()} NotaBener. All rights reserved.</p>
             </div>
           </div>
         </body>
@@ -645,23 +645,23 @@ export const emailTemplates = {
     resetUrl: string
     expiresIn: string
   }) => ({
-    subject: `Reset Password InvoiceKirim`,
+    subject: `Reset Password NotaBener`,
     html: `
       <!DOCTYPE html>
       <html>
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Reset Password - InvoiceKirim</title>
+          <title>Reset Password - NotaBener</title>
         </head>
         <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f7f7f7;">
           <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
             <!-- Header -->
             <div style="text-align: center; margin-bottom: 40px;">
               <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #276874, #2d7d8a); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
-                <span style="color: white; font-weight: bold; font-size: 16px;">[iK]</span>
+                <span style="color: white; font-weight: bold; font-size: 16px;">[nB]</span>
               </div>
-              <h1 style="color: #276874; font-size: 24px; font-weight: bold; margin: 0;">InvoiceKirim</h1>
+              <h1 style="color: #276874; font-size: 24px; font-weight: bold; margin: 0;">NotaBener</h1>
               <p style="color: #64748b; margin: 8px 0 0;">Platform Invoice untuk Freelancer</p>
             </div>
 
@@ -701,8 +701,8 @@ export const emailTemplates = {
 
             <!-- Footer -->
             <div style="text-align: center; margin-top: 40px; color: #94a3b8; font-size: 14px;">
-              <p style="margin: 0 0 8px;">Invoice dibuat dengan InvoiceKirim</p>
-              <p style="margin: 0;">&copy; ${new Date().getFullYear()} InvoiceKirim. All rights reserved.</p>
+              <p style="margin: 0 0 8px;">Invoice dibuat dengan NotaBener</p>
+              <p style="margin: 0;">&copy; ${new Date().getFullYear()} NotaBener. All rights reserved.</p>
             </div>
           </div>
         </body>
@@ -753,7 +753,7 @@ export async function sendSystemEmail({
       },
     })
 
-    const fromName = admin.smtpFromName || 'InvoiceKirim'
+    const fromName = admin.smtpFromName || 'NotaBener'
     const fromEmail = admin.smtpFromEmail
 
     await transporter.sendMail({

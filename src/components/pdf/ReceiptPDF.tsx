@@ -211,13 +211,13 @@ export const ReceiptPDF = ({
       <View style={styles.header}>
         <View style={styles.titleContainer}>
           <View style={styles.logoBadge}>
-            <Text style={styles.logoText}>[iK]</Text>
+            <Text style={styles.logoText}>[nB]</Text>
           </View>
           <View style={styles.paidBadge}>
             <Text style={styles.paidText}>PEMBAYARAN BERHASIL</Text>
           </View>
           <Text style={styles.title}>Kuitansi</Text>
-          <Text style={styles.subtitle}>InvoiceKirim Payment Receipt</Text>
+          <Text style={styles.subtitle}>NotaBener Payment Receipt</Text>
         </View>
       </View>
 
@@ -297,10 +297,10 @@ export const ReceiptPDF = ({
       {/* Footer */}
       <View style={styles.footer}>
         <Text style={styles.footerText}>
-          Kuitansi ini dibuat secara otomatis oleh InvoiceKirim
+          Kuitansi ini dibuat secara otomatis oleh NotaBener
         </Text>
         <Text style={[styles.footerText, { marginTop: 5 }]}>
-          Jika Anda memiliki pertanyaan, hubungi support@invoicekirim.com
+          Jika Anda memiliki pertanyaan, hubungi support@notabener.com
         </Text>
       </View>
     </Page>

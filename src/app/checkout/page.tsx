@@ -393,7 +393,7 @@ export default function CheckoutPage() {
                 Pilih Paket Berlangganan
               </h1>
               <p className="text-text-secondary max-w-lg mx-auto">
-                Tingkatkan kemampuan InvoiceKirim Anda dengan paket yang sesuai kebutuhan bisnis
+                Tingkatkan kemampuan NotaBener Anda dengan paket yang sesuai kebutuhan bisnis
               </p>
             </div>
 
@@ -558,7 +558,7 @@ export default function CheckoutPage() {
                     {billingCycle === 'yearly' && selectedPlan && !selectedPlan.slug.includes('trial') && ' - Tahunan'}
                     {selectedPlan?.slug.includes('trial') && ' - Trial Gratis'}
                   </p>
-                  <p className="text-white/70 text-sm mt-1">InvoiceKirim Subscription</p>
+                  <p className="text-white/70 text-sm mt-1">NotaBener Subscription</p>
                 </div>
                 <div className="text-right">
                   <p className="text-white/80 text-sm mb-1">Total</p>
@@ -953,7 +953,7 @@ export default function CheckoutPage() {
                   href="/dashboard"
                   className="block w-full py-4 bg-gradient-to-br from-primary-500 to-primary-600 text-white font-bold rounded-xl hover:from-primary-600 hover:to-primary-700 transition-all shadow-lg shadow-primary-500/30 text-center"
                 >
-                  Mulai Gunakan InvoiceKirim
+                  Mulai Gunakan NotaBener
                 </Link>
                 <Link
                   href="/dashboard/billing"

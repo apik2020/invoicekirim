@@ -26,9 +26,9 @@ export const HELP_CATEGORIES: HelpCategory[] = [
   {
     id: 'getting-started',
     name: 'Getting Started',
-    description: 'Learn the basics of InvoiceKirim',
+    description: 'Learn the basics of NotaBener',
     icon: 'Rocket',
-    articles: ['what-is-invoicekirim', 'creating-first-invoice', 'setting-up-profile'],
+    articles: ['what-is-notabener', 'creating-first-invoice', 'setting-up-profile'],
   },
   {
     id: 'invoices',
@@ -76,15 +76,15 @@ export const HELP_CATEGORIES: HelpCategory[] = [
 
 export const HELP_ARTICLES: HelpArticle[] = [
   {
-    id: 'what-is-invoicekirim',
-    slug: 'what-is-invoicekirim',
-    title: 'What is InvoiceKirim?',
+    id: 'what-is-notabener',
+    slug: 'what-is-notabener',
+    title: 'What is NotaBener?',
     category: 'getting-started',
-    excerpt: 'Introduction to InvoiceKirim and its features',
+    excerpt: 'Introduction to NotaBener and its features',
     content: `
-# What is InvoiceKirim?
+# What is NotaBener?
 
-InvoiceKirim is a modern invoicing platform designed for Indonesian businesses and freelancers.
+NotaBener is a modern invoicing platform designed for Indonesian businesses and freelancers.
 
 ## Key Features
 
@@ -102,7 +102,7 @@ InvoiceKirim is a modern invoicing platform designed for Indonesian businesses a
 3. Create your first invoice
 4. Send it to your client
 
-Need help? Contact our support team at support@invoicekirim.com
+Need help? Contact our support team at support@notabener.com
     `,
     keywords: ['introduction', 'features', 'getting started'],
     lastUpdated: '2024-01-15',
@@ -203,11 +203,11 @@ Teams allow you to collaborate with others on invoices and clients.
     slug: 'api-authentication',
     title: 'API Authentication',
     category: 'api',
-    excerpt: 'How to authenticate with the InvoiceKirim API',
+    excerpt: 'How to authenticate with the NotaBener API',
     content: `
 # API Authentication
 
-InvoiceKirim uses API keys for authentication.
+NotaBener uses API keys for authentication.
 
 ## Creating an API Key
 
@@ -229,7 +229,7 @@ Authorization: Bearer ik_live_xxxxxxxxxxxx
 ## Example Request
 
 \`\`\`bash
-curl -X GET "https://invoicekirim.com/api/invoices" \\
+curl -X GET "https://notabener.com/api/invoices" \\
   -H "Authorization: Bearer ik_live_xxxxxxxxxxxx" \\
   -H "Content-Type: application/json"
 \`\`\`

@@ -1,4 +1,4 @@
-# InvoiceKirim
+# NotaBener
 
 Platform Invoice Profesional untuk Freelancer Indonesia.
 
@@ -18,7 +18,7 @@ Platform Invoice Profesional untuk Freelancer Indonesia.
 - **Backend**: Next.js API Routes, Prisma ORM
 - **Database**: PostgreSQL
 - **Authentication**: NextAuth.js
-- **Payment**: Stripe
+- **Payment**: DOKU, Stripe
 - **Email**: Resend
 - **PDF Generation**: @react-pdf/renderer
 
@@ -26,7 +26,8 @@ Platform Invoice Profesional untuk Freelancer Indonesia.
 
 - Node.js 18+
 - PostgreSQL database
-- Stripe account (for payments)
+- DOKU account (for Indonesia payments)
+- Stripe account (for international payments)
 - Resend account (for emails)
 
 ## Environment Setup
@@ -34,8 +35,8 @@ Platform Invoice Profesional untuk Freelancer Indonesia.
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/yourusername/invoicekirim.git
-cd invoicekirim
+git clone https://github.com/yourusername/notabener.git
+cd notabener
 ```
 
 ### 2. Install dependencies
@@ -50,7 +51,7 @@ Create a `.env` file in the root directory:
 
 ```bash
 # Database
-DATABASE_URL="postgresql://user:password@localhost:5432/invoicekirim"
+DATABASE_URL="postgresql://user:password@localhost:5432/notabener"
 
 # NextAuth
 NEXTAUTH_URL="http://localhost:3000"
@@ -59,6 +60,11 @@ NEXTAUTH_SECRET="your-secret-key-here"
 # OAuth Providers (optional)
 GOOGLE_CLIENT_ID="your-google-client-id"
 GOOGLE_CLIENT_SECRET="your-google-client-secret"
+
+# DOKU Payment Gateway (Indonesia)
+DOKU_CLIENT_ID="your-doku-client-id"
+DOKU_SECRET_KEY="your-doku-secret-key"
+DOKU_ENVIRONMENT="SANDBOX"  # SANDBOX or PRODUCTION
 
 # Stripe
 STRIPE_SECRET_KEY="sk_test_..."
@@ -101,22 +107,44 @@ Or manually create an admin in the database:
 INSERT INTO "Admin" (id, email, name, password)
 VALUES (
   'admin-id',
-  'admin@invoicekirim.com',
+  'admin@notabener.com',
   'Admin',
   'hashed-password-here' -- Use bcrypt to hash
 );
 ```
 
-## Stripe Setup
+## DOKU Setup (Indonesia Payments)
+
+### 1. Create DOKU Account
+
+1. Go to [DOKU Dashboard](https://dashboard.doku.com)
+2. Sign up and complete verification
+3. Get your Client ID and Secret Key
+
+### 2. Configure Webhook
+
+1. In DOKU Dashboard, go to **Settings** > **Configuration**
+2. Set **Notification URL**: `https://your-domain.com/api/webhooks/doku`
+3. Set **Return URL**: `https://your-domain.com/checkout?status=success`
+
+### 3. Environment Variables
+
+```bash
+DOKU_CLIENT_ID="BRN-xxxx-xxxxxxxxxxxx"
+DOKU_SECRET_KEY="SK-xxxxxxxxxxxx"
+DOKU_ENVIRONMENT="SANDBOX"  # Use PRODUCTION for live
+```
+
+## Stripe Setup (International Payments)
 
 ### 1. Create Stripe Products & Prices
 
 1. Go to [Stripe Dashboard](https://dashboard.stripe.com)
 2. Navigate to **Products** > **Add product**
 3. Create a product with:
-   - Name: `InvoiceKirim Pro`
+   - Name: `NotaBener Pro`
    - Description: `Professional invoice management`
-   - Price: `Rp 49.000/month` or `IDR 49000`
+   - Price: `$9/month` or your preferred pricing
 4. Copy the Price ID and set it as `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID`
 
 ### 2. Set up Webhook
@@ -198,6 +226,9 @@ Before deploying, make sure all required variables are set:
 - [ ] `DATABASE_URL`
 - [ ] `NEXTAUTH_URL`
 - [ ] `NEXTAUTH_SECRET`
+- [ ] `DOKU_CLIENT_ID`
+- [ ] `DOKU_SECRET_KEY`
+- [ ] `DOKU_ENVIRONMENT`
 - [ ] `STRIPE_SECRET_KEY`
 - [ ] `STRIPE_WEBHOOK_SECRET`
 - [ ] `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID`
@@ -213,6 +244,7 @@ src/
 │   ├── api/                  # API Routes
 │   │   ├── admin/           # Admin endpoints
 │   │   ├── stripe/          # Stripe webhooks
+│   │   ├── webhooks/doku/   # DOKU webhooks
 │   │   ├── cron/            # Cron jobs
 │   │   └── ...
 │   ├── dashboard/           # Dashboard pages
@@ -226,6 +258,7 @@ src/
 │   ├── auth.ts             # NextAuth config
 │   ├── email.ts            # Email templates
 │   ├── prisma.ts           # Prisma client
+│   ├── doku.ts             # DOKU functions
 │   ├── stripe.ts           # Stripe functions
 │   └── ...
 └── types/                  # TypeScript types
@@ -245,4 +278,4 @@ MIT License - see LICENSE file for details.
 
 ## Support
 
-For support, email hello@invoicekirim.com or open an issue on GitHub.
+For support, email hello@notabener.com or open an issue on GitHub.

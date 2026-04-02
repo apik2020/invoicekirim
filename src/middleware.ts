@@ -87,7 +87,9 @@ export default async function middleware(req: NextRequest) {
   }
 
   // Client portal and client API are public
-  if (isClientPortal || isClientAPI) {
+  // Also allow webhooks (they have their own signature verification)
+  const isWebhook = pathname.includes('/webhooks/')
+  if (isClientPortal || isClientAPI || isWebhook) {
     return response
   }
 

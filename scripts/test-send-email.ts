@@ -61,13 +61,13 @@ async function testSendEmail() {
     // Send test email
     console.log(`\nSending test email to: ${testEmail}`)
     const info = await transporter.sendMail({
-      from: `"${admin!.smtpFromName || 'InvoiceKirim'}" <${admin!.smtpFromEmail}>`,
+      from: `"${admin!.smtpFromName || 'NotaBener'}" <${admin!.smtpFromEmail}>`,
       to: testEmail,
-      subject: 'Test Email dari InvoiceKirim',
+      subject: 'Test Email dari NotaBener',
       html: `
         <div style="font-family: Arial, sans-serif; padding: 20px;">
           <h2 style="color: #276874;">Test Email Berhasil!</h2>
-          <p>Email ini dikirim dari sistem InvoiceKirim untuk menguji konfigurasi SMTP.</p>
+          <p>Email ini dikirim dari sistem NotaBener untuk menguji konfigurasi SMTP.</p>
           <p>Waktu pengiriman: ${new Date().toLocaleString('id-ID')}</p>
         </div>
       `,

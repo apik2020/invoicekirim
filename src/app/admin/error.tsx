@@ -130,7 +130,7 @@ export default function AdminError({
             {/* Support Link */}
             <div className="text-center">
               <a
-                href="mailto:support@invoicekirim.com"
+                href="mailto:support@notabener.com"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors font-medium"
               >
                 <Mail className="w-4 h-4" />

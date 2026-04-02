@@ -68,7 +68,7 @@ const DEFAULT_TEMPLATES: Record<string, { subject: string; body: string }> = {
       <a href="#" class="button">Lihat Invoice</a>
     </div>
     <div class="footer">
-      <p>Invoice dikirim oleh {{companyName}} melalui InvoiceKirim</p>
+      <p>Invoice dikirim oleh {{companyName}} melalui NotaBener</p>
     </div>
   </div>
 </body>

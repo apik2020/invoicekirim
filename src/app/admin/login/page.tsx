@@ -74,7 +74,7 @@ export default function AdminLoginPage() {
               Admin Login
             </h1>
             <p className="text-text-secondary text-sm sm:text-base">
-              Login untuk mengakses dashboard admin InvoiceKirim
+              Login untuk mengakses dashboard admin NotaBener
             </p>
           </div>
 
@@ -98,7 +98,7 @@ export default function AdminLoginPage() {
                   </div>
                   <input
                     type="email"
-                    placeholder="admin@invoicekirim.com"
+                    placeholder="admin@notabener.com"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="auth-input"

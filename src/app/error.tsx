@@ -167,7 +167,7 @@ export default function Error({
         <div className="mt-8 text-center">
           <p className="text-gray-600 mb-3">Masih mengalami masalah?</p>
           <a
-            href="mailto:support@invoicekirim.com"
+            href="mailto:support@notabener.com"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white shadow-lg hover:shadow-xl transition-shadow text-gray-700 font-medium"
           >
             <Mail className="w-5 h-5 text-orange-500" />

@@ -3,7 +3,7 @@ import QRCode from 'qrcode'
 import { prisma } from './prisma'
 import { randomBytes, createHash } from 'crypto'
 
-const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || 'InvoiceKirim'
+const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || 'NotaBener'
 
 /**
  * Generate a new TOTP secret for a user

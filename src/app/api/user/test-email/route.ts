@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     await transporter.sendMail({
       from: smtpUser,
       to: smtpUser, // Send to self
-      subject: '✅ Test Email - InvoiceKirim',
+      subject: '✅ Test Email - NotaBener',
       html: `
         <!DOCTYPE html>
         <html>
@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
               <div class="success">✅</div>
               <h2 style="text-align: center;">Pengaturan Email Anda Sudah Benar</h2>
               <p style="text-align: center;">
-                InvoiceKirim berhasil mengirim email menggunakan konfigurasi SMTP Anda.
+                NotaBener berhasil mengirim email menggunakan konfigurasi SMTP Anda.
               </p>
               <p style="text-align: center; color: #666; margin-top: 30px;">
                 Anda sekarang bisa mengirim invoice langsung dari dashboard!

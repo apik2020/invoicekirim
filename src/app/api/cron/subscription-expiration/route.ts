@@ -89,14 +89,14 @@ export async function POST(req: NextRequest) {
         if (resend && subscription.users.email) {
           try {
             await resend.emails.send({
-              from: 'InvoiceKirim <notifications@invoicekirim.com>',
+              from: 'NotaBener <notifications@notabener.com>',
               to: subscription.users.email,
               subject: 'Langganan PRO Anda Telah Berakhir',
               html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                   <h2 style="color: #333;">Langganan PRO Anda Telah Berakhir</h2>
                   <p>Hai ${subscription.users.name || 'Pengguna'},</p>
-                  <p>Langganan PRO InvoiceKirim Anda telah berakhir pada ${now.toLocaleDateString('id-ID')}.</p>
+                  <p>Langganan PRO NotaBener Anda telah berakhir pada ${now.toLocaleDateString('id-ID')}.</p>
                   <p>Akun Anda telah diturunkan ke paket FREE. Anda masih dapat mengakses fitur dasar dengan batasan:</p>
                   <ul>
                     <li>Maksimal 10 invoice per bulan</li>
@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
                       Upgrade Kembali ke PRO
                     </a>
                   </div>
-                  <p>Terima kasih telah menggunakan InvoiceKirim!</p>
+                  <p>Terima kasih telah menggunakan NotaBener!</p>
                   <p style="color: #666; font-size: 12px;">Email ini dikirim otomatis, jangan balas email ini.</p>
                 </div>
               `,

@@ -262,7 +262,7 @@ function PricingContent() {
         <div className="mt-20 text-center max-w-2xl mx-auto">
           <p className="font-body text-muted">
             Butuh bantuan atau ada pertanyaan?{' '}
-            <a href="mailto:hello@invoicekirim.com" className="text-arctic-blue font-bold hover:underline">
+            <a href="mailto:hello@notabener.com" className="text-arctic-blue font-bold hover:underline">
               Hubungi kami
             </a>
           </p>

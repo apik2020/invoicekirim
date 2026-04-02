@@ -53,7 +53,7 @@ model admins {
   smtpSecure     Boolean  @default(false)
   smtpUser       String?
   smtpPass       String?
-  smtpFromName   String?  @default("InvoiceKirim")
+  smtpFromName   String?  @default("NotaBener")
   smtpFromEmail   String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime
@@ -304,6 +304,8 @@ model payments {
   expiredAt             DateTime?
   midtransOrderId       String?       @unique
   midtransTransactionId String?
+  dokuOrderId           String?       @unique
+  dokuTransactionId     String?
   paymentGateway        String?
   paymentMethod         String?
   pricingPlanId         String?
@@ -316,6 +318,7 @@ model payments {
   users                 users         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([invoiceId])
+  @@index([dokuOrderId])
   @@index([midtransOrderId])
   @@index([pricingPlanId])
   @@index([status])

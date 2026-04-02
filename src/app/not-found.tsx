@@ -97,7 +97,7 @@ export default function NotFound() {
           <div className="inline-flex items-center gap-3 px-6 py-3 bg-white rounded-full shadow-md">
             <span className="text-sm text-gray-600">Butuh bantuan?</span>
             <a
-              href="mailto:support@invoicekirim.com"
+              href="mailto:support@notabener.com"
               className="text-sm font-semibold text-blue-600 hover:text-blue-700"
             >
               Hubungi Support

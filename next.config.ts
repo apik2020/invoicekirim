@@ -4,6 +4,9 @@ import type { NextConfig } from 'next'
 const isProduction = process.env.NODE_ENV === 'production'
 
 const nextConfig: NextConfig = {
+  // Explicitly set distDir to avoid Turbopack issues
+  distDir: '.next',
+
   // Image optimization
   images: {
     formats: ['image/avif', 'image/webp'],

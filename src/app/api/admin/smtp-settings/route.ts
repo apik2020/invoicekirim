@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
       smtpPort: adminData?.smtpPort || '587',
       smtpSecure: adminData?.smtpSecure || false,
       smtpUser: adminData?.smtpUser || '',
-      smtpFromName: adminData?.smtpFromName || 'InvoiceKirim',
+      smtpFromName: adminData?.smtpFromName || 'NotaBener',
       smtpFromEmail: adminData?.smtpFromEmail || '',
     })
   } catch (error) {

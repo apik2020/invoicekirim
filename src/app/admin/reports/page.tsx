@@ -87,7 +87,7 @@ export default function AdminReportsPage() {
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `invoicekirim-report-${new Date().toISOString().split('T')[0]}.csv`
+    a.download = `notabener-report-${new Date().toISOString().split('T')[0]}.csv`
     a.click()
     window.URL.revokeObjectURL(url)
   }

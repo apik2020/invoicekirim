@@ -153,10 +153,10 @@ export function DashboardSidebar({
         <div className="h-16 px-4 border-b border-white/10 flex items-center justify-between flex-shrink-0">
           <Link href="/dashboard" className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-primary flex-shrink-0">
-              <span className="font-bold text-white text-xs tracking-tight">[iK]</span>
+              <span className="font-bold text-white text-xs tracking-tight">[nB]</span>
             </div>
             {(!isCollapsed || mobileOpen) && (
-              <span className="font-bold text-base text-white">InvoiceKirim</span>
+              <span className="font-bold text-base text-white">NotaBener</span>
             )}
           </Link>
           {/* Mobile Close Button */}

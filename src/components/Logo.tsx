@@ -32,7 +32,7 @@ function LogoIcon({ size, className }: { size?: 'sm' | 'md' | 'lg'; className?: 
         className
       )}
     >
-      <span className="font-bold text-white tracking-tight">[iK]</span>
+      <span className="font-bold text-white tracking-tight">[nB]</span>
     </div>
   )
 }
@@ -48,7 +48,7 @@ function LogoText({ size, textClassName }: { size?: 'sm' | 'md' | 'lg'; textClas
         textClassName
       )}
     >
-      InvoiceKirim
+      NotaBener
     </span>
   )
 }
@@ -95,7 +95,7 @@ export function AdminLogo({
       {showText && (
         <div className="flex items-center gap-2">
           <span className={cn('font-bold text-brand-500', textSizeClasses[size], textClassName)}>
-            InvoiceKirim
+            NotaBener
           </span>
           {linkToHome && (
             <span className="px-2 py-0.5 bg-primary-100 text-primary-600 text-xs font-semibold rounded-full">

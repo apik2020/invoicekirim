@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document explains the complete Feature-Based Access Control (FBAC) system implemented in InvoiceKirim. The system controls user access to features based on their subscription plan.
+This document explains the complete Feature-Based Access Control (FBAC) system implemented in NotaBener. The system controls user access to features based on their subscription plan.
 
 ## Architecture
 

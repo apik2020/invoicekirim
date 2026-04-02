@@ -122,8 +122,8 @@ export async function createVAPayment(
       free_text: {
         inquiry: [
           {
-            id: 'Pembayaran InvoiceKirim Pro',
-            en: 'InvoiceKirim Pro Payment',
+            id: 'Pembayaran NotaBener Pro',
+            en: 'NotaBener Pro Payment',
           },
         ],
         payment: [

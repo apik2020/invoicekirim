@@ -2,22 +2,22 @@ import { Quote } from 'lucide-react'
 
 const testimonials = [
   {
-    name: 'Andi Pratama',
+    name: 'Ibu Sari',
+    role: 'Pemilik Warung Kopi',
+    content: 'Dulu pakai buku tulis, sekarang pakai NotaBener. Klien langsung kaget lihat invoice nya rapi! Praktis banget.',
+    initials: 'IS'
+  },
+  {
+    name: 'Mas Budi',
     role: 'Freelance Designer',
-    content: 'Akhirnya ada tool invoice Indonesia yang simpel banget. Cuma butuh 2 menit buat kirim invoice ke klien.',
-    initials: 'AP'
+    content: 'Gak perlu Excel lagi! 2 menit udah jadi invoice profesional. Klien juga jadi lebih percaya.',
+    initials: 'MB'
   },
   {
-    name: 'Siti Rahayu',
-    role: 'Content Writer',
-    content: 'Suka banget sama desainnya yang otomatis rapi. Klien saya langsung bayar karena invoice terlihat profesional.',
-    initials: 'SR'
-  },
-  {
-    name: 'Budi Santoso',
-    role: 'Web Developer',
-    content: 'Fitur kirim via WhatsApp sangat membantu. Respons klien jauh lebih cepat dibanding email.',
-    initials: 'BS'
+    name: 'Mbak Dewi',
+    role: 'Owner Online Shop',
+    content: 'Bisa kirim invoice lewat WhatsApp, praktis banget! Pembeli juga jadi lebih percaya karena invoice nya resmi.',
+    initials: 'MD'
   }
 ]
 
@@ -28,10 +28,10 @@ export default function Testimonials() {
         {/* Section Header */}
         <div className="text-center mb-20">
           <h2 className="font-display text-extrabold text-4xl md:text-5xl lg:text-6xl text-slate mb-6 tracking-tight">
-            Apa Kata Freelancer?
+            Apa Kata Pengguna NotaBener?
           </h2>
           <p className="font-body text-lg md:text-xl text-muted max-w-2xl mx-auto">
-            Sudah digunakan oleh ratusan freelancer di Indonesia.
+            Dipercaya oleh ratusan UMKM dan freelancer di Indonesia.
           </p>
         </div>
 
@@ -69,12 +69,12 @@ export default function Testimonials() {
         {/* Stats */}
         <div className="grid grid-cols-3 gap-12 max-w-4xl mx-auto">
           <div className="neu-card-md p-8 text-center hover:-translate-y-1 transition-all duration-300">
-            <div className="font-display text-5xl font-extrabold text-arctic-blue tracking-tight mb-2">500+</div>
-            <div className="font-body text-sm text-muted">Invoice Dibuat</div>
+            <div className="font-display text-5xl font-extrabold text-arctic-blue tracking-tight mb-2">10rb+</div>
+            <div className="font-body text-sm text-muted">Invoice Terkirim</div>
           </div>
           <div className="neu-card-md p-8 text-center hover:-translate-y-1 transition-all duration-300">
-            <div className="font-display text-5xl font-extrabold text-arctic-blue tracking-tight mb-2">200+</div>
-            <div className="font-body text-sm text-muted">Freelancer</div>
+            <div className="font-display text-5xl font-extrabold text-arctic-blue tracking-tight mb-2">500+</div>
+            <div className="font-body text-sm text-muted">UMKM & Freelancer</div>
           </div>
           <div className="neu-card-md p-8 text-center hover:-translate-y-1 transition-all duration-300">
             <div className="font-display text-5xl font-extrabold text-arctic-blue tracking-tight mb-2">4.8</div>

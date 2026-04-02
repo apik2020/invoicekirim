@@ -3,12 +3,12 @@ import type { OpenAPIV3_1 } from 'openapi-types'
 export const openApiSpec: OpenAPIV3_1.Document = {
   openapi: '3.1.0',
   info: {
-    title: 'InvoiceKirim API',
+    title: 'NotaBener API',
     version: '1.0.0',
-    description: 'API for InvoiceKirim - Create, send, and manage invoices with payment integration',
+    description: 'API for NotaBener - Create, send, and manage invoices with payment integration',
     contact: {
-      name: 'InvoiceKirim Support',
-      email: 'support@invoicekirim.com',
+      name: 'NotaBener Support',
+      email: 'support@notabener.com',
     },
     license: {
       name: 'MIT',
@@ -17,7 +17,7 @@ export const openApiSpec: OpenAPIV3_1.Document = {
   },
   servers: [
     {
-      url: 'https://invoicekirim.com/api',
+      url: 'https://notabener.com/api',
       description: 'Production server',
     },
     {

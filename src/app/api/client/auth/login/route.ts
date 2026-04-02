@@ -95,14 +95,14 @@ export async function POST(request: NextRequest) {
 
     await sendSystemEmail({
       to: client.email,
-      subject: 'Login ke Dashboard Client InvoiceKirim',
+      subject: 'Login ke Dashboard Client NotaBener',
       html: `
         <!DOCTYPE html>
         <html>
           <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Login - InvoiceKirim Client</title>
+            <title>Login - NotaBener Client</title>
           </head>
           <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f7f7f7;">
             <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
                 <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #276874, #2d7d8a); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
                   <span style="color: white; font-weight: bold; font-size: 16px;">[iK]</span>
                 </div>
-                <h1 style="color: #276874; font-size: 24px; font-weight: bold; margin: 0;">InvoiceKirim</h1>
+                <h1 style="color: #276874; font-size: 24px; font-weight: bold; margin: 0;">NotaBener</h1>
                 <p style="color: #64748b; margin: 8px 0 0;">Client Portal</p>
               </div>
 
@@ -146,8 +146,8 @@ export async function POST(request: NextRequest) {
               </div>
 
               <div style="text-align: center; margin-top: 40px; color: #94a3b8; font-size: 14px;">
-                <p style="margin: 0 0 8px;">InvoiceKirim - Platform Invoice untuk Freelancer</p>
-                <p style="margin: 0;">&copy; ${new Date().getFullYear()} InvoiceKirim. All rights reserved.</p>
+                <p style="margin: 0 0 8px;">NotaBener - Platform Invoice untuk Freelancer</p>
+                <p style="margin: 0;">&copy; ${new Date().getFullYear()} NotaBener. All rights reserved.</p>
               </div>
             </div>
           </body>

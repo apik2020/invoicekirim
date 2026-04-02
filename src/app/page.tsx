@@ -136,20 +136,20 @@ export default function Home() {
             <div className="text-center md:text-left">
               <div className="badge badge-brand mb-6 inline-flex items-center gap-2 animate-pulse-soft">
                 <Sparkles className="w-4 h-4" />
-                <span>Platform Invoice Indonesia</span>
+                <span>100% Gratis untuk Selamanya</span>
               </div>
 
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-brand-500 mb-6 leading-tight">
-                Buat Invoice{' '}
+                Bikin Invoice{' '}
                 <span className="text-primary-500">
-                  MUDAH
+                  Tanpa Ribet
                 </span>
                 <br />
-                dalam Hitungan Detik
+                Langsung Terkirim!
               </h1>
 
               <p className="text-lg text-text-secondary mb-8 max-w-xl mx-auto md:mx-0 leading-relaxed">
-                Kelola invoice bisnis Anda dengan mudah. Buat, kirim, dan lacak pembayaran - semuanya dari satu platform yang profesional dan user-friendly.
+                Ribet pakai Excel? NotaBener bikin urusan invoice jadi gampang. Buat, kirim via WhatsApp, dan lacak pembayaran - semua dari HP atau laptop.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start mb-8">
@@ -157,7 +157,7 @@ export default function Home() {
                   href="/login"
                   className="inline-flex items-center justify-center gap-2 px-8 py-4 btn-primary font-semibold"
                 >
-                  <span className="font-bold text-white">[iK]</span>
+                  <span className="font-bold text-white">[nB]</span>
                   Mulai Gratis
                 </Link>
                 <Link
@@ -193,7 +193,7 @@ export default function Home() {
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-brand">
-                      <span className="font-bold text-white text-sm tracking-tight">[iK]</span>
+                      <span className="font-bold text-white text-sm tracking-tight">[nB]</span>
                     </div>
                     <div>
                       <span className="font-bold text-brand-500 text-lg">Dashboard</span>
@@ -341,7 +341,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-brand-500 mb-4">
-              Kenapa InvoiceKirim?
+              Kenapa NotaBener Cocok untuk UMKM?
             </h2>
             <p className="text-lg text-text-secondary max-w-2xl mx-auto">
               Semua yang Anda butuhkan untuk mengelola invoice bisnis Anda
@@ -399,21 +399,21 @@ export default function Home() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="cta-gradient rounded-3xl p-12 md:p-16 text-center shadow-brand-lg">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6">
-              Siap Mengelola Invoice?
+              Yuk, Mulai Bikin Invoice yang Bener!
             </h2>
             <p className="text-lg text-white/90 mb-8 max-w-2xl mx-auto leading-relaxed">
-              Bergabung dengan ratusan freelancer Indonesia yang sudah menggunakan InvoiceKirim.
-              Cepat, mudah, dan profesional.
+              Ribet pakai Excel? NotaBener bikin urusan invoice jadi gampang.
+              Daftar gratis, pakai selamanya. Dipercaya 500+ UMKM Indonesia.
             </p>
             <Link
               href="/login"
               className="inline-flex items-center justify-center gap-2 px-10 py-5 bg-primary-500 text-white rounded-xl font-bold text-lg hover:bg-primary-600 shadow-primary-lg hover:shadow-primary transition-all"
             >
-              <span className="font-bold text-white">[iK]</span>
+              <span className="font-bold text-white">[nB]</span>
               Mulai Gratis Sekarang
             </Link>
             <p className="mt-6 text-white text-sm opacity-90">
-              Data tersimpan aman • Siap dalam 2 menit
+              Tidak perlu kartu kredit • Siap dalam 30 detik
             </p>
           </div>
         </div>
@@ -428,8 +428,8 @@ export default function Home() {
                 <Logo size="sm" textClassName="!text-white" />
               </div>
               <p className="text-white/80 max-w-sm leading-relaxed">
-                Platform invoice profesional untuk freelancer dan bisnis Indonesia.
-                Buat invoice profesional dalam hitungan detik.
+                Platform invoice gratis untuk UMKM, pebisnis pemula, dan freelancer Indonesia.
+                Bikin invoice tanpa ribet, langsung terkirim!
               </p>
             </div>
 
@@ -477,7 +477,7 @@ export default function Home() {
           </div>
 
           <div className="pt-8 border-t border-white/20 text-center text-sm">
-            <p className="text-white/80">© 2024 InvoiceKirim. Dibuat dengan ❤️ untuk bisnis Indonesia.</p>
+            <p className="text-white/80">© 2024 NotaBener. Dibuat dengan ❤️ untuk bisnis Indonesia.</p>
           </div>
         </div>
       </footer>

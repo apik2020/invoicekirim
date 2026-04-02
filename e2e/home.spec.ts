@@ -5,7 +5,7 @@ test.describe('Home Page', () => {
     await page.goto('/')
 
     // Check that the page loaded
-    await expect(page).toHaveTitle(/InvoiceKirim/i)
+    await expect(page).toHaveTitle(/NotaBener/i)
   })
 
   test('should have navigation to login', async ({ page }) => {

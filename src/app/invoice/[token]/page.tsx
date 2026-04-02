@@ -20,8 +20,8 @@ interface InvoiceSettings {
   showSignature?: boolean
 }
 
-// Default InvoiceKirim branding
-const DEFAULT_INVOICEKIRIM_BRANDING: Partial<BrandingSettings> = {
+// Default NotaBener branding
+const DEFAULT_NOTABENER_BRANDING: Partial<BrandingSettings> = {
   primaryColor: '#F97316',
   secondaryColor: '#FFFFFF',
   accentColor: '#276874',
@@ -74,15 +74,15 @@ export default async function InvoicePage({ params }: PageProps) {
   }
 
   // Apply branding based on feature access:
-  // - Free users: Always use default InvoiceKirim branding
+  // - Free users: Always use default NotaBener branding
   // - Pro users: Use custom branding if configured, otherwise default
   const effectiveBranding: BrandingSettings = {
     id: branding?.id || 'default',
     teamId: branding?.teamId || 'default',
     logoUrl: hasCustomBranding && branding?.showLogo ? (branding?.logoUrl || null) : null,
-    primaryColor: hasCustomBranding && branding?.showColors ? (branding?.primaryColor || DEFAULT_INVOICEKIRIM_BRANDING.primaryColor!) : DEFAULT_INVOICEKIRIM_BRANDING.primaryColor!,
-    secondaryColor: hasCustomBranding && branding?.showColors ? (branding?.secondaryColor || DEFAULT_INVOICEKIRIM_BRANDING.secondaryColor!) : DEFAULT_INVOICEKIRIM_BRANDING.secondaryColor!,
-    accentColor: hasCustomBranding && branding?.showColors ? (branding?.accentColor || DEFAULT_INVOICEKIRIM_BRANDING.accentColor!) : DEFAULT_INVOICEKIRIM_BRANDING.accentColor!,
+    primaryColor: hasCustomBranding && branding?.showColors ? (branding?.primaryColor || DEFAULT_NOTABENER_BRANDING.primaryColor!) : DEFAULT_NOTABENER_BRANDING.primaryColor!,
+    secondaryColor: hasCustomBranding && branding?.showColors ? (branding?.secondaryColor || DEFAULT_NOTABENER_BRANDING.secondaryColor!) : DEFAULT_NOTABENER_BRANDING.secondaryColor!,
+    accentColor: hasCustomBranding && branding?.showColors ? (branding?.accentColor || DEFAULT_NOTABENER_BRANDING.accentColor!) : DEFAULT_NOTABENER_BRANDING.accentColor!,
     invoicePrefix: branding?.invoicePrefix || 'INV',
     receiptPrefix: branding?.receiptPrefix || 'RCP',
     showLogo: hasCustomBranding && branding?.showLogo ? true : false,

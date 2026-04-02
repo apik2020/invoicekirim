@@ -450,7 +450,7 @@ function PricingContent() {
               <div className="mt-12 text-center">
                 <p className="text-text-secondary">
                   Butuh bantuan atau ada pertanyaan?{' '}
-                  <a href="mailto:hello@invoicekirim.com" className="text-brand-600 font-semibold hover:text-brand-700">
+                  <a href="mailto:hello@notabener.com" className="text-brand-600 font-semibold hover:text-brand-700">
                     Hubungi kami
                   </a>
                 </p>
@@ -498,7 +498,7 @@ function PricingContent() {
                 Siap Membuat Invoice Profesional?
               </h2>
               <p className="text-xl text-text-secondary mb-8">
-                Bergabung dengan ribuan freelancer Indonesia yang sudah menggunakan InvoiceKirim
+                Bergabung dengan ribuan freelancer Indonesia yang sudah menggunakan NotaBener
               </p>
               <Link
                 href={session ? '/dashboard/invoices/create' : '/login'}

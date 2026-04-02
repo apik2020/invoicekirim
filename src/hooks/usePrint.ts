@@ -14,7 +14,7 @@ export function usePrint(options: UsePrintOptions = {}) {
 
   const handlePrint = useReactToPrint({
     contentRef,
-    documentTitle: options.documentTitle || 'InvoiceKirim',
+    documentTitle: options.documentTitle || 'NotaBener',
     onBeforePrint: async () => {
       if (options.onBeforePrint) {
         await options.onBeforePrint()

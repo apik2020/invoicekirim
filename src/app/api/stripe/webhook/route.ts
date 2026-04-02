@@ -166,7 +166,7 @@ export async function POST(req: NextRequest) {
               stripePaymentIntentId: invoice.payment_intent || null,
               amount: invoice.amount_paid / 100, // Convert from cents
               currency: invoice.currency.toUpperCase(),
-              description: `InvoiceKirim Pro Subscription - ${new Date().toLocaleDateString('id-ID')}`,
+              description: `NotaBener Pro Subscription - ${new Date().toLocaleDateString('id-ID')}`,
               status: 'COMPLETED',
               updatedAt: new Date(),
             },

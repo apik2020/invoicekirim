@@ -2,11 +2,12 @@ import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import {
-  createTransaction,
   createVAPayment,
   createQRISPayment,
-  VABankCode,
-} from '@/lib/midtrans'
+  generateDOKUOrderId,
+  DOKU_VA_BANKS,
+  type DOKUVABankCode,
+} from '@/lib/doku'
 import { validateUpgradeRequest } from '@/lib/subscription-upgrade'
 
 export async function POST(req: NextRequest) {
@@ -88,8 +89,8 @@ export async function POST(req: NextRequest) {
     // Calculate amount - use pricing plan price
     const amount = pricingPlan.price
 
-    // Generate order ID
-    const orderId = `IK-${Date.now()}-${session.id.slice(-6)}`
+    // Generate DOKU order ID
+    const orderId = generateDOKUOrderId(session.id)
 
     // Get user info
     const user = await prisma.users.findUnique({
@@ -106,29 +107,38 @@ export async function POST(req: NextRequest) {
       data: {
         id: crypto.randomUUID(),
         userId: session.id,
-        midtransOrderId: orderId,
+        dokuOrderId: orderId,
         amount,
         currency: pricingPlan.currency,
-        description: `InvoiceKirim ${pricingPlan.name}`,
+        description: `NotaBener ${pricingPlan.name}`,
         status: 'PENDING',
         paymentMethod,
-        paymentGateway: 'MIDTRANS',
+        paymentGateway: 'DOKU',
         pricingPlanId, // Link to pricing plan for webhook processing
         updatedAt: new Date(),
       },
     })
 
-    const expiryDate = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
-
     // Create transaction based on payment method
     if (paymentMethod === 'VA' && bankCode) {
-      const vaResult = await createVAPayment(bankCode as VABankCode, {
-        orderId,
-        amount,
-        customerName: user.name || 'Customer',
-        customerEmail: user.email,
-        description: `InvoiceKirim ${pricingPlan.name}`,
-      })
+      console.log('[Payment] Creating VA payment with bank:', bankCode)
+
+      try {
+        const vaResult = await createVAPayment(bankCode as DOKUVABankCode, {
+          orderId,
+          amount,
+          customerName: user.name || 'Customer',
+          customerEmail: user.email,
+          description: `NotaBener ${pricingPlan.name} - ${pricingPlan.name}`,
+        })
+        console.log('[Payment] VA payment created successfully:', vaResult)
+      } catch (dokuError) {
+        console.error('[Payment] DOKU VA payment failed:', dokuError)
+        console.error('[Payment] DOKU error type:', typeof dokuError)
+        console.error('[Payment] DOKU error message:', (dokuError as any).message)
+        console.error('[Payment] DOKU error stringified:', JSON.stringify(dokuError))
+        throw dokuError
+      }
 
       // Update payment with VA details
       await prisma.payments.update({
@@ -136,7 +146,8 @@ export async function POST(req: NextRequest) {
         data: {
           vaNumber: vaResult.vaNumber,
           vaBank: vaResult.bank,
-          expiredAt: vaResult.expiredAt,
+          expiredAt: vaResult.expiryDate,
+          paymentUrl: vaResult.paymentUrl,
         },
       })
 
@@ -149,7 +160,8 @@ export async function POST(req: NextRequest) {
           method: 'VA',
           vaNumber: vaResult.vaNumber,
           bank: vaResult.bank,
-          expiredAt: vaResult.expiredAt,
+          paymentUrl: vaResult.paymentUrl,
+          expiredAt: vaResult.expiryDate,
         },
       })
     }
@@ -160,7 +172,7 @@ export async function POST(req: NextRequest) {
         amount,
         customerName: user.name || 'Customer',
         customerEmail: user.email,
-        description: `InvoiceKirim ${pricingPlan.name}`,
+        description: `NotaBener ${pricingPlan.name} - ${pricingPlan.name}`,
       })
 
       // Update payment with QRIS details
@@ -168,7 +180,9 @@ export async function POST(req: NextRequest) {
         where: { id: payment.id },
         data: {
           qrisUrl: qrisResult.qrImageUrl,
-          expiredAt: qrisResult.expiredAt,
+          qrString: qrisResult.qrString,
+          expiredAt: qrisResult.expiryDate,
+          paymentUrl: qrisResult.paymentUrl,
         },
       })
 
@@ -180,18 +194,32 @@ export async function POST(req: NextRequest) {
           amount,
           method: 'QRIS',
           qrImageUrl: qrisResult.qrImageUrl,
-          expiredAt: qrisResult.expiredAt,
+          qrString: qrisResult.qrString,
+          paymentUrl: qrisResult.paymentUrl,
+          expiredAt: qrisResult.expiryDate,
         },
       })
     }
 
-    // Default: Snap (all payment methods)
-    const snapResult = await createTransaction({
+    // SNAP (all payment methods via DOKU Snap)
+    // For now, we'll return VA as default for SNAP
+    const defaultBank = 'BCA'
+    const snapResult = await createVAPayment(defaultBank, {
       orderId,
       amount,
       customerName: user.name || 'Customer',
       customerEmail: user.email,
-      description: `InvoiceKirim ${pricingPlan.name}`,
+      description: `NotaBener ${pricingPlan.name} - ${pricingPlan.name}`,
+    })
+
+    await prisma.payments.update({
+      where: { id: payment.id },
+      data: {
+        vaNumber: snapResult.vaNumber,
+        vaBank: snapResult.bank,
+        expiredAt: snapResult.expiryDate,
+        paymentUrl: snapResult.paymentUrl,
+      },
     })
 
     return NextResponse.json({
@@ -200,17 +228,47 @@ export async function POST(req: NextRequest) {
         id: payment.id,
         orderId,
         amount,
-        method: 'SNAP',
-        snapToken: snapResult.token,
-        snapUrl: snapResult.redirectUrl,
-        expiredAt: expiryDate,
+        method: 'VA',
+        vaNumber: snapResult.vaNumber,
+        bank: snapResult.bank,
+        paymentUrl: snapResult.paymentUrl,
+        expiredAt: snapResult.expiryDate,
       },
     })
   } catch (error) {
     console.error('Payment creation error:', error)
+    console.error('Error details:', JSON.stringify(error, null, 2))
+
+    // Extract error message safely
+    let errorMessage = 'Gagal membuat transaksi pembayaran'
+    if (error) {
+      if (typeof error === 'string') {
+        errorMessage = error
+      } else if (error instanceof Error) {
+        errorMessage = error.message
+      } else if ((error as any).message) {
+        errorMessage = (error as any).message
+      }
+    }
+
     return NextResponse.json(
-      { error: 'Gagal membuat transaksi pembayaran' },
+      {
+        error: errorMessage,
+        details: process.env.NODE_ENV === 'development' ? JSON.stringify(error, null, 2) : undefined
+      },
       { status: 500 }
     )
   }
+}
+
+// GET endpoint to get available VA banks
+export async function GET() {
+  return NextResponse.json({
+    vaBanks: DOKU_VA_BANKS,
+    paymentMethods: [
+      { value: 'VA', label: 'Virtual Account', description: 'Transfer bank BCA, Mandiri, BNI, BRI, CIMB, Permata' },
+      { value: 'QRIS', label: 'QRIS', description: 'QRIS payment via GoPay, ShopeePay, Dana, LinkAja' },
+      { value: 'SNAP', label: 'All Payments', description: 'Pilih metode pembayaran di halaman DOKU' },
+    ],
+  })
 }

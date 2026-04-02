@@ -119,7 +119,7 @@ export function SubscriptionGuard({ children }: { children: React.ReactNode }) {
               Masa Trial Berakhir
             </h2>
             <p className="text-gray-600 mb-6">
-              Masa percobaan gratis Anda telah berakhir. Pilih paket untuk melanjutkan menggunakan semua fitur InvoiceKirim.
+              Masa percobaan gratis Anda telah berakhir. Pilih paket untuk melanjutkan menggunakan semua fitur NotaBener.
             </p>
           </>
         ) : (

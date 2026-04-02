@@ -19,7 +19,7 @@ const SMTP_CONFIG = {
   smtpSecure: false,
   smtpUser: 'hs.pramono@gmail.com',
   smtpPass: smtpPassword,
-  smtpFromName: 'InvoiceKirim',
+  smtpFromName: 'NotaBener',
   smtpFromEmail: 'hs.pramono@gmail.com',
 }
 
@@ -108,20 +108,20 @@ async function saveSmtpAndTest() {
     const info = await transporter.sendMail({
       from: `"${SMTP_CONFIG.smtpFromName}" <${SMTP_CONFIG.smtpFromEmail}>`,
       to: testEmail,
-      subject: 'Test Email dari InvoiceKirim - SMTP Berhasil!',
+      subject: 'Test Email dari NotaBener - SMTP Berhasil!',
       html: `
         <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px;">
           <div style="text-align: center; margin-bottom: 30px;">
             <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #276874, #2d7d8a); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
               <span style="color: white; font-weight: bold; font-size: 16px;">[iK]</span>
             </div>
-            <h1 style="color: #276874; margin: 0;">InvoiceKirim</h1>
+            <h1 style="color: #276874; margin: 0;">NotaBener</h1>
           </div>
 
           <div style="background: white; border-radius: 20px; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
             <h2 style="color: #276874; margin-top: 0;">✅ Test Email Berhasil!</h2>
             <p style="color: #334155; line-height: 1.6;">
-              Email ini dikirim dari sistem InvoiceKirim untuk menguji konfigurasi SMTP.
+              Email ini dikirim dari sistem NotaBener untuk menguji konfigurasi SMTP.
             </p>
             <div style="background: #f0fdf4; border: 2px solid #C5E151; border-radius: 12px; padding: 20px; margin: 20px 0;">
               <p style="margin: 0; color: #3f6212;">
@@ -135,7 +135,7 @@ async function saveSmtpAndTest() {
           </div>
 
           <div style="text-align: center; margin-top: 30px; color: #94a3b8; font-size: 14px;">
-            <p>Email ini dikirim dari sistem InvoiceKirim</p>
+            <p>Email ini dikirim dari sistem NotaBener</p>
           </div>
         </div>
       `,

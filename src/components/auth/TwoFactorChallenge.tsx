@@ -171,7 +171,7 @@ export function TwoFactorChallenge({ email, callbackUrl }: TwoFactorChallengePro
           <div className="mt-6 text-center">
             <p className="text-sm text-text-secondary">
               Tidak bisa mengakses kode?{' '}
-              <a href="mailto:support@invoicekirim.com" className="text-brand-500 hover:text-brand-600 font-medium">
+              <a href="mailto:support@notabener.com" className="text-brand-500 hover:text-brand-600 font-medium">
                 Hubungi support
               </a>
             </p>

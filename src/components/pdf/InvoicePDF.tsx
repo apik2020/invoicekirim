@@ -260,13 +260,13 @@ export const InvoicePDF = ({ invoice }: InvoicePDFProps) => (
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.logoContainer}>
-          {/* Logo [iK] */}
+          {/* Logo [nB] */}
           <View style={[styles.logo, { backgroundColor: '#f97316', alignItems: 'center', justifyContent: 'center' }]}>
-            <Text style={{ color: '#ffffff', fontWeight: 'bold', fontSize: 12 }}>[iK]</Text>
+            <Text style={{ color: '#ffffff', fontWeight: 'bold', fontSize: 12 }}>[nB]</Text>
           </View>
           <View>
-            <Text style={styles.companyName}>InvoiceKirim</Text>
-            <Text style={styles.companyTagline}>Platform Invoice untuk Freelancer</Text>
+            <Text style={styles.companyName}>NotaBener</Text>
+            <Text style={styles.companyTagline}>Platform Invoice untuk UMKM</Text>
           </View>
         </View>
 
@@ -402,7 +402,7 @@ export const InvoicePDF = ({ invoice }: InvoicePDFProps) => (
       {/* Footer */}
       <View style={styles.footer}>
         <Text style={styles.footerText}>
-          Invoice dibuat dengan InvoiceKirim - Platform Invoice untuk Freelancer Indonesia
+          Invoice dibuat dengan NotaBener - Platform Invoice untuk UMKM Indonesia
         </Text>
         <Text style={[styles.footerText, { marginTop: 5 }]}>
           {formatDate(new Date())}

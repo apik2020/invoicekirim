@@ -22,7 +22,7 @@ export default function AdminEmailSettingsPage() {
     smtpSecure: false,
     smtpUser: '',
     smtpPass: '',
-    smtpFromName: 'InvoiceKirim',
+    smtpFromName: 'NotaBener',
     smtpFromEmail: '',
   })
   const [isLoading, setIsLoading] = useState(true)
@@ -46,7 +46,7 @@ export default function AdminEmailSettingsPage() {
           smtpSecure: data.smtpSecure || false,
           smtpUser: data.smtpUser || '',
           smtpPass: '', // Don't show password
-          smtpFromName: data.smtpFromName || 'InvoiceKirim',
+          smtpFromName: data.smtpFromName || 'NotaBener',
           smtpFromEmail: data.smtpFromEmail || '',
         })
       }
@@ -246,7 +246,7 @@ export default function AdminEmailSettingsPage() {
                 type="text"
                 value={settings.smtpFromName}
                 onChange={(e) => setSettings({ ...settings, smtpFromName: e.target.value })}
-                placeholder="InvoiceKirim"
+                placeholder="NotaBener"
                 className="input-field"
               />
             </div>

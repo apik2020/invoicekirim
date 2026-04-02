@@ -30,7 +30,7 @@ export function PrintableContent({
 // Print button component
 export function PrintButton({
   contentRef,
-  documentTitle = 'InvoiceKirim',
+  documentTitle = 'NotaBener',
   buttonClassName = 'inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-pink-500 text-white font-bold rounded-xl hover:from-orange-600 hover:to-pink-600 transition-all shadow-lg',
   buttonText = '🖨️ Cetak',
 }: {
@@ -52,7 +52,7 @@ export function PrintButton({
 }
 
 // Hook for custom print implementations
-export function usePrintContent(contentRef: React.RefObject<HTMLDivElement | null>, documentTitle = 'InvoiceKirim') {
+export function usePrintContent(contentRef: React.RefObject<HTMLDivElement | null>, documentTitle = 'NotaBener') {
   return useReactToPrint({
     contentRef,
     documentTitle,

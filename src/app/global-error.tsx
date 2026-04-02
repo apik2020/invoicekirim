@@ -122,7 +122,7 @@ export default function GlobalError({
               <div className="inline-flex flex-col sm:flex-row items-center gap-3 px-6 py-4 bg-white rounded-xl shadow-lg">
                 <p className="text-sm text-gray-700">Masih mengalami masalah?</p>
                 <a
-                  href="mailto:support@invoicekirim.com"
+                  href="mailto:support@notabener.com"
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors font-medium"
                 >
                   Hubungi Support Team

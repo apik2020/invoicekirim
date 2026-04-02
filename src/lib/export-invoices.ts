@@ -77,7 +77,7 @@ export function generateInvoicesCSV(invoices: InvoiceExportData[]): string {
  */
 export async function generateInvoicesExcel(invoices: InvoiceExportData[]): Promise<Buffer> {
   const workbook = new ExcelJS.Workbook()
-  workbook.creator = 'InvoiceKirim'
+  workbook.creator = 'NotaBener'
   workbook.created = new Date()
 
   // Sheet 1: Invoices Summary

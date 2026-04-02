@@ -1,7 +1,7 @@
 import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getTransactionStatus } from '@/lib/midtrans'
+import { getPaymentStatus } from '@/lib/doku'
 
 export async function GET(
   req: NextRequest,
@@ -28,58 +28,108 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // If payment is pending, check status from Midtrans
-    if (payment.status === 'PENDING' && payment.midtransOrderId) {
+    // If payment is pending, check status from DOKU
+    if (payment.status === 'PENDING' && payment.dokuOrderId) {
       try {
-        const midtransStatus = await getTransactionStatus(payment.midtransOrderId)
+        const dokuStatus = await getPaymentStatus(payment.dokuOrderId)
+
+        // Map DOKU payment statuses to our internal status
+        const statusMapping: Record<string, 'COMPLETED' | 'FAILED' | 'PENDING'> = {
+          'SUCCESS': 'COMPLETED',
+          'PAYMENT_SUCCESS': 'COMPLETED',
+          'PAYMENT_FAILED': 'FAILED',
+          'FAILED': 'FAILED',
+          'PENDING': 'PENDING',
+          'EXPIRED': 'FAILED',
+        }
+
+        const newStatus = statusMapping[dokuStatus.payment_status] || 'PENDING'
 
         // Update status if changed
-        if (midtransStatus.transactionStatus === 'settlement' || midtransStatus.transactionStatus === 'capture') {
+        if (newStatus !== 'PENDING' && newStatus !== payment.status) {
           await prisma.payments.update({
             where: { id },
             data: {
-              status: 'COMPLETED',
-              midtransTransactionId: midtransStatus.orderId,
+              status: newStatus,
+              dokuTransactionId: dokuStatus.transaction?.transaction_id,
             },
           })
 
-          // Update subscription
-          const existingSub = await prisma.subscriptions.findFirst({
-            where: { userId: session.id },
-          })
-
-          const periodEnd = new Date()
-          periodEnd.setMonth(periodEnd.getMonth() + 1)
-
-          if (existingSub) {
-            await prisma.subscriptions.update({
-              where: { id: existingSub.id },
-              data: {
-                planType: 'PRO',
-                status: 'ACTIVE',
-                stripeCurrentPeriodEnd: periodEnd,
-              },
+          // If payment completed, update subscription
+          if (newStatus === 'COMPLETED') {
+            const existingSub = await prisma.subscriptions.findFirst({
+              where: { userId: session.id },
             })
-          } else {
-            await prisma.subscriptions.create({
+
+            const pricingPlan = payment.pricingPlanId
+              ? await prisma.pricing_plans.findUnique({
+                  where: { id: payment.pricingPlanId },
+                  select: {
+                    id: true,
+                    slug: true,
+                    name: true,
+                    price: true,
+                    trialDays: true,
+                  },
+                })
+              : null
+
+            const periodEnd = new Date()
+            periodEnd.setMonth(periodEnd.getMonth() + 1)
+
+            if (existingSub) {
+              await prisma.subscriptions.update({
+                where: { id: existingSub.id },
+                data: {
+                  status: 'ACTIVE',
+                  planType: 'PRO',
+                  pricingPlanId: pricingPlan?.id || null,
+                  stripeCurrentPeriodEnd: periodEnd,
+                  updatedAt: new Date(),
+                },
+              })
+            } else {
+              await prisma.subscriptions.create({
+                data: {
+                  id: crypto.randomUUID(),
+                  userId: session.id,
+                  status: 'ACTIVE',
+                  planType: 'PRO',
+                  pricingPlanId: pricingPlan?.id || null,
+                  stripeCurrentPeriodEnd: periodEnd,
+                  updatedAt: new Date(),
+                },
+              })
+            }
+
+            // Log activity
+            await prisma.activity_logs.create({
               data: {
                 id: crypto.randomUUID(),
                 userId: session.id,
-                planType: 'PRO',
-                status: 'ACTIVE',
-                stripeCurrentPeriodEnd: periodEnd,
-                updatedAt: new Date(),
+                action: 'CREATED',
+                entityType: 'Subscription',
+                entityId: payment.id,
+                title: 'Pembayaran Berhasil - Langganan Pro Aktif',
+                description: `Pembayaran ${pricingPlan?.name} berhasil melalui DOKU`,
+                metadata: {
+                  paymentId: payment.id,
+                  dokuOrderId: payment.dokuOrderId,
+                  pricingPlan: pricingPlan?.name,
+                  amount: payment.amount.toString(),
+                },
               },
             })
           }
 
           return NextResponse.json({
-            payment: { ...payment, status: 'COMPLETED' },
+            payment: { ...payment, status: newStatus },
             statusChanged: true,
+            dokuStatus: dokuStatus,
           })
         }
       } catch (error) {
-        console.error('Failed to check Midtrans status:', error)
+        console.error('Failed to check DOKU status:', error)
       }
     }
 

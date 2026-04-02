@@ -28,7 +28,7 @@ export default function Features() {
         {/* Section Header */}
         <div className="text-center mb-20">
           <h2 className="font-display text-extrabold text-4xl md:text-5xl lg:text-6xl text-slate mb-6 tracking-tight">
-            Kenapa InvoiceKirim?
+            Kenapa NotaBener Cocok untuk UMKM?
           </h2>
           <p className="font-body text-lg md:text-xl text-muted max-w-2xl mx-auto">
             Dibuat khusus untuk freelancer Indonesia yang butuh invoice cepat dan profesional.

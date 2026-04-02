@@ -261,7 +261,7 @@ export async function POST(
             </div>
 
             <div class="footer">
-              <p>Invoice ini dikirim secara otomatis oleh InvoiceKirim</p>
+              <p>Invoice ini dikirim secara otomatis oleh NotaBener</p>
               <p>Jika ada pertanyaan, silakan hubungi pengirim invoice ini</p>
             </div>
           </div>

@@ -20,7 +20,7 @@ export default function CTA() {
 
             {/* Description */}
             <p className="font-body text-lg md:text-xl text-muted mb-12 max-w-2xl mx-auto leading-relaxed">
-              Bergabung dengan ratusan freelancer Indonesia yang sudah menggunakan InvoiceKirim.
+              Bergabung dengan ratusan UMKM dan freelancer Indonesia yang sudah menggunakan NotaBener.
               Cepat, simpel, langsung pakai.
             </p>
 

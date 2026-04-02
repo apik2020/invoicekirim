@@ -98,7 +98,7 @@ export class ErrorBoundary extends Component<Props, State> {
             <div className="mt-8 pt-8 border-t border-gray-200">
               <p className="text-sm text-gray-500">
                 Masih mengalami masalah?{' '}
-                <a href="mailto:support@invoicekirim.com" className="text-orange-600 hover:text-orange-700 font-medium">
+                <a href="mailto:support@notabener.com" className="text-orange-600 hover:text-orange-700 font-medium">
                   Hubungi Support
                 </a>
               </p>

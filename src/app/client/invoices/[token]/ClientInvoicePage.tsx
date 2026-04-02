@@ -210,7 +210,7 @@ export default function ClientInvoicePage({
             <!-- Footer -->
             <div style="margin-top: 48px; padding-top: 32px; border-top: 1px solid ${pdfPrimaryColor}30; text-align: center;">
               <p style="font-size: 12px; color: #333333; margin: 0;">
-                Invoice dibuat dengan <a href="https://invoicekirim.com" style="color: ${pdfPrimaryColor}; text-decoration: none; font-weight: 600;">InvoiceKirim</a>
+                Invoice dibuat dengan <a href="https://notabener.com" style="color: ${pdfPrimaryColor}; text-decoration: none; font-weight: 600;">NotaBener</a>
               </p>
             </div>
           </div>
@@ -389,7 +389,7 @@ export default function ClientInvoicePage({
             <!-- Footer -->
             <div style="margin-top: 48px; padding-top: 32px; border-top: 1px solid ${pdfPrimaryColor}30; text-align: center;">
               <p style="font-size: 12px; color: #333333; margin: 0;">
-                Invoice dibuat dengan <a href="https://invoicekirim.com" style="color: ${pdfPrimaryColor}; text-decoration: none; font-weight: 600;">InvoiceKirim</a>
+                Invoice dibuat dengan <a href="https://notabener.com" style="color: ${pdfPrimaryColor}; text-decoration: none; font-weight: 600;">NotaBener</a>
               </p>
             </div>
           </div>
@@ -603,7 +603,7 @@ Terima kasih!`
                 <FileText className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="font-bold text-gray-900 text-lg">InvoiceKirim</h1>
+                <h1 className="font-bold text-gray-900 text-lg">NotaBener</h1>
                 <p className="text-xs text-gray-600">Client Portal</p>
               </div>
             </div>
@@ -875,16 +875,16 @@ Terima kasih!`
               <p className="text-sm text-gray-600">
                 Invoice dibuat dengan{' '}
                 <a
-                  href="https://invoicekirim.com"
+                  href="https://notabener.com"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-gray-900 font-medium hover:underline"
                 >
-                  InvoiceKirim
+                  NotaBener
                 </a>
               </p>
               <p className="text-xs text-gray-600 mt-2">
-                &copy; {new Date().getFullYear()} InvoiceKirim. All rights reserved.
+                &copy; {new Date().getFullYear()} NotaBener. All rights reserved.
               </p>
             </div>
           </div>

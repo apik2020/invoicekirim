@@ -11,12 +11,12 @@ export default function Footer() {
           <div className="md:col-span-2">
             <Link href="/" className="flex items-center gap-3 mb-6 group">
               <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-500 to-lime-500 flex items-center justify-center group-hover:-translate-y-0.5 transition-all duration-300 shadow-lg shadow-orange-200">
-                <span className="font-bold text-white text-base tracking-tight">[iK]</span>
+                <span className="font-bold text-white text-base tracking-tight">[nB]</span>
               </div>
-              <span className="font-display text-2xl font-bold text-slate tracking-tight">InvoiceKirim</span>
+              <span className="font-display text-2xl font-bold text-slate tracking-tight">NotaBener</span>
             </Link>
             <p className="font-body text-muted max-w-sm leading-relaxed">
-              Generator invoice Indonesia untuk freelancer. Buat invoice profesional dalam hitungan detik.
+              Platform invoice gratis untuk UMKM dan freelancer Indonesia. Bikin invoice tanpa ribet!
             </p>
           </div>
 
@@ -68,7 +68,7 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-slate/10 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="font-body text-sm text-muted">
-            &copy; {currentYear} InvoiceKirim. Dibuat dengan ❤️ untuk freelancer Indonesia.
+            &copy; {currentYear} NotaBener. Dibuat dengan ❤️ untuk UMKM Indonesia.
           </p>
           <div className="flex items-center gap-6 font-body text-sm text-muted">
             <span className="flex items-center gap-2">

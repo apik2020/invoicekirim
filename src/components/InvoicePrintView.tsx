@@ -458,7 +458,7 @@ export function InvoicePrintView({ invoice, branding }: InvoicePrintViewProps) {
             <p className="text-sm text-gray-500">
               {logoUrl
                 ? `Invoice ini dikirim oleh ${invoice.companyName}`
-                : 'Invoice dibuat dengan InvoiceKirim - Invoice Generator untuk Freelancer Indonesia'}
+                : 'Invoice dibuat dengan NotaBener - Platform Invoice untuk UMKM Indonesia'}
             </p>
           </div>
         </div>

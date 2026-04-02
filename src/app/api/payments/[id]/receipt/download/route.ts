@@ -55,7 +55,7 @@ export async function GET(
       amount: payment.amount,
       currency: payment.currency,
       paymentMethod: 'Stripe',
-      description: payment.description || 'InvoiceKirim Subscription Payment',
+      description: payment.description || 'NotaBener Subscription Payment',
       customerName: user?.name || user?.email || 'Customer',
       customerEmail: user?.email || '',
       invoiceNumber: payment.invoiceId || undefined,

@@ -138,7 +138,7 @@ function generateDomainVerificationToken(teamId: string, domain: string): string
     .digest('hex')
     .slice(0, 32)
 
-  return `invoicekirim-verification=${hash}`
+  return `notabener-verification=${hash}`
 }
 
 /**
