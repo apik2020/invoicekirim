@@ -150,12 +150,7 @@ export async function POST(req: NextRequest) {
 
       // Generate receipt
       try {
-        const receiptPdf = await createReceipt(payment.id)
-
-        await prisma.payments.update({
-          where: { id: payment.id },
-          data: { receiptUrl: receiptPdf },
-        })
+        await createReceipt(payment.id)
       } catch (receiptError) {
         console.error('Failed to generate receipt:', receiptError)
       }
