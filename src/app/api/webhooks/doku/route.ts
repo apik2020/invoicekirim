@@ -150,13 +150,7 @@ export async function POST(req: NextRequest) {
 
       // Generate receipt
       try {
-        const receiptPdf = await createReceipt({
-          paymentId: payment.id,
-          userId: payment.userId,
-          amount: amount,
-          paymentMethod: mapDOKUPaymentMethod(paymentMethod),
-          transactionId: transactionId,
-        })
+        const receiptPdf = await createReceipt(payment.id)
 
         await prisma.payments.update({
           where: { id: payment.id },
