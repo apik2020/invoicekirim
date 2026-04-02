@@ -3,6 +3,24 @@ import type { NextRequest } from 'next/server'
 
 export default async function middleware(req: NextRequest) {
   const { pathname, origin } = req.nextUrl
+
+  // Handle static files - force correct MIME types
+  if (pathname.startsWith('/_next/static/')) {
+    const response = NextResponse.next()
+
+    // Force correct Content-Type for JavaScript files
+    if (pathname.endsWith('.js') || pathname.endsWith('.mjs')) {
+      response.headers.set('Content-Type', 'application/javascript; charset=utf-8')
+    }
+
+    // Force correct Content-Type for CSS files
+    if (pathname.endsWith('.css')) {
+      response.headers.set('Content-Type', 'text/css; charset=utf-8')
+    }
+
+    return response
+  }
+
   const response = NextResponse.next()
 
   // 1. Security Headers (additional to next.config.ts)
@@ -142,5 +160,6 @@ export const config = {
     '/api/:path*',
     '/login',
     '/register',
+    '/_next/static/:path*',
   ],
 }
