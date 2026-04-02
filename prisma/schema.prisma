@@ -310,6 +310,8 @@ model payments {
   paymentMethod         String?
   pricingPlanId         String?
   qrisUrl               String?
+  paymentUrl            String?
+  qrString              String?
   updatedAt             DateTime
   vaBank                String?
   vaNumber              String?
