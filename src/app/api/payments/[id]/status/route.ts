@@ -43,7 +43,8 @@ export async function GET(
           'EXPIRED': 'FAILED',
         }
 
-        const newStatus = statusMapping[dokuStatus.payment_status] || 'PENDING'
+        const mappedStatus = statusMapping[dokuStatus.payment_status]
+        const newStatus: 'COMPLETED' | 'FAILED' | 'PENDING' = mappedStatus || 'PENDING'
 
         // Update status if changed
         if (newStatus !== 'PENDING' && newStatus !== payment.status) {
