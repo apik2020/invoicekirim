@@ -2,275 +2,405 @@
 
 Platform Invoice Profesional untuk Freelancer Indonesia.
 
-## Features
+Website: [https://notabener.com](https://notabener.com)
 
-- Create professional invoices in seconds
-- Send invoices via WhatsApp & Email
-- Track payments & send automatic reminders
-- Custom branding (logo, colors) for Pro users
+## Daftar Isi
+
+- [Fitur](#fitur)
+- [Tech Stack](#tech-stack)
+- [Prerequisites](#prerequisites)
+- [Instalasi](#instalasi)
+- [Environment Variables](#environment-variables)
+- [Database Setup](#database-setup)
+- [Payment Gateway Setup](#payment-gateway-setup)
+- [Email Setup](#email-setup)
+- [Deployment](#deployment)
+- [Project Structure](#project-structure)
+- [API Documentation](#api-documentation)
+- [Contributing](#contributing)
+
+## Fitur
+
+### Fitur Utama
+- Buat invoice profesional dalam hitungan detik
+- Kirim invoice via WhatsApp & Email
+- Lacak pembayaran & kirim pengingat otomatis
+- Custom branding (logo, warna) untuk pengguna Pro
 - Multi-currency support
-- Export to PDF/Excel
-- Responsive design
+- Export ke PDF/Excel
+- Responsive design (mobile-first)
+
+### Fitur Subscription
+- **Free**: 10 invoice/bulan, template dasar, export PDF
+- **Pro**: Invoice unlimited, custom branding, analytics, priority support
+
+### Payment Methods
+- Virtual Account (BCA, Mandiri, BNI, BRI, CIMB, Permata)
+- QRIS (GoPay, ShopeePay, Dana, LinkAja)
+- International: Stripe (Credit Card)
 
 ## Tech Stack
 
-- **Frontend**: Next.js 14 (App Router), React, Tailwind CSS
-- **Backend**: Next.js API Routes, Prisma ORM
-- **Database**: PostgreSQL
-- **Authentication**: NextAuth.js
-- **Payment**: DOKU, Stripe
-- **Email**: Resend
-- **PDF Generation**: @react-pdf/renderer
+| Category | Technology |
+|----------|------------|
+| **Frontend** | Next.js 16 (App Router), React 19, TypeScript |
+| **Styling** | Tailwind CSS 4, Radix UI |
+| **Backend** | Next.js API Routes, Prisma ORM |
+| **Database** | PostgreSQL (Neon) |
+| **Authentication** | NextAuth.js, 2FA Support |
+| **Payment - ID** | DOKU (VA, QRIS) |
+| **Payment - International** | Stripe |
+| **Email** | Resend / Custom SMTP |
+| **PDF Generation** | @react-pdf/renderer |
+| **Deployment** | Docker, Dokploy |
 
 ## Prerequisites
 
 - Node.js 18+
 - PostgreSQL database
-- DOKU account (for Indonesia payments)
-- Stripe account (for international payments)
-- Resend account (for emails)
+- DOKU account (untuk pembayaran Indonesia)
+- Stripe account (untuk pembayaran internasional)
+- Resend account atau SMTP server (untuk email)
 
-## Environment Setup
+## Instalasi
 
-### 1. Clone the repository
+### 1. Clone Repository
 
 ```bash
-git clone https://github.com/yourusername/notabener.git
-cd notabener
+git clone https://github.com/apik2020/invoicekirim.git
+cd invoicekirim
 ```
 
-### 2. Install dependencies
+### 2. Install Dependencies
 
 ```bash
 npm install
 ```
 
-### 3. Set up environment variables
+### 3. Setup Environment Variables
 
-Create a `.env` file in the root directory:
+Buat file `.env` di root directory:
 
 ```bash
-# Database
-DATABASE_URL="postgresql://user:password@localhost:5432/notabener"
-
-# NextAuth
-NEXTAUTH_URL="http://localhost:3000"
-NEXTAUTH_SECRET="your-secret-key-here"
-
-# OAuth Providers (optional)
-GOOGLE_CLIENT_ID="your-google-client-id"
-GOOGLE_CLIENT_SECRET="your-google-client-secret"
-
-# DOKU Payment Gateway (Indonesia)
-DOKU_CLIENT_ID="your-doku-client-id"
-DOKU_SECRET_KEY="your-doku-secret-key"
-DOKU_ENVIRONMENT="SANDBOX"  # SANDBOX or PRODUCTION
-
-# Stripe
-STRIPE_SECRET_KEY="sk_test_..."
-STRIPE_WEBHOOK_SECRET="whsec_..."
-NEXT_PUBLIC_STRIPE_PRO_PRICE_ID="price_..."
-NEXT_PUBLIC_APP_URL="http://localhost:3000"
-
-# Resend (Email)
-RESEND_API_KEY="re_..."
-RESEND_FROM_EMAIL="your-email@example.com"
-
-# Cron Job Secret (for payment reminders)
-CRON_SECRET="your-cron-secret-here"
-
-# Upstash Redis (optional - for rate limiting)
-UPSTASH_REDIS_REST_URL="your-redis-url"
-UPSTASH_REDIS_REST_TOKEN="your-redis-token"
+cp .env.example .env
 ```
 
-### 4. Set up the database
+Edit file `.env` dengan konfigurasi Anda.
 
-Run Prisma migrations:
+### 4. Setup Database
 
 ```bash
-npx prisma migrate dev
 npx prisma generate
+npx prisma migrate dev
 ```
 
-### 5. Create admin user
-
-Run the seed script to create an admin user:
+### 5. Seed Data (Opsional)
 
 ```bash
 npx prisma db seed
 ```
 
-Or manually create an admin in the database:
-
-```sql
-INSERT INTO "Admin" (id, email, name, password)
-VALUES (
-  'admin-id',
-  'admin@notabener.com',
-  'Admin',
-  'hashed-password-here' -- Use bcrypt to hash
-);
-```
-
-## DOKU Setup (Indonesia Payments)
-
-### 1. Create DOKU Account
-
-1. Go to [DOKU Dashboard](https://dashboard.doku.com)
-2. Sign up and complete verification
-3. Get your Client ID and Secret Key
-
-### 2. Configure Webhook
-
-1. In DOKU Dashboard, go to **Settings** > **Configuration**
-2. Set **Notification URL**: `https://your-domain.com/api/webhooks/doku`
-3. Set **Return URL**: `https://your-domain.com/checkout?status=success`
-
-### 3. Environment Variables
-
-```bash
-DOKU_CLIENT_ID="BRN-xxxx-xxxxxxxxxxxx"
-DOKU_SECRET_KEY="SK-xxxxxxxxxxxx"
-DOKU_ENVIRONMENT="SANDBOX"  # Use PRODUCTION for live
-```
-
-## Stripe Setup (International Payments)
-
-### 1. Create Stripe Products & Prices
-
-1. Go to [Stripe Dashboard](https://dashboard.stripe.com)
-2. Navigate to **Products** > **Add product**
-3. Create a product with:
-   - Name: `NotaBener Pro`
-   - Description: `Professional invoice management`
-   - Price: `$9/month` or your preferred pricing
-4. Copy the Price ID and set it as `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID`
-
-### 2. Set up Webhook
-
-1. In Stripe Dashboard, go to **Developers** > **Webhooks**
-2. Add endpoint: `https://your-domain.com/api/stripe/webhook`
-3. Select events to listen for:
-   - `checkout.session.completed`
-   - `customer.subscription.updated`
-   - `customer.subscription.deleted`
-   - `invoice.paid`
-   - `invoice.payment_failed`
-4. Copy the webhook secret and set it as `STRIPE_WEBHOOK_SECRET`
-
-## Resend Setup (Email)
-
-### 1. Create Resend Account
-
-1. Go to [resend.com](https://resend.com)
-2. Sign up and verify your domain
-3. Get your API key
-
-### 2. Configure Email
-
-1. Set `RESEND_API_KEY` in your `.env`
-2. Update the `from` email in `src/lib/email.ts` if needed
-
-## Cron Jobs (Payment Reminders)
-
-For Vercel deployment, the cron job is configured in `vercel.json`:
-
-```json
-{
-  "crons": [{
-    "path": "/api/cron/payment-reminders",
-    "schedule": "0 9 * * *"
-  }]
-}
-```
-
-This runs daily at 9:00 AM to send payment reminders for invoices due in 3 days and overdue notices.
-
-Make sure to set `CRON_SECRET` in your environment variables and include it in the cron request headers:
-
-```
-X-Cron-Secret: your-cron-secret-here
-```
-
-## Development
-
-Start the development server:
+### 6. Jalankan Development Server
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Buka [http://localhost:3000](http://localhost:3000)
 
-## Building for Production
+## Environment Variables
+
+### Required Variables
+
+```bash
+# Database
+DATABASE_URL="postgresql://user:password@host:5432/notabener"
+
+# NextAuth
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="your-secret-key-here"
+
+# App URL
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+```
+
+### Authentication (Optional - OAuth)
+
+```bash
+GOOGLE_CLIENT_ID="your-google-client-id"
+GOOGLE_CLIENT_SECRET="your-google-client-secret"
+```
+
+### Payment Gateway - DOKU (Indonesia)
+
+```bash
+DOKU_CLIENT_ID="BRN-xxxx-xxxxxxxxxxxx"
+DOKU_SECRET_KEY="SK-xxxxxxxxxxxx"
+DOKU_ENVIRONMENT="SANDBOX"  # SANDBOX or PRODUCTION
+```
+
+### Payment Gateway - Stripe (International)
+
+```bash
+STRIPE_SECRET_KEY="sk_test_..."
+STRIPE_WEBHOOK_SECRET="whsec_..."
+NEXT_PUBLIC_STRIPE_PRO_PRICE_ID="price_..."
+```
+
+### Email - Resend
+
+```bash
+RESEND_API_KEY="re_..."
+RESEND_FROM_EMAIL="hello@notabener.com"
+```
+
+### Cron Jobs
+
+```bash
+CRON_SECRET="your-cron-secret-here"
+```
+
+## Database Setup
+
+### Schema Overview
+
+Database menggunakan PostgreSQL dengan Prisma ORM. Schema utama:
+
+- **users** - Data pengguna
+- **teams** - Tim/organisasi
+- **invoices** - Invoice
+- **invoice_items** - Item dalam invoice
+- **clients** - Data klien
+- **payments** - Data pembayaran
+- **subscriptions** - Langganan pengguna
+- **pricing_plans** - Paket harga
+- **activity_logs** - Log aktivitas
+
+### Migrations
+
+```bash
+# Development
+npx prisma migrate dev
+
+# Production
+npx prisma migrate deploy
+```
+
+### Seed Data
+
+```bash
+npx prisma db seed
+```
+
+## Payment Gateway Setup
+
+### DOKU Setup (Indonesia)
+
+1. Daftar di [DOKU Dashboard](https://dashboard.doku.com)
+2. Verifikasi bisnis Anda
+3. Dapatkan Client ID dan Secret Key
+4. Webhook URL sudah dikonfigurasi otomatis via `override_notification_url`
+
+**Environment:**
+- Sandbox: `https://api-sandbox.doku.com`
+- Production: `https://api.doku.com`
+
+### Stripe Setup (International)
+
+1. Daftar di [Stripe Dashboard](https://dashboard.stripe.com)
+2. Buat Products & Prices
+3. Setup Webhook: `https://yourdomain.com/api/stripe/webhook`
+4. Events: `checkout.session.completed`, `customer.subscription.*`, `invoice.*`
+
+## Email Setup
+
+### Option 1: Resend (Recommended)
+
+1. Daftar di [resend.com](https://resend.com)
+2. Verifikasi domain Anda
+3. Dapatkan API key
+
+### Option 2: Custom SMTP
+
+Konfigurasi SMTP di Admin Dashboard `/admin/settings/email`
+
+## Deployment
+
+### Dokploy (Recommended)
+
+1. Connect GitHub repository
+2. Set build pack: `nixpacks`
+3. Configure environment variables
+4. Deploy!
+
+### Manual Deployment
 
 ```bash
 npm run build
 npm start
 ```
 
-## Deployment
+### Docker
 
-### Vercel (Recommended)
-
-1. Push your code to GitHub
-2. Import project in [Vercel](https://vercel.com)
-3. Add environment variables
-4. Deploy!
-
-### Environment Variables Checklist
-
-Before deploying, make sure all required variables are set:
-
-- [ ] `DATABASE_URL`
-- [ ] `NEXTAUTH_URL`
-- [ ] `NEXTAUTH_SECRET`
-- [ ] `DOKU_CLIENT_ID`
-- [ ] `DOKU_SECRET_KEY`
-- [ ] `DOKU_ENVIRONMENT`
-- [ ] `STRIPE_SECRET_KEY`
-- [ ] `STRIPE_WEBHOOK_SECRET`
-- [ ] `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID`
-- [ ] `NEXT_PUBLIC_APP_URL`
-- [ ] `RESEND_API_KEY`
-- [ ] `CRON_SECRET`
+```bash
+docker build -t notabener .
+docker run -p 3000:3000 notabener
+```
 
 ## Project Structure
 
 ```
 src/
-├── app/                      # Next.js App Router
-│   ├── api/                  # API Routes
-│   │   ├── admin/           # Admin endpoints
-│   │   ├── stripe/          # Stripe webhooks
-│   │   ├── webhooks/doku/   # DOKU webhooks
-│   │   ├── cron/            # Cron jobs
-│   │   └── ...
-│   ├── dashboard/           # Dashboard pages
-│   ├── admin/               # Admin pages
-│   └── ...
-├── components/              # React components
-│   ├── pdf/                # PDF components
-│   ├── admin/              # Admin components
-│   └── ...
-├── lib/                    # Utility functions
-│   ├── auth.ts             # NextAuth config
-│   ├── email.ts            # Email templates
-│   ├── prisma.ts           # Prisma client
-│   ├── doku.ts             # DOKU functions
-│   ├── stripe.ts           # Stripe functions
-│   └── ...
-└── types/                  # TypeScript types
+├── app/                          # Next.js App Router
+│   ├── api/                      # API Routes
+│   │   ├── admin/               # Admin endpoints
+│   │   ├── auth/                # Authentication
+│   │   ├── client/              # Client portal API
+│   │   ├── cron/                # Cron jobs
+│   │   ├── invoices/            # Invoice endpoints
+│   │   ├── payments/            # Payment endpoints
+│   │   ├── stripe/              # Stripe webhooks
+│   │   ├── subscriptions/       # Subscription management
+│   │   ├── user/                # User endpoints
+│   │   └── webhooks/            # Payment webhooks (DOKU)
+│   │
+│   ├── admin/                    # Admin dashboard pages
+│   │   ├── login/               # Admin login
+│   │   ├── reports/             # Reports & analytics
+│   │   └── settings/            # Admin settings
+│   │
+│   ├── auth/                     # Authentication pages
+│   │   ├── login/               # User login
+│   │   └── register/            # User registration
+│   │
+│   ├── checkout/                 # Checkout page
+│   │
+│   ├── client/                   # Client portal
+│   │   └── invoices/[token]/    # View invoice as client
+│   │
+│   ├── dashboard/                # User dashboard
+│   │   ├── invoices/            # Invoice management
+│   │   ├── clients/             # Client management
+│   │   ├── payments/            # Payment history
+│   │   ├── settings/            # User settings
+│   │   └── subscription/        # Subscription management
+│   │
+│   ├── invoice/                  # Public invoice view
+│   │   └── [token]/             # Invoice by access token
+│   │
+│   ├── pricing/                  # Pricing page
+│   │
+│   ├── layout.tsx               # Root layout
+│   ├── page.tsx                 # Landing page
+│   └── globals.css              # Global styles
+│
+├── components/                   # React components
+│   ├── admin/                   # Admin components
+│   ├── auth/                    # Auth components (2FA, etc)
+│   ├── pdf/                     # PDF components
+│   ├── receipts/                # Receipt components
+│   ├── ui/                      # UI primitives (Radix)
+│   └── ...                      # Other components
+│
+├── hooks/                        # Custom React hooks
+│   ├── useFeatureAccess.ts      # Feature access control
+│   ├── usePrint.ts              # Print functionality
+│   └── useSubscriptionGuard.tsx # Subscription protection
+│
+├── lib/                          # Utility functions
+│   ├── auth.ts                  # NextAuth configuration
+│   ├── prisma.ts                # Prisma client
+│   ├── doku.ts                  # DOKU integration
+│   ├── stripe.ts                # Stripe integration
+│   ├── email.ts                 # Email templates & sending
+│   ├── feature-access.ts        # Feature access logic
+│   ├── branding.ts              # Branding configuration
+│   └── ...                      # Other utilities
+│
+├── types/                        # TypeScript type definitions
+│
+└── middleware.ts                 # Next.js middleware (auth, CSRF)
+
+prisma/
+├── schema.prisma                 # Database schema
+├── seed.ts                       # Seed data
+└── migrations/                   # Database migrations
+
+scripts/                          # Utility scripts
+├── test-send-email.ts           # Test email sending
+└── save-smtp-and-test.ts        # SMTP configuration test
 ```
 
-## Security Notes
+## API Documentation
 
-1. **Never commit `.env` files** to version control
-2. Use strong `NEXTAUTH_SECRET` in production
-3. Set up proper CORS for API routes
-4. Use HTTPS in production
-5. Keep dependencies updated
+### Authentication
+
+Semua API endpoint (kecuali public routes) memerlukan authentication via session.
+
+### Public Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/payments/create` | Get available payment methods |
+| GET | `/invoice/[token]` | View public invoice |
+| POST | `/api/webhooks/doku` | DOKU webhook |
+| POST | `/api/stripe/webhook` | Stripe webhook |
+
+### User Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/invoices` | Get user invoices |
+| POST | `/api/invoices` | Create invoice |
+| GET | `/api/invoices/[id]` | Get invoice by ID |
+| PUT | `/api/invoices/[id]` | Update invoice |
+| DELETE | `/api/invoices/[id]` | Delete invoice |
+| POST | `/api/invoices/[id]/send` | Send invoice via email/WhatsApp |
+| GET | `/api/payments/[id]/status` | Check payment status |
+| GET | `/api/payments/[id]/receipt/download` | Download receipt PDF |
+
+### Subscription Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/subscription` | Get subscription status |
+| POST | `/api/payments/create` | Create payment for subscription |
+| GET | `/api/features/[featureKey]/check` | Check feature access |
+
+### Admin Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/admin/login` | Admin login |
+| GET | `/api/admin/smtp-settings` | Get SMTP settings |
+| POST | `/api/admin/smtp-settings` | Update SMTP settings |
+
+## Cron Jobs
+
+Aplikasi menggunakan cron jobs untuk:
+
+- **Payment Reminders**: Kirim pengingat pembayaran untuk invoice yang akan jatuh tempo
+- **Subscription Expiration**: Notifikasi dan penanganan subscription yang expired
+
+Konfigurasi di `vercel.json` atau setup manual di server.
+
+## Security
+
+- CSRF Protection
+- Content Security Policy (CSP)
+- XSS Protection
+- SQL Injection Prevention (Prisma)
+- Rate Limiting
+- 2FA Support
+- Secure Session Management
+
+## Contributing
+
+1. Fork repository
+2. Buat feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'feat: add amazing feature'`)
+4. Push ke branch (`git push origin feature/amazing-feature`)
+5. Buat Pull Request
 
 ## License
 
@@ -278,4 +408,10 @@ MIT License - see LICENSE file for details.
 
 ## Support
 
-For support, email hello@notabener.com or open an issue on GitHub.
+- Email: hello@notabener.com
+- Website: [https://notabener.com](https://notabener.com)
+- GitHub Issues: [https://github.com/apik2020/invoicekirim/issues](https://github.com/apik2020/invoicekirim/issues)
+
+---
+
+**NotaBener** - Bikin invoice jadi gampang!
