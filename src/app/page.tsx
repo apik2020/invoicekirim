@@ -136,7 +136,7 @@ export default function Home() {
             <div className="text-center md:text-left">
               <div className="badge badge-brand mb-6 inline-flex items-center gap-2 animate-pulse-soft">
                 <Sparkles className="w-4 h-4" />
-                <span>100% Gratis untuk Selamanya</span>
+                <span>Gratis untuk mulai, powerful untuk berkembang</span>
               </div>
 
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-brand-500 mb-6 leading-tight">
@@ -144,8 +144,11 @@ export default function Home() {
                 <span className="text-primary-500">
                   Tanpa Ribet
                 </span>
-                <br />
-                Langsung Terkirim!
+                , Kirim dalam Hitungan{' '}
+                <span className="text-primary-500 font-extrabold">
+                  Detik
+                </span>
+                !
               </h1>
 
               <p className="text-lg text-text-secondary mb-8 max-w-xl mx-auto md:mx-0 leading-relaxed">
@@ -157,7 +160,6 @@ export default function Home() {
                   href="/login"
                   className="inline-flex items-center justify-center gap-2 px-8 py-4 btn-primary font-semibold"
                 >
-                  <span className="font-bold text-white">[nB]</span>
                   Mulai Gratis
                 </Link>
                 <Link
@@ -174,7 +176,7 @@ export default function Home() {
                   <div className="w-5 h-5 rounded-full bg-success-400 flex items-center justify-center">
                     <Check className="w-3 h-3 text-white" />
                   </div>
-                  <span>Gratis selamanya</span>
+                  <span>Tanpa Ribet</span>
                 </div>
                 <div className="flex items-center gap-2 text-text-secondary text-sm">
                   <div className="w-5 h-5 rounded-full bg-success-400 flex items-center justify-center">
@@ -193,7 +195,7 @@ export default function Home() {
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-brand">
-                      <span className="font-bold text-white text-sm tracking-tight">[nB]</span>
+                      <span className="font-bold text-white text-sm tracking-tight">NotaBener</span>
                     </div>
                     <div>
                       <span className="font-bold text-brand-500 text-lg">Dashboard</span>
@@ -341,7 +343,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-brand-500 mb-4">
-              Kenapa NotaBener Cocok untuk UMKM?
+              Kenapa InvoiceKirim?
             </h2>
             <p className="text-lg text-text-secondary max-w-2xl mx-auto">
               Semua yang Anda butuhkan untuk mengelola invoice bisnis Anda
@@ -365,13 +367,13 @@ export default function Home() {
             {/* Feature 2 */}
             <div className="card card-hover p-8">
               <div className="icon-box icon-box-secondary mb-6">
-                <TrendingUp className="w-7 h-7 text-secondary-600" />
+                <Send className="w-7 h-7 text-secondary-600" />
               </div>
               <h3 className="text-xl font-bold text-brand-500 mb-3">
-                Lacak Pembayaran
+                Cepat Terhubung
               </h3>
               <p className="text-text-secondary leading-relaxed">
-                Pantau status invoice dan pembayaran dalam real-time. Dapatkan notifikasi saat invoice lunas.
+                Kirim invoice langsung ke WhatsApp klien dalam satu klik. Tanpa perlu buka aplikasi lain, komunikasi jadi lebih cepat dan praktis.
               </p>
             </div>
 
@@ -399,21 +401,20 @@ export default function Home() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="cta-gradient rounded-3xl p-12 md:p-16 text-center shadow-brand-lg">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6">
-              Yuk, Mulai Bikin Invoice yang Bener!
+              Siap Mengelola Invoice?
             </h2>
             <p className="text-lg text-white/90 mb-8 max-w-2xl mx-auto leading-relaxed">
-              Ribet pakai Excel? NotaBener bikin urusan invoice jadi gampang.
-              Daftar gratis, pakai selamanya. Dipercaya 500+ UMKM Indonesia.
+              Bergabung dengan ratusan freelancer Indonesia yang sudah menggunakan NotaBener.
+              Cepat, mudah, dan profesional.
             </p>
             <Link
               href="/login"
               className="inline-flex items-center justify-center gap-2 px-10 py-5 bg-primary-500 text-white rounded-xl font-bold text-lg hover:bg-primary-600 shadow-primary-lg hover:shadow-primary transition-all"
             >
-              <span className="font-bold text-white">[nB]</span>
               Mulai Gratis Sekarang
             </Link>
             <p className="mt-6 text-white text-sm opacity-90">
-              Tidak perlu kartu kredit • Siap dalam 30 detik
+              Data tersimpan aman • Siap dalam 2 menit
             </p>
           </div>
         </div>
@@ -428,8 +429,8 @@ export default function Home() {
                 <Logo size="sm" textClassName="!text-white" />
               </div>
               <p className="text-white/80 max-w-sm leading-relaxed">
-                Platform invoice gratis untuk UMKM, pebisnis pemula, dan freelancer Indonesia.
-                Bikin invoice tanpa ribet, langsung terkirim!
+                Platform invoice profesional untuk UMKM dan bisnis Indonesia.
+                Buat invoice profesional dalam hitungan detik.
               </p>
             </div>
 
@@ -477,7 +478,7 @@ export default function Home() {
           </div>
 
           <div className="pt-8 border-t border-white/20 text-center text-sm">
-            <p className="text-white/80">© 2024 NotaBener. Dibuat dengan ❤️ untuk bisnis Indonesia.</p>
+            <p className="text-white/80">© 2024 NotaBener. Dibuat dengan Benar untuk UMKM dan Bisnis Indonesia.</p>
           </div>
         </div>
       </footer>

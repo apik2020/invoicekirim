@@ -107,15 +107,15 @@ export async function POST(request: NextRequest) {
           <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #f7f7f7;">
             <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
               <div style="text-align: center; margin-bottom: 40px;">
-                <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #276874, #2d7d8a); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
+                <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #0A637D, #2d7d8a); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
                   <span style="color: white; font-weight: bold; font-size: 16px;">[iK]</span>
                 </div>
-                <h1 style="color: #276874; font-size: 24px; font-weight: bold; margin: 0;">NotaBener</h1>
+                <h1 style="color: #0A637D; font-size: 24px; font-weight: bold; margin: 0;">NotaBener</h1>
                 <p style="color: #64748b; margin: 8px 0 0;">Client Portal</p>
               </div>
 
               <div style="background: white; border-radius: 20px; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-                <h2 style="color: #276874; font-size: 24px; font-weight: bold; margin: 0 0 20px;">
+                <h2 style="color: #0A637D; font-size: 24px; font-weight: bold; margin: 0 0 20px;">
                   Login ke Dashboard
                 </h2>
                 <p style="color: #334155; line-height: 1.6; margin: 0 0 30px;">
@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
                 <p style="color: #64748b; font-size: 14px; margin: 20px 0 0;">
                   Jika tombol di atas tidak berfungsi, salin dan tempel link berikut ke browser Anda:
                 </p>
-                <p style="color: #276874; font-size: 12px; word-break: break-all; margin: 10px 0 0;">
+                <p style="color: #0A637D; font-size: 12px; word-break: break-all; margin: 10px 0 0;">
                   ${magicLinkUrl}
                 </p>
               </div>

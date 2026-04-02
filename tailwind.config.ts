@@ -33,11 +33,11 @@ const config: Config = {
           200: '#B3D4D8',
           300: '#82B9C0',
           400: '#4D9BA4',
-          500: '#276874', // Deep Teal - Navigation & Headers
-          600: '#215D68',
-          700: '#1A4D57',
-          800: '#143D45',
-          900: '#0F2D33',
+          500: '#0A637D', // Deep Teal - Navigation & Headers
+          600: '#084F63',
+          700: '#063B4A',
+          800: '#042831',
+          900: '#021419',
         },
         // Success/Growth Color - Paid status & profit indicators
         success: {

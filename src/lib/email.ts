@@ -65,7 +65,7 @@ async function sendViaSMTP(
 }
 
 // Email templates with new NotaBener theme
-// Brand/Deep Teal: #276874
+// Brand/Deep Teal: #0A637D
 // Primary/Bright Orange: #F97316 (brand-500), #EA580C (brand-600)
 // Success/Lime Green: #C5E151
 export const emailTemplates = {
@@ -90,16 +90,16 @@ export const emailTemplates = {
           <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
             <!-- Header -->
             <div style="text-align: center; margin-bottom: 40px;">
-              <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #276874, #2d7d8a); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
+              <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #0A637D, #2d7d8a); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
                 <span style="color: white; font-weight: bold; font-size: 16px;">[nB]</span>
               </div>
-              <h1 style="color: #276874; font-size: 24px; font-weight: bold; margin: 0;">NotaBener</h1>
+              <h1 style="color: #0A637D; font-size: 24px; font-weight: bold; margin: 0;">NotaBener</h1>
               <p style="color: #64748b; margin: 8px 0 0;">Platform Invoice untuk Freelancer</p>
             </div>
 
             <!-- Main Card -->
             <div style="background: white; border-radius: 20px; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-              <h2 style="color: #276874; font-size: 28px; font-weight: bold; margin: 0 0 10px;">
+              <h2 style="color: #0A637D; font-size: 28px; font-weight: bold; margin: 0 0 10px;">
                 Invoice ${data.invoiceNumber}
               </h2>
               <p style="color: #64748b; margin: 0 0 30px;">
@@ -117,7 +117,7 @@ export const emailTemplates = {
                 </div>
                 <div style="display: flex; justify-content: space-between;">
                   <span style="color: #64748b;">Jatuh Tempo</span>
-                  <span style="color: #276874; font-weight: 600;">${data.dueDate}</span>
+                  <span style="color: #0A637D; font-weight: 600;">${data.dueDate}</span>
                 </div>
               </div>
 
@@ -377,10 +377,10 @@ export const emailTemplates = {
           <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
             <!-- Header -->
             <div style="text-align: center; margin-bottom: 40px;">
-              <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #276874, #2d7d8a); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
+              <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #0A637D, #2d7d8a); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
                 <span style="color: white; font-weight: bold; font-size: 16px;">[nB]</span>
               </div>
-              <h1 style="color: #276874; font-size: 24px; font-weight: bold; margin: 0;">NotaBener</h1>
+              <h1 style="color: #0A637D; font-size: 24px; font-weight: bold; margin: 0;">NotaBener</h1>
               <p style="color: #64748b; margin: 8px 0 0;">Platform Invoice untuk Freelancer</p>
             </div>
 
@@ -516,23 +516,23 @@ export const emailTemplates = {
           <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
             <!-- Header -->
             <div style="text-align: center; margin-bottom: 40px;">
-              <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #276874, #2d7d8a); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
+              <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #0A637D, #2d7d8a); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
                 <span style="color: white; font-weight: bold; font-size: 16px;">[nB]</span>
               </div>
-              <h1 style="color: #276874; font-size: 24px; font-weight: bold; margin: 0;">NotaBener</h1>
+              <h1 style="color: #0A637D; font-size: 24px; font-weight: bold; margin: 0;">NotaBener</h1>
               <p style="color: #64748b; margin: 8px 0 0;">Platform Invoice untuk Freelancer</p>
             </div>
 
             <!-- Main Card -->
             <div style="background: white; border-radius: 20px; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-              <h2 style="color: #276874; font-size: 24px; font-weight: bold; margin: 0 0 20px;">
+              <h2 style="color: #0A637D; font-size: 24px; font-weight: bold; margin: 0 0 20px;">
                 Pengingat Trial
               </h2>
               <p style="color: #334155; line-height: 1.6; margin: 0 0 20px;">
                 Halo ${data.userName},
               </p>
               <p style="color: #334155; line-height: 1.6; margin: 0 0 30px;">
-                Masa trial gratis Anda akan berakhir dalam <strong style="color: #276874;">${data.daysLeft} hari</strong> pada tanggal ${data.expiryDate}.
+                Masa trial gratis Anda akan berakhir dalam <strong style="color: #0A637D;">${data.daysLeft} hari</strong> pada tanggal ${data.expiryDate}.
               </p>
 
               <!-- Info Box -->
@@ -548,7 +548,7 @@ export const emailTemplates = {
 
               <!-- CTA Button -->
               <div style="text-align: center; margin: 30px 0;">
-                <a href="${data.dashboardUrl}" style="display: inline-block; background: linear-gradient(145deg, #276874, #2d7d8a); color: white; text-decoration: none; padding: 14px 32px; border-radius: 12px; font-weight: 600; font-size: 16px;">
+                <a href="${data.dashboardUrl}" style="display: inline-block; background: linear-gradient(145deg, #0A637D, #2d7d8a); color: white; text-decoration: none; padding: 14px 32px; border-radius: 12px; font-weight: 600; font-size: 16px;">
                   Lihat Plan PRO
                 </a>
               </div>
@@ -589,16 +589,16 @@ export const emailTemplates = {
           <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
             <!-- Header -->
             <div style="text-align: center; margin-bottom: 40px;">
-              <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #276874, #2d7d8a); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
+              <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #0A637D, #2d7d8a); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
                 <span style="color: white; font-weight: bold; font-size: 16px;">[nB]</span>
               </div>
-              <h1 style="color: #276874; font-size: 24px; font-weight: bold; margin: 0;">NotaBener</h1>
+              <h1 style="color: #0A637D; font-size: 24px; font-weight: bold; margin: 0;">NotaBener</h1>
               <p style="color: #64748b; margin: 8px 0 0;">Platform Invoice untuk Freelancer</p>
             </div>
 
             <!-- Main Card -->
             <div style="background: white; border-radius: 20px; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-              <h2 style="color: #276874; font-size: 24px; font-weight: bold; margin: 0 0 20px;">
+              <h2 style="color: #0A637D; font-size: 24px; font-weight: bold; margin: 0 0 20px;">
                 Undangan Tim
               </h2>
               <p style="color: #334155; line-height: 1.6; margin: 0 0 20px;">
@@ -613,7 +613,7 @@ export const emailTemplates = {
                 </div>
                 <div style="display: flex; justify-content: space-between;">
                   <span style="color: #64748b;">Peran</span>
-                  <span style="color: #276874; font-weight: 600;">${data.role}</span>
+                  <span style="color: #0A637D; font-weight: 600;">${data.role}</span>
                 </div>
               </div>
 
@@ -658,16 +658,16 @@ export const emailTemplates = {
           <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
             <!-- Header -->
             <div style="text-align: center; margin-bottom: 40px;">
-              <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #276874, #2d7d8a); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
+              <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #0A637D, #2d7d8a); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
                 <span style="color: white; font-weight: bold; font-size: 16px;">[nB]</span>
               </div>
-              <h1 style="color: #276874; font-size: 24px; font-weight: bold; margin: 0;">NotaBener</h1>
+              <h1 style="color: #0A637D; font-size: 24px; font-weight: bold; margin: 0;">NotaBener</h1>
               <p style="color: #64748b; margin: 8px 0 0;">Platform Invoice untuk Freelancer</p>
             </div>
 
             <!-- Main Card -->
             <div style="background: white; border-radius: 20px; padding: 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-              <h2 style="color: #276874; font-size: 24px; font-weight: bold; margin: 0 0 20px;">
+              <h2 style="color: #0A637D; font-size: 24px; font-weight: bold; margin: 0 0 20px;">
                 Reset Password
               </h2>
               <p style="color: #334155; line-height: 1.6; margin: 0 0 20px;">
@@ -694,7 +694,7 @@ export const emailTemplates = {
               <p style="color: #64748b; font-size: 14px; margin: 20px 0 0;">
                 Jika tombol di atas tidak berfungsi, salin dan tempel link berikut ke browser Anda:
               </p>
-              <p style="color: #276874; font-size: 12px; word-break: break-all; margin: 10px 0 0;">
+              <p style="color: #0A637D; font-size: 12px; word-break: break-all; margin: 10px 0 0;">
                 ${data.resetUrl}
               </p>
             </div>
