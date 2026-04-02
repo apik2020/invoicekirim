@@ -123,8 +123,9 @@ export async function POST(req: NextRequest) {
     if (paymentMethod === 'VA' && bankCode) {
       console.log('[Payment] Creating VA payment with bank:', bankCode)
 
+      let vaResult
       try {
-        const vaResult = await createVAPayment(bankCode as DOKUVABankCode, {
+        vaResult = await createVAPayment(bankCode as DOKUVABankCode, {
           orderId,
           amount,
           customerName: user.name || 'Customer',
