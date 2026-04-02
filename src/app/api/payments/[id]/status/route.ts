@@ -46,8 +46,8 @@ export async function GET(
         const mappedStatus = statusMapping[dokuStatus.payment_status]
         const newStatus: 'COMPLETED' | 'FAILED' | 'PENDING' = mappedStatus || 'PENDING'
 
-        // Update status if changed
-        if (newStatus !== 'PENDING' && newStatus !== payment.status) {
+        // Update status if changed to a final state (COMPLETED or FAILED)
+        if (newStatus !== 'PENDING') {
           await prisma.payments.update({
             where: { id },
             data: {
