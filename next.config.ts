@@ -7,6 +7,12 @@ const nextConfig: NextConfig = {
   // Explicitly set distDir to avoid Turbopack issues
   distDir: '.next',
 
+  // Use standalone output for better production compatibility
+  output: 'standalone',
+
+  // Disable compression to let Traefik handle it
+  compress: false,
+
   // Image optimization
   images: {
     formats: ['image/avif', 'image/webp'],
@@ -135,9 +141,52 @@ const nextConfig: NextConfig = {
             key: 'Cache-Control',
             value: 'public, max-age=31536000, immutable',
           },
+        ],
+      },
+      // JavaScript files - explicit MIME type
+      {
+        source: '/_next/static/chunks/:path*.js',
+        headers: [
           {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
+            key: 'Content-Type',
+            value: 'application/javascript; charset=utf-8',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      // CSS files - explicit MIME type
+      {
+        source: '/_next/static/css/:path*.css',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'text/css; charset=utf-8',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      // App build files - explicit MIME type
+      {
+        source: '/_next/static/:build/_buildManifest.js',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/javascript; charset=utf-8',
+          },
+        ],
+      },
+      {
+        source: '/_next/static/:build/_ssgManifest.js',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/javascript; charset=utf-8',
           },
         ],
       },
