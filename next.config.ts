@@ -4,6 +4,9 @@ import type { NextConfig } from 'next'
 const isProduction = process.env.NODE_ENV === 'production'
 
 const nextConfig: NextConfig = {
+  // Use standalone output for better Docker deployment
+  output: 'standalone',
+
   // Explicitly set distDir to avoid Turbopack issues
   distDir: '.next',
 
