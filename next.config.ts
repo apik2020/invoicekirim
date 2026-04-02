@@ -7,12 +7,6 @@ const nextConfig: NextConfig = {
   // Explicitly set distDir to avoid Turbopack issues
   distDir: '.next',
 
-  // Use standalone output for better production compatibility
-  output: 'standalone',
-
-  // Disable compression to let Traefik handle it
-  compress: false,
-
   // Image optimization
   images: {
     formats: ['image/avif', 'image/webp'],
