@@ -127,7 +127,7 @@ const nextConfig: NextConfig = {
           },
         ],
       },
-      // Static files - proper caching and MIME type hints
+      // Static files - proper caching
       {
         source: '/_next/static/:path*',
         headers: [
@@ -138,26 +138,6 @@ const nextConfig: NextConfig = {
           {
             key: 'X-Content-Type-Options',
             value: 'nosniff',
-          },
-        ],
-      },
-      // JavaScript files
-      {
-        source: '/_next/static/chunks/:path*.js',
-        headers: [
-          {
-            key: 'Content-Type',
-            value: 'application/javascript; charset=utf-8',
-          },
-        ],
-      },
-      // CSS files
-      {
-        source: '/_next/static/css/:path*.css',
-        headers: [
-          {
-            key: 'Content-Type',
-            value: 'text/css; charset=utf-8',
           },
         ],
       },
