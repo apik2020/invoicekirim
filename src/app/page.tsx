@@ -343,7 +343,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-brand-500 mb-4">
-              Kenapa InvoiceKirim?
+              Kenapa NotaBener Cocok untuk UMKM & Freelancer?
             </h2>
             <p className="text-lg text-text-secondary max-w-2xl mx-auto">
               Semua yang Anda butuhkan untuk mengelola invoice bisnis Anda
@@ -401,11 +401,10 @@ export default function Home() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="cta-gradient rounded-3xl p-12 md:p-16 text-center shadow-brand-lg">
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6">
-              Siap Mengelola Invoice?
+              Yuk, Mulai Mengelola Invoice yang Bener!
             </h2>
             <p className="text-lg text-white/90 mb-8 max-w-2xl mx-auto leading-relaxed">
-              Bergabung dengan ratusan freelancer Indonesia yang sudah menggunakan NotaBener.
-              Cepat, mudah, dan profesional.
+              Ribet pakai Excel? NotaBener bikin urusan invoice jadi gampang. Daftar gratis, upgrade kapan saja bisnis Anda berkembang.
             </p>
             <Link
               href="/login"
