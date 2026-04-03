@@ -9,6 +9,7 @@ Semua perubahan penting di project NotaBener akan didokumentasikan di file ini.
 ### Fixed
 - **Bank Code Casing**: Fixed bank codes dari lowercase ke uppercase (bca → BCA) untuk kompatibilitas DOKU API
 - **Payment Method Validation**: Removed unsupported SNAP payment method
+- **CSRF for Cron Jobs**: Fixed middleware untuk skip CSRF protection pada `/api/cron/` endpoints
 
 ### Changed
 - **Payment Methods**: Sekarang hanya mendukung VA (Virtual Account) dan QRIS
@@ -22,6 +23,7 @@ Semua perubahan penting di project NotaBener akan didokumentasikan di file ini.
 - Bank codes sekarang menggunakan format uppercase: BCA, BNI, BRI, MANDIRI, PERMATA, CIMB
 - Cron job menggunakan CRON_SECRET untuk authorization
 - Expired payments diupdate secara otomatis dengan activity logging
+- Middleware skip CSRF untuk cron endpoints karena menggunakan CRON_SECRET verification
 
 ## [2026-04-03] - Fix MIME Type Issue untuk Traefik/Dokploy
 
