@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Validate payment method
-    const validMethods = ['VA', 'QRIS', 'SNAP']
+    const validMethods = ['VA', 'QRIS']
     if (!validMethods.includes(paymentMethod)) {
       return NextResponse.json(
         { error: 'Metode pembayaran tidak valid' },
@@ -202,40 +202,11 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // SNAP (all payment methods via DOKU Snap)
-    // For now, we'll return VA as default for SNAP
-    const defaultBank = 'BCA'
-    const snapResult = await createVAPayment(defaultBank, {
-      orderId,
-      amount,
-      customerName: user.name || 'Customer',
-      customerEmail: user.email,
-      description: `NotaBener ${pricingPlan.name} - ${pricingPlan.name}`,
-    })
-
-    await prisma.payments.update({
-      where: { id: payment.id },
-      data: {
-        vaNumber: snapResult.vaNumber,
-        vaBank: snapResult.bank,
-        expiredAt: snapResult.expiryDate,
-        paymentUrl: snapResult.paymentUrl,
-      },
-    })
-
-    return NextResponse.json({
-      success: true,
-      payment: {
-        id: payment.id,
-        orderId,
-        amount,
-        method: 'VA',
-        vaNumber: snapResult.vaNumber,
-        bank: snapResult.bank,
-        paymentUrl: snapResult.paymentUrl,
-        expiredAt: snapResult.expiryDate,
-      },
-    })
+    // If we reach here, payment method is not supported
+    return NextResponse.json(
+      { error: 'Metode pembayaran tidak didukung' },
+      { status: 400 }
+    )
   } catch (error) {
     console.error('Payment creation error:', error)
     console.error('Error details:', JSON.stringify(error, null, 2))
@@ -269,7 +240,6 @@ export async function GET() {
     paymentMethods: [
       { value: 'VA', label: 'Virtual Account', description: 'Transfer bank BCA, Mandiri, BNI, BRI, CIMB, Permata' },
       { value: 'QRIS', label: 'QRIS', description: 'QRIS payment via GoPay, ShopeePay, Dana, LinkAja' },
-      { value: 'SNAP', label: 'All Payments', description: 'Pilih metode pembayaran di halaman DOKU' },
     ],
   })
 }

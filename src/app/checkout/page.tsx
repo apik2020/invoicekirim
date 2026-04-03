@@ -23,12 +23,12 @@ import {
 import { Logo } from '@/components/Logo'
 
 const VA_BANKS = [
-  { code: 'bca', name: 'BCA', description: 'Virtual Account BCA' },
-  { code: 'bni', name: 'BNI', description: 'Virtual Account BNI' },
-  { code: 'bri', name: 'BRI', description: 'Virtual Account BRI' },
-  { code: 'mandiri', name: 'Mandiri', description: 'Virtual Account Mandiri' },
-  { code: 'permata', name: 'Permata', description: 'Virtual Account Permata' },
-  { code: 'cimb', name: 'CIMB Niaga', description: 'Virtual Account CIMB Niaga' },
+  { code: 'BCA', name: 'BCA', description: 'Virtual Account BCA' },
+  { code: 'BNI', name: 'BNI', description: 'Virtual Account BNI' },
+  { code: 'BRI', name: 'BRI', description: 'Virtual Account BRI' },
+  { code: 'MANDIRI', name: 'Mandiri', description: 'Virtual Account Mandiri' },
+  { code: 'PERMATA', name: 'Permata', description: 'Virtual Account Permata' },
+  { code: 'CIMB', name: 'CIMB Niaga', description: 'Virtual Account CIMB Niaga' },
 ]
 
 type Step = 'plan' | 'payment' | 'va' | 'qris' | 'processing' | 'success'
@@ -85,8 +85,8 @@ export default function CheckoutPage() {
 
   const [step, setStep] = useState<Step>('plan')
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly')
-  const [paymentMethod, setPaymentMethod] = useState<'VA' | 'QRIS' | 'SNAP'>('VA')
-  const [selectedBank, setSelectedBank] = useState<string>('bca')
+  const [paymentMethod, setPaymentMethod] = useState<'VA' | 'QRIS'>('VA')
+  const [selectedBank, setSelectedBank] = useState<string>('BCA')
   const [loading, setLoading] = useState(false)
   const [paymentData, setPaymentData] = useState<any>(null)
   const [copied, setCopied] = useState(false)
@@ -254,9 +254,6 @@ export default function CheckoutPage() {
         setStep('va')
       } else if (paymentMethod === 'QRIS') {
         setStep('qris')
-      } else {
-        // SNAP - redirect to Midtrans
-        window.location.href = data.payment.snapUrl
       }
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Gagal membuat transaksi')
@@ -659,35 +656,6 @@ export default function CheckoutPage() {
                     }`}
                   >
                     {paymentMethod === 'QRIS' && (
-                      <Check className="w-4 h-4 text-white" />
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Other Payment Methods (Snap) */}
-              <div
-                onClick={() => setPaymentMethod('SNAP')}
-                className={`bg-white rounded-2xl p-5 border-2 cursor-pointer transition-all duration-300 ${
-                  paymentMethod === 'SNAP'
-                    ? 'border-primary-500 shadow-lg shadow-primary-500/10'
-                    : 'border-gray-200 hover:border-primary-300 hover:shadow-md'
-                }`}
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/30">
-                    <CreditCard className="w-7 h-7 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-bold text-text-primary text-lg">Metode Lainnya</p>
-                    <p className="text-sm text-text-secondary">Kartu kredit, e-wallet, paylater</p>
-                  </div>
-                  <div
-                    className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all ${
-                      paymentMethod === 'SNAP' ? 'border-primary-500 bg-primary-500' : 'border-gray-300'
-                    }`}
-                  >
-                    {paymentMethod === 'SNAP' && (
                       <Check className="w-4 h-4 text-white" />
                     )}
                   </div>

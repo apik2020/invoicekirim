@@ -53,11 +53,10 @@ model admins {
   smtpSecure     Boolean  @default(false)
   smtpUser       String?
   smtpPass       String?
-  smtpFromName   String?  @default("NotaBener")
+  smtpFromName   String?  @default("InvoiceKirim")
   smtpFromEmail   String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime
-  impersonation_sessions impersonation_sessions[]
 }
 
 model analytics_snapshots {
@@ -253,8 +252,6 @@ model invoices {
   clients                  clients?        @relation(fields: [clientId], references: [id])
   teams                    teams?          @relation(fields: [teamId], references: [id], onDelete: Cascade)
   users                    users           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  client_invoice_access    client_invoice_access[]
-  invoice_messages         invoice_messages[]
 
   @@index([accessToken])
   @@index([status])
@@ -308,10 +305,10 @@ model payments {
   dokuTransactionId     String?
   paymentGateway        String?
   paymentMethod         String?
-  pricingPlanId         String?
-  qrisUrl               String?
   paymentUrl            String?
+  qrisUrl               String?
   qrString              String?
+  pricingPlanId         String?
   updatedAt             DateTime
   vaBank                String?
   vaNumber              String?
@@ -320,9 +317,8 @@ model payments {
   users                 users         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([invoiceId])
-  @@index([dokuOrderId])
   @@index([midtransOrderId])
-  @@index([pricingPlanId])
+  @@index([dokuOrderId])
   @@index([status])
   @@index([stripePaymentIntentId])
   @@index([userId])
@@ -479,11 +475,6 @@ model users {
   subscriptions        subscriptions?
   team_members         team_members[]
   teams                teams[]
-  // Micro-SaaS relations
-  announcement_reads   announcement_reads[]
-  support_tickets      support_tickets[]
-  support_messages     support_messages[]
-  impersonation_sessions impersonation_sessions[]
 }
 
 model verification_tokens {
@@ -549,6 +540,7 @@ enum PaymentStatus {
   COMPLETED
   FAILED
   REFUNDED
+  EXPIRED
 }
 
 enum PlanType {
@@ -619,194 +611,4 @@ enum TeamRole {
   ADMIN
   MEMBER
   VIEWER
-}
-
-// ==================== Micro-SaaS Tables ====================
-
-model announcements {
-  id           String   @id @default(uuid())
-  title        String
-  message      String
-  type         String   @default("info") // "info", "warning", "success", "error"
-  targetType   String   @default("all")  // "all", "free", "pro", "specific"
-  targetUsers  Json?    // Array of user IDs for specific targeting
-  displayType  String   @default("banner") // "banner", "modal", "toast"
-  isDismissible Boolean @default(true)
-  isActive     Boolean  @default(true)
-  startsAt     DateTime?
-  endsAt       DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  announcement_reads announcement_reads[]
-
-  @@index([isActive, startsAt, endsAt])
-}
-
-model announcement_reads {
-  id             String       @id @default(uuid())
-  announcementId String
-  userId         String
-  readAt         DateTime     @default(now())
-  dismissedAt    DateTime?
-  announcements  announcements @relation(fields: [announcementId], references: [id], onDelete: Cascade)
-  users          users        @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([announcementId, userId])
-  @@index([announcementId])
-  @@index([userId])
-}
-
-model support_tickets {
-  id          String   @id @default(uuid())
-  userId      String?  // Optional - for vendor/user tickets
-  clientId    String?  // For client tickets
-  subject     String
-  description String
-  category    String   @default("general") // "general", "billing", "technical", "feature_request"
-  priority    String   @default("normal")  // "low", "normal", "high", "urgent"
-  status      String   @default("open")    // "open", "in_progress", "waiting_customer", "resolved", "closed"
-  assignedTo  String?  // Admin ID
-  lastReplyAt DateTime?
-  resolvedAt  DateTime?
-  closedAt    DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  users       users?   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  client      client_accounts? @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  support_messages support_messages[]
-
-  @@index([userId])
-  @@index([clientId])
-  @@index([status])
-  @@index([assignedTo])
-  @@index([createdAt])
-}
-
-model support_messages {
-  id        String   @id @default(uuid())
-  ticketId  String
-  userId    String?
-  adminId   String?
-  clientId  String?  // For client replies
-  message   String
-  isInternal Boolean @default(false) // For internal notes not visible to user
-  attachments Json?  // Array of attachment URLs
-  createdAt DateTime @default(now())
-  support_tickets support_tickets @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  users     users?   @relation(fields: [userId], references: [id], onDelete: SetNull)
-  client    client_accounts? @relation(fields: [clientId], references: [id], onDelete: SetNull)
-
-  @@index([ticketId])
-  @@index([clientId])
-  @@index([createdAt])
-}
-
-model impersonation_sessions {
-  id           String   @id @default(uuid())
-  adminId      String
-  targetUserId String
-  token        String   @unique
-  reason       String?
-  endedAt      DateTime?
-  endReason    String?
-  createdAt    DateTime @default(now())
-  admins       admins   @relation(fields: [adminId], references: [id], onDelete: Cascade)
-  users        users    @relation(fields: [targetUserId], references: [id], onDelete: Cascade)
-
-  @@index([adminId])
-  @@index([targetUserId])
-  @@index([token])
-  @@index([createdAt])
-}
-
-// ==================== Client Dashboard Tables ====================
-
-// Client Account - for clients who want to register for dashboard access
-model client_accounts {
-  id                     String                     @id @default(uuid())
-  email                  String                     @unique
-  name                   String
-  phone                  String?
-  password               String?                    // hashed password (optional for magic link)
-  magicLinkToken         String?                    @unique
-  magicLinkExpires       DateTime?
-  createdAt              DateTime                   @default(now())
-  updatedAt              DateTime                   @updatedAt
-  client_invoice_access      client_invoice_access[]
-  client_notifications       client_notifications[]
-  client_notification_preferences client_notification_preferences?
-  invoice_messages           invoice_messages[]
-  support_tickets            support_tickets[]
-  support_messages           support_messages[]
-
-  @@index([email])
-  @@index([magicLinkToken])
-}
-
-// Link between invoice and client account for access tracking
-model client_invoice_access {
-  id          String         @id @default(uuid())
-  clientId    String
-  invoiceId   String
-  accessToken String         @unique // token unik untuk akses
-  lastViewed  DateTime?
-  viewCount   Int            @default(0)
-  client      client_accounts @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  invoice     invoices       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  createdAt   DateTime       @default(now())
-
-  @@unique([clientId, invoiceId])
-  @@index([clientId])
-  @@index([invoiceId])
-  @@index([accessToken])
-}
-
-// Notifications for clients
-model client_notifications {
-  id          String         @id @default(uuid())
-  clientId    String
-  type        String         // "invoice_sent", "payment_reminder", "payment_received", "overdue", "message", "system"
-  title       String
-  message     String
-  data        Json?          // data tambahan (invoice id, dll)
-  isRead      Boolean        @default(false)
-  readAt      DateTime?
-  client      client_accounts @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  createdAt   DateTime       @default(now())
-
-  @@index([clientId, isRead])
-  @@index([clientId, createdAt])
-  @@index([type])
-}
-
-// Client notification preferences
-model client_notification_preferences {
-  id                String         @id @default(uuid())
-  clientId          String         @unique
-  emailNotification Boolean        @default(true)
-  invoiceSent       Boolean        @default(true)
-  paymentReminder   Boolean        @default(true)
-  paymentReceived   Boolean        @default(true)
-  overdueAlert      Boolean        @default(true)
-  newMessage        Boolean        @default(true)
-  client            client_accounts @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-}
-
-// Messages/Comments on invoices
-model invoice_messages {
-  id          String         @id @default(uuid())
-  invoiceId   String
-  senderType  String         // "vendor" atau "client"
-  senderId    String         // user id atau client id
-  message     String
-  attachments Json?          // array of URLs
-  isRead      Boolean        @default(false)
-  invoice     invoices       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  sender      client_accounts? @relation(fields: [senderId], references: [id], onDelete: SetNull)
-  createdAt   DateTime       @default(now())
-
-  @@index([invoiceId, createdAt])
-  @@index([senderType, senderId])
 }
