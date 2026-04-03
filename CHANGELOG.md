@@ -10,6 +10,7 @@ Semua perubahan penting di project NotaBener akan didokumentasikan di file ini.
 - **Bank Code Casing**: Fixed bank codes dari lowercase ke uppercase (bca → BCA) untuk kompatibilitas DOKU API
 - **Payment Method Validation**: Removed unsupported SNAP payment method
 - **CSRF for Cron Jobs**: Fixed middleware untuk skip CSRF protection pada `/api/cron/` endpoints
+- **Cleanup Script**: Fixed TypeScript errors di cleanup-user-data.ts dengan menghapus references ke non-existent Prisma models
 
 ### Changed
 - **Payment Methods**: Sekarang hanya mendukung VA (Virtual Account) dan QRIS
