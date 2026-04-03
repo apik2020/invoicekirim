@@ -142,8 +142,8 @@ export async function createVAPayment(
   })
 
   // Correct DOKU VA endpoint
-  const url = `${DOKU_CONFIG.apiUrl}/api/v1/payment-service/va/create`
-  const signature = generateSignature('POST', '/api/v1/payment-service/va/create', timestamp, requestBody)
+  const url = `${DOKU_CONFIG.apiUrl}/order/v1/payment/va`
+  const signature = generateSignature('POST', '/order/v1/payment/va', timestamp, requestBody)
 
   const headers = {
     'Content-Type': 'application/json',
@@ -242,8 +242,8 @@ export async function createQRISPayment(
   })
 
   // Correct DOKU QRIS endpoint
-  const url = `${DOKU_CONFIG.apiUrl}/qr-qriss/v2/generate-qr`
-  const signature = generateSignature('POST', '/qr-qriss/v2/generate-qr', timestamp, requestBody)
+  const url = `${DOKU_CONFIG.apiUrl}/order/v1/payment/qris`
+  const signature = generateSignature('POST', '/order/v1/payment/qris', timestamp, requestBody)
 
   const headers = {
     'Content-Type': 'application/json',
@@ -372,8 +372,8 @@ export async function createRecurringPayment(params: {
 export async function getPaymentStatus(orderId: string) {
   const timestamp = Date.now().toString()
   // DOKU VA status check endpoint
-  const url = `${DOKU_CONFIG.apiUrl}/api/v1/payment-service/va/status?invoice_number=${orderId}`
-  const signature = generateSignature('GET', `/api/v1/payment-service/va/status?invoice_number=${orderId}`, timestamp, '')
+  const url = `${DOKU_CONFIG.apiUrl}/order/v1/payment/va/status?invoice_number=${orderId}`
+  const signature = generateSignature('GET', `/order/v1/payment/va/status?invoice_number=${orderId}`, timestamp, '')
 
   const response = await fetch(url, {
     method: 'GET',

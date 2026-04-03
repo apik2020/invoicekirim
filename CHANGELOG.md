@@ -4,6 +4,15 @@ Semua perubahan penting di project NotaBener akan didokumentasikan di file ini.
 
 ## [Unreleased]
 
+## [2026-04-03] - DOKU API Endpoints Fix
+
+### Fixed
+- **DOKU API Endpoints**: Updated to correct DOKU API paths:
+  - VA Creation: `/api/v1/payment-service/va/create` → `/order/v1/payment/va`
+  - QRIS Creation: `/qr-qriss/v2/generate-qr` → `/order/v1/payment/qris`
+  - VA Status: `/api/v1/payment-service/va/status` → `/order/v1/payment/va/status`
+- **Removed SNAP**: Completely removed SNAP payment method, only VA and QRIS supported
+
 ## [2026-04-03] - DOKU Payment Flow & Deployment Fixes
 
 ### Added
