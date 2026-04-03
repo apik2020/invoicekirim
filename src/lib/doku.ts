@@ -117,33 +117,33 @@ export async function createVAPayment(
   const customerId = generateCustomerId(params.customerEmail)
   const timestamp = Date.now().toString()
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://notabener.com'
+
+  // DOKU VA API expects this structure
   const requestBody = JSON.stringify({
     order: {
-      amount: params.amount,
       invoice_number: params.orderId,
-      currency: 'IDR',
-      expiry_period: params.expiryPeriod || 1440, // 24 hours default
-      type: 'PAYMENT',
+      amount: params.amount,
     },
-    payment: {
-      payment_method_types: [`${bank}_VA`],
+    virtual_account_info: {
+      billing_type: 'FIX_BILL',
+      expired_time: params.expiryPeriod || 1440, // 24 hours default in minutes
+      reusable_status: false,
+      info1: params.description.substring(0, 30), // Max 30 chars for VA display
     },
     customer: {
-      id: customerId,
       name: params.customerName,
       email: params.customerEmail,
       phone: params.customerPhone || '',
     },
-    metadata: {
-      description: params.description,
-    },
     additional_info: {
-      override_notification_url: `${appUrl}/api/webhooks/doku`,
+      // Bank code for VA (BCA, MANDIRI, BNI, BRI, PERMATA, CIMB)
+      bank: bank,
     },
   })
 
-  const url = `${DOKU_CONFIG.apiUrl}/v1/payments`
-  const signature = generateSignature('POST', '/v1/payments', timestamp, requestBody)
+  // Correct DOKU VA endpoint
+  const url = `${DOKU_CONFIG.apiUrl}/api/v1/payment-service/va/create`
+  const signature = generateSignature('POST', '/api/v1/payment-service/va/create', timestamp, requestBody)
 
   const headers = {
     'Content-Type': 'application/json',
@@ -187,12 +187,20 @@ export async function createVAPayment(
   }
 
   const data = await response.json()
+  console.log('[DOKU] VA Payment response:', JSON.stringify(data, null, 2))
 
-  // Get VA number from response
-  const vaNumber = data.payment?.va_number || data.va?.va_number || ''
-  const paymentUrl = data.payment?.payment_url || data.payment_url || ''
-  const token = data.payment?.token || data.token || ''
-  const expiryDate = new Date(data.payment?.expiry_date || Date.now() + 24 * 60 * 60 * 1000)
+  // Get VA number from response (DOKU VA response structure)
+  const vaNumber = data.virtual_account_info?.virtual_account_number
+    || data.virtual_account_number
+    || data.va_number
+    || ''
+  const paymentUrl = data.virtual_account_info?.payment_url || data.payment_url || ''
+  const token = data.virtual_account_info?.token || data.token || ''
+  const expiryDate = new Date(
+    data.virtual_account_info?.expired_time
+      ? Date.now() + (data.virtual_account_info.expired_time * 60 * 1000)
+      : Date.now() + 24 * 60 * 60 * 1000
+  )
 
   return {
     paymentUrl,
@@ -211,33 +219,31 @@ export async function createQRISPayment(
   const customerId = generateCustomerId(params.customerEmail)
   const timestamp = Date.now().toString()
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://notabener.com'
+
+  // DOKU QRIS API expects this structure
   const requestBody = JSON.stringify({
     order: {
-      amount: params.amount,
       invoice_number: params.orderId,
-      currency: 'IDR',
-      expiry_period: params.expiryPeriod || 15, // 15 minutes for QRIS
-      type: 'PAYMENT',
+      amount: params.amount,
     },
-    payment: {
-      payment_method_types: ['QRIS'],
+    qris_info: {
+      expired_time: params.expiryPeriod || 15, // 15 minutes for QRIS
+      reusable_status: false,
+      info1: params.description.substring(0, 30), // Max 30 chars
     },
     customer: {
-      id: customerId,
       name: params.customerName,
       email: params.customerEmail,
       phone: params.customerPhone || '',
     },
-    metadata: {
-      description: params.description,
-    },
     additional_info: {
-      override_notification_url: `${appUrl}/api/webhooks/doku`,
+      callback_url: `${appUrl}/api/webhooks/doku`,
     },
   })
 
-  const url = `${DOKU_CONFIG.apiUrl}/v1/payments`
-  const signature = generateSignature('POST', '/v1/payments', timestamp, requestBody)
+  // Correct DOKU QRIS endpoint
+  const url = `${DOKU_CONFIG.apiUrl}/qr-qriss/v2/generate-qr`
+  const signature = generateSignature('POST', '/qr-qriss/v2/generate-qr', timestamp, requestBody)
 
   const headers = {
     'Content-Type': 'application/json',
@@ -247,14 +253,14 @@ export async function createQRISPayment(
     'Signature': signature,
   }
 
-  console.log('[DOKU] Request URL:', url)
-  console.log('[DOKU] Request headers:', JSON.stringify({
+  console.log('[DOKU QRIS] Request URL:', url)
+  console.log('[DOKU QRIS] Request headers:', JSON.stringify({
     'Content-Type': headers['Content-Type'],
     'Client-Id': headers['Client-Id'],
     'Request-Timestamp': headers['Request-Timestamp'],
     'Signature': signature.substring(0, 20) + '...',
   }, null, 2))
-  console.log('[DOKU] Request body:', requestBody)
+  console.log('[DOKU QRIS] Request body:', requestBody)
 
   const response = await fetch(url, {
     method: 'POST',
@@ -281,12 +287,18 @@ export async function createQRISPayment(
   }
 
   const data = await response.json()
+  console.log('[DOKU QRIS] Response:', JSON.stringify(data, null, 2))
 
-  const paymentUrl = data.payment?.payment_url || ''
-  const token = data.payment?.token || ''
-  const qrString = data.payment?.qr_string || ''
-  const qrImageUrl = data.payment?.qr_image_url || ''
-  const expiryDate = new Date(data.payment?.expiry_date || Date.now() + 15 * 60 * 1000)
+  // Get QRIS data from response
+  const paymentUrl = data.qris_info?.payment_url || data.payment_url || ''
+  const token = data.qris_info?.token || data.token || ''
+  const qrString = data.qris_info?.qr_string || data.qr_string || ''
+  const qrImageUrl = data.qris_info?.qr_image_url || data.qr_image_url || ''
+  const expiryDate = new Date(
+    data.qris_info?.expired_time
+      ? Date.now() + (data.qris_info.expired_time * 60 * 1000)
+      : Date.now() + 15 * 60 * 1000
+  )
 
   return {
     paymentUrl,
@@ -359,8 +371,9 @@ export async function createRecurringPayment(params: {
 // Get payment status
 export async function getPaymentStatus(orderId: string) {
   const timestamp = Date.now().toString()
-  const url = `${DOKU_CONFIG.apiUrl}/v1/payments/${orderId}`
-  const signature = generateSignature('GET', `/v1/payments/${orderId}`, timestamp, '')
+  // DOKU VA status check endpoint
+  const url = `${DOKU_CONFIG.apiUrl}/api/v1/payment-service/va/status?invoice_number=${orderId}`
+  const signature = generateSignature('GET', `/api/v1/payment-service/va/status?invoice_number=${orderId}`, timestamp, '')
 
   const response = await fetch(url, {
     method: 'GET',
