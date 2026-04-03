@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
   // Explicitly set distDir to avoid Turbopack issues
   distDir: '.next',
 
+  // Enable standalone output for Docker deployment
+  output: 'standalone',
+
   // Temporarily skip TypeScript errors during build
   // TODO: Fix all Prisma schema issues and remove this
   typescript: {
