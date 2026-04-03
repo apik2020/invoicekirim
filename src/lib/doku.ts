@@ -153,6 +153,15 @@ export async function createVAPayment(
     'Signature': signature,
   }
 
+  console.log('[DOKU] Request URL:', url)
+  console.log('[DOKU] Request headers:', JSON.stringify({
+    'Content-Type': headers['Content-Type'],
+    'Client-Id': headers['Client-Id'],
+    'Request-Timestamp': headers['Request-Timestamp'],
+    'Signature': signature.substring(0, 20) + '...',
+  }, null, 2))
+  console.log('[DOKU] Request body:', requestBody)
+
   const response = await fetch(url, {
     method: 'POST',
     headers,
@@ -161,14 +170,20 @@ export async function createVAPayment(
 
   if (!response.ok) {
     const errorText = await response.text()
+    console.error('[DOKU] VA Payment error response:', {
+      status: response.status,
+      statusText: response.statusText,
+      body: errorText,
+    })
     let errorMessage = 'DOKU VA Payment failed'
     try {
       const error = JSON.parse(errorText)
-      errorMessage = error.message || error.error || errorMessage
+      console.error('[DOKU] Parsed error object:', JSON.stringify(error, null, 2))
+      errorMessage = error.message || error.error?.message || error.error || JSON.stringify(error)
     } catch {
       errorMessage = errorText || errorMessage
     }
-    throw new Error(errorMessage)
+    throw new Error(`DOKU Error: ${errorMessage}`)
   }
 
   const data = await response.json()
@@ -232,6 +247,15 @@ export async function createQRISPayment(
     'Signature': signature,
   }
 
+  console.log('[DOKU] Request URL:', url)
+  console.log('[DOKU] Request headers:', JSON.stringify({
+    'Content-Type': headers['Content-Type'],
+    'Client-Id': headers['Client-Id'],
+    'Request-Timestamp': headers['Request-Timestamp'],
+    'Signature': signature.substring(0, 20) + '...',
+  }, null, 2))
+  console.log('[DOKU] Request body:', requestBody)
+
   const response = await fetch(url, {
     method: 'POST',
     headers,
@@ -240,14 +264,20 @@ export async function createQRISPayment(
 
   if (!response.ok) {
     const errorText = await response.text()
+    console.error('[DOKU] QRIS Payment error response:', {
+      status: response.status,
+      statusText: response.statusText,
+      body: errorText,
+    })
     let errorMessage = 'DOKU QRIS Payment failed'
     try {
       const error = JSON.parse(errorText)
-      errorMessage = error.message || error.error || errorMessage
+      console.error('[DOKU] Parsed error object:', JSON.stringify(error, null, 2))
+      errorMessage = error.message || error.error?.message || error.error || JSON.stringify(error)
     } catch {
       errorMessage = errorText || errorMessage
     }
-    throw new Error(errorMessage)
+    throw new Error(`DOKU Error: ${errorMessage}`)
   }
 
   const data = await response.json()
