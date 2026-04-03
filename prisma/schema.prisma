@@ -481,6 +481,7 @@ model users {
   team_members         team_members[]
   teams                teams[]
   support_tickets      support_tickets[]
+  announcement_reads   announcement_reads[]
 }
 
 model verification_tokens {
@@ -647,6 +648,7 @@ model announcement_reads {
   readAt          DateTime @default(now())
   dismissed       Boolean  @default(false)
   announcements   announcements @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  users           users    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([announcementId, userId])
   @@index([announcementId])
