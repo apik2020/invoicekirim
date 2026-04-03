@@ -62,7 +62,8 @@ export default async function middleware(req: NextRequest) {
     // Also skip for OAuth callbacks (Google, GitHub, etc.) and NextAuth endpoints
     // Also skip for auth-simple test endpoint
     // Also skip for file upload endpoint (uses multipart/form-data)
-    if (pathname.includes('/webhooks/') || pathname.includes('/api/auth') || pathname.includes('/api/auth-simple') || pathname === '/api/upload') {
+    // Also skip for cron endpoints (they use CRON_SECRET for authorization)
+    if (pathname.includes('/webhooks/') || pathname.includes('/api/auth') || pathname.includes('/api/auth-simple') || pathname.includes('/api/cron/') || pathname === '/api/upload') {
       // Continue without CSRF check
     } else if (pathname.startsWith('/api/')) {
       // For API routes, check Origin/Referer matches host
