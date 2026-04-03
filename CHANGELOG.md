@@ -17,6 +17,7 @@ Semua perubahan penting di project NotaBener akan didokumentasikan di file ini.
   - `impersonation_sessions`
   - `client_accounts`, `client_invoice_access`, `invoice_messages`
   - `client_notifications`, `client_notification_preferences`
+- **Dockerfile Permissions**: Removed non-root user setup yang menyebabkan deployment cancelled
 
 ### Changed
 - **Payment Methods**: Sekarang hanya mendukung VA (Virtual Account) dan QRIS
