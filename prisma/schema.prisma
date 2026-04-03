@@ -149,6 +149,7 @@ model clients {
   client_accounts client_accounts?
   support_tickets support_tickets[]
   support_messages support_messages[]
+  client_notifications client_notifications[]
 
   @@index([teamId])
   @@index([userId])
@@ -668,6 +669,7 @@ model support_tickets {
   priority    String   @default("normal")
   category    String?
   assignedTo  String?
+  lastReplyAt DateTime?
   resolvedAt  DateTime?
   closedAt    DateTime?
   createdAt   DateTime @default(now())
@@ -727,7 +729,6 @@ model client_accounts {
   updatedAt    DateTime
   clients      clients  @relation(fields: [clientId], references: [id], onDelete: Cascade)
   client_invoice_access client_invoice_access[]
-  client_notifications client_notifications[]
   client_notification_preferences client_notification_preferences?
   invoice_messages invoice_messages[]
 
@@ -766,7 +767,7 @@ model invoice_messages {
 // Client Notifications
 model client_notifications {
   id           String   @id @default(uuid())
-  clientAccountId String
+  clientId     String
   type         String
   title        String
   message      String
@@ -774,9 +775,9 @@ model client_notifications {
   isRead       Boolean  @default(false)
   readAt       DateTime?
   createdAt    DateTime @default(now())
-  client_accounts client_accounts @relation(fields: [clientAccountId], references: [id], onDelete: Cascade)
+  clients      clients  @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
-  @@index([clientAccountId])
+  @@index([clientId])
   @@index([isRead])
 }
 
