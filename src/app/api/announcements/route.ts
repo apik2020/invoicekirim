@@ -127,7 +127,7 @@ export async function GET(req: NextRequest) {
       select: {
         announcementId: true,
         readAt: true,
-        dismissedAt: true,
+        dismissed: true,
       },
     })
 
@@ -135,7 +135,7 @@ export async function GET(req: NextRequest) {
     readRecords.forEach((record) => {
       readMap.set(record.announcementId, {
         read: !!record.readAt,
-        dismissed: !!record.dismissedAt,
+        dismissed: record.dismissed || false,
       })
     })
 

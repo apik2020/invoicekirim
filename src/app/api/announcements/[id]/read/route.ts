@@ -56,7 +56,7 @@ export async function POST(
         },
         data: {
           readAt: new Date(),
-          dismissedAt: dismissed ? new Date() : null,
+          dismissed: dismissed,
         },
       })
     } else {
@@ -67,7 +67,7 @@ export async function POST(
           announcementId: id,
           userId: session.id,
           readAt: new Date(),
-          dismissedAt: dismissed ? new Date() : null,
+          dismissed: dismissed,
         },
       })
     }
@@ -77,40 +77,6 @@ export async function POST(
     console.error('Error marking announcement as read:', error)
     return NextResponse.json(
       { error: 'Gagal menandai pengumuman' },
-      { status: 500 }
-    )
-  }
-}
-
-/**
- * DELETE /api/announcements/[id]/read
- * Remove read/dismissed status (allow showing again)
- */
-export async function DELETE(
-  _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const session = await getUserSession()
-    if (!session?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const { id } = await params
-
-    // Delete read record
-    await prisma.announcement_reads.deleteMany({
-      where: {
-        announcementId: id,
-        userId: session.id,
-      },
-    })
-
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('Error removing announcement read status:', error)
-    return NextResponse.json(
-      { error: 'Gagal menghapus status pengumuman' },
       { status: 500 }
     )
   }
