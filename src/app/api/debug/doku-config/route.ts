@@ -43,10 +43,10 @@ export async function GET() {
         : 'https://api-sandbox.doku.com',
     },
     recommendation: {
-      hasQuotesInClientId
+      clientId: hasQuotesInClientId
         ? 'Remove quotes from DOKU_CLIENT_ID in Dokploy environment variables'
         : 'DOKU_CLIENT_ID looks correct',
-      hasQuotesInSecretKey
+      secretKey: hasQuotesInSecretKey
         ? 'Remove quotes from DOKU_SECRET_KEY in Dokploy environment variables'
         : 'DOKU_SECRET_KEY looks correct',
     },
