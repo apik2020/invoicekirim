@@ -21,76 +21,13 @@ async function cleanupUserData() {
     console.log(`📋 Found ${adminIds.length} admin accounts to preserve`)
 
     // Delete in order to respect foreign key constraints
-    // Tables without userId that reference user-related tables first
+    // Only delete from tables that exist in the schema
 
-    // 1. Delete support tickets and messages (optional - user related)
-    console.log('🗑️  Deleting support tickets...')
-    await prisma.support_messages.deleteMany({
-      where: {
-        OR: [
-          { userId: { not: { in: adminIds } } },
-          { clientId: { not: undefined } }, // Client tickets
-        ],
-      },
-    })
-    await prisma.support_tickets.deleteMany({
-      where: {
-        OR: [
-          { userId: { not: { in: adminIds } } },
-          { userId: null }, // Client tickets without userId
-        ],
-      },
-    })
-
-    // 2. Delete impersonation sessions (except admin ones)
-    console.log('🗑️  Deleting impersonation sessions...')
-    await prisma.impersonation_sessions.deleteMany({
-      where: {
-        adminId: { not: { in: adminIds } },
-      },
-    })
-
-    // 3. Delete announcement reads
-    console.log('🗑️  Deleting announcement reads...')
-    await prisma.announcement_reads.deleteMany({
-      where: {
-        userId: { not: { in: adminIds } },
-      },
-    })
-
-    // 4. Delete client invoice access
-    console.log('🗑️  Deleting client invoice access...')
-    await prisma.client_invoice_access.deleteMany({})
-
-    // 5. Delete invoice messages
-    console.log('🗑️  Deleting invoice messages...')
-    await prisma.invoice_messages.deleteMany({})
-
-    // 6. Delete client notifications
-    console.log('🗑️  Deleting client notifications...')
-    await prisma.client_notifications.deleteMany({})
-
-    // 7. Delete client notification preferences
-    console.log('🗑️  Deleting client notification preferences...')
-    await prisma.client_notification_preferences.deleteMany({})
-
-    // 8. Delete client accounts
-    console.log('🗑️  Deleting client accounts...')
-    await prisma.client_accounts.deleteMany({})
-
-    // 9. Delete analytics snapshots
-    console.log('🗑️  Deleting analytics snapshots...')
-    await prisma.analytics_snapshots.deleteMany({})
-
-    // 10. Delete webhooks
-    console.log('🗑️  Deleting webhooks...')
-    await prisma.webhooks.deleteMany({})
-
-    // 11. Delete team invitations
+    // 1. Delete team invitations
     console.log('🗑️  Deleting team invitations...')
     await prisma.team_invitations.deleteMany({})
 
-    // 12. Delete team members
+    // 2. Delete team members
     console.log('🗑️  Deleting team members...')
     await prisma.team_members.deleteMany({
       where: {
@@ -98,7 +35,7 @@ async function cleanupUserData() {
       },
     })
 
-    // 13. Delete teams (this will cascade to branding, api_keys, etc.)
+    // 3. Delete teams (this will cascade to branding, api_keys, etc.)
     console.log('🗑️  Deleting teams...')
     await prisma.teams.deleteMany({
       where: {
@@ -106,15 +43,15 @@ async function cleanupUserData() {
       },
     })
 
-    // 14. Delete invoice items (will cascade from invoices, but delete directly to be safe)
+    // 4. Delete invoice items (will cascade from invoices, but delete directly to be safe)
     console.log('🗑️  Deleting invoice items...')
     await prisma.invoice_items.deleteMany({})
 
-    // 15. Delete template items
+    // 5. Delete template items
     console.log('🗑️  Deleting template items...')
     await prisma.template_items.deleteMany({})
 
-    // 16. Delete invoice templates
+    // 6. Delete invoice templates
     console.log('🗑️  Deleting invoice templates...')
     await prisma.invoice_templates.deleteMany({
       where: {
@@ -122,7 +59,7 @@ async function cleanupUserData() {
       },
     })
 
-    // 17. Delete invoices
+    // 7. Delete invoices
     console.log('🗑️  Deleting invoices...')
     await prisma.invoices.deleteMany({
       where: {
@@ -130,7 +67,7 @@ async function cleanupUserData() {
       },
     })
 
-    // 18. Delete payments
+    // 8. Delete payments
     console.log('🗑️  Deleting payments...')
     await prisma.payments.deleteMany({
       where: {
@@ -138,7 +75,7 @@ async function cleanupUserData() {
       },
     })
 
-    // 19. Delete items/catalog
+    // 9. Delete items/catalog
     console.log('🗑️  Deleting catalog items...')
     await prisma.items.deleteMany({
       where: {
@@ -146,7 +83,7 @@ async function cleanupUserData() {
       },
     })
 
-    // 20. Delete clients
+    // 10. Delete clients
     console.log('🗑️  Deleting clients...')
     await prisma.clients.deleteMany({
       where: {
@@ -154,22 +91,15 @@ async function cleanupUserData() {
       },
     })
 
-    // 21. Delete api keys
-    console.log('🗑️  Deleting API keys...')
-    await prisma.api_keys.deleteMany({
-      where: {
-        OR: [
-          { userId: { not: { in: adminIds } } },
-          { userId: null, teamId: { not: undefined } }, // Team keys without user
-        ],
-      },
-    })
+    // 11. Delete analytics snapshots
+    console.log('🗑️  Deleting analytics snapshots...')
+    await prisma.analytics_snapshots.deleteMany({})
 
-    // 22. Delete branding (should cascade from teams, but delete any remaining)
-    console.log('🗑️  Deleting branding settings...')
-    await prisma.branding.deleteMany({})
+    // 12. Delete webhooks
+    console.log('🗑️  Deleting webhooks...')
+    await prisma.webhooks.deleteMany({})
 
-    // 23. Delete activity logs
+    // 13. Delete activity logs
     console.log('🗑️  Deleting activity logs...')
     await prisma.activity_logs.deleteMany({
       where: {
@@ -177,7 +107,7 @@ async function cleanupUserData() {
       },
     })
 
-    // 24. Delete sessions
+    // 14. Delete sessions
     console.log('🗑️  Deleting sessions...')
     await prisma.sessions.deleteMany({
       where: {
@@ -185,7 +115,7 @@ async function cleanupUserData() {
       },
     })
 
-    // 25. Delete accounts
+    // 15. Delete accounts
     console.log('🗑️  Deleting accounts...')
     await prisma.accounts.deleteMany({
       where: {
@@ -193,7 +123,7 @@ async function cleanupUserData() {
       },
     })
 
-    // 26. Delete subscriptions
+    // 16. Delete subscriptions
     console.log('🗑️  Deleting subscriptions...')
     await prisma.subscriptions.deleteMany({
       where: {
@@ -201,7 +131,7 @@ async function cleanupUserData() {
       },
     })
 
-    // 27. Finally, delete users (except admins)
+    // 17. Finally, delete users (except admins)
     console.log('🗑️  Deleting users...')
     const deletedUsers = await prisma.users.deleteMany({
       where: {
