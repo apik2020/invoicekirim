@@ -11,6 +11,12 @@ Semua perubahan penting di project NotaBener akan didokumentasikan di file ini.
 - **Payment Method Validation**: Removed unsupported SNAP payment method
 - **CSRF for Cron Jobs**: Fixed middleware untuk skip CSRF protection pada `/api/cron/` endpoints
 - **Cleanup Script**: Fixed TypeScript errors di cleanup-user-data.ts dengan menghapus references ke non-existent Prisma models
+- **Missing Prisma Models**: Added missing models yang di-reference di API routes:
+  - `announcements` & `announcement_reads`
+  - `support_tickets` & `support_messages`
+  - `impersonation_sessions`
+  - `client_accounts`, `client_invoice_access`, `invoice_messages`
+  - `client_notifications`, `client_notification_preferences`
 
 ### Changed
 - **Payment Methods**: Sekarang hanya mendukung VA (Virtual Account) dan QRIS
