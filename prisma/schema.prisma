@@ -57,6 +57,7 @@ model admins {
   smtpFromEmail   String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime
+  impersonation_sessions impersonation_sessions[]
 }
 
 model analytics_snapshots {
@@ -145,6 +146,8 @@ model clients {
   teams     teams?     @relation(fields: [teamId], references: [id], onDelete: Cascade)
   users     users      @relation(fields: [userId], references: [id], onDelete: Cascade)
   invoices  invoices[]
+  client_accounts client_accounts?
+  support_tickets support_tickets[]
 
   @@index([teamId])
   @@index([userId])
@@ -252,6 +255,8 @@ model invoices {
   clients                  clients?        @relation(fields: [clientId], references: [id])
   teams                    teams?          @relation(fields: [teamId], references: [id], onDelete: Cascade)
   users                    users           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  client_invoice_access    client_invoice_access[]
+  invoice_messages         invoice_messages[]
 
   @@index([accessToken])
   @@index([status])
@@ -475,6 +480,7 @@ model users {
   subscriptions        subscriptions?
   team_members         team_members[]
   teams                teams[]
+  support_tickets      support_tickets[]
 }
 
 model verification_tokens {
@@ -611,4 +617,167 @@ enum TeamRole {
   ADMIN
   MEMBER
   VIEWER
+}
+
+// Announcements
+model announcements {
+  id            String   @id @default(uuid())
+  title         String
+  message       String
+  type          String   @default("info")
+  targetType    String   @default("all")
+  targetUsers   Json?
+  displayType   String   @default("banner")
+  isDismissible Boolean  @default(true)
+  isActive      Boolean  @default(true)
+  startsAt      DateTime?
+  endsAt        DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime
+
+  announcement_reads announcement_reads[]
+
+  @@index([isActive, createdAt])
+}
+
+model announcement_reads {
+  id              String   @id @default(uuid())
+  announcementId  String
+  userId          String
+  readAt          DateTime @default(now())
+  dismissed       Boolean  @default(false)
+  announcements   announcements @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+
+  @@unique([announcementId, userId])
+  @@index([announcementId])
+  @@index([userId])
+}
+
+// Support Tickets
+model support_tickets {
+  id          String   @id @default(uuid())
+  userId      String?
+  clientId    String?
+  subject     String
+  description String?
+  status      String   @default("open")
+  priority    String   @default("normal")
+  category    String?
+  assignedTo  String?
+  resolvedAt  DateTime?
+  closedAt    DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+  users       users?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  client      clients? @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  support_messages support_messages[]
+
+  @@index([status])
+  @@index([userId])
+  @@index([clientId])
+}
+
+model support_messages {
+  id        String   @id @default(uuid())
+  ticketId  String
+  userId    String?
+  message   String
+  createdAt DateTime @default(now())
+  support_tickets support_tickets @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId])
+}
+
+// Impersonation Sessions
+model impersonation_sessions {
+  id          String   @id @default(uuid())
+  adminId     String
+  targetUserId String
+  reason      String?
+  expiresAt   DateTime
+  createdAt   DateTime @default(now())
+  endedAt     DateTime?
+  admins      admins   @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([targetUserId])
+}
+
+// Client Portal Accounts
+model client_accounts {
+  id           String   @id @default(uuid())
+  clientId     String   @unique
+  email        String   @unique
+  password     String
+  isActive     Boolean  @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime
+  clients      clients  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  client_invoice_access client_invoice_access[]
+  client_notifications client_notifications[]
+  client_notification_preferences client_notification_preferences?
+  invoice_messages invoice_messages[]
+
+  @@index([email])
+}
+
+// Client Invoice Access
+model client_invoice_access {
+  id          String   @id @default(uuid())
+  invoiceId   String
+  clientAccountId String
+  accessedAt  DateTime @default(now())
+  ipAddress   String?
+  userAgent   String?
+  invoices    invoices @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  client_accounts client_accounts @relation(fields: [clientAccountId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@index([clientAccountId])
+}
+
+// Invoice Messages
+model invoice_messages {
+  id          String   @id @default(uuid())
+  invoiceId   String
+  senderId    String?
+  senderType  String   @default("user")
+  message     String
+  createdAt   DateTime @default(now())
+  invoices    invoices @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  client_accounts client_accounts? @relation(fields: [senderId], references: [id], onDelete: SetNull)
+
+  @@index([invoiceId])
+}
+
+// Client Notifications
+model client_notifications {
+  id           String   @id @default(uuid())
+  clientAccountId String
+  type         String
+  title        String
+  message      String
+  data         Json?
+  isRead       Boolean  @default(false)
+  readAt       DateTime?
+  createdAt    DateTime @default(now())
+  client_accounts client_accounts @relation(fields: [clientAccountId], references: [id], onDelete: Cascade)
+
+  @@index([clientAccountId])
+  @@index([isRead])
+}
+
+// Client Notification Preferences
+model client_notification_preferences {
+  id           String   @id @default(uuid())
+  clientAccountId String @unique
+  emailNewInvoice   Boolean @default(true)
+  emailReminder     Boolean @default(true)
+  emailReceipt      Boolean @default(true)
+  pushNewInvoice    Boolean @default(false)
+  pushReminder      Boolean @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime
+  client_accounts client_accounts @relation(fields: [clientAccountId], references: [id], onDelete: Cascade)
 }
