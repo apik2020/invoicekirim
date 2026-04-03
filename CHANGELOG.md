@@ -4,6 +4,25 @@ Semua perubahan penting di project NotaBener akan didokumentasikan di file ini.
 
 ## [Unreleased]
 
+## [2026-04-03] - DOKU Payment Flow Improvements
+
+### Fixed
+- **Bank Code Casing**: Fixed bank codes dari lowercase ke uppercase (bca → BCA) untuk kompatibilitas DOKU API
+- **Payment Method Validation**: Removed unsupported SNAP payment method
+
+### Changed
+- **Payment Methods**: Sekarang hanya mendukung VA (Virtual Account) dan QRIS
+- Removed SNAP payment option dari checkout page dan API
+
+### Added
+- **EXPIRED Payment Status**: Added EXPIRED ke PaymentStatus enum di Prisma schema
+- **Expire Payments Cron**: Added `/api/cron/expire-payments` untuk meng-automate expired pending payments
+
+### Technical Details
+- Bank codes sekarang menggunakan format uppercase: BCA, BNI, BRI, MANDIRI, PERMATA, CIMB
+- Cron job menggunakan CRON_SECRET untuk authorization
+- Expired payments diupdate secara otomatis dengan activity logging
+
 ## [2026-04-03] - Fix MIME Type Issue untuk Traefik/Dokploy
 
 ### Fixed
