@@ -27,10 +27,6 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Create non-root user
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
 # Copy all necessary files for non-standalone mode
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next ./.next
@@ -38,11 +34,6 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/next.config.ts ./
-
-# Set correct permissions
-RUN chown -R nextjs:nodejs /app
-
-USER nextjs
 
 EXPOSE 3000
 
