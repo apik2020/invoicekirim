@@ -10,10 +10,14 @@ COPY package.json package-lock.json* ./
 COPY prisma ./prisma/
 
 # Install dependencies (this will run prisma generate via postinstall)
-RUN npm ci
+# Use --prefer-offline for faster builds but ensure fresh install
+RUN npm ci --prefer-offline || npm ci
 
 # Copy source files
 COPY . .
+
+# Clean previous build if exists
+RUN rm -rf .next
 
 # Build the application
 ENV NEXT_TELEMETRY_DISABLED=1
