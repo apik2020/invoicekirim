@@ -32,9 +32,15 @@
 
 ### 3. Build Configuration
 
-- **Build Pack**: `nixpacks`
-- **Build Command**: `npm run build`
-- **Start Command**: `npm run start`
+- **Build Pack**: `Dockerfile`
+- **Docker Context**: `.` (root directory)
+- **Dockerfile**: Use file dari repository (sudah dikonfigurasi)
+
+**Catatan Penting tentang Dockerfile**:
+- Menggunakan `npm start` dengan Next.js built-in server
+- Tidak menggunakan `output: 'standalone'` untuk kompatibilitas dengan Traefik
+- Middleware di `src/middleware.ts` menangani MIME types untuk static files
+- Prisma schema di-copy sebelum `npm ci` untuk postinstall script
 
 ### 4. Environment Variables
 
@@ -227,14 +233,42 @@ npx prisma db seed
 
 ## Troubleshooting
 
-### MIME Type Error
+### MIME Type Error (Traefik + Dokploy)
 
-**Error**: `MIME type ('text/plain') is not executable`
+**Error**: `Refused to execute script... MIME type ('text/plain') is not executable`
 
-**Solusi**:
-1. Pastikan `next.config.ts` memiliki headers untuk static files
-2. Check Traefik/nginx configuration
-3. Clear browser cache dan hard refresh
+**Penyebab**: Traefik meng-override Content-Type header dari Next.js server.
+
+**Solusi** (sudah diimplementasikan):
+
+1. **Middleware Force MIME Types** (`src/middleware.ts`):
+   ```typescript
+   // Handle static files - force correct MIME types
+   if (pathname.startsWith('/_next/static/')) {
+     const response = NextResponse.next()
+     if (pathname.endsWith('.js') || pathname.endsWith('.mjs')) {
+       response.headers.set('Content-Type', 'application/javascript; charset=utf-8')
+     }
+     if (pathname.endsWith('.css')) {
+       response.headers.set('Content-Type', 'text/css; charset=utf-8')
+     }
+     return response
+   }
+   ```
+
+2. **Dockerfile Configuration**:
+   - Gunakan `npm start` mode (bukan standalone)
+   - Hapus non-root user permissions untuk menghindari deployment issues
+   - Copy semua file termasuk `node_modules`, `.next`, dan `prisma`
+
+3. **Traefik Configuration** (di Dokploy):
+   - Tambahkan middleware dengan `contentTypeNosniff: true`
+   - Pastikan tidak ada compression yang mengganggu headers
+
+4. **Setelah Deploy**:
+   - Clear browser cache (Cmd+Shift+Delete)
+   - Hard refresh (Cmd+Shift+R)
+   - Test di incognito/private mode
 
 ### Build Failed
 
