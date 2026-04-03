@@ -148,6 +148,7 @@ model clients {
   invoices  invoices[]
   client_accounts client_accounts?
   support_tickets support_tickets[]
+  support_messages support_messages[]
 
   @@index([teamId])
   @@index([userId])
@@ -481,6 +482,7 @@ model users {
   team_members         team_members[]
   teams                teams[]
   support_tickets      support_tickets[]
+  support_messages     support_messages[]
   announcement_reads   announcement_reads[]
 }
 
@@ -683,11 +685,19 @@ model support_messages {
   id        String   @id @default(uuid())
   ticketId  String
   userId    String?
+  adminId   String?
+  clientId  String?
   message   String
+  isInternal Boolean @default(false)
   createdAt DateTime @default(now())
   support_tickets support_tickets @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  users     users?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+  client    clients? @relation(fields: [clientId], references: [id], onDelete: SetNull)
 
   @@index([ticketId])
+  @@index([userId])
+  @@index([adminId])
+  @@index([clientId])
 }
 
 // Impersonation Sessions
