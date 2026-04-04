@@ -112,10 +112,12 @@ export interface QRISPaymentResult {
   expiryDate: Date
 }
 
-// Generate DOKU Customer ID from email
+// Generate DOKU Customer ID - must be digits only (max 20 chars)
 function generateCustomerId(email: string): string {
-  const hash = createHash('sha256').update(email).digest('hex')
-  return hash.substring(0, 8).toUpperCase()
+  // Generate numeric-only customer ID from timestamp + hash
+  const timestamp = Date.now().toString().slice(-10)
+  const hashNum = parseInt(createHash('sha256').update(email).digest('hex').substring(0, 6), 16)
+  return `${timestamp}${hashNum}`.slice(0, 20)
 }
 
 // Generate DOKU Order ID - takes userId for reference but uses timestamp + random
@@ -125,10 +127,15 @@ export function generateDOKUOrderId(userId?: string): string {
   return `INV-${timestamp}-${randomStr}`
 }
 
-// Format expiry date to ISO-8601 with timezone
+// Format expiry date to ISO-8601 with timezone offset (required by DOKU)
+// Format: 2024-01-01T12:00:00+07:00
 function formatExpiryDate(minutes: number): string {
   const expiryDate = new Date(Date.now() + minutes * 60 * 1000)
-  return expiryDate.toISOString()
+  // Format with timezone offset for Indonesia (WIB = +07:00)
+  const offset = '+07:00'
+  const iso = expiryDate.toISOString()
+  // Replace Z with +07:00
+  return iso.replace('Z', '').replace(/\.\d{3}$/, '') + offset
 }
 
 /**
@@ -164,13 +171,20 @@ export async function createVAPayment(
     const VirtualAccountConfig = require('doku-nodejs-library/_models/virtualAccountConfig')
 
     const createVaRequestDto = new CreateVARequestDto()
-    createVaRequestDto.partnerServiceId = DOKU_CONFIG.partnerServiceId
+    // partnerServiceId must be exactly 8 characters - pad with spaces if needed
+    const partnerServiceId = DOKU_CONFIG.partnerServiceId.padEnd(8, ' ')
+    createVaRequestDto.partnerServiceId = partnerServiceId
     createVaRequestDto.customerNo = customerNo
-    createVaRequestDto.virtualAccountNo = `${DOKU_CONFIG.partnerServiceId}${customerNo}`
+    createVaRequestDto.virtualAccountNo = `${partnerServiceId}${customerNo}`
     createVaRequestDto.virtualAccountName = params.customerName.substring(0, 255)
     createVaRequestDto.virtualAccountEmail = params.customerEmail
-    createVaRequestDto.virtualAccountPhone = params.customerPhone || ''
+    // Only set phone if provided - don't send empty string
+    if (params.customerPhone) {
+      createVaRequestDto.virtualAccountPhone = params.customerPhone
+    }
     createVaRequestDto.trxId = params.orderId
+    // freeText must be an array
+    createVaRequestDto.freeText = ['Payment for ' + params.description.substring(0, 20)]
 
     const totalAmount = new TotalAmount()
     totalAmount.value = params.amount.toFixed(2)
@@ -321,10 +335,11 @@ export async function getPaymentStatus(orderId: string) {
 
   const CheckStatusVARequestDto = require('doku-nodejs-library/_models/checkStatusVARequestDTO')
 
+  const partnerServiceId = DOKU_CONFIG.partnerServiceId.padEnd(8, ' ')
   const checkVaRequestDto = new CheckStatusVARequestDto()
-  checkVaRequestDto.partnerServiceId = DOKU_CONFIG.partnerServiceId
+  checkVaRequestDto.partnerServiceId = partnerServiceId
   checkVaRequestDto.customerNo = generateCustomerId(orderId)
-  checkVaRequestDto.virtualAccountNo = `${DOKU_CONFIG.partnerServiceId}${checkVaRequestDto.customerNo}`
+  checkVaRequestDto.virtualAccountNo = `${partnerServiceId}${checkVaRequestDto.customerNo}`
 
   const response = await snap.checkStatusVa(checkVaRequestDto)
   return response
