@@ -4,32 +4,17 @@ Semua perubahan penting di project NotaBener akan didokumentasikan di file ini.
 
 ## [Unreleased]
 
-## [2026-04-04] - DOKU SNAP API Integration Refactor
+## [2026-04-04] - DOKU SDK Integration
 
 ### Changed
-- **DOKU Integration**: Complete refactor to use DOKU SNAP API specification:
-  - VA Creation: `/virtual-accounts/bi-snap-va/v1.1/transfer-va/create-va`
-  - VA Status: `/orders/v1.0/transfer-va/status`
-  - B2B Token: `/authorization/v1/access-token/b2b`
-- **Authentication**: Updated to use RSA-SHA256 for B2B token + HMAC-SHA512 for API requests
-
-### Added
-- **RSA Key Generator**: `npm run doku:generate-keys` script to generate RSA key pairs
-- **New Environment Variables**:
-  - `DOKU_PRIVATE_KEY`: RSA private key for signing requests
-  - `DOKU_PUBLIC_KEY`: RSA public key (upload to DOKU dashboard)
-  - `DOKU_PUBLIC_KEY_DOKU`: DOKU's public key for signature verification
-  - `DOKU_PARTNER_SERVICE_ID`: Partner Service ID from DOKU dashboard
-
-### Fixed
-- **Bank Code Format**: Bank codes now use proper channel format (e.g., `VIRTUAL_ACCOUNT_BANK_BCA`)
-- **Signature Generation**: Correctly implements SNAP API signature specification
+- **DOKU Integration**: Refactored to use official `doku-nodejs-library` SDK
+  - Uses SDK's built-in SNAP API authentication
+  - Simplified signature handling (SDK manages complexity)
 
 ### Technical Details
-- Bank channel mapping: `BCA` → `VIRTUAL_ACCOUNT_BANK_BCA`, etc.
-- B2B token authentication uses RSA-SHA256 signature
-- API requests use HMAC-SHA512 with B2B token
-- Partner Service ID required for VA number generation
+- SDK handles RSA-SHA256 + HMAC-SHA512 authentication automatically
+- Partner Service ID defaults to `11111` for sandbox testing
+- Supports VA (Virtual Account) and QRIS payment methods
 
 ## [2026-04-03] - DOKU API Endpoints Fix
 
