@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Mail, Lock, ArrowRight, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { Logo } from '@/components/Logo'
 import { AlertBox } from '@/components/Toast'
@@ -111,8 +112,15 @@ export default function LoginPage() {
         <div className="w-full max-w-md animate-fade-in-up">
           {/* Logo/Icon */}
           <div className="text-center mb-8 sm:mb-10">
-            <div className="auth-icon">
-              <span className="font-bold text-white text-2xl sm:text-3xl tracking-tight">[iK]</span>
+            <div className="auth-icon bg-transparent shadow-none p-0 overflow-hidden">
+              <Image
+                src="/images/notabener-icon.png"
+                alt="NotaBener"
+                width={96}
+                height={96}
+                className="w-full h-full object-cover"
+                priority
+              />
             </div>
             <h1 className="text-3xl sm:text-4xl font-bold text-brand-500 mb-2 sm:mb-3 tracking-tight">
               Selamat Datang
