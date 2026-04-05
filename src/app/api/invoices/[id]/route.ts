@@ -29,7 +29,12 @@ export async function GET(
       return NextResponse.json({ error: 'Invoice tidak ditemukan' }, { status: 404 })
     }
 
-    return NextResponse.json(invoice)
+    // Transform invoice_items to items for frontend compatibility
+    const { invoice_items, ...rest } = invoice
+    return NextResponse.json({
+      ...rest,
+      items: invoice_items,
+    })
   } catch (error) {
     console.error('Get invoice error:', error)
     return NextResponse.json(
