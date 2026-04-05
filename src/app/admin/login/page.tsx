@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Mail, Lock, ArrowRight, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { AdminLogo } from '@/components/Logo'
 import { AlertBox } from '@/components/Toast'
@@ -67,8 +68,15 @@ export default function AdminLoginPage() {
         <div className="w-full max-w-md animate-fade-in-up">
           {/* Logo/Icon */}
           <div className="text-center mb-8 sm:mb-10">
-            <div className="auth-icon bg-gradient-to-br from-brand-500 to-brand-600 shadow-brand-lg">
-              <span className="font-bold text-white text-2xl sm:text-3xl tracking-tight">[iK]</span>
+            <div className="auth-icon bg-gradient-to-br from-brand-500 to-brand-600 shadow-brand-lg p-0 overflow-hidden">
+              <Image
+                src="/images/notabener-icon.png"
+                alt="NotaBener"
+                width={80}
+                height={80}
+                className="w-full h-full object-cover"
+                priority
+              />
             </div>
             <h1 className="text-3xl sm:text-4xl font-bold text-brand-500 mb-2 sm:mb-3 tracking-tight">
               Admin Login
