@@ -7,7 +7,7 @@ interface LogoProps {
   showText?: boolean
   linkToHome?: boolean
   className?: string
-  textClassName?: string
+  textClassName?: string // Kept for backward compatibility
 }
 
 const logoSizes = {
@@ -60,8 +60,9 @@ export function Logo({
   showText = true,
   linkToHome = true,
   className,
-  textClassName,
+  textClassName, // Accepted for backward compatibility but not used with image
 }: LogoProps) {
+  // Always render the same structure to avoid hydration mismatch
   const content = showText ? (
     <LogoImage size={size} className={className} />
   ) : (
