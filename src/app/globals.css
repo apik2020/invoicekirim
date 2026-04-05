@@ -251,7 +251,7 @@ body {
   }
 
   .auth-icon {
-    @apply w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center mx-auto mb-6 shadow-primary-lg animate-float;
+    @apply w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center mx-auto mb-6 shadow-primary-lg animate-float;
   }
 
   .auth-divider {
