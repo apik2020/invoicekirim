@@ -179,9 +179,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             <Image
               src="/images/notabener-logo.png"
               alt="NotaBener"
-              width={130}
-              height={25}
-              className="h-6 w-auto"
+              width={168}
+              height={32}
+              className="h-8 w-auto"
               priority
             />
           ) : (
