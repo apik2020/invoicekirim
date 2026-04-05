@@ -27,13 +27,20 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# Create necessary directories
+RUN mkdir -p .next/static
+
 # Copy public assets
 COPY --from=builder /app/public ./public
 
-# Automatically leverage output traces to reduce image size
-# https://nextjs.org/docs/advanced-features/output-file-tracing
+# Copy standalone server
 COPY --from=builder /app/.next/standalone ./
+
+# Copy static files to correct location
 COPY --from=builder /app/.next/static ./.next/static
+
+# Verify files exist
+RUN ls -la .next/static || echo "Static folder check"
 
 # Copy prisma for runtime migrations if needed
 COPY --from=builder /app/prisma ./prisma
@@ -44,5 +51,9 @@ EXPOSE 3000
 
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/session || exit 1
 
 CMD ["node", "server.js"]
