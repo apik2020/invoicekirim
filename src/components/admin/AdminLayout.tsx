@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
+import Image from 'next/image'
 import {
   Users,
   DollarSign,
@@ -174,8 +175,24 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       >
         {/* Sidebar Header */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-white/10">
-          {(sidebarOpen || mobileMenuOpen) && (
-            <AdminLogo size="sm" linkToHome={false} />
+          {(sidebarOpen || mobileMenuOpen) ? (
+            <Image
+              src="/images/notabener-logo.png"
+              alt="NotaBener"
+              width={130}
+              height={25}
+              className="h-6 w-auto"
+              priority
+            />
+          ) : (
+            <Image
+              src="/images/notabener-icon.png"
+              alt="NotaBener"
+              width={36}
+              height={36}
+              className="w-9 h-9 rounded-lg"
+              priority
+            />
           )}
           <button
             onClick={() => setMobileMenuOpen(false)}

@@ -163,9 +163,14 @@ export function DashboardSidebar({
                 priority
               />
             ) : (
-              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-md flex-shrink-0">
-                <span className="font-bold text-white text-xs tracking-tight">No</span>
-              </div>
+              <Image
+                src="/images/notabener-icon.png"
+                alt="NotaBener"
+                width={36}
+                height={36}
+                className="w-9 h-9 rounded-lg"
+                priority
+              />
             )}
           </Link>
           {/* Mobile Close Button */}
