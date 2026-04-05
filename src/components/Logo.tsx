@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { cn } from '@/lib/utils'
 
 interface LogoProps {
@@ -9,47 +10,48 @@ interface LogoProps {
   textClassName?: string
 }
 
-const sizeClasses = {
-  sm: 'w-8 h-8 text-sm',
-  md: 'w-10 h-10 text-base',
-  lg: 'w-12 h-12 text-lg',
+const logoSizes = {
+  sm: { height: 24, width: 126 },
+  md: { height: 32, width: 168 },
+  lg: { height: 40, width: 210 },
 }
 
-const textSizeClasses = {
-  sm: 'text-lg',
-  md: 'text-xl',
-  lg: 'text-2xl',
+const iconSizes = {
+  sm: 'w-6 h-6 text-[8px]',
+  md: 'w-8 h-8 text-[10px]',
+  lg: 'w-10 h-10 text-xs',
 }
 
+// Icon-only logo for small spaces (sidebar, etc.)
 function LogoIcon({ size, className }: { size?: 'sm' | 'md' | 'lg'; className?: string }) {
-  const sizeClass = sizeClasses[size || 'md']
+  const sizeClass = iconSizes[size || 'md']
 
   return (
     <div
       className={cn(
-        'rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-primary',
+        'rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-md flex-shrink-0',
         sizeClass,
         className
       )}
     >
-      <span className="font-bold text-white tracking-tight">[nB]</span>
+      <span className="font-bold text-white tracking-tight">No</span>
     </div>
   )
 }
 
-function LogoText({ size, textClassName }: { size?: 'sm' | 'md' | 'lg'; textClassName?: string }) {
-  const textSizeClass = textSizeClasses[size || 'md']
+// Full logo with image
+function LogoImage({ size, className }: { size?: 'sm' | 'md' | 'lg'; className?: string }) {
+  const dimensions = logoSizes[size || 'md']
 
   return (
-    <span
-      className={cn(
-        'font-bold bg-gradient-to-r from-brand-500 to-brand-600 bg-clip-text text-transparent',
-        textSizeClass,
-        textClassName
-      )}
-    >
-      NotaBener
-    </span>
+    <Image
+      src="/images/notabener-logo.png"
+      alt="NotaBener"
+      width={dimensions.width}
+      height={dimensions.height}
+      className={cn('h-auto', className)}
+      priority
+    />
   )
 }
 
@@ -60,23 +62,22 @@ export function Logo({
   className,
   textClassName,
 }: LogoProps) {
-  const content = (
-    <>
-      <LogoIcon size={size} className={className} />
-      {showText && <LogoText size={size} textClassName={textClassName} />}
-    </>
+  const content = showText ? (
+    <LogoImage size={size} className={className} />
+  ) : (
+    <LogoIcon size={size} className={className} />
   )
 
   if (linkToHome) {
     return (
-      <Link href="/" className="flex items-center gap-2 group">
+      <Link href="/" className="flex items-center group">
         {content}
       </Link>
     )
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center">
       {content}
     </div>
   )
@@ -89,22 +90,17 @@ export function AdminLogo({
   className,
   textClassName,
 }: LogoProps) {
-  const content = (
-    <>
-      <LogoIcon size={size} className={className} />
-      {showText && (
-        <div className="flex items-center gap-2">
-          <span className={cn('font-bold text-brand-500', textSizeClasses[size], textClassName)}>
-            NotaBener
-          </span>
-          {linkToHome && (
-            <span className="px-2 py-0.5 bg-primary-100 text-primary-600 text-xs font-semibold rounded-full">
-              Admin
-            </span>
-          )}
-        </div>
+  const content = showText ? (
+    <div className="flex items-center gap-2">
+      <LogoImage size={size} className={className} />
+      {linkToHome && (
+        <span className="px-2 py-0.5 bg-orange-100 text-orange-600 text-xs font-semibold rounded-full">
+          Admin
+        </span>
       )}
-    </>
+    </div>
+  ) : (
+    <LogoIcon size={size} className={className} />
   )
 
   if (linkToHome) {

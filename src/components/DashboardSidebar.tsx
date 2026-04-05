@@ -152,8 +152,8 @@ export function DashboardSidebar({
         {/* Sidebar Header */}
         <div className="h-16 px-4 border-b border-white/10 flex items-center justify-between flex-shrink-0">
           <Link href="/dashboard" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-primary flex-shrink-0">
-              <span className="font-bold text-white text-xs tracking-tight">[nB]</span>
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-md flex-shrink-0">
+              <span className="font-bold text-white text-xs tracking-tight">No</span>
             </div>
             {(!isCollapsed || mobileOpen) && (
               <span className="font-bold text-base text-white">NotaBener</span>

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function Footer() {
   const currentYear = new Date().getFullYear()
@@ -9,11 +10,15 @@ export default function Footer() {
         <div className="grid md:grid-cols-4 gap-12 mb-12">
           {/* Logo & Tagline */}
           <div className="md:col-span-2">
-            <Link href="/" className="flex items-center gap-3 mb-6 group">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-500 to-lime-500 flex items-center justify-center group-hover:-translate-y-0.5 transition-all duration-300 shadow-lg shadow-orange-200">
-                <span className="font-bold text-white text-base tracking-tight">[nB]</span>
-              </div>
-              <span className="font-display text-2xl font-bold text-slate tracking-tight">NotaBener</span>
+            <Link href="/" className="flex items-center mb-6 group">
+              <Image
+                src="/images/notabener-logo.png"
+                alt="NotaBener"
+                width={180}
+                height={34}
+                className="h-8 w-auto group-hover:-translate-y-0.5 transition-all duration-300"
+                priority
+              />
             </Link>
             <p className="font-body text-muted max-w-sm leading-relaxed">
               Platform invoice gratis untuk UMKM dan freelancer Indonesia. Bikin invoice tanpa ribet!

@@ -4,6 +4,23 @@ Semua perubahan penting di project NotaBener akan didokumentasikan di file ini.
 
 ## [Unreleased]
 
+## [2026-04-05] - Invoice PDF Redesign & Bug Fixes
+
+### Changed
+- **Invoice PDF Layout**: Redesigned invoice PDF untuk tampilan yang lebih profesional dan compact
+  - Layout 1 halaman A4 (tidak ada halaman kedua yang kosong)
+  - Header dengan logo badge dan nama perusahaan
+  - Two-column bill-to section (Our Information | Billing For)
+  - 6-column items table (Product, Qty, Unit Price, Disc, Tax, Total)
+  - Totals section right-aligned dengan grand total yang di-highlight
+  - Bottom section dengan terms dan signature area
+  - Font: Times-Roman untuk tampilan profesional
+
+### Fixed
+- **Invoice API Response**: Fixed mapping `invoice_items` ke `items` untuk frontend compatibility
+  - GET `/api/invoices/[id]` sekarang mengembalikan `items` sebagai pengganti `invoice_items`
+  - Mencegah error "Cannot read properties of undefined (reading 'map')" di halaman invoice detail
+
 ## [2026-04-05] - Duitku Payment Gateway Integration
 
 ### Added
