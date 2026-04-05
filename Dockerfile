@@ -28,24 +28,25 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Create necessary directories
-RUN mkdir -p .next/static
+RUN mkdir -p .next/static public/images
+
+# Copy standalone server files
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 
 # Copy public assets
 COPY --from=builder /app/public ./public
 
-# Copy standalone server
-COPY --from=builder /app/.next/standalone ./
+# Copy custom server.js (overrides standalone server.js)
+COPY server.js ./server.js
 
-# Copy static files to correct location
-COPY --from=builder /app/.next/static ./.next/static
-
-# Verify files exist
-RUN ls -la .next/static || echo "Static folder check"
-
-# Copy prisma for runtime migrations if needed
+# Copy prisma for runtime
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+
+# Verify files exist
+RUN ls -la .next/static && ls -la server.js
 
 EXPOSE 3000
 
