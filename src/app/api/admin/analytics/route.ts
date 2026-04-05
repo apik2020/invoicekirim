@@ -12,8 +12,11 @@ export async function GET(req: NextRequest) {
     // Verify admin session (separate from user session)
     const result = await requireAdminAuth()
     if (result.error) {
+      console.log('[Admin Analytics] Auth failed:', result.error)
       return NextResponse.json({ error: result.error }, { status: 401 })
     }
+
+    console.log('[Admin Analytics] Fetching data for period...')
 
     const url = new URL(req.url)
     const period = parseInt(url.searchParams.get('period') || '30')
@@ -248,9 +251,18 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(analyticsData)
   } catch (error) {
-    console.error('Analytics API error:', error)
+    console.error('[Admin Analytics] Error:', error)
+
+    // Check if it's a database connection error
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const isDbError = errorMessage.includes('Can\'t reach database') || errorMessage.includes('P1001')
+
     return NextResponse.json(
-      { error: 'Failed to fetch analytics data', details: error instanceof Error ? error.message : 'Unknown error' },
+      {
+        error: isDbError ? 'Database connection error. Please try again.' : 'Failed to fetch analytics data',
+        details: errorMessage,
+        code: isDbError ? 'DB_CONNECTION_ERROR' : 'UNKNOWN_ERROR'
+      },
       { status: 500 }
     )
   }

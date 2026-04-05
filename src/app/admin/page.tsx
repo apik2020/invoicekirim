@@ -71,22 +71,26 @@ interface AnalyticsData {
 export default function AdminDashboard() {
   const [data, setData] = useState<AnalyticsData | null>(null)
   const [period, setPeriod] = useState('30')
-  const [, setLoading] = useState(true)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const fetchAnalytics = useCallback(async () => {
     try {
       setLoading(true)
+      setError(null)
       const res = await fetch(`/api/admin/analytics?period=${period}`)
       const responseData = await res.json()
 
       if (!res.ok) {
         console.error('Analytics API error:', responseData)
+        setError(responseData.error || responseData.details || 'Failed to fetch analytics')
         throw new Error(responseData.error || 'Failed to fetch analytics')
       }
 
       setData(responseData)
-    } catch (error) {
-      console.error('Error fetching analytics:', error)
+    } catch (err) {
+      console.error('Error fetching analytics:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load data')
     } finally {
       setLoading(false)
     }
@@ -129,6 +133,34 @@ export default function AdminDashboard() {
   return (
     <AdminLayout>
       <div className="space-y-6">
+        {/* Error Display */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-red-700">Gagal memuat data</p>
+                <p className="text-sm text-red-600">{error}</p>
+              </div>
+              <button
+                onClick={() => fetchAnalytics()}
+                className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Coba Lagi
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Loading State */}
+        {loading && !data && (
+          <div className="flex items-center justify-center py-20">
+            <div className="text-center">
+              <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-text-secondary">Memuat data...</p>
+            </div>
+          </div>
+        )}
+
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
