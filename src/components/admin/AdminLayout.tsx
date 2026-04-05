@@ -165,29 +165,30 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed top-0 left-0 z-50 h-full bg-white border-r border-gray-200 transition-all duration-300 ease-in-out',
+          'fixed top-0 left-0 z-50 h-full transition-all duration-300 ease-in-out',
           'lg:translate-x-0',
           sidebarOpen ? 'w-64' : 'w-20',
           mobileMenuOpen ? 'translate-x-0 w-64' : '-translate-x-full lg:translate-x-0'
         )}
+        style={{ backgroundColor: '#0A637D' }}
       >
         {/* Sidebar Header */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200">
+        <div className="h-16 flex items-center justify-between px-4 border-b border-white/10">
           {(sidebarOpen || mobileMenuOpen) && (
             <AdminLogo size="sm" linkToHome={false} />
           )}
           <button
             onClick={() => setMobileMenuOpen(false)}
-            className="lg:hidden p-2 rounded-lg hover:bg-gray-100"
+            className="lg:hidden p-2 rounded-lg hover:bg-white/10"
           >
-            <X className="w-5 h-5 text-gray-500" />
+            <X className="w-5 h-5 text-white/70" />
           </button>
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="hidden lg:block p-2 rounded-lg hover:bg-gray-100"
+            className="hidden lg:block p-2 rounded-lg hover:bg-white/10"
           >
             <ChevronLeft className={cn(
-              'w-5 h-5 text-gray-500 transition-transform',
+              'w-5 h-5 text-white/70 transition-transform',
               !sidebarOpen && 'rotate-180'
             )} />
           </button>
@@ -208,8 +209,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                     className={cn(
                       'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all',
                       isParentActive
-                        ? 'bg-brand-100 text-brand-600'
-                        : 'text-text-secondary hover:bg-brand-50 hover:text-brand-600',
+                        ? 'bg-white/15 text-white'
+                        : 'text-white/70 hover:bg-white/10 hover:text-white',
                       !sidebarOpen && !mobileMenuOpen && 'justify-center px-0'
                     )}
                     title={!sidebarOpen ? item.name : undefined}
@@ -226,7 +227,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                     )}
                   </button>
                   {isDropdownOpen && (sidebarOpen || mobileMenuOpen) && (
-                    <div className="mt-1 ml-4 pl-4 border-l-2 border-gray-200 space-y-1">
+                    <div className="mt-1 ml-4 pl-4 border-l-2 border-white/20 space-y-1">
                       {item.children!.map((child) => {
                         const childActive = isActive(child.href)
                         return (
@@ -236,8 +237,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                             className={cn(
                               'w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all',
                               childActive
-                                ? 'bg-brand-500 text-white'
-                                : 'text-text-secondary hover:bg-brand-50 hover:text-brand-600'
+                                ? 'bg-orange-500 text-white'
+                                : 'text-white/70 hover:bg-white/10 hover:text-white'
                             )}
                           >
                             <span className="w-1.5 h-1.5 rounded-full bg-current" />
@@ -259,8 +260,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 className={cn(
                   'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all',
                   active
-                    ? 'bg-brand-500 text-white shadow-brand'
-                    : 'text-text-secondary hover:bg-brand-50 hover:text-brand-600',
+                    ? 'bg-orange-500 text-white'
+                    : 'text-white/70 hover:bg-white/10 hover:text-white',
                   !sidebarOpen && !mobileMenuOpen && 'justify-center px-0'
                 )}
                 title={!sidebarOpen ? item.name : undefined}
@@ -275,21 +276,21 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         </nav>
 
         {/* Admin Info & Logout */}
-        <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-gray-200">
+        <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-white/10">
           {(sidebarOpen || mobileMenuOpen) ? (
             <div className="space-y-3">
               <div className="flex items-center gap-3 px-3 py-2">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white font-bold">
+                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white font-bold">
                   <Shield className="w-5 h-5" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-text-primary truncate">{admin?.name || 'Admin'}</p>
-                  <p className="text-xs text-text-muted truncate">{admin?.email}</p>
+                  <p className="font-semibold text-white truncate">{admin?.name || 'Admin'}</p>
+                  <p className="text-xs text-white/60 truncate">{admin?.email}</p>
                 </div>
               </div>
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm text-red-600 hover:bg-red-50 transition-all"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm text-white/70 hover:bg-white/10 hover:text-white transition-all"
               >
                 <LogOut className="w-5 h-5" />
                 <span>Logout</span>
@@ -298,10 +299,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           ) : (
             <button
               onClick={handleLogout}
-              className="w-full flex items-center justify-center p-2.5 rounded-xl hover:bg-red-50 transition-all"
+              className="w-full flex items-center justify-center p-2.5 rounded-xl hover:bg-white/10 transition-all"
               title="Logout"
             >
-              <LogOut className="w-5 h-5 text-red-600" />
+              <LogOut className="w-5 h-5 text-white/70" />
             </button>
           )}
         </div>
@@ -315,18 +316,18 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         )}
       >
         {/* Top Header */}
-        <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-lg border-b border-gray-200">
+        <header className="sticky top-0 z-30 bg-[#0A637D]">
           <div className="flex items-center justify-between h-16 px-4 sm:px-6">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setMobileMenuOpen(true)}
-                className="lg:hidden p-2 rounded-lg hover:bg-gray-100"
+                className="lg:hidden p-2 rounded-lg hover:bg-white/10"
               >
-                <Menu className="w-5 h-5 text-gray-500" />
+                <Menu className="w-5 h-5 text-white" />
               </button>
               <div className="flex items-center gap-2">
-                <BarChart3 className="w-6 h-6 text-brand-500" />
-                <h1 className="text-lg font-bold text-text-primary hidden sm:block">
+                <BarChart3 className="w-6 h-6 text-white" />
+                <h1 className="text-lg font-bold text-white hidden sm:block">
                   Admin Dashboard
                 </h1>
               </div>
@@ -334,7 +335,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
             {/* Right side actions */}
             <div className="flex items-center gap-3">
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-50 text-brand-600 text-sm font-medium">
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 text-white text-sm font-medium">
                 <Shield className="w-4 h-4" />
                 <span>Admin Mode</span>
               </div>
