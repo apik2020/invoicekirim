@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import {
@@ -152,11 +153,19 @@ export function DashboardSidebar({
         {/* Sidebar Header */}
         <div className="h-16 px-4 border-b border-white/10 flex items-center justify-between flex-shrink-0">
           <Link href="/dashboard" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-md flex-shrink-0">
-              <span className="font-bold text-white text-xs tracking-tight">No</span>
-            </div>
-            {(!isCollapsed || mobileOpen) && (
-              <span className="font-bold text-base text-white">NotaBener</span>
+            {(!isCollapsed || mobileOpen) ? (
+              <Image
+                src="/images/notabener-logo.png"
+                alt="NotaBener"
+                width={130}
+                height={25}
+                className="h-6 w-auto"
+                priority
+              />
+            ) : (
+              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-md flex-shrink-0">
+                <span className="font-bold text-white text-xs tracking-tight">No</span>
+              </div>
             )}
           </Link>
           {/* Mobile Close Button */}
