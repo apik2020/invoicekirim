@@ -168,7 +168,7 @@ export function DashboardSidebar({
                 alt="NotaBener"
                 width={28}
                 height={28}
-                className="w-7 h-7 rounded-md"
+                className="w-7 h-7"
                 priority
               />
             )}
