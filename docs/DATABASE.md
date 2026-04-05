@@ -132,10 +132,10 @@ Data pembayaran.
 | currency | String | Currency code |
 | status | Enum | PENDING, COMPLETED, FAILED |
 | paymentMethod | String? | VA, QRIS, STRIPE |
-| paymentGateway | String? | DOKU, STRIPE |
+| paymentGateway | String? | Duitku, STRIPE |
 | description | String? | Payment description |
-| dokuOrderId | String? | DOKU order ID |
-| dokuTransactionId | String? | DOKU transaction ID |
+| dokuOrderId | String? | Payment gateway order ID (legacy field name) |
+| dokuTransactionId | String? | Payment gateway transaction ID (legacy field name) |
 | stripePaymentId | String? | Stripe payment ID |
 | vaNumber | String? | VA number |
 | vaBank | String? | VA bank |

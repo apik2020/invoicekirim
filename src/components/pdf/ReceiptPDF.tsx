@@ -18,150 +18,151 @@ interface ReceiptPDFProps {
   invoiceNumber?: string
 }
 
-// Define styles
+// Define compact styles with Times-Roman font
 const styles = StyleSheet.create({
   page: {
-    fontFamily: 'Helvetica',
-    fontSize: 11,
-    paddingTop: 40,
-    paddingBottom: 40,
-    paddingHorizontal: 50,
+    fontFamily: 'Times-Roman',
+    fontSize: 10,
+    paddingTop: 25,
+    paddingBottom: 25,
+    paddingHorizontal: 35,
     backgroundColor: '#FFFFFF',
   },
   header: {
-    marginBottom: 30,
-  },
-  titleContainer: {
+    marginBottom: 15,
     alignItems: 'center',
-    marginBottom: 30,
   },
   logoBadge: {
-    width: 50,
-    height: 50,
-    borderRadius: 10,
-    backgroundColor: '#f97316',
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    backgroundColor: '#0A637D',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 15,
+    marginBottom: 10,
   },
   logoText: {
     color: '#ffffff',
-    fontWeight: 'bold',
-    fontSize: 16,
+    fontFamily: 'Times-Bold',
+    fontSize: 12,
   },
   paidBadge: {
     backgroundColor: '#10b981',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 6,
-    marginBottom: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 4,
+    marginBottom: 8,
   },
   paidText: {
-    fontSize: 14,
-    fontWeight: 'bold',
+    fontSize: 10,
+    fontFamily: 'Times-Bold',
     color: '#ffffff',
   },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#1e293b',
+    fontSize: 24,
+    fontFamily: 'Times-Bold',
+    color: '#0A637D',
   },
   subtitle: {
-    fontSize: 11,
+    fontSize: 9,
     color: '#64748b',
-    marginTop: 5,
+    marginTop: 3,
   },
   section: {
-    marginBottom: 25,
+    marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#64748b',
-    marginBottom: 12,
+    fontSize: 8,
+    fontFamily: 'Times-Bold',
+    color: '#0A637D',
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    marginBottom: 6,
   },
   card: {
     backgroundColor: '#f8fafc',
-    borderRadius: 8,
-    padding: 16,
+    borderRadius: 4,
+    padding: 10,
+    borderLeftWidth: 3,
+    borderLeftColor: '#0A637D',
   },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 5,
   },
   label: {
-    fontSize: 10,
+    fontSize: 9,
     color: '#64748b',
   },
   value: {
-    fontSize: 11,
-    fontWeight: 'bold',
+    fontSize: 10,
+    fontFamily: 'Times-Bold',
     color: '#1e293b',
   },
   amountContainer: {
-    marginTop: 20,
-    paddingTop: 20,
-    borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
+    alignItems: 'center',
+    marginTop: 10,
+    padding: 15,
+    backgroundColor: '#f0fdfa',
+    borderRadius: 6,
+    borderLeftWidth: 3,
+    borderLeftColor: '#10b981',
   },
   amountLabel: {
-    fontSize: 10,
+    fontSize: 9,
     color: '#64748b',
     marginBottom: 5,
   },
   amount: {
-    fontSize: 28,
-    fontWeight: 'bold',
+    fontSize: 22,
+    fontFamily: 'Times-Bold',
     color: '#10b981',
   },
   divider: {
-    height: 1,
+    height: 0.5,
     backgroundColor: '#e2e8f0',
-    marginVertical: 20,
+    marginVertical: 12,
   },
   checkmarkContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'center',
   },
   checkmark: {
-    width: 20,
-    height: 20,
+    width: 16,
+    height: 16,
     backgroundColor: '#10b981',
-    borderRadius: 10,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 6,
   },
   checkmarkText: {
     color: '#ffffff',
-    fontSize: 12,
-    fontWeight: 'bold',
+    fontSize: 9,
+    fontFamily: 'Times-Bold',
   },
   checkmarkLabel: {
-    fontSize: 11,
+    fontSize: 10,
     color: '#1e293b',
-    fontWeight: '500',
   },
   footer: {
     position: 'absolute',
-    bottom: 40,
-    left: 50,
-    right: 50,
+    bottom: 20,
+    left: 35,
+    right: 35,
   },
   footerText: {
-    fontSize: 9,
+    fontSize: 8,
     color: '#94a3b8',
     textAlign: 'center',
   },
   thankYou: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#1e293b',
+    fontSize: 11,
+    fontFamily: 'Times-Bold',
+    color: '#0A637D',
     textAlign: 'center',
-    marginTop: 20,
+    marginTop: 10,
   },
 })
 
@@ -185,15 +186,6 @@ const formatDate = (date: Date | string) => {
   }).format(new Date(date))
 }
 
-// Get short date
-const formatShortDate = (date: Date | string) => {
-  return new Intl.DateTimeFormat('id-ID', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  }).format(new Date(date))
-}
-
 export const ReceiptPDF = ({
   receiptNumber,
   date,
@@ -209,16 +201,14 @@ export const ReceiptPDF = ({
     <Page size="A4" style={styles.page}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.titleContainer}>
-          <View style={styles.logoBadge}>
-            <Text style={styles.logoText}>[nB]</Text>
-          </View>
-          <View style={styles.paidBadge}>
-            <Text style={styles.paidText}>PEMBAYARAN BERHASIL</Text>
-          </View>
-          <Text style={styles.title}>Kuitansi</Text>
-          <Text style={styles.subtitle}>NotaBener Payment Receipt</Text>
+        <View style={styles.logoBadge}>
+          <Text style={styles.logoText}>[nB]</Text>
         </View>
+        <View style={styles.paidBadge}>
+          <Text style={styles.paidText}>PEMBAYARAN BERHASIL</Text>
+        </View>
+        <Text style={styles.title}>Kuitansi</Text>
+        <Text style={styles.subtitle}>NotaBener Payment Receipt</Text>
       </View>
 
       {/* Receipt Details */}
@@ -247,13 +237,9 @@ export const ReceiptPDF = ({
       </View>
 
       {/* Amount */}
-      <View style={styles.section}>
-        <View style={styles.card}>
-          <View style={styles.amountContainer}>
-            <Text style={styles.amountLabel}>Jumlah Pembayaran</Text>
-            <Text style={styles.amount}>{formatCurrency(amount)}</Text>
-          </View>
-        </View>
+      <View style={styles.amountContainer}>
+        <Text style={styles.amountLabel}>Jumlah Pembayaran</Text>
+        <Text style={styles.amount}>{formatCurrency(amount)}</Text>
       </View>
 
       {/* Description */}
@@ -279,17 +265,15 @@ export const ReceiptPDF = ({
         </View>
       </View>
 
-      {/* Confirmation */}
-      <View style={styles.section}>
-        <View style={styles.checkmarkContainer}>
-          <View style={styles.checkmark}>
-            <Text style={styles.checkmarkText}>✓</Text>
-          </View>
-          <Text style={styles.checkmarkLabel}>Pembayaran telah dikonfirmasi</Text>
-        </View>
-      </View>
-
       <View style={styles.divider} />
+
+      {/* Confirmation */}
+      <View style={styles.checkmarkContainer}>
+        <View style={styles.checkmark}>
+          <Text style={styles.checkmarkText}>✓</Text>
+        </View>
+        <Text style={styles.checkmarkLabel}>Pembayaran telah dikonfirmasi</Text>
+      </View>
 
       {/* Thank You Message */}
       <Text style={styles.thankYou}>Terima kasih atas pembayaran Anda!</Text>
@@ -297,10 +281,7 @@ export const ReceiptPDF = ({
       {/* Footer */}
       <View style={styles.footer}>
         <Text style={styles.footerText}>
-          Kuitansi ini dibuat secara otomatis oleh NotaBener
-        </Text>
-        <Text style={[styles.footerText, { marginTop: 5 }]}>
-          Jika Anda memiliki pertanyaan, hubungi support@notabener.com
+          Kuitansi ini dibuat secara otomatis oleh NotaBener - Platform Invoice Profesional Indonesia
         </Text>
       </View>
     </Page>

@@ -10,7 +10,6 @@ Selamat datang di dokumentasi NotaBener.
 | [Deployment Guide](./DEPLOYMENT.md) | Cara deploy ke production |
 | [API Documentation](./API.md) | REST API endpoints |
 | [Database Schema](./DATABASE.md) | Database structure |
-| [DOKU Integration](./DOKU_INTEGRATION.md) | Payment gateway integration |
 | [Feature Access System](./FEATURE_ACCESS_SYSTEM.md) | Subscription & feature control |
 
 ## Project Overview
@@ -28,7 +27,7 @@ Selamat datang di dokumentasi NotaBener.
 - **Frontend**: Next.js 16, React 19, TypeScript, Tailwind CSS
 - **Backend**: Next.js API Routes, Prisma ORM
 - **Database**: PostgreSQL
-- **Payment**: DOKU (Indonesia), Stripe (International)
+- **Payment**: Duitku (Indonesia), Stripe (International)
 - **Email**: Resend / Custom SMTP
 
 ## Getting Started
@@ -86,7 +85,6 @@ notaBener/
 
 - [API Documentation](./API.md) - REST API endpoints & usage
 - [Database Schema](./DATABASE.md) - Tables & relationships
-- [DOKU Integration](./DOKU_INTEGRATION.md) - Payment gateway setup
 
 ### For DevOps
 

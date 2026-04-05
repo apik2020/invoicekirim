@@ -1,7 +1,7 @@
 import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getPaymentStatus } from '@/lib/doku'
+import { getDuitkuPaymentStatus } from '@/lib/duitku'
 
 export async function GET(
   req: NextRequest,
@@ -28,36 +28,23 @@ export async function GET(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // If payment is pending, check status from DOKU
+    // If payment is pending, check status from Duitku
     if (payment.status === 'PENDING' && payment.dokuOrderId) {
       try {
-        const dokuStatus = await getPaymentStatus(payment.dokuOrderId)
-
-        // Map DOKU payment statuses to our internal status
-        const statusMapping: Record<string, 'COMPLETED' | 'FAILED' | 'PENDING'> = {
-          'SUCCESS': 'COMPLETED',
-          'PAYMENT_SUCCESS': 'COMPLETED',
-          'PAYMENT_FAILED': 'FAILED',
-          'FAILED': 'FAILED',
-          'PENDING': 'PENDING',
-          'EXPIRED': 'FAILED',
-        }
-
-        const mappedStatus = statusMapping[dokuStatus.payment_status]
-        const newStatus: 'COMPLETED' | 'FAILED' | 'PENDING' = mappedStatus || 'PENDING'
+        const duitkuStatus = await getDuitkuPaymentStatus(payment.dokuOrderId)
 
         // Update status if changed to a final state (COMPLETED or FAILED)
-        if (newStatus !== 'PENDING') {
+        if (duitkuStatus.status !== 'PENDING') {
           await prisma.payments.update({
             where: { id },
             data: {
-              status: newStatus,
-              dokuTransactionId: dokuStatus.transaction?.transaction_id,
+              status: duitkuStatus.status,
+              paymentMethod: duitkuStatus.paymentMethod || payment.paymentMethod,
             },
           })
 
           // If payment completed, update subscription
-          if (newStatus === 'COMPLETED') {
+          if (duitkuStatus.status === 'COMPLETED') {
             const existingSub = await prisma.subscriptions.findFirst({
               where: { userId: session.id },
             })
@@ -112,10 +99,10 @@ export async function GET(
                 entityType: 'Subscription',
                 entityId: payment.id,
                 title: 'Pembayaran Berhasil - Langganan Pro Aktif',
-                description: `Pembayaran ${pricingPlan?.name} berhasil melalui DOKU`,
+                description: `Pembayaran ${pricingPlan?.name} berhasil melalui Duitku`,
                 metadata: {
                   paymentId: payment.id,
-                  dokuOrderId: payment.dokuOrderId,
+                  orderId: payment.dokuOrderId,
                   pricingPlan: pricingPlan?.name,
                   amount: payment.amount.toString(),
                 },
@@ -124,13 +111,13 @@ export async function GET(
           }
 
           return NextResponse.json({
-            payment: { ...payment, status: newStatus },
+            payment: { ...payment, status: duitkuStatus.status },
             statusChanged: true,
-            dokuStatus: dokuStatus,
+            duitkuStatus: duitkuStatus,
           })
         }
       } catch (error) {
-        console.error('Failed to check DOKU status:', error)
+        console.error('Failed to check Duitku status:', error)
       }
     }
 

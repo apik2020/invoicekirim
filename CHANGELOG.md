@@ -4,6 +4,41 @@ Semua perubahan penting di project NotaBener akan didokumentasikan di file ini.
 
 ## [Unreleased]
 
+## [2026-04-05] - Duitku Payment Gateway Integration
+
+### Added
+- **Duitku Integration**: Integrasi payment gateway Duitku sebagai pengganti DOKU
+  - Library `src/lib/duitku.ts` dengan fungsi API Duitku
+  - Webhook handler `src/app/api/webhooks/duitku/route.ts`
+  - Signature verification menggunakan MD5 hash
+- **Payment Methods** via Duitku:
+  - Virtual Account: BCA, Mandiri, BNI, BRI, CIMB Niaga, Permata, Danamon, Digibank
+  - QRIS payments
+  - E-Wallet: OVO, DANA, ShopeePay, GoPay (ready untuk diaktifkan)
+- **Environment Variables**: Konfigurasi lebih sederhana dari DOKU
+  - `DUITKU_MERCHANT_CODE`
+  - `DUITKU_API_KEY`
+  - `DUITKU_ENVIRONMENT` (SANDBOX/PRODUCTION)
+
+### Changed
+- **Payment Route**: Update `src/app/api/payments/create/route.ts` untuk menggunakan Duitku
+- **Payment Gateway**: Switch dari DOKU ke Duitku sebagai primary payment gateway
+
+### Removed
+- **DOKU Integration**: Dihapus sepenuhnya dari project
+  - File yang dihapus: `src/lib/doku.ts`, `src/app/api/webhooks/doku/route.ts`, `src/app/api/debug/doku-config/route.ts`, `scripts/generate-doku-keys.ts`, `src/types/doku-nodejs-library.d.ts`, `docs/DOKU_INTEGRATION.md`
+  - Dependency dihapus: `doku-nodejs-library`
+  - Environment variables dihapus: `DOKU_CLIENT_ID`, `DOKU_SECRET_KEY`, `DOKU_ENVIRONMENT`, `DOKU_PRIVATE_KEY`, `DOKU_PUBLIC_KEY`, `DOKU_PUBLIC_KEY_DOKU`, `DOKU_PARTNER_SERVICE_ID`
+
+### Technical Details
+- Duitku menggunakan signature MD5: `MD5(email + amount + merchantCode + orderId + apiKey)`
+- Callback verification: `MD5(merchantCode + orderId + amount + apiKey)`
+- Result codes: `00` = Success, `01` = Pending, `02` = Failed, `03` = Expired
+- Default expiry period: 24 jam (1440 menit)
+- API endpoints:
+  - Sandbox: `https://sandbox.duitku.com/webapi/api/merchant/v2`
+  - Production: `https://passport.duitku.com/webapi/api/merchant/v2`
+
 ## [2026-04-04] - DOKU SDK Integration
 
 ### Changed

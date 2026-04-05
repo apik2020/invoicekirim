@@ -48,7 +48,7 @@ Website: [https://notabener.com](https://notabener.com)
 | **Backend** | Next.js API Routes, Prisma ORM |
 | **Database** | PostgreSQL (Neon) |
 | **Authentication** | NextAuth.js, 2FA Support |
-| **Payment - ID** | DOKU (VA, QRIS) |
+| **Payment - ID** | Duitku (VA, QRIS, E-Wallet) |
 | **Payment - International** | Stripe |
 | **Email** | Resend / Custom SMTP |
 | **PDF Generation** | @react-pdf/renderer |
@@ -58,7 +58,7 @@ Website: [https://notabener.com](https://notabener.com)
 
 - Node.js 18+
 - PostgreSQL database
-- DOKU account (untuk pembayaran Indonesia)
+- Duitku account (untuk pembayaran Indonesia)
 - Stripe account (untuk pembayaran internasional)
 - Resend account atau SMTP server (untuk email)
 
@@ -131,12 +131,12 @@ GOOGLE_CLIENT_ID="your-google-client-id"
 GOOGLE_CLIENT_SECRET="your-google-client-secret"
 ```
 
-### Payment Gateway - DOKU (Indonesia)
+### Payment Gateway - Duitku (Indonesia)
 
 ```bash
-DOKU_CLIENT_ID="BRN-xxxx-xxxxxxxxxxxx"
-DOKU_SECRET_KEY="SK-xxxxxxxxxxxx"
-DOKU_ENVIRONMENT="SANDBOX"  # SANDBOX or PRODUCTION
+DUITKU_MERCHANT_CODE="your-merchant-code"
+DUITKU_API_KEY="your-api-key"
+DUITKU_ENVIRONMENT="SANDBOX"  # SANDBOX or PRODUCTION
 ```
 
 ### Payment Gateway - Stripe (International)
@@ -194,16 +194,16 @@ npx prisma db seed
 
 ## Payment Gateway Setup
 
-### DOKU Setup (Indonesia)
+### Duitku Setup (Indonesia)
 
-1. Daftar di [DOKU Dashboard](https://dashboard.doku.com)
+1. Daftar di [Duitku Dashboard](https://dashboard.duitku.com)
 2. Verifikasi bisnis Anda
-3. Dapatkan Client ID dan Secret Key
-4. Webhook URL sudah dikonfigurasi otomatis via `override_notification_url`
+3. Dapatkan Merchant Code dan API Key
+4. Webhook URL: `https://yourdomain.com/api/webhooks/duitku`
 
 **Environment:**
-- Sandbox: `https://api-sandbox.doku.com`
-- Production: `https://api.doku.com`
+- Sandbox: `https://sandbox.duitku.com/webapi/api/merchant/v2`
+- Production: `https://passport.duitku.com/webapi/api/merchant/v2`
 
 ### Stripe Setup (International)
 
@@ -262,7 +262,7 @@ src/
 │   │   ├── stripe/              # Stripe webhooks
 │   │   ├── subscriptions/       # Subscription management
 │   │   ├── user/                # User endpoints
-│   │   └── webhooks/            # Payment webhooks (DOKU)
+│   │   └── webhooks/            # Payment webhooks (Duitku)
 │   │
 │   ├── admin/                    # Admin dashboard pages
 │   │   ├── login/               # Admin login
@@ -310,7 +310,7 @@ src/
 ├── lib/                          # Utility functions
 │   ├── auth.ts                  # NextAuth configuration
 │   ├── prisma.ts                # Prisma client
-│   ├── doku.ts                  # DOKU integration
+│   ├── duitku.ts                # Duitku integration
 │   ├── stripe.ts                # Stripe integration
 │   ├── email.ts                 # Email templates & sending
 │   ├── feature-access.ts        # Feature access logic
@@ -343,7 +343,7 @@ Semua API endpoint (kecuali public routes) memerlukan authentication via session
 |--------|----------|-------------|
 | GET | `/api/payments/create` | Get available payment methods |
 | GET | `/invoice/[token]` | View public invoice |
-| POST | `/api/webhooks/doku` | DOKU webhook |
+| POST | `/api/webhooks/duitku` | Duitku webhook |
 | POST | `/api/stripe/webhook` | Stripe webhook |
 
 ### User Endpoints

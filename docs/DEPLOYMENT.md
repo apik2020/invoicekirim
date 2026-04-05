@@ -167,10 +167,10 @@ NEXT_PUBLIC_APP_URL="https://notabener.com"
 ### Payment Gateway
 
 ```bash
-# DOKU (Indonesia)
-DOKU_CLIENT_ID="BRN-xxxx-xxxxxxxxxxxx"
-DOKU_SECRET_KEY="SK-xxxxxxxxxxxx"
-DOKU_ENVIRONMENT="PRODUCTION"
+# Duitku (Indonesia)
+DUITKU_MERCHANT_CODE="your-merchant-code"
+DUITKU_API_KEY="your-api-key"
+DUITKU_ENVIRONMENT="PRODUCTION"
 
 # Stripe (International)
 STRIPE_SECRET_KEY="sk_live_..."
@@ -301,7 +301,7 @@ npx prisma db seed
 
 **Solusi**:
 1. Check webhook URL is accessible
-2. Verify DOKU/Stripe configuration
+2. Verify Duitku/Stripe configuration
 3. Check server logs for errors
 
 ---

@@ -87,6 +87,44 @@ export const DUITKU_EWALLETS = [
 export type DuitkuVABankCode = typeof DUITKU_VA_BANKS[number]['code']
 
 /**
+ * Map UI bank codes to Duitku API bank codes
+ * UI uses: 'BCA', 'MANDIRI', 'BNI', 'BRI', 'CIMB', 'PERMATA', etc.
+ * Duitku API uses: 'BC', 'M1', 'B1', 'BR', 'C1', 'A1', etc.
+ */
+export function mapBankCodeToDuitku(uiBankCode: string): string {
+  const bankCodeMap: Record<string, string> = {
+    'BCA': 'BC',
+    'MANDIRI': 'M1',
+    'BNI': 'B1',
+    'BRI': 'BR',
+    'CIMB': 'C1',
+    'CIMB NIAGA': 'C1',
+    'PERMATA': 'A1',
+    'DANAMON': 'B2',
+    'DIGIBANK': 'D1',
+    // Also accept Duitku codes directly (pass-through)
+    'BC': 'BC',
+    'M1': 'M1',
+    'B1': 'B1',
+    'BR': 'BR',
+    'C1': 'C1',
+    'A1': 'A1',
+    'B2': 'B2',
+    'D1': 'D1',
+  }
+
+  const normalizedCode = uiBankCode.toUpperCase().trim()
+  const duitkuCode = bankCodeMap[normalizedCode]
+
+  if (!duitkuCode) {
+    console.warn(`[Duitku] Unknown bank code: ${uiBankCode}, using as-is`)
+    return uiBankCode // Return original if not found
+  }
+
+  return duitkuCode
+}
+
+/**
  * Create payment via Duitku API
  */
 export async function createDuitkuPayment(

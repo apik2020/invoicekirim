@@ -340,21 +340,18 @@ Content-Type: application/json
 
 ### Webhooks
 
-#### DOKU Webhook
+#### Duitku Webhook
 
 ```http
-POST /api/webhooks/doku
+POST /api/webhooks/duitku
 Content-Type: application/json
-X-Doku-Signature: xxx
 
 {
-  "order": {
-    "invoice_number": "INV-xxx"
-  },
-  "transaction": {
-    "status": "SUCCESS",
-    "transaction_id": "TRX-xxx"
-  }
+  "merchantCode": "xxx",
+  "merchantOrderId": "INV-xxx",
+  "resultCode": "00",
+  "amount": "100000",
+  "signature": "xxx"
 }
 ```
 
@@ -401,16 +398,15 @@ API endpoints dibatasi untuk mencegah abuse:
 
 ## Webhook Signature Verification
 
-### DOKU
+### Duitku
 
 ```typescript
-import { verifyDOKUSignature } from '@/lib/doku'
+import { verifyDuitkuCallback } from '@/lib/duitku'
 
-const isValid = verifyDOKUSignature(
-  requestBody,
-  signature,
-  timestamp,
-  clientId
+const isValid = verifyDuitkuCallback(
+  orderId,
+  amount,
+  signature
 )
 ```
 

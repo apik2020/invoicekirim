@@ -5,6 +5,7 @@ import {
   createDuitkuPayment,
   getDuitkuPaymentStatus,
   generateDuitkuOrderId,
+  mapBankCodeToDuitku,
   DUITKU_VA_BANKS,
   DUITKU_QRIS,
   type DuitkuVABankCode,
@@ -122,7 +123,9 @@ export async function POST(req: NextRequest) {
 
     // Create transaction based on payment method
     if (paymentMethod === 'VA' && bankCode) {
-      console.log('[Payment] Creating VA payment with bank:', bankCode)
+      // Map UI bank code to Duitku API bank code
+      const duitkuBankCode = mapBankCodeToDuitku(bankCode)
+      console.log('[Payment] Creating VA payment with bank:', bankCode, '-> Duitku code:', duitkuBankCode)
 
       let vaResult
       try {
@@ -132,7 +135,7 @@ export async function POST(req: NextRequest) {
           customerName: user.name || 'Customer',
           customerEmail: user.email,
           description: `NotaBener ${pricingPlan.name} - ${pricingPlan.name}`,
-          paymentMethod: bankCode,
+          paymentMethod: duitkuBankCode,
         })
         console.log('[Payment] VA payment created successfully:', vaResult)
       } catch (duitkuError) {
