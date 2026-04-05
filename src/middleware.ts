@@ -4,7 +4,7 @@ import type { NextRequest } from 'next/server'
 export default async function middleware(req: NextRequest) {
   const { pathname, origin } = req.nextUrl
 
-  // Handle static files - force correct MIME types
+  // Handle static files - force correct MIME types and skip other middleware
   if (pathname.startsWith('/_next/static/')) {
     const response = NextResponse.next()
 
@@ -18,7 +18,15 @@ export default async function middleware(req: NextRequest) {
       response.headers.set('Content-Type', 'text/css; charset=utf-8')
     }
 
+    // Add cache headers for static files
+    response.headers.set('Cache-Control', 'public, max-age=31536000, immutable')
+
     return response
+  }
+
+  // Skip middleware for other Next.js internal paths
+  if (pathname.startsWith('/_next/') || pathname.includes('/__nextjs')) {
+    return NextResponse.next()
   }
 
   const response = NextResponse.next()
@@ -155,12 +163,13 @@ export default async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
+    // Skip all internal Next.js paths
+    '/((?!_next/static|_next/image|favicon.ico|images|fonts).*)',
     '/dashboard/:path*',
     '/client/:path*',
     '/admin/:path*',
     '/api/:path*',
     '/login',
     '/register',
-    '/_next/static/:path*',
   ],
 }
