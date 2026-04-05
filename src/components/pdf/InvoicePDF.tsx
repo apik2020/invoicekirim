@@ -15,133 +15,115 @@ interface InvoicePDFProps {
   invoice: InvoiceWithItems
 }
 
-// Define compact styles with Times-Roman font
+// Compact styles matching the reference design
 const styles = StyleSheet.create({
   page: {
     fontFamily: 'Times-Roman',
-    fontSize: 10,
+    fontSize: 9,
     paddingTop: 25,
-    paddingBottom: 25,
-    paddingHorizontal: 35,
+    paddingBottom: 20,
+    paddingHorizontal: 30,
     backgroundColor: '#FFFFFF',
   },
-  // Header section
+  // Header
   header: {
-    marginBottom: 15,
-    paddingBottom: 10,
-    borderBottomWidth: 2,
-    borderBottomColor: '#0A637D',
-  },
-  headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 8,
+    marginBottom: 15,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#0A637D',
   },
-  brandSection: {
-    flex: 1,
+  logoSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  brandName: {
-    fontSize: 18,
+  logoBadge: {
+    width: 35,
+    height: 35,
+    backgroundColor: '#0A637D',
+    borderRadius: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  logoText: {
+    color: '#ffffff',
+    fontFamily: 'Times-Bold',
+    fontSize: 10,
+  },
+  companyName: {
+    fontSize: 14,
     fontFamily: 'Times-Bold',
     color: '#0A637D',
-  },
-  brandTagline: {
-    fontSize: 8,
-    color: '#64748b',
-    marginTop: 2,
   },
   invoiceTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontFamily: 'Times-Bold',
     color: '#0A637D',
-    textAlign: 'right',
   },
-  invoiceNumber: {
-    fontSize: 10,
-    color: '#64748b',
-    textAlign: 'right',
-    marginTop: 2,
-  },
-  // Status badge
-  statusBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 3,
-    marginTop: 8,
-  },
-  statusText: {
-    fontSize: 8,
-    fontFamily: 'Times-Bold',
-    color: '#ffffff',
-    textTransform: 'uppercase',
-  },
-  // Two column layout for parties
-  partiesSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 12,
-    marginBottom: 12,
-  },
-  partyColumn: {
-    flex: 1,
-    maxWidth: '48%',
-  },
-  partyLabel: {
-    fontSize: 8,
-    fontFamily: 'Times-Bold',
-    color: '#0A637D',
-    textTransform: 'uppercase',
-    marginBottom: 4,
-  },
-  partyBox: {
-    backgroundColor: '#f8fafc',
-    padding: 8,
-    borderRadius: 4,
-    borderLeftWidth: 3,
-    borderLeftColor: '#0A637D',
-  },
-  partyName: {
-    fontSize: 10,
-    fontFamily: 'Times-Bold',
-    color: '#1e293b',
-    marginBottom: 3,
-  },
-  partyDetail: {
-    fontSize: 9,
-    color: '#475569',
-    lineHeight: 1.4,
-  },
-  // Invoice details row
+  // Invoice Details Row
   detailsRow: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'space-between',
     marginBottom: 12,
-    gap: 20,
   },
   detailItem: {
-    alignItems: 'flex-end',
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   detailLabel: {
-    fontSize: 8,
+    fontSize: 9,
     color: '#64748b',
-    textTransform: 'uppercase',
+    marginRight: 5,
   },
   detailValue: {
     fontSize: 10,
     fontFamily: 'Times-Bold',
     color: '#1e293b',
   },
-  // Items table
+  // Bill To Section
+  billToSection: {
+    flexDirection: 'row',
+    marginBottom: 12,
+  },
+  billToColumn: {
+    flex: 1,
+    paddingRight: 10,
+  },
+  billToColumnRight: {
+    flex: 1,
+    paddingLeft: 10,
+    borderLeftWidth: 1,
+    borderLeftColor: '#e2e8f0',
+  },
+  billToTitle: {
+    fontSize: 9,
+    fontFamily: 'Times-Bold',
+    color: '#0A637D',
+    marginBottom: 6,
+    textTransform: 'uppercase',
+  },
+  billToText: {
+    fontSize: 9,
+    color: '#334155',
+    marginBottom: 2,
+  },
+  billToName: {
+    fontSize: 10,
+    fontFamily: 'Times-Bold',
+    color: '#1e293b',
+    marginBottom: 3,
+  },
+  // Items Table
   table: {
-    marginTop: 5,
+    marginBottom: 8,
   },
   tableHeader: {
     flexDirection: 'row',
     backgroundColor: '#0A637D',
     padding: 6,
-    borderRadius: 3,
   },
   tableHeaderCell: {
     fontSize: 8,
@@ -149,44 +131,35 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     textTransform: 'uppercase',
   },
-  colDescription: {
-    flex: 4,
-  },
-  colQty: {
-    flex: 1,
-    textAlign: 'center',
-  },
-  colPrice: {
-    flex: 2,
-    textAlign: 'right',
-  },
-  colTotal: {
-    flex: 2,
-    textAlign: 'right',
-  },
   tableRow: {
     flexDirection: 'row',
-    padding: 6,
+    padding: 5,
     borderBottomWidth: 0.5,
     borderBottomColor: '#e2e8f0',
   },
   tableCell: {
-    fontSize: 9,
+    fontSize: 8,
     color: '#334155',
   },
-  // Totals section
+  colProduct: { flex: 3 },
+  colQty: { flex: 1, textAlign: 'center' },
+  colPrice: { flex: 2, textAlign: 'right' },
+  colDiscount: { flex: 1, textAlign: 'right' },
+  colTax: { flex: 1, textAlign: 'right' },
+  colTotal: { flex: 2, textAlign: 'right' },
+  // Totals
   totalsSection: {
-    marginTop: 10,
     flexDirection: 'row',
     justifyContent: 'flex-end',
+    marginBottom: 10,
   },
   totalsBox: {
-    width: 200,
+    width: 180,
   },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 3,
+    paddingVertical: 2,
   },
   totalLabel: {
     fontSize: 9,
@@ -199,92 +172,77 @@ const styles = StyleSheet.create({
   grandTotalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 6,
-    marginTop: 4,
-    borderTopWidth: 1.5,
+    paddingVertical: 4,
+    marginTop: 3,
+    borderTopWidth: 1,
     borderTopColor: '#0A637D',
   },
   grandTotalLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontFamily: 'Times-Bold',
     color: '#0A637D',
   },
   grandTotalValue: {
-    fontSize: 12,
+    fontSize: 11,
     fontFamily: 'Times-Bold',
     color: '#0A637D',
   },
-  // Payment info section
-  paymentSection: {
-    marginTop: 12,
-    padding: 8,
-    backgroundColor: '#f0fdfa',
-    borderRadius: 4,
-    borderLeftWidth: 3,
-    borderLeftColor: '#10b981',
-  },
-  paymentTitle: {
-    fontSize: 8,
-    fontFamily: 'Times-Bold',
-    color: '#10b981',
-    textTransform: 'uppercase',
-    marginBottom: 4,
-  },
-  paymentText: {
-    fontSize: 9,
-    color: '#334155',
-  },
-  // Notes section
-  notesSection: {
+  // Bottom Section
+  bottomSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginTop: 10,
-    padding: 8,
-    backgroundColor: '#fffbeb',
-    borderRadius: 4,
-    borderLeftWidth: 3,
-    borderLeftColor: '#f59e0b',
   },
-  notesTitle: {
-    fontSize: 8,
-    fontFamily: 'Times-Bold',
-    color: '#b45309',
-    textTransform: 'uppercase',
-    marginBottom: 3,
-  },
-  notesText: {
-    fontSize: 9,
-    color: '#78350f',
-    lineHeight: 1.4,
-  },
-  // Terms section
   termsSection: {
-    marginTop: 8,
+    flex: 1,
+    paddingRight: 15,
   },
   termsTitle: {
     fontSize: 8,
     fontFamily: 'Times-Bold',
-    color: '#64748b',
+    color: '#0A637D',
+    marginBottom: 4,
     textTransform: 'uppercase',
-    marginBottom: 3,
   },
   termsText: {
+    fontSize: 7,
+    color: '#64748b',
+    lineHeight: 1.3,
+  },
+  // Footer with signature
+  footerSection: {
+    width: 120,
+    alignItems: 'flex-end',
+  },
+  footerDate: {
     fontSize: 8,
     color: '#64748b',
-    lineHeight: 1.4,
+    marginBottom: 8,
   },
-  // Footer
-  footer: {
-    position: 'absolute',
-    bottom: 20,
-    left: 35,
-    right: 35,
-    borderTopWidth: 0.5,
-    borderTopColor: '#e2e8f0',
-    paddingTop: 8,
+  signatureLine: {
+    width: 100,
+    height: 30,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
+    marginBottom: 4,
   },
-  footerText: {
+  signatureName: {
     fontSize: 8,
-    color: '#94a3b8',
+    fontFamily: 'Times-Bold',
+    color: '#1e293b',
     textAlign: 'center',
+  },
+  // Status badge
+  statusBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 3,
+  },
+  statusText: {
+    fontSize: 7,
+    fontFamily: 'Times-Bold',
+    color: '#ffffff',
+    textTransform: 'uppercase',
   },
 })
 
@@ -296,7 +254,7 @@ const statusColors: Record<string, string> = {
   PAID: '#10b981',
   OVERDUE: '#ef4444',
   CANCELLED: '#94a3b8',
-  CANCELED: '#94a3b8', // alias for CANCELLED
+  CANCELED: '#94a3b8',
 }
 
 // Format currency
@@ -311,9 +269,9 @@ const formatCurrency = (amount: number) => {
 // Format date
 const formatDate = (date: Date | string) => {
   return new Intl.DateTimeFormat('id-ID', {
-    year: 'numeric',
-    month: 'long',
     day: 'numeric',
+    month: 'short',
+    year: 'numeric',
   }).format(new Date(date))
 }
 
@@ -325,7 +283,19 @@ export const InvoicePDF = ({ invoice }: InvoicePDFProps) => {
     PAID: 'Lunas',
     OVERDUE: 'Terlambat',
     CANCELLED: 'Dibatalkan',
-    CANCELED: 'Dibatalkan', // alias
+    CANCELED: 'Dibatalkan',
+  }
+
+  // Calculate discount per item (if any)
+  const getItemDiscount = (item: invoice_items) => {
+    // Assuming no item-level discount for now
+    return 0
+  }
+
+  // Calculate tax per item
+  const getItemTax = (item: invoice_items) => {
+    const taxRate = item.taxRate || invoice.taxRate || 11
+    return (item.price * item.quantity * taxRate) / 100
   }
 
   return (
@@ -333,80 +303,72 @@ export const InvoicePDF = ({ invoice }: InvoicePDFProps) => {
       <Page size="A4" style={styles.page}>
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.headerTop}>
-            <View style={styles.brandSection}>
-              <Text style={styles.brandName}>{invoice.companyName || 'NotaBener'}</Text>
-              <Text style={styles.brandTagline}>Platform Invoice Profesional</Text>
-              {invoice.companyEmail && (
-                <Text style={[styles.brandTagline, { marginTop: 4 }]}>
-                  {invoice.companyEmail}
-                </Text>
-              )}
-              {invoice.companyPhone && (
-                <Text style={styles.brandTagline}>{invoice.companyPhone}</Text>
-              )}
-              {invoice.companyAddress && (
-                <Text style={styles.brandTagline}>{invoice.companyAddress}</Text>
-              )}
+          <View style={styles.logoSection}>
+            <View style={styles.logoBadge}>
+              <Text style={styles.logoText}>[nB]</Text>
             </View>
-            <View>
-              <Text style={styles.invoiceTitle}>INVOICE</Text>
-              <Text style={styles.invoiceNumber}>{invoice.invoiceNumber}</Text>
-            </View>
+            <Text style={styles.companyName}>{invoice.companyName || 'NotaBener'}</Text>
           </View>
+          <Text style={styles.invoiceTitle}>INVOICE</Text>
+        </View>
 
+        {/* Invoice Details Row */}
+        <View style={styles.detailsRow}>
+          <View style={styles.detailItem}>
+            <Text style={styles.detailLabel}>Reference:</Text>
+            <Text style={styles.detailValue}>{invoice.invoiceNumber}</Text>
+          </View>
+          <View style={styles.detailItem}>
+            <Text style={styles.detailLabel}>Date:</Text>
+            <Text style={styles.detailValue}>{formatDate(invoice.date)}</Text>
+          </View>
+          {invoice.dueDate && (
+            <View style={styles.detailItem}>
+              <Text style={styles.detailLabel}>Due Date:</Text>
+              <Text style={styles.detailValue}>{formatDate(invoice.dueDate)}</Text>
+            </View>
+          )}
           <View style={[styles.statusBadge, { backgroundColor: statusColors[invoice.status] || '#64748b' }]}>
             <Text style={styles.statusText}>{statusLabel[invoice.status] || invoice.status}</Text>
           </View>
         </View>
 
-        {/* Invoice Details */}
-        <View style={styles.detailsRow}>
-          <View style={styles.detailItem}>
-            <Text style={styles.detailLabel}>Tanggal</Text>
-            <Text style={styles.detailValue}>{formatDate(invoice.date)}</Text>
+        {/* Bill To Section - Two Columns */}
+        <View style={styles.billToSection}>
+          <View style={styles.billToColumn}>
+            <Text style={styles.billToTitle}>Our Information</Text>
+            <Text style={styles.billToName}>{invoice.companyName}</Text>
+            {invoice.companyEmail && <Text style={styles.billToText}>{invoice.companyEmail}</Text>}
+            {invoice.companyPhone && <Text style={styles.billToText}>{invoice.companyPhone}</Text>}
+            {invoice.companyAddress && <Text style={styles.billToText}>{invoice.companyAddress}</Text>}
           </View>
-          {invoice.dueDate && (
-            <View style={styles.detailItem}>
-              <Text style={styles.detailLabel}>Jatuh Tempo</Text>
-              <Text style={styles.detailValue}>{formatDate(invoice.dueDate)}</Text>
-            </View>
-          )}
-        </View>
-
-        {/* Parties Section */}
-        <View style={styles.partiesSection}>
-          <View style={styles.partyColumn}>
-            <Text style={styles.partyLabel}>Tagih Kepada</Text>
-            <View style={styles.partyBox}>
-              <Text style={styles.partyName}>{invoice.clientName}</Text>
-              {invoice.clientEmail && (
-                <Text style={styles.partyDetail}>{invoice.clientEmail}</Text>
-              )}
-              {invoice.clientPhone && (
-                <Text style={styles.partyDetail}>{invoice.clientPhone}</Text>
-              )}
-              {invoice.clientAddress && (
-                <Text style={styles.partyDetail}>{invoice.clientAddress}</Text>
-              )}
-            </View>
+          <View style={styles.billToColumnRight}>
+            <Text style={styles.billToTitle}>Billing For</Text>
+            <Text style={styles.billToName}>{invoice.clientName}</Text>
+            {invoice.clientEmail && <Text style={styles.billToText}>{invoice.clientEmail}</Text>}
+            {invoice.clientPhone && <Text style={styles.billToText}>{invoice.clientPhone}</Text>}
+            {invoice.clientAddress && <Text style={styles.billToText}>{invoice.clientAddress}</Text>}
           </View>
         </View>
 
         {/* Items Table */}
         <View style={styles.table}>
           <View style={styles.tableHeader}>
-            <Text style={[styles.tableHeaderCell, styles.colDescription]}>Deskripsi</Text>
+            <Text style={[styles.tableHeaderCell, styles.colProduct]}>Product</Text>
             <Text style={[styles.tableHeaderCell, styles.colQty]}>Qty</Text>
-            <Text style={[styles.tableHeaderCell, styles.colPrice]}>Harga</Text>
+            <Text style={[styles.tableHeaderCell, styles.colPrice]}>Unit Price</Text>
+            <Text style={[styles.tableHeaderCell, styles.colDiscount]}>Disc</Text>
+            <Text style={[styles.tableHeaderCell, styles.colTax]}>Tax</Text>
             <Text style={[styles.tableHeaderCell, styles.colTotal]}>Total</Text>
           </View>
 
           {invoice.items.map((item, index) => (
             <View key={index} style={styles.tableRow}>
-              <Text style={[styles.tableCell, styles.colDescription]}>{item.description}</Text>
+              <Text style={[styles.tableCell, styles.colProduct]}>{item.description}</Text>
               <Text style={[styles.tableCell, styles.colQty]}>{item.quantity}</Text>
               <Text style={[styles.tableCell, styles.colPrice]}>{formatCurrency(item.price)}</Text>
+              <Text style={[styles.tableCell, styles.colDiscount]}>-</Text>
+              <Text style={[styles.tableCell, styles.colTax]}>{invoice.taxRate}%</Text>
               <Text style={[styles.tableCell, styles.colTotal]}>
                 {formatCurrency(item.quantity * item.price)}
               </Text>
@@ -424,9 +386,7 @@ export const InvoicePDF = ({ invoice }: InvoicePDFProps) => {
 
             {invoice.discountAmount && invoice.discountAmount > 0 && (
               <View style={styles.totalRow}>
-                <Text style={styles.totalLabel}>
-                  Diskon {invoice.discountType === 'PERCENTAGE' ? `(${invoice.discountValue}%)` : ''}
-                </Text>
+                <Text style={styles.totalLabel}>Discount</Text>
                 <Text style={[styles.totalValue, { color: '#10b981' }]}>
                   -{formatCurrency(invoice.discountAmount)}
                 </Text>
@@ -434,7 +394,7 @@ export const InvoicePDF = ({ invoice }: InvoicePDFProps) => {
             )}
 
             <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Pajak ({invoice.taxRate}%)</Text>
+              <Text style={styles.totalLabel}>Tax ({invoice.taxRate}%)</Text>
               <Text style={styles.totalValue}>{formatCurrency(invoice.taxAmount)}</Text>
             </View>
 
@@ -445,38 +405,40 @@ export const InvoicePDF = ({ invoice }: InvoicePDFProps) => {
           </View>
         </View>
 
-        {/* Payment Info */}
-        {invoice.paymentMethod && (
-          <View style={styles.paymentSection}>
-            <Text style={styles.paymentTitle}>Informasi Pembayaran</Text>
-            <Text style={styles.paymentText}>Metode: {invoice.paymentMethod}</Text>
+        {/* Bottom Section - Terms & Signature */}
+        <View style={styles.bottomSection}>
+          <View style={styles.termsSection}>
+            <Text style={styles.termsTitle}>Terms and Condition</Text>
+            {invoice.paymentMethod && (
+              <Text style={styles.termsText}>
+                Payment Method: {invoice.paymentMethod}
+              </Text>
+            )}
             {invoice.paymentNotes && (
-              <Text style={styles.paymentText}>{invoice.paymentNotes}</Text>
+              <Text style={styles.termsText}>{invoice.paymentNotes}</Text>
+            )}
+            {invoice.notes && (
+              <Text style={styles.termsText}>{invoice.notes}</Text>
+            )}
+            {invoice.termsAndConditions && (
+              <Text style={styles.termsText}>{invoice.termsAndConditions}</Text>
+            )}
+            {!invoice.paymentMethod && !invoice.paymentNotes && !invoice.notes && !invoice.termsAndConditions && (
+              <Text style={styles.termsText}>
+                Pembayaran dapat dilakukan melalui transfer bank.{'\n'}
+                Harap sebutkan nomor invoice pada saat pembayaran.
+              </Text>
             )}
           </View>
-        )}
 
-        {/* Notes */}
-        {invoice.notes && (
-          <View style={styles.notesSection}>
-            <Text style={styles.notesTitle}>Catatan</Text>
-            <Text style={styles.notesText}>{invoice.notes}</Text>
+          <View style={styles.footerSection}>
+            <Text style={styles.footerDate}>{formatDate(new Date())}</Text>
+            <View style={styles.signatureLine} />
+            <Text style={styles.signatureName}>{invoice.signatoryName || invoice.companyName}</Text>
+            {invoice.signatoryTitle && (
+              <Text style={[styles.footerDate, { fontFamily: 'Times-Roman' }]}>{invoice.signatoryTitle}</Text>
+            )}
           </View>
-        )}
-
-        {/* Terms */}
-        {invoice.termsAndConditions && (
-          <View style={styles.termsSection}>
-            <Text style={styles.termsTitle}>Syarat & Ketentuan</Text>
-            <Text style={styles.termsText}>{invoice.termsAndConditions}</Text>
-          </View>
-        )}
-
-        {/* Footer */}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            Invoice ini dibuat menggunakan NotaBener - Platform Invoice Profesional Indonesia
-          </Text>
         </View>
       </Page>
     </Document>
