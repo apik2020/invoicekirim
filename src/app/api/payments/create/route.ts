@@ -2,12 +2,13 @@ import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import {
-  createVAPayment,
-  createQRISPayment,
-  generateDOKUOrderId,
-  DOKU_VA_BANKS,
-  type DOKUVABankCode,
-} from '@/lib/doku'
+  createDuitkuPayment,
+  getDuitkuPaymentStatus,
+  generateDuitkuOrderId,
+  DUITKU_VA_BANKS,
+  DUITKU_QRIS,
+  type DuitkuVABankCode,
+} from '@/lib/duitku'
 import { validateUpgradeRequest } from '@/lib/subscription-upgrade'
 
 export async function POST(req: NextRequest) {
@@ -89,8 +90,8 @@ export async function POST(req: NextRequest) {
     // Calculate amount - use pricing plan price
     const amount = pricingPlan.price
 
-    // Generate DOKU order ID
-    const orderId = generateDOKUOrderId(session.id)
+    // Generate Duitku order ID
+    const orderId = generateDuitkuOrderId(session.id)
 
     // Get user info
     const user = await prisma.users.findUnique({
@@ -107,13 +108,13 @@ export async function POST(req: NextRequest) {
       data: {
         id: crypto.randomUUID(),
         userId: session.id,
-        dokuOrderId: orderId,
+        dokuOrderId: orderId, // Keep field name for compatibility
         amount,
         currency: pricingPlan.currency,
         description: `NotaBener ${pricingPlan.name}`,
         status: 'PENDING',
         paymentMethod,
-        paymentGateway: 'DOKU',
+        paymentGateway: 'Duitku',
         pricingPlanId, // Link to pricing plan for webhook processing
         updatedAt: new Date(),
       },
@@ -125,26 +126,28 @@ export async function POST(req: NextRequest) {
 
       let vaResult
       try {
-        vaResult = await createVAPayment(bankCode as DOKUVABankCode, {
+        vaResult = await createDuitkuPayment({
           orderId,
           amount,
           customerName: user.name || 'Customer',
           customerEmail: user.email,
           description: `NotaBener ${pricingPlan.name} - ${pricingPlan.name}`,
+          paymentMethod: bankCode,
         })
         console.log('[Payment] VA payment created successfully:', vaResult)
-      } catch (dokuError) {
-        console.error('[Payment] DOKU VA payment failed:', dokuError)
-        console.error('[Payment] DOKU error type:', typeof dokuError)
-        console.error('[Payment] DOKU error message:', (dokuError as any).message)
-        console.error('[Payment] DOKU error stringified:', JSON.stringify(dokuError))
-        throw dokuError
+      } catch (duitkuError) {
+        console.error('[Payment] Duitku VA payment failed:', duitkuError)
+        console.error('[Payment] Duitku error type:', typeof duitkuError)
+        console.error('[Payment] Duitku error message:', (duitkuError as any).message)
+        console.error('[Payment] Duitku error stringified:', JSON.stringify(duitkuError))
+        throw duitkuError
       }
 
       // Update payment with VA details
       await prisma.payments.update({
         where: { id: payment.id },
         data: {
+          dokuOrderId: orderId,
           vaNumber: vaResult.vaNumber,
           vaBank: vaResult.bank,
           expiredAt: vaResult.expiryDate,
@@ -168,18 +171,20 @@ export async function POST(req: NextRequest) {
     }
 
     if (paymentMethod === 'QRIS') {
-      const qrisResult = await createQRISPayment({
+      const qrisResult = await createDuitkuPayment({
         orderId,
         amount,
         customerName: user.name || 'Customer',
         customerEmail: user.email,
         description: `NotaBener ${pricingPlan.name} - ${pricingPlan.name}`,
+        paymentMethod: DUITKU_QRIS.code,
       })
 
       // Update payment with QRIS details
       await prisma.payments.update({
         where: { id: payment.id },
         data: {
+          dokuOrderId: orderId,
           qrisUrl: qrisResult.qrImageUrl,
           qrString: qrisResult.qrString,
           expiredAt: qrisResult.expiryDate,
@@ -236,9 +241,10 @@ export async function POST(req: NextRequest) {
 // GET endpoint to get available VA banks
 export async function GET() {
   return NextResponse.json({
-    vaBanks: DOKU_VA_BANKS,
+    vaBanks: DUITKU_VA_BANKS,
+    qris: DUITKU_QRIS,
     paymentMethods: [
-      { value: 'VA', label: 'Virtual Account', description: 'Transfer bank BCA, Mandiri, BNI, BRI, CIMB, Permata' },
+      { value: 'VA', label: 'Virtual Account', description: 'Transfer bank BCA, Mandiri, BNI, BRI, CIMB, Permata, Danamon, Digibank' },
       { value: 'QRIS', label: 'QRIS', description: 'QRIS payment via GoPay, ShopeePay, Dana, LinkAja' },
     ],
   })
