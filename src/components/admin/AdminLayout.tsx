@@ -188,9 +188,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             <Image
               src="/images/notabener-icon.png"
               alt="NotaBener"
-              width={36}
-              height={36}
-              className="w-9 h-9 rounded-lg"
+              width={28}
+              height={28}
+              className="w-7 h-7 rounded-md"
               priority
             />
           )}
