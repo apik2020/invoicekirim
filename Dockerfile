@@ -30,15 +30,12 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # Create necessary directories
 RUN mkdir -p .next/static public/images
 
-# Copy standalone server files
+# Copy standalone server files (includes built-in server.js)
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 
 # Copy public assets
 COPY --from=builder /app/public ./public
-
-# Copy custom server.js (overrides standalone server.js)
-COPY server.js ./server.js
 
 # Copy prisma for runtime
 COPY --from=builder /app/prisma ./prisma
