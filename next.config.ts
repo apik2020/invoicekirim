@@ -10,6 +10,11 @@ const nextConfig: NextConfig = {
   // Enable standalone output for Docker deployment
   output: 'standalone',
 
+  // Generate unique build ID to invalidate cache on each deployment
+  generateBuildId: async () => {
+    return Date.now().toString()
+  },
+
   // Temporarily skip TypeScript errors during build
   // TODO: Fix all Prisma schema issues and remove this
   typescript: {
@@ -69,6 +74,25 @@ const nextConfig: NextConfig = {
     ]
 
     return [
+      // HTML pages - no cache to prevent stale chunk references
+      {
+        source: '/',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          },
+        ],
+      },
+      {
+        source: '/:path((?!_next/static|_next/image|favicon.ico|images).*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          },
+        ],
+      },
       {
         source: '/:path*',
         headers: [
