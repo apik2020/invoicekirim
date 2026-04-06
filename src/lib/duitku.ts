@@ -29,15 +29,28 @@ function getBaseUrl(): string {
 }
 
 // Generate signature for Duitku API (MD5)
+// Amount must be formatted as integer string (no decimals)
 function generateSignature(orderId: string, amount: number): string {
   // Duitku signature format: MD5(merchantCode + merchantOrderId + paymentAmount + apiKey)
-  const signatureString = `${DUITKU_CONFIG.merchantCode}${orderId}${amount}${DUITKU_CONFIG.apiKey}`
+  // paymentAmount must be integer (e.g., "100000" not "100000.00")
+  const formattedAmount = Math.round(amount)
+  const signatureString = `${DUITKU_CONFIG.merchantCode}${orderId}${formattedAmount}${DUITKU_CONFIG.apiKey}`
+
+  console.log('[Duitku] Signature debug:', {
+    merchantCode: DUITKU_CONFIG.merchantCode,
+    orderId,
+    amount: formattedAmount,
+    apiKeyLength: DUITKU_CONFIG.apiKey?.length || 0,
+    signatureString: `${DUITKU_CONFIG.merchantCode}${orderId}${formattedAmount}[API_KEY]`,
+  })
+
   return createHash('md5').update(signatureString).digest('hex')
 }
 
 // Generate callback signature
 function generateCallbackSignature(orderId: string, amount: number): string {
-  const signatureString = `${DUITKU_CONFIG.merchantCode}${orderId}${amount}${DUITKU_CONFIG.apiKey}`
+  const formattedAmount = Math.round(amount)
+  const signatureString = `${DUITKU_CONFIG.merchantCode}${orderId}${formattedAmount}${DUITKU_CONFIG.apiKey}`
   return createHash('md5').update(signatureString).digest('hex')
 }
 
@@ -143,10 +156,13 @@ export async function createDuitkuPayment(
   const expiryMinutes = params.expiryPeriod || 1440 // 24 hours default
   const expiryDate = new Date(Date.now() + expiryMinutes * 60 * 1000)
 
+  // Ensure amount is integer (Duitku requires integer amount)
+  const paymentAmount = Math.round(params.amount)
+
   // Build request body
   const requestBody: Record<string, string | number> = {
     merchantCode: DUITKU_CONFIG.merchantCode,
-    paymentAmount: params.amount,
+    paymentAmount: paymentAmount,
     merchantOrderId: params.orderId,
     productDetails: params.description,
     email: params.customerEmail,
@@ -164,8 +180,8 @@ export async function createDuitkuPayment(
     requestBody.paymentMethod = params.paymentMethod
   }
 
-  // Generate signature
-  requestBody.signature = generateSignature(params.orderId, params.amount)
+  // Generate signature (using same paymentAmount integer)
+  requestBody.signature = generateSignature(params.orderId, paymentAmount)
 
   console.log('[Duitku] Request:', {
     ...requestBody,
