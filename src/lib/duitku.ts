@@ -64,6 +64,8 @@ export interface DuitkuPaymentParams {
   description: string
   expiryPeriod?: number // in minutes
   paymentMethod?: string // VA code, QRIS, etc
+  returnUrl?: string // URL to redirect after payment
+  callbackUrl?: string // Webhook callback URL
 }
 
 export interface DuitkuPaymentResult {
@@ -172,6 +174,8 @@ export async function createDuitkuPayment(
     email: params.customerEmail,
     customerVaName: params.customerName,
     expiryPeriod: expiryMinutes,
+    returnUrl: params.returnUrl || `${process.env.NEXT_PUBLIC_APP_URL}/payment/success`,
+    callbackUrl: params.callbackUrl || `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/duitku`,
     ...(params.customerPhone && { phoneNumber: params.customerPhone }),
     ...(params.paymentMethod && { paymentMethod: params.paymentMethod }),
   }
