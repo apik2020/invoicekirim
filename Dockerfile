@@ -47,11 +47,13 @@ RUN ls -la .next/static && ls -la server.js
 
 EXPOSE 3000
 
+# Dokploy may override PORT, so healthcheck uses localhost:3000 by default
+# but the app will bind to whatever PORT is set
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Health check
+# Health check - use wget with fallback
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/session || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT:-3000}/api/session || exit 1
 
 CMD ["node", "server.js"]
