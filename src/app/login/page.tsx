@@ -112,7 +112,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md animate-fade-in-up">
           {/* Logo/Icon */}
           <div className="text-center mb-8 sm:mb-10">
-            <div className="auth-icon bg-transparent shadow-none p-0 overflow-hidden">
+            <div className="auth-icon bg-transparent shadow-none p-0 overflow-hidden" style={{ backgroundColor: '#0A637D' }}>
               <Image
                 src="/images/notabener-icon.png"
                 alt="NotaBener"
