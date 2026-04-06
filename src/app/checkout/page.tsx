@@ -248,12 +248,11 @@ export default function CheckoutPage() {
         throw new Error(data.error || 'Gagal membuat transaksi')
       }
 
-      setPaymentData(data.payment)
-
-      if (paymentMethod === 'VA') {
-        setStep('va')
-      } else if (paymentMethod === 'QRIS') {
-        setStep('qris')
+      // Redirect to Duitku payment page
+      if (data.payment?.paymentUrl) {
+        window.location.href = data.payment.paymentUrl
+      } else {
+        throw new Error('URL pembayaran tidak tersedia')
       }
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Gagal membuat transaksi')
