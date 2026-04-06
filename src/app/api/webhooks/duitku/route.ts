@@ -20,7 +20,21 @@ import crypto from 'crypto'
  */
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json()
+    // Duitku sends callback as form-urlencoded, not JSON
+    const contentType = req.headers.get('content-type') || ''
+    let body: Record<string, string>
+
+    if (contentType.includes('application/x-www-form-urlencoded')) {
+      // Parse form-urlencoded data
+      const formData = await req.formData()
+      body = {}
+      formData.forEach((value, key) => {
+        body[key] = value.toString()
+      })
+    } else {
+      // Fallback to JSON for testing
+      body = await req.json()
+    }
 
     // Get Duitku callback parameters
     const {
@@ -40,6 +54,7 @@ export async function POST(req: NextRequest) {
       amount,
       resultCode,
       paymentCode,
+      contentType,
     })
 
     // Find payment by order ID
