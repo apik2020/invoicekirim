@@ -70,8 +70,8 @@ export default function AdminLoginPage() {
           <div className="text-center mb-8 sm:mb-10">
             <div className="auth-icon bg-gradient-to-br from-brand-500 to-brand-600 shadow-brand-lg p-0 overflow-hidden">
               <Image
-                src="/images/notabener-icon.png"
-                alt="NotaBener"
+                src="/images/notabener-icon-admin.png"
+                alt="NotaBener Admin"
                 width={80}
                 height={80}
                 className="w-full h-full object-cover"

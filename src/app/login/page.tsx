@@ -114,7 +114,7 @@ export default function LoginPage() {
           <div className="text-center mb-8 sm:mb-10">
             <div className="auth-icon bg-transparent shadow-none p-0 overflow-hidden" style={{ backgroundColor: '#0A637D' }}>
               <Image
-                src="/images/notabener-icon.png"
+                src="/images/notabener-icon-user.png"
                 alt="NotaBener"
                 width={96}
                 height={96}
