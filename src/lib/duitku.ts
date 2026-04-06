@@ -29,10 +29,9 @@ function getBaseUrl(): string {
 }
 
 // Generate signature for Duitku API (MD5)
-function generateSignature(params: Record<string, string | number>): string {
-  // Duitku signature format: MD5(email + amount + merchantCode + orderId + apiKey)
-  const { email, amount, orderId } = params
-  const signatureString = `${email}${amount}${DUITKU_CONFIG.merchantCode}${orderId}${DUITKU_CONFIG.apiKey}`
+function generateSignature(orderId: string, amount: number): string {
+  // Duitku signature format: MD5(merchantCode + merchantOrderId + paymentAmount + apiKey)
+  const signatureString = `${DUITKU_CONFIG.merchantCode}${orderId}${amount}${DUITKU_CONFIG.apiKey}`
   return createHash('md5').update(signatureString).digest('hex')
 }
 
@@ -166,11 +165,7 @@ export async function createDuitkuPayment(
   }
 
   // Generate signature
-  requestBody.signature = generateSignature({
-    email: params.customerEmail,
-    amount: params.amount,
-    orderId: params.orderId,
-  })
+  requestBody.signature = generateSignature(params.orderId, params.amount)
 
   console.log('[Duitku] Request:', {
     ...requestBody,
