@@ -164,7 +164,7 @@ export function DashboardSidebar({
               />
             ) : (
               <Image
-                src="/images/notabener-icon.png"
+                src="/images/notabener-icon-user.png"
                 alt="NotaBener"
                 width={28}
                 height={28}
