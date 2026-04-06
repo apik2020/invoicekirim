@@ -43,7 +43,7 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
 # Verify files exist
-RUN ls -la .next/static && ls -la server.js
+RUN ls -la .next/static && ls -la server.js && ls -la public/images/
 
 EXPOSE 3000
 
