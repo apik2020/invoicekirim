@@ -54,6 +54,13 @@ export default function PaymentSuccessPage() {
       setPaymentStatus({ status: 'FAILED' })
       return
     }
+
+    // If Duitku redirect says success (resultCode=00), show success immediately
+    // even before API verification completes
+    if (resultCd === '00') {
+      setPaymentStatus({ status: 'LOADING' })
+    }
+
     try {
       // Check payment status via API, pass resultCode from Duitku redirect
       const res = await fetch(`/api/payments/verify?reference=${ref}${resultCd ? `&resultCode=${resultCd}` : ''}`)
@@ -74,12 +81,30 @@ export default function PaymentSuccessPage() {
           status: 'PENDING',
           planName: data.payment?.planName,
         })
+      } else if (resultCd === '00') {
+        // Duitku said success but our API had issues — trust Duitku
+        console.log('API error but resultCode=00, trusting Duitku redirect')
+        setPaymentStatus({
+          status: 'SUCCESS',
+          planName: data.payment?.planName || 'PRO',
+          amount: data.payment?.amount,
+          orderId: data.payment?.orderId || ref,
+        })
       } else {
         setPaymentStatus({ status: 'FAILED' })
       }
     } catch (error) {
       console.error('Error verifying payment:', error)
-      setPaymentStatus({ status: 'FAILED' })
+      // If Duitku said success, trust it even if our API is down
+      if (resultCd === '00') {
+        setPaymentStatus({
+          status: 'SUCCESS',
+          planName: 'PRO',
+          orderId: ref,
+        })
+      } else {
+        setPaymentStatus({ status: 'FAILED' })
+      }
     }
   }
 
