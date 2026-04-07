@@ -55,10 +55,11 @@ export default function RootLayout({
             __html: `
               (function() {
                 // Prevent infinite refresh loop
-                var MAX_REFRESH_ATTEMPTS = 3;
+                var MAX_REFRESH_ATTEMPTS = 5;
                 var REFRESH_KEY = '__nb_refresh_count';
                 var REFRESH_TIME_KEY = '__nb_refresh_time';
                 var REFRESH_WINDOW_MS = 60000; // 1 minute window
+                var isRefreshing = false;
 
                 function getRefreshCount() {
                   try {
@@ -82,57 +83,53 @@ export default function RootLayout({
                 }
 
                 function forceRefresh() {
+                  // Prevent multiple simultaneous refresh attempts
+                  if (isRefreshing) return;
+                  isRefreshing = true;
+
                   var count = getRefreshCount();
                   console.warn('[ChunkError] Refresh attempt', count + 1, 'of', MAX_REFRESH_ATTEMPTS);
 
                   if (count >= MAX_REFRESH_ATTEMPTS) {
-                    console.error('[ChunkError] Max refresh attempts reached. Please clear browser cache manually.');
-                    alert('Terjadi kesalahan cache. Silakan clear browser cache (Ctrl+Shift+Delete) atau buka di incognito mode.');
+                    console.error('[ChunkError] Max refresh attempts reached.');
+                    alert('Terjadi kesalahan cache. Silakan buka di incognito mode atau clear browser cache (Ctrl+Shift+Delete)');
+                    isRefreshing = false;
                     return;
                   }
 
                   incrementRefreshCount();
 
-                  // Clear all caches first
-                  if ('caches' in window) {
-                    caches.keys().then(function(names) {
-                      return Promise.all(names.map(function(name) {
-                        return caches.delete(name);
-                      }));
-                    }).then(function() {
-                      // Clear sessionStorage for refresh count after cache clear
-                      setTimeout(function() {
-                        // Force hard refresh with cache-busting param
-                        var url = window.location.pathname + '?_nc=' + Date.now();
-                        window.location.replace(url);
-                      }, 100);
-                    }).catch(function() {
-                      window.location.replace(window.location.pathname + '?_nc=' + Date.now());
+                  // REFRESH IMMEDIATELY - don't wait for cache clearing
+                  var newUrl = window.location.pathname + '?_nc=' + Date.now();
+                  window.location.href = newUrl;
+                }
+
+                // Clear caches in background (non-blocking)
+                if ('caches' in window) {
+                  caches.keys().then(function(names) {
+                    names.forEach(function(name) {
+                      caches.delete(name);
                     });
-                  } else {
-                    window.location.replace(window.location.pathname + '?_nc=' + Date.now());
-                  }
+                  });
                 }
 
                 // Handle script/link load errors - IMMEDIATELY refresh
                 window.addEventListener('error', function(e) {
-                  if (e.target) {
-                    var tag = e.target.tagName;
-                    if (tag === 'SCRIPT' || tag === 'LINK') {
-                      var src = e.target.src || e.target.href || '';
-                      if (src.indexOf('/_next/static/chunks/') !== -1) {
-                        console.warn('[ChunkError] Script chunk failed:', src);
-                        e.preventDefault();
-                        forceRefresh();
-                      }
+                  if (e.target && (e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK')) {
+                    var src = e.target.src || e.target.href || '';
+                    if (src.indexOf('/_next/static/chunks/') !== -1 || src.indexOf('/_next/static/css/') !== -1) {
+                      console.warn('[ChunkError] Resource failed:', src);
+                      e.preventDefault();
+                      e.stopPropagation();
+                      forceRefresh();
                     }
                   }
-                }, true);
+                }, true); // capture phase for early detection
 
                 // Handle dynamic import errors - IMMEDIATELY refresh
                 window.addEventListener('unhandledrejection', function(e) {
                   var msg = e.reason && (e.reason.message || String(e.reason));
-                  if (msg && (msg.indexOf('Loading chunk') !== -1 || msg.indexOf('ChunkLoadError') !== -1)) {
+                  if (msg && (msg.indexOf('Loading chunk') !== -1 || msg.indexOf('ChunkLoadError') !== -1 || msg.indexOf('Failed to fetch dynamically imported module') !== -1)) {
                     console.warn('[ChunkError] Dynamic import failed:', msg);
                     e.preventDefault();
                     forceRefresh();
