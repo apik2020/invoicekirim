@@ -30,18 +30,30 @@ export default function PaymentSuccessPage() {
   const searchParams = useSearchParams()
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>({ status: 'LOADING' })
 
+  // Duitku redirect params:
+  // - merchantOrderId: our order ID
+  // - resultCode: 00=Success, 01=Pending, 02=Canceled
+  // - reference: Duitku reference
+  const merchantOrderId = searchParams.get('merchantOrderId')
+  const resultCode = searchParams.get('resultCode')
   const reference = searchParams.get('reference')
-  const responseCode = searchParams.get('responseCode')
 
   useEffect(() => {
-    if (reference) {
-      verifyPayment(reference)
+    // Use merchantOrderId (from Duitku redirect) or reference as fallback
+    const orderId = merchantOrderId || reference
+    if (orderId) {
+      verifyPayment(orderId, resultCode)
     } else {
       setPaymentStatus({ status: 'FAILED' })
     }
-  }, [reference])
+  }, [merchantOrderId, reference, resultCode])
 
-  const verifyPayment = async (ref: string) => {
+  const verifyPayment = async (ref: string, resultCd?: string | null) => {
+    // If Duitku already told us it was canceled (resultCode=02), skip API check
+    if (resultCd === '02') {
+      setPaymentStatus({ status: 'FAILED' })
+      return
+    }
     try {
       // Check payment status via API
       const res = await fetch(`/api/payments/verify?reference=${ref}`)
@@ -268,7 +280,7 @@ export default function PaymentSuccessPage() {
 
             <div className="space-y-3">
               <button
-                onClick={() => reference && verifyPayment(reference)}
+                onClick={() => (merchantOrderId || reference) && verifyPayment(merchantOrderId || reference || '')}
                 className="flex items-center justify-center gap-2 w-full py-4 bg-brand-500 text-white font-bold rounded-xl hover:bg-brand-600 transition-colors"
               >
                 <Loader2 className="w-5 h-5" />
@@ -303,9 +315,9 @@ export default function PaymentSuccessPage() {
               <p className="text-text-secondary mb-4">
                 Jika Anda yakin sudah melakukan pembayaran, silakan hubungi customer support kami.
               </p>
-              {reference && (
+              {(merchantOrderId || reference) && (
                 <p className="text-sm text-text-muted">
-                  Reference: <span className="font-mono">{reference}</span>
+                  Reference: <span className="font-mono">{merchantOrderId || reference}</span>
                 </p>
               )}
             </div>

@@ -60,12 +60,12 @@ const nextConfig: NextConfig = {
   async headers() {
     const cspDirectives = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com https://checkout.stripe.com https://app.sandbox.midtrans.com https://app.midtrans.com",
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com https://checkout.stripe.com https://app.sandbox.midtrans.com https://app.midtrans.com https://app-sandbox.duitku.com https://app.duitku.com",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https: http:",
       "font-src 'self' data:",
-      "connect-src 'self' https://api.stripe.com https://checkout.stripe.com https://api.midtrans.com https://app.sandbox.midtrans.com https://o1.ingest.sentry.io",
-      "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com https://app.sandbox.midtrans.com https://app.midtrans.com",
+      "connect-src 'self' https://api.stripe.com https://checkout.stripe.com https://api.midtrans.com https://app.sandbox.midtrans.com https://sandbox.duitku.com https://passport.duitku.com https://o1.ingest.sentry.io",
+      "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com https://app.sandbox.midtrans.com https://app.midtrans.com https://app-sandbox.duitku.com https://app.duitku.com",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",

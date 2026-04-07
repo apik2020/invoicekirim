@@ -1,6 +1,8 @@
 /**
  * Duitku Payment Gateway Integration
- * Using NEW Duitku API with SHA256 signature
+ * Using official Duitku v2 API with MD5 signature
+ *
+ * Documentation: https://docs.duitku.com/api/id/#parameter-request-transaksi
  *
  * Required Environment Variables:
  * - DUITKU_MERCHANT_CODE: Your Duitku Merchant Code
@@ -9,7 +11,6 @@
  */
 
 import { createHash } from 'crypto'
-import * as moment from 'moment-timezone'
 
 // Duitku Configuration
 const DUITKU_CONFIG = {
@@ -18,41 +19,66 @@ const DUITKU_CONFIG = {
   isProduction: process.env.DUITKU_MODE === 'PRODUCTION',
 }
 
-// NEW API Endpoints
+// Official Duitku v2 API Endpoints
 const DUITKU_ENDPOINTS = {
-  sandbox: 'https://api-sandbox.duitku.com/api/merchant',
-  production: 'https://api-prod.duitku.com/api/merchant',
+  sandbox: {
+    inquiry: 'https://sandbox.duitku.com/webapi/api/merchant/v2/inquiry',
+    transactionStatus: 'https://sandbox.duitku.com/webapi/api/merchant/transactionStatus',
+    paymentMethod: 'https://sandbox.duitku.com/webapi/api/merchant/paymentmethod/getpaymentmethod',
+  },
+  production: {
+    inquiry: 'https://passport.duitku.com/webapi/api/merchant/v2/inquiry',
+    transactionStatus: 'https://passport.duitku.com/webapi/api/merchant/transactionStatus',
+    paymentMethod: 'https://passport.duitku.com/webapi/api/merchant/paymentmethod/getpaymentmethod',
+  },
 }
 
-function getBaseUrl(): string {
+function getEndpoints() {
   return DUITKU_CONFIG.isProduction
     ? DUITKU_ENDPOINTS.production
     : DUITKU_ENDPOINTS.sandbox
 }
 
-// Generate Jakarta timezone timestamp (Unix timestamp in milliseconds)
-function getJakartaTimestamp(): number {
-  const jakartaTime = moment().tz('Asia/Jakarta')
-  return jakartaTime.valueOf()
+// Generate MD5 signature for transaction request
+// Format: MD5(merchantCode + merchantOrderId + paymentAmount + apiKey)
+function generateTransactionSignature(
+  merchantCode: string,
+  merchantOrderId: string,
+  paymentAmount: number,
+  apiKey: string
+): string {
+  const data = `${merchantCode}${merchantOrderId}${paymentAmount}${apiKey}`
+  return createHash('md5').update(data).digest('hex')
 }
 
-// Generate SHA256 signature for NEW Duitku API
-// Format: SHA256(merchantCode + timestamp + apiKey)
-function generateSignature(merchantCode: string, timestamp: number, apiKey: string): string {
-  const data = `${merchantCode}${timestamp}${apiKey}`
+// Generate MD5 signature for transaction status check
+// Format: MD5(merchantCode + merchantOrderId + apiKey)
+function generateStatusSignature(
+  merchantCode: string,
+  merchantOrderId: string,
+  apiKey: string
+): string {
+  const data = `${merchantCode}${merchantOrderId}${apiKey}`
+  return createHash('md5').update(data).digest('hex')
+}
+
+// Generate SHA256 signature for get payment method
+// Format: SHA256(merchantCode + amount + datetime + apiKey)
+function generatePaymentMethodSignature(
+  merchantCode: string,
+  amount: number,
+  datetime: string,
+  apiKey: string
+): string {
+  const data = `${merchantCode}${amount}${datetime}${apiKey}`
   return createHash('sha256').update(data).digest('hex')
 }
 
-// Build request headers with signature
-function buildHeaders(timestamp: number): Record<string, string> {
-  const signature = generateSignature(DUITKU_CONFIG.merchantCode, timestamp, DUITKU_CONFIG.apiKey)
-
-  return {
-    'Content-Type': 'application/json',
-    'x-duitku-signature': signature,
-    'x-duitku-timestamp': timestamp.toString(),
-    'x-duitku-merchantcode': DUITKU_CONFIG.merchantCode,
-  }
+// Generate datetime format for payment method API (YYYY-MM-DD HH:mm:ss)
+function getDatetime(): string {
+  const now = new Date()
+  const pad = (n: number) => n.toString().padStart(2, '0')
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`
 }
 
 export interface DuitkuPaymentParams {
@@ -79,53 +105,51 @@ export interface DuitkuPaymentResult {
   qrImageUrl?: string
 }
 
-// Duitku payment method codes
+// Duitku payment method codes (official from documentation)
 export const DUITKU_VA_BANKS = [
   { code: 'BC', name: 'BCA', logo: '/images/banks/bca.png' },
-  { code: 'M1', name: 'Mandiri', logo: '/images/banks/mandiri.png' },
-  { code: 'B1', name: 'BNI', logo: '/images/banks/bni.png' },
+  { code: 'M2', name: 'Mandiri', logo: '/images/banks/mandiri.png' },
+  { code: 'I1', name: 'BNI', logo: '/images/banks/bni.png' },
   { code: 'BR', name: 'BRI', logo: '/images/banks/bri.png' },
-  { code: 'C1', name: 'CIMB Niaga', logo: '/images/banks/cimb.png' },
-  { code: 'A1', name: 'Bank Permata', logo: '/images/banks/permata.png' },
-  { code: 'B2', name: 'Bank Danamon', logo: '/images/banks/danamon.png' },
-  { code: 'D1', name: 'Bank Digibank', logo: '/images/banks/digibank.png' },
-] as const
+  { code: 'B1', name: 'CIMB Niaga', logo: '/images/banks/cimb.png' },
+  { code: 'BT', name: 'Bank Permata', logo: '/images/banks/permata.png' },
+  { code: 'DM', name: 'Bank Danamon', logo: '/images/banks/danamon.png' },
+]
 
 export const DUITKU_QRIS = { code: 'QP', name: 'QRIS', logo: '/images/qris.png' }
+
 export const DUITKU_EWALLETS = [
   { code: 'OV', name: 'OVO', logo: '/images/ewallets/ovo.png' },
   { code: 'DA', name: 'DANA', logo: '/images/ewallets/dana.png' },
   { code: 'SP', name: 'ShopeePay', logo: '/images/ewallets/shopeepay.png' },
-  { code: 'GQ', name: 'GoPay', logo: '/images/ewallets/gopay.png' },
+  { code: 'SA', name: 'ShopeePay Apps', logo: '/images/ewallets/shopeepay.png' },
 ]
 
 export type DuitkuVABankCode = typeof DUITKU_VA_BANKS[number]['code']
 
 /**
- * Map UI bank codes to Duitku API bank codes
+ * Map UI bank codes to official Duitku API bank codes
  * UI uses: 'BCA', 'MANDIRI', 'BNI', 'BRI', 'CIMB', 'PERMATA', etc.
- * Duitku API uses: 'BC', 'M1', 'B1', 'BR', 'C1', 'A1', etc.
+ * Official Duitku codes: 'BC', 'M2', 'I1', 'BR', 'B1', 'BT', 'DM'
  */
 export function mapBankCodeToDuitku(uiBankCode: string): string {
   const bankCodeMap: Record<string, string> = {
     'BCA': 'BC',
-    'MANDIRI': 'M1',
-    'BNI': 'B1',
+    'MANDIRI': 'M2',
+    'BNI': 'I1',
     'BRI': 'BR',
-    'CIMB': 'C1',
-    'CIMB NIAGA': 'C1',
-    'PERMATA': 'A1',
-    'DANAMON': 'B2',
-    'DIGIBANK': 'D1',
+    'CIMB': 'B1',
+    'CIMB NIAGA': 'B1',
+    'PERMATA': 'BT',
+    'DANAMON': 'DM',
     // Also accept Duitku codes directly (pass-through)
     'BC': 'BC',
-    'M1': 'M1',
-    'B1': 'B1',
+    'M2': 'M2',
+    'I1': 'I1',
     'BR': 'BR',
-    'C1': 'C1',
-    'A1': 'A1',
-    'B2': 'B2',
-    'D1': 'D1',
+    'B1': 'B1',
+    'BT': 'BT',
+    'DM': 'DM',
   }
 
   const normalizedCode = uiBankCode.toUpperCase().trim()
@@ -133,14 +157,15 @@ export function mapBankCodeToDuitku(uiBankCode: string): string {
 
   if (!duitkuCode) {
     console.warn(`[Duitku] Unknown bank code: ${uiBankCode}, using as-is`)
-    return uiBankCode // Return original if not found
+    return uiBankCode
   }
 
   return duitkuCode
 }
 
 /**
- * Create payment via NEW Duitku API
+ * Create payment via official Duitku v2 API
+ * POST to https://sandbox.duitku.com/webapi/api/merchant/v2/inquiry
  */
 export async function createDuitkuPayment(
   params: DuitkuPaymentParams
@@ -162,10 +187,19 @@ export async function createDuitkuPayment(
   // Ensure amount is integer (Duitku requires integer amount)
   const paymentAmount = Math.round(params.amount)
 
-  // Get Jakarta timestamp
-  const timestamp = getJakartaTimestamp()
+  // Generate MD5 signature: MD5(merchantCode + merchantOrderId + paymentAmount + apiKey)
+  const signature = generateTransactionSignature(
+    DUITKU_CONFIG.merchantCode,
+    params.orderId,
+    paymentAmount,
+    DUITKU_CONFIG.apiKey
+  )
 
-  // Build request body for NEW API
+  // Build returnUrl with orderId for verification after redirect
+  const returnUrl = params.returnUrl || `${process.env.NEXT_PUBLIC_APP_URL}/payment/success`
+  const callbackUrl = params.callbackUrl || `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/duitku`
+
+  // Build request body per official v2 API documentation
   const requestBody = {
     merchantCode: DUITKU_CONFIG.merchantCode,
     paymentAmount: paymentAmount,
@@ -174,25 +208,24 @@ export async function createDuitkuPayment(
     email: params.customerEmail,
     customerVaName: params.customerName,
     expiryPeriod: expiryMinutes,
-    returnUrl: params.returnUrl || `${process.env.NEXT_PUBLIC_APP_URL}/payment/success`,
-    callbackUrl: params.callbackUrl || `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/duitku`,
+    returnUrl: returnUrl,
+    callbackUrl: callbackUrl,
+    signature: signature,
     ...(params.customerPhone && { phoneNumber: params.customerPhone }),
     ...(params.paymentMethod && { paymentMethod: params.paymentMethod }),
   }
 
-  // Build headers with signature
-  const headers = buildHeaders(timestamp)
-
   console.log('[Duitku] Request:', {
-    url: `${getBaseUrl()}/createInvoice`,
-    body: requestBody,
-    timestamp: timestamp,
+    url: getEndpoints().inquiry,
+    body: { ...requestBody, signature: '***' },
   })
 
-  // Call NEW Duitku API
-  const response = await fetch(`${getBaseUrl()}/createInvoice`, {
+  // Call Duitku v2 API
+  const response = await fetch(getEndpoints().inquiry, {
     method: 'POST',
-    headers,
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(requestBody),
   })
 
@@ -237,7 +270,9 @@ export async function createDuitkuPayment(
 }
 
 /**
- * Get payment status from Duitku (NEW API)
+ * Get payment status from Duitku
+ * POST to https://sandbox.duitku.com/webapi/api/merchant/transactionStatus
+ * Signature: MD5(merchantCode + merchantOrderId + apiKey)
  */
 export async function getDuitkuPaymentStatus(orderId: string): Promise<{
   status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'EXPIRED'
@@ -251,20 +286,24 @@ export async function getDuitkuPaymentStatus(orderId: string): Promise<{
     throw new Error('Duitku credentials not configured')
   }
 
-  // Get Jakarta timestamp
-  const timestamp = getJakartaTimestamp()
-
-  // Build headers with signature
-  const headers = buildHeaders(timestamp)
+  // Generate MD5 signature for status check: MD5(merchantCode + merchantOrderId + apiKey)
+  const signature = generateStatusSignature(
+    DUITKU_CONFIG.merchantCode,
+    orderId,
+    DUITKU_CONFIG.apiKey
+  )
 
   const requestBody = {
     merchantCode: DUITKU_CONFIG.merchantCode,
     merchantOrderId: orderId,
+    signature: signature,
   }
 
-  const response = await fetch(`${getBaseUrl()}/transactionStatus`, {
+  const response = await fetch(getEndpoints().transactionStatus, {
     method: 'POST',
-    headers,
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(requestBody),
   })
 
@@ -303,7 +342,7 @@ export async function getDuitkuPaymentStatus(orderId: string): Promise<{
 
 /**
  * Verify Duitku callback signature
- * Callback uses MD5 signature (old format for callbacks)
+ * Callback signature: MD5(merchantCode + amount + merchantOrderId + apiKey)
  */
 export function verifyDuitkuCallback(
   orderId: string,
@@ -311,7 +350,7 @@ export function verifyDuitkuCallback(
   signature: string
 ): boolean {
   const formattedAmount = Math.round(amount)
-  const signatureString = `${DUITKU_CONFIG.merchantCode}${orderId}${formattedAmount}${DUITKU_CONFIG.apiKey}`
+  const signatureString = `${DUITKU_CONFIG.merchantCode}${formattedAmount}${orderId}${DUITKU_CONFIG.apiKey}`
   const expectedSignature = createHash('md5').update(signatureString).digest('hex')
   return signature.toLowerCase() === expectedSignature.toLowerCase()
 }
@@ -327,6 +366,8 @@ export function generateDuitkuOrderId(userId?: string): string {
 
 /**
  * Get available payment methods from Duitku
+ * POST to https://sandbox.duitku.com/webapi/api/merchant/paymentmethod/getpaymentmethod
+ * Signature: SHA256(merchantCode + amount + datetime + apiKey)
  */
 export async function getDuitkuPaymentMethods(amount: number): Promise<{
   paymentMethod: string
@@ -340,17 +381,29 @@ export async function getDuitkuPaymentMethods(amount: number): Promise<{
     throw new Error('Duitku credentials not configured')
   }
 
-  const timestamp = getJakartaTimestamp()
-  const headers = buildHeaders(timestamp)
+  const datetime = getDatetime()
+  const paymentAmount = Math.round(amount)
+
+  // SHA256 signature for get payment method
+  const signature = generatePaymentMethodSignature(
+    DUITKU_CONFIG.merchantCode,
+    paymentAmount,
+    datetime,
+    DUITKU_CONFIG.apiKey
+  )
 
   const requestBody = {
     merchantCode: DUITKU_CONFIG.merchantCode,
-    amount: Math.round(amount),
+    amount: paymentAmount,
+    datetime: datetime,
+    signature: signature,
   }
 
-  const response = await fetch(`${getBaseUrl()}/paymentMethod`, {
+  const response = await fetch(getEndpoints().paymentMethod, {
     method: 'POST',
-    headers,
+    headers: {
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify(requestBody),
   })
 

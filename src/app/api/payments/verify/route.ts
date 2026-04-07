@@ -9,7 +9,8 @@ import { getDuitkuPaymentStatus } from '@/lib/duitku'
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
-    const reference = searchParams.get('reference')
+    // Accept both 'reference' and 'merchantOrderId' params
+    const reference = searchParams.get('reference') || searchParams.get('merchantOrderId')
 
     if (!reference) {
       return NextResponse.json(
@@ -18,7 +19,7 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    // Find payment by reference or orderId
+    // Find payment by orderId (merchantOrderId) or transaction reference
     const payment = await prisma.payments.findFirst({
       where: {
         OR: [
