@@ -55,8 +55,8 @@ export default function PaymentSuccessPage() {
       return
     }
     try {
-      // Check payment status via API
-      const res = await fetch(`/api/payments/verify?reference=${ref}`)
+      // Check payment status via API, pass resultCode from Duitku redirect
+      const res = await fetch(`/api/payments/verify?reference=${ref}${resultCd ? `&resultCode=${resultCd}` : ''}`)
       const data = await res.json()
 
       if (res.ok && data.success) {
