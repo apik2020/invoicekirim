@@ -738,10 +738,25 @@ export async function sendSystemEmail({
       },
     })
 
-    if (!admin?.smtpHost || !admin?.smtpUser || !admin?.smtpPass || !admin?.smtpFromEmail) {
-      console.error('Admin SMTP not configured. Please configure SMTP in Admin Settings.')
-      return { success: false, error: 'SMTP not configured' }
+    // Check which fields are missing for better debugging
+    const missingFields = []
+    if (!admin?.smtpHost) missingFields.push('smtpHost')
+    if (!admin?.smtpUser) missingFields.push('smtpUser')
+    if (!admin?.smtpPass) missingFields.push('smtpPass')
+    if (!admin?.smtpFromEmail) missingFields.push('smtpFromEmail')
+
+    if (missingFields.length > 0) {
+      console.error('[Email] Admin SMTP not configured. Missing fields:', missingFields.join(', '))
+      return { success: false, error: `SMTP not configured. Missing: ${missingFields.join(', ')}` }
     }
+
+    console.log('[Email] Sending system email via SMTP:', {
+      host: admin.smtpHost,
+      port: admin.smtpPort,
+      user: admin.smtpUser,
+      from: admin.smtpFromEmail,
+      to: Array.isArray(to) ? to.join(', ') : to,
+    })
 
     const transporter = nodemailer.createTransport({
       host: admin.smtpHost,
@@ -756,17 +771,19 @@ export async function sendSystemEmail({
     const fromName = admin.smtpFromName || 'NotaBener'
     const fromEmail = admin.smtpFromEmail
 
-    await transporter.sendMail({
+    const result = await transporter.sendMail({
       from: `"${fromName}" <${fromEmail}>`,
       to: Array.isArray(to) ? to.join(', ') : to,
       subject,
       html,
     })
 
-    return { success: true, data: { id: 'smtp-sent', method: 'admin-smtp' } }
-  } catch (error) {
-    console.error('System email send failed:', error)
-    return { success: false, error }
+    console.log('[Email] System email sent successfully:', result.messageId)
+
+    return { success: true, data: { id: 'smtp-sent', method: 'admin-smtp', messageId: result.messageId } }
+  } catch (error: any) {
+    console.error('[Email] System email send failed:', error?.message || error)
+    return { success: false, error: error?.message || 'Unknown error' }
   }
 }
 

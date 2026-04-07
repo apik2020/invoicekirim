@@ -59,12 +59,23 @@ export async function POST(req: NextRequest) {
     const resetUrl = `${baseUrl}/reset-password?token=${resetData.token}`
 
     // Send password reset email
-    await sendPasswordResetEmail({
+    const emailResult = await sendPasswordResetEmail({
       to: email,
       userName: user.name || 'Pengguna',
       resetUrl,
       expiresIn: '1 jam',
     })
+
+    // Check if email was sent successfully
+    if (!emailResult || !emailResult.success) {
+      console.error('[ForgotPassword] Failed to send email:', emailResult?.error)
+      return NextResponse.json(
+        { error: 'Gagal mengirim email reset password. Silakan hubungi admin atau coba lagi nanti.' },
+        { status: 500 }
+      )
+    }
+
+    console.log('[ForgotPassword] Email sent successfully to:', email)
 
     return NextResponse.json({
       message: 'Link reset password telah dikirim ke email Anda',
