@@ -44,43 +44,76 @@ export default function RootLayout({
     <html lang="id" suppressHydrationWarning>
       <head>
         <ResourceHints />
+        {/* Prevent caching of this page */}
+        <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+        <meta httpEquiv="Pragma" content="no-cache" />
+        <meta httpEquiv="Expires" content="0" />
+
         {/* Chunk error handler - auto refresh on stale chunk references */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
-                let chunkErrorCount = 0;
-                const MAX_CHUNK_ERRORS = 3;
+                // Track chunk loading errors
+                let chunkErrors = 0;
+                let lastChunkError = 0;
+                const COOLDOWN_MS = 5000; // Only count errors within 5 seconds
 
+                function handleChunkError(src) {
+                  const now = Date.now();
+
+                  // Reset counter if last error was more than 5 seconds ago
+                  if (now - lastChunkError > COOLDOWN_MS) {
+                    chunkErrors = 0;
+                  }
+
+                  lastChunkError = now;
+                  chunkErrors++;
+
+                  console.warn('[ChunkError] Failed to load:', src, 'Errors:', chunkErrors);
+
+                  // If 2+ errors in quick succession, force refresh
+                  if (chunkErrors >= 2) {
+                    console.warn('[ChunkError] Multiple chunk errors detected, forcing refresh...');
+                    forceRefresh();
+                  }
+                }
+
+                function forceRefresh() {
+                  // Clear all caches
+                  if ('caches' in window) {
+                    caches.keys().then(function(names) {
+                      names.forEach(function(name) {
+                        caches.delete(name);
+                      });
+                    }).then(function() {
+                      // Add timestamp to force bypass cache
+                      window.location.href = window.location.pathname + '?refresh=' + Date.now();
+                    });
+                  } else {
+                    window.location.reload(true);
+                  }
+                }
+
+                // Handle script/link load errors
                 window.addEventListener('error', function(e) {
-                  if (e.target && (e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK')) {
-                    const src = e.target.src || e.target.href || '';
-                    if (src.includes('/_next/static/chunks/')) {
-                      chunkErrorCount++;
-                      console.warn('[ChunkError] Failed to load chunk:', src);
-
-                      if (chunkErrorCount >= MAX_CHUNK_ERRORS) {
-                        console.warn('[ChunkError] Multiple chunk errors detected, forcing hard refresh...');
-                        // Clear cache and force reload
-                        if ('caches' in window) {
-                          caches.keys().then(function(names) {
-                            names.forEach(function(name) {
-                              caches.delete(name);
-                            });
-                          });
-                        }
-                        // Force hard refresh
-                        window.location.reload(true);
+                  if (e.target) {
+                    var tag = e.target.tagName;
+                    if (tag === 'SCRIPT' || tag === 'LINK') {
+                      var src = e.target.src || e.target.href || '';
+                      if (src.indexOf('/_next/static/') !== -1) {
+                        handleChunkError(src);
                       }
                     }
                   }
                 }, true);
 
-                // Also handle dynamic import errors
+                // Handle dynamic import errors
                 window.addEventListener('unhandledrejection', function(e) {
-                  if (e.reason && e.reason.message && e.reason.message.includes('Loading chunk')) {
-                    console.warn('[ChunkError] Dynamic import failed:', e.reason.message);
-                    window.location.reload(true);
+                  var msg = e.reason && (e.reason.message || String(e.reason));
+                  if (msg && (msg.indexOf('Loading chunk') !== -1 || msg.indexOf('Loading CSS chunk') !== -1)) {
+                    console.warn('[ChunkError] Dynamic import failed:', msg);
+                    forceRefresh();
                   }
                 });
               })();

@@ -9,7 +9,7 @@ const dev = process.env.NODE_ENV !== 'production'
 const hostname = process.env.HOSTNAME || '0.0.0.0'
 const port = process.env.PORT || 3000
 
-// Environment variable to force hard refresh on chunk errors
+// Build version for cache busting
 const CHUNK_VERSION = process.env.NEXT_PUBLIC_BUILD_ID || Date.now().toString()
 
 // Handle uncaught exceptions
@@ -45,6 +45,7 @@ const mimeTypes = {
   '.txt': 'text/plain; charset=utf-8',
   '.webp': 'image/webp',
   '.avif': 'image/avif',
+  '.map': 'application/json',
 }
 
 function getMimeType(path) {
@@ -52,30 +53,19 @@ function getMimeType(path) {
   return mimeTypes[ext] || 'application/octet-stream'
 }
 
-// Routes that should never be cached (to prevent stale chunk references)
-const noCacheRoutes = [
-  '/',
-  '/login',
-  '/register',
-  '/forgot-password',
-  '/reset-password',
-  '/checkout',
-  '/dashboard',
-  '/admin',
-  '/client',
-  '/invoice',
-  '/payment',
-  '/billing',
-  '/settings',
-]
-
-function shouldNotCache(pathname) {
-  // Check if it's a page route (no file extension and not a static path)
-  if (!pathname.includes('.') && !pathname.startsWith('/_next') && !pathname.startsWith('/api')) {
-    return true
+// Check if pathname is a page route (not static file)
+function isPageRoute(pathname) {
+  // Exclude static paths
+  if (pathname.startsWith('/_next') || pathname.startsWith('/api')) {
+    return false
   }
-  // Check known routes
-  return noCacheRoutes.some(route => pathname.startsWith(route))
+  // Exclude files with extensions (except .html)
+  const lastDot = pathname.lastIndexOf('.')
+  if (lastDot > pathname.lastIndexOf('/')) {
+    const ext = pathname.substring(lastDot).toLowerCase()
+    return ext === '.html'
+  }
+  return true
 }
 
 // Graceful shutdown
@@ -116,7 +106,7 @@ app.prepare()
           if (existsSync(filePath) && statSync(filePath).isFile()) {
             const mimeType = getMimeType(pathname)
 
-            // Set headers
+            // Set headers for static chunks
             res.setHeader('Content-Type', mimeType)
             res.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
             res.setHeader('X-Content-Type-Options', 'nosniff')
@@ -131,13 +121,13 @@ app.prepare()
             fileStream.pipe(res)
             return
           } else {
-            // Chunk file not found - this happens when old cached HTML references old chunks
-            // Return a proper 404 with correct headers to prevent MIME type issues
-            console.log('[Server] Chunk not found (likely old cached reference):', pathname)
+            // Chunk file not found - return 404 with correct MIME type
+            console.log('[Server] Chunk not found (stale cache):', pathname)
             res.statusCode = 404
             res.setHeader('Content-Type', 'text/plain; charset=utf-8')
             res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-            res.end('Not found - please refresh the page')
+            res.setHeader('X-Chunk-Error', 'stale-reference')
+            res.end('Chunk not found - please refresh')
             return
           }
         }
@@ -150,7 +140,8 @@ app.prepare()
             const mimeType = getMimeType(pathname)
 
             res.setHeader('Content-Type', mimeType)
-            res.setHeader('Cache-Control', 'public, max-age=86400') // 1 day for public assets
+            res.setHeader('Cache-Control', 'public, max-age=86400')
+            res.setHeader('X-Content-Type-Options', 'nosniff')
 
             const fileStream = createReadStream(publicPath)
             fileStream.on('error', (err) => {
@@ -163,17 +154,25 @@ app.prepare()
           }
         }
 
-        // Set no-cache headers for HTML pages to prevent stale chunk references
-        if (shouldNotCache(pathname)) {
-          res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+        // Set aggressive no-cache headers for ALL page routes
+        if (isPageRoute(pathname)) {
+          // Standard no-cache headers
+          res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0')
           res.setHeader('Pragma', 'no-cache')
           res.setHeader('Expires', '0')
+
+          // CDN/Proxy no-cache headers
+          res.setHeader('Surrogate-Control', 'no-store')
+          res.setHeader('CDN-Cache-Control', 'no-store')
+
+          // Security headers
           res.setHeader('X-Content-Type-Options', 'nosniff')
-          // Add build ID header for debugging
+
+          // Build version for debugging
           res.setHeader('X-Build-ID', CHUNK_VERSION)
         }
 
-        // Let Next.js handle everything else
+        // Let Next.js handle the request
         await handle(req, res, parsedUrl)
       } catch (err) {
         console.error('[Server] Error handling request:', req.url, err)
