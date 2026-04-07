@@ -3,15 +3,25 @@ import { requireAdminAuth } from '@/lib/admin-session'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 
-const smtpSettingsSchema = z.object({
+// Schema for test connection (password required)
+const testConnectionSchema = z.object({
   smtpHost: z.string().min(1, 'SMTP host harus diisi'),
   smtpPort: z.string().default('587'),
   smtpSecure: z.boolean().default(false),
   smtpUser: z.string().min(1, 'SMTP user harus diisi'),
   smtpPass: z.string().min(1, 'SMTP password harus diisi'),
+  testOnly: z.literal(true),
+})
+
+// Schema for save settings (password optional - keep existing if not provided)
+const saveSettingsSchema = z.object({
+  smtpHost: z.string().min(1, 'SMTP host harus diisi'),
+  smtpPort: z.string().default('587'),
+  smtpSecure: z.boolean().default(false),
+  smtpUser: z.string().min(1, 'SMTP user harus diisi'),
+  smtpPass: z.string().optional(), // Optional - keep existing if empty
   smtpFromName: z.string().min(1, 'Nama pengirim harus diisi'),
   smtpFromEmail: z.string().email('Format email tidak valid'),
-  testOnly: z.boolean().optional(),
 })
 
 // GET - Retrieve SMTP settings
@@ -33,6 +43,7 @@ export async function GET(req: NextRequest) {
         smtpPort: true,
         smtpSecure: true,
         smtpUser: true,
+        smtpPass: true, // Check if password exists (don't return it)
         smtpFromName: true,
         smtpFromEmail: true,
       },
@@ -45,6 +56,7 @@ export async function GET(req: NextRequest) {
       smtpUser: adminData?.smtpUser || '',
       smtpFromName: adminData?.smtpFromName || 'NotaBener',
       smtpFromEmail: adminData?.smtpFromEmail || '',
+      hasSmtpPass: !!adminData?.smtpPass, // Indicate if password is set
     })
   } catch (error) {
     console.error('Get SMTP settings error:', error)
@@ -55,7 +67,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST - Save SMTP settings
+// POST - Save SMTP settings or test connection
 export async function POST(req: NextRequest) {
   const result = await requireAdminAuth()
 
@@ -68,20 +80,22 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
-    const validation = smtpSettingsSchema.safeParse(body)
 
-    if (!validation.success) {
-      const firstError = validation.error.issues[0]
-      return NextResponse.json(
-        { error: firstError?.message || 'Data tidak valid' },
-        { status: 400 }
-      )
-    }
+    // Check if this is just a test request (requires full password)
+    if (body.testOnly === true) {
+      const validation = testConnectionSchema.safeParse(body)
 
-    const { smtpHost, smtpPort, smtpSecure, smtpUser, smtpPass, smtpFromName, smtpFromEmail, testOnly } = validation.data
+      if (!validation.success) {
+        const firstError = validation.error.issues[0]
+        return NextResponse.json(
+          { error: firstError?.message || 'Data tidak valid' },
+          { status: 400 }
+        )
+      }
 
-    // Check if this is just a test request
-    if (testOnly) {
+      const { smtpHost, smtpPort, smtpSecure, smtpUser, smtpPass } = validation.data
+
+      // Test SMTP connection
       const nodemailer = await import('nodemailer')
 
       const transporter = nodemailer.default.createTransport({
@@ -113,19 +127,39 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Save settings - validate
+    const validation = saveSettingsSchema.safeParse(body)
+
+    if (!validation.success) {
+      const firstError = validation.error.issues[0]
+      return NextResponse.json(
+        { error: firstError?.message || 'Data tidak valid' },
+        { status: 400 }
+      )
+    }
+
+    const { smtpHost, smtpPort, smtpSecure, smtpUser, smtpPass, smtpFromName, smtpFromEmail } = validation.data
+
+    // Build update data - always update these fields
+    const updateData: Record<string, any> = {
+      smtpHost,
+      smtpPort,
+      smtpSecure,
+      smtpUser,
+      smtpFromName,
+      smtpFromEmail,
+      updatedAt: new Date(),
+    }
+
+    // Only update password if a new one is provided (not empty)
+    if (smtpPass && smtpPass.trim() !== '') {
+      updateData.smtpPass = smtpPass
+    }
+
     // Save SMTP settings
     await prisma.admins.update({
       where: { id: result.admin.id },
-      data: {
-        smtpHost,
-        smtpPort,
-        smtpSecure,
-        smtpUser,
-        smtpPass,
-        smtpFromName,
-        smtpFromEmail,
-        updatedAt: new Date(),
-      },
+      data: updateData,
     })
 
     return NextResponse.json({

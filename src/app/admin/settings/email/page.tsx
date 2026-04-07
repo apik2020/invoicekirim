@@ -13,6 +13,7 @@ interface SmtpSettings {
   smtpPass: string
   smtpFromName: string
   smtpFromEmail: string
+  hasSmtpPass?: boolean // Indicates if password is already saved
 }
 
 export default function AdminEmailSettingsPage() {
@@ -24,10 +25,12 @@ export default function AdminEmailSettingsPage() {
     smtpPass: '',
     smtpFromName: 'NotaBener',
     smtpFromEmail: '',
+    hasSmtpPass: false,
   })
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [isTesting, setIsTesting] = useState(false)
+  const [isSendingTest, setIsSendingTest] = useState(false)
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null)
   const [error, setError] = useState('')
 
@@ -45,9 +48,10 @@ export default function AdminEmailSettingsPage() {
           smtpPort: data.smtpPort || '587',
           smtpSecure: data.smtpSecure || false,
           smtpUser: data.smtpUser || '',
-          smtpPass: '', // Don't show password
+          smtpPass: '', // Don't show existing password
           smtpFromName: data.smtpFromName || 'NotaBener',
           smtpFromEmail: data.smtpFromEmail || '',
+          hasSmtpPass: data.hasSmtpPass || false, // Flag if password exists
         })
       }
     } catch {
@@ -253,11 +257,13 @@ export default function AdminEmailSettingsPage() {
                 type="password"
                 value={settings.smtpPass}
                 onChange={(e) => setSettings({ ...settings, smtpPass: e.target.value })}
-                placeholder="••••••••"
+                placeholder={settings.hasSmtpPass ? '•••••••• (password sudah tersimpan)' : '••••••••'}
                 className="input-field"
               />
               <p className="text-xs text-text-muted mt-1">
-                Untuk Gmail, gunakan App Password
+                {settings.hasSmtpPass
+                  ? 'Kosongkan untuk mempertahankan password yang ada'
+                  : 'Untuk Gmail, gunakan App Password'}
               </p>
             </div>
 

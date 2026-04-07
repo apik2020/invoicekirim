@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminAuth } from '@/lib/admin-session'
+import { prisma } from '@/lib/prisma'
 import nodemailer from 'nodemailer'
 
 // Force dynamic rendering
@@ -15,7 +16,39 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json()
-    const { smtpHost, smtpPort, smtpSecure, smtpUser, smtpPass, smtpFromName, smtpFromEmail } = body
+    let { smtpHost, smtpPort, smtpSecure, smtpUser, smtpPass, smtpFromName, smtpFromEmail } = body
+
+    // If password not provided, fetch from database
+    if (!smtpPass || smtpPass.trim() === '') {
+      const adminData = await prisma.admins.findUnique({
+        where: { id: result.admin.id },
+        select: {
+          smtpHost: true,
+          smtpPort: true,
+          smtpSecure: true,
+          smtpUser: true,
+          smtpPass: true,
+          smtpFromName: true,
+          smtpFromEmail: true,
+        },
+      })
+
+      if (!adminData?.smtpPass) {
+        return NextResponse.json(
+          { error: 'Password SMTP belum disimpan. Silakan masukkan password SMTP terlebih dahulu.' },
+          { status: 400 }
+        )
+      }
+
+      // Use saved settings
+      smtpHost = smtpHost || adminData.smtpHost
+      smtpPort = smtpPort || adminData.smtpPort
+      smtpSecure = smtpSecure ?? adminData.smtpSecure
+      smtpUser = smtpUser || adminData.smtpUser
+      smtpPass = adminData.smtpPass
+      smtpFromName = smtpFromName || adminData.smtpFromName
+      smtpFromEmail = smtpFromEmail || adminData.smtpFromEmail
+    }
 
     // Validate required fields
     if (!smtpHost || !smtpUser || !smtpPass) {
