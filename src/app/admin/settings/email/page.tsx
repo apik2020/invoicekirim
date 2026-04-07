@@ -106,6 +106,30 @@ export default function AdminEmailSettingsPage() {
     }
   }
 
+  const handleSendTestEmail = async () => {
+    setIsTesting(true)
+    setTestResult(null)
+
+    try {
+      const res = await fetch('/api/admin/smtp-settings/test-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+      })
+
+      const data = await res.json()
+      if (data.success) {
+        setTestResult({ success: true, message: `Email test berhasil dikirim ke ${settings.smtpUser}` })
+      } else {
+        setTestResult({ success: false, message: data.error || 'Gagal mengirim email test' })
+      }
+    } catch {
+      setTestResult({ success: false, message: 'Terjadi kesalahan saat mengirim email test' })
+    } finally {
+      setIsTesting(false)
+    }
+  }
+
   if (isLoading) {
     return (
       <AdminLayout>
@@ -285,7 +309,7 @@ export default function AdminEmailSettingsPage() {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-3 mt-6 pt-6 border-t border-gray-100">
+          <div className="flex flex-wrap items-center gap-3 mt-6 pt-6 border-t border-gray-100">
             <button
               onClick={handleTestConnection}
               disabled={isTesting || !settings.smtpHost || !settings.smtpUser}
@@ -300,6 +324,24 @@ export default function AdminEmailSettingsPage() {
                 <>
                   <TestTube className="w-4 h-4" />
                   <span>Test Koneksi</span>
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={handleSendTestEmail}
+              disabled={isTesting || !settings.smtpHost || !settings.smtpUser || !settings.smtpPass}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-green-200 text-green-600 hover:bg-green-50 transition-all text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isTesting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                  <span>Mengirim...</span>
+                </>
+              ) : (
+                <>
+                  <Mail className="w-4 h-4" />
+                  <span>Kirim Test Email</span>
                 </>
               )}
             </button>
