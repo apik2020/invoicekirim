@@ -121,13 +121,22 @@ app.prepare()
             fileStream.pipe(res)
             return
           } else {
-            // Chunk file not found - return 404 with correct MIME type
+            // Chunk file not found (stale reference from cached HTML)
+            // Return valid JavaScript that forces a page reload instead of
+            // returning text/plain which causes MIME type errors in the browser
             console.log('[Server] Chunk not found (stale cache):', pathname)
-            res.statusCode = 404
-            res.setHeader('Content-Type', 'text/plain; charset=utf-8')
-            res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
-            res.setHeader('X-Chunk-Error', 'stale-reference')
-            res.end('Chunk not found - please refresh')
+            const isJS = pathname.endsWith('.js') || pathname.endsWith('.mjs')
+            if (isJS) {
+              res.statusCode = 200
+              res.setHeader('Content-Type', 'application/javascript; charset=utf-8')
+              res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+              res.end(';console.warn("[ChunkFallback] Stale chunk detected, forcing reload...");if(!window.__staleChunkReload){window.__staleChunkReload=true;setTimeout(function(){window.location.replace(window.location.pathname+"?_nc="+Date.now())},50)};')
+            } else {
+              res.statusCode = 404
+              res.setHeader('Content-Type', 'text/plain; charset=utf-8')
+              res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
+              res.end('Not found')
+            }
             return
           }
         }
