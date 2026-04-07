@@ -336,7 +336,7 @@ export default function AdminEmailSettingsPage() {
 
             <button
               onClick={handleSendTestEmail}
-              disabled={isTesting || !settings.smtpHost || !settings.smtpUser || !settings.smtpPass}
+              disabled={isTesting || !settings.smtpHost || !settings.smtpUser || (!settings.smtpPass && !settings.hasSmtpPass)}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-green-200 text-green-600 hover:bg-green-50 transition-all text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isTesting ? (

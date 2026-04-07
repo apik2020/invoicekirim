@@ -59,6 +59,14 @@ export async function POST(req: NextRequest) {
     }
 
     // Create transporter
+    console.log('[TestEmail] Creating transporter with:', {
+      host: smtpHost,
+      port: parseInt(smtpPort) || 587,
+      secure: smtpSecure,
+      user: smtpUser,
+      hasPassword: !!smtpPass,
+    })
+
     const transporter = nodemailer.createTransport({
       host: smtpHost,
       port: parseInt(smtpPort) || 587,
