@@ -174,16 +174,17 @@ export async function POST(req: NextRequest) {
     }
 
     if (paymentMethod === 'QRIS') {
+      // Don't specify paymentMethod — let Duitku show all methods including QRIS
       const qrisResult = await createDuitkuPayment({
         orderId,
         amount,
         customerName: user.name || 'Customer',
         customerEmail: user.email,
         description: `NotaBener ${pricingPlan.name} - ${pricingPlan.name}`,
-        paymentMethod: DUITKU_QRIS.code,
+        // No paymentMethod specified — user picks QRIS on Duitku's hosted page
       })
 
-      // Update payment with QRIS details
+      // Update payment with details
       await prisma.payments.update({
         where: { id: payment.id },
         data: {

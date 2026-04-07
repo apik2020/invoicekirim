@@ -316,13 +316,13 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen bg-[#F5F0E6]"> {/* Warna pasir pantai */}
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50">
+      <header className="bg-[#0A637D] backdrop-blur-md border-b border-[#095469] sticky top-0 z-50">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between">
             <Logo />
             <button
               onClick={() => router.back()}
-              className="flex items-center gap-2 text-text-secondary hover:text-brand-500 transition-colors font-medium"
+              className="flex items-center gap-2 text-white/80 hover:text-white transition-colors font-medium"
             >
               <ArrowLeft className="w-4 h-4" />
               Kembali
