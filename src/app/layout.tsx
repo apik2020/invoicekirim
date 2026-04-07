@@ -44,6 +44,49 @@ export default function RootLayout({
     <html lang="id" suppressHydrationWarning>
       <head>
         <ResourceHints />
+        {/* Chunk error handler - auto refresh on stale chunk references */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                let chunkErrorCount = 0;
+                const MAX_CHUNK_ERRORS = 3;
+
+                window.addEventListener('error', function(e) {
+                  if (e.target && (e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK')) {
+                    const src = e.target.src || e.target.href || '';
+                    if (src.includes('/_next/static/chunks/')) {
+                      chunkErrorCount++;
+                      console.warn('[ChunkError] Failed to load chunk:', src);
+
+                      if (chunkErrorCount >= MAX_CHUNK_ERRORS) {
+                        console.warn('[ChunkError] Multiple chunk errors detected, forcing hard refresh...');
+                        // Clear cache and force reload
+                        if ('caches' in window) {
+                          caches.keys().then(function(names) {
+                            names.forEach(function(name) {
+                              caches.delete(name);
+                            });
+                          });
+                        }
+                        // Force hard refresh
+                        window.location.reload(true);
+                      }
+                    }
+                  }
+                }, true);
+
+                // Also handle dynamic import errors
+                window.addEventListener('unhandledrejection', function(e) {
+                  if (e.reason && e.reason.message && e.reason.message.includes('Loading chunk')) {
+                    console.warn('[ChunkError] Dynamic import failed:', e.reason.message);
+                    window.location.reload(true);
+                  }
+                });
+              })();
+            `,
+          }}
+        />
       </head>
       <body
         className={`${inter.variable} ${plusJakartaSans.variable} font-sans antialiased`}
