@@ -6,6 +6,7 @@ import { signIn } from 'next-auth/react'
 import Link from 'next/link'
 import { Mail, Lock, User, ArrowRight, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { Logo } from '@/components/Logo'
+import Image from 'next/image'
 import { AlertBox } from '@/components/Toast'
 
 export default function RegisterPage() {
@@ -93,7 +94,13 @@ export default function RegisterPage() {
           {/* Logo/Icon */}
           <div className="text-center mb-8 sm:mb-10">
             <div className="auth-icon">
-              <span className="font-bold text-white text-2xl sm:text-3xl tracking-tight">[iK]</span>
+              <Image
+                src="/images/notabener-icon-user.png"
+                alt="NotaBener"
+                width={56}
+                height={56}
+                className="rounded-xl"
+              />
             </div>
             <h1 className="text-3xl sm:text-4xl font-bold text-brand-500 mb-2 sm:mb-3 tracking-tight">
               Buat Akun Baru
