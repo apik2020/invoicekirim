@@ -36,10 +36,17 @@ COPY --from=builder /app/.next/static ./.next/static/
 # Copy public assets
 COPY --from=builder /app/public ./public/
 
-# Copy prisma for runtime
+# Copy prisma for runtime migrations
 COPY --from=builder /app/prisma ./prisma/
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma/
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma/
+
+# Copy prisma CLI for running migrations
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma/
+
+# Copy entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Verify files exist for debugging
 RUN ls -la .next/static/chunks/ | head -20
@@ -53,4 +60,6 @@ ENV HOSTNAME="0.0.0.0"
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000/', (r) => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))"
 
+# Use entrypoint to run migrations before starting server
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["node", "server.js"]
