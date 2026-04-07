@@ -30,6 +30,9 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # Copy standalone server files (includes server.js and dependencies)
 COPY --from=builder /app/.next/standalone ./
 
+# Overwrite with our custom server.js (has MIME type handling & stale chunk fallback)
+COPY --from=builder /app/server.js ./server.js
+
 # Copy static files (chunks, css, etc)
 COPY --from=builder /app/.next/static ./.next/static/
 
