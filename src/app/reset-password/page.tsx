@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Lock, Eye, EyeOff, Loader2, CheckCircle, ArrowLeft } from 'lucide-react'
 import { Logo } from '@/components/Logo'
 import { AlertBox } from '@/components/Toast'
@@ -141,8 +142,8 @@ export default function ResetPasswordPage() {
         <div className="w-full max-w-md animate-fade-in-up">
           {/* Logo/Icon */}
           <div className="text-center mb-8 sm:mb-10">
-            <div className="auth-icon">
-              <span className="font-bold text-white text-2xl sm:text-3xl tracking-tight">[iK]</span>
+            <div className="auth-icon overflow-hidden">
+              <Image src="/images/notabener-icon-user.png" alt="NotaBener" width={56} height={56} className="rounded-xl" />
             </div>
             <h1 className="text-3xl sm:text-4xl font-bold text-brand-500 mb-2 sm:mb-3">
               Reset Password

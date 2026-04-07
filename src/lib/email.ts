@@ -90,8 +90,8 @@ export const emailTemplates = {
           <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
             <!-- Header -->
             <div style="text-align: center; margin-bottom: 40px;">
-              <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #0A637D, #2d7d8a); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
-                <span style="color: white; font-weight: bold; font-size: 16px;">[nB]</span>
+              <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #0A637D, #2d7d8a); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                <img src="https://notabener.com/images/notabener-icon-admin.png" alt="NotaBener" width="48" height="48" style="border-radius: 12px;" />
               </div>
               <h1 style="color: #0A637D; font-size: 24px; font-weight: bold; margin: 0;">NotaBener</h1>
               <p style="color: #64748b; margin: 8px 0 0;">Platform Invoice untuk Freelancer</p>
@@ -377,8 +377,8 @@ export const emailTemplates = {
           <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
             <!-- Header -->
             <div style="text-align: center; margin-bottom: 40px;">
-              <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #0A637D, #2d7d8a); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
-                <span style="color: white; font-weight: bold; font-size: 16px;">[nB]</span>
+              <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #0A637D, #2d7d8a); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                <img src="https://notabener.com/images/notabener-icon-admin.png" alt="NotaBener" width="48" height="48" style="border-radius: 12px;" />
               </div>
               <h1 style="color: #0A637D; font-size: 24px; font-weight: bold; margin: 0;">NotaBener</h1>
               <p style="color: #64748b; margin: 8px 0 0;">Platform Invoice untuk Freelancer</p>
@@ -516,8 +516,8 @@ export const emailTemplates = {
           <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
             <!-- Header -->
             <div style="text-align: center; margin-bottom: 40px;">
-              <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #0A637D, #2d7d8a); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
-                <span style="color: white; font-weight: bold; font-size: 16px;">[nB]</span>
+              <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #0A637D, #2d7d8a); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                <img src="https://notabener.com/images/notabener-icon-admin.png" alt="NotaBener" width="48" height="48" style="border-radius: 12px;" />
               </div>
               <h1 style="color: #0A637D; font-size: 24px; font-weight: bold; margin: 0;">NotaBener</h1>
               <p style="color: #64748b; margin: 8px 0 0;">Platform Invoice untuk Freelancer</p>
@@ -589,8 +589,8 @@ export const emailTemplates = {
           <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
             <!-- Header -->
             <div style="text-align: center; margin-bottom: 40px;">
-              <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #0A637D, #2d7d8a); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
-                <span style="color: white; font-weight: bold; font-size: 16px;">[nB]</span>
+              <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #0A637D, #2d7d8a); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                <img src="https://notabener.com/images/notabener-icon-admin.png" alt="NotaBener" width="48" height="48" style="border-radius: 12px;" />
               </div>
               <h1 style="color: #0A637D; font-size: 24px; font-weight: bold; margin: 0;">NotaBener</h1>
               <p style="color: #64748b; margin: 8px 0 0;">Platform Invoice untuk Freelancer</p>
@@ -658,8 +658,8 @@ export const emailTemplates = {
           <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
             <!-- Header -->
             <div style="text-align: center; margin-bottom: 40px;">
-              <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #0A637D, #2d7d8a); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
-                <span style="color: white; font-weight: bold; font-size: 16px;">[nB]</span>
+              <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #0A637D, #2d7d8a); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                <img src="https://notabener.com/images/notabener-icon-admin.png" alt="NotaBener" width="48" height="48" style="border-radius: 12px;" />
               </div>
               <h1 style="color: #0A637D; font-size: 24px; font-weight: bold; margin: 0;">NotaBener</h1>
               <p style="color: #64748b; margin: 8px 0 0;">Platform Invoice untuk Freelancer</p>

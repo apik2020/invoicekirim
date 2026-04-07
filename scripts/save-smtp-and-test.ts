@@ -113,7 +113,7 @@ async function saveSmtpAndTest() {
         <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 600px;">
           <div style="text-align: center; margin-bottom: 30px;">
             <div style="width: 60px; height: 60px; background: linear-gradient(145deg, #276874, #2d7d8a); border-radius: 16px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
-              <span style="color: white; font-weight: bold; font-size: 16px;">[iK]</span>
+              <img src="https://notabener.com/images/notabener-icon-admin.png" alt="NotaBener" width="48" height="48" style="border-radius: 12px;" />
             </div>
             <h1 style="color: #276874; margin: 0;">NotaBener</h1>
           </div>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard,
@@ -132,8 +133,8 @@ export function ClientDashboardSidebar({
       >
         <div className="h-16 px-4 border-b border-white/10 flex items-center justify-between flex-shrink-0">
           <Link href="/client/dashboard" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-primary flex-shrink-0">
-              <span className="font-bold text-white text-xs tracking-tight">[iK]</span>
+            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-primary flex-shrink-0 overflow-hidden">
+              <Image src="/images/notabener-icon-admin.png" alt="NotaBener" width={28} height={28} className="rounded-md" />
             </div>
             {(!isCollapsed || mobileOpen) && (
               <span className="font-bold text-base text-white">Client Portal</span>

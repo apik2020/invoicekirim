@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useReactToPrint } from 'react-to-print'
 import { Printer, Save, Send, Plus, Trash2, ArrowLeft } from 'lucide-react'
 import { Logo } from '@/components/Logo'
@@ -442,8 +443,8 @@ Terima kasih!`
             <div className="flex justify-between items-start mb-10 pb-8 border-b border-slate">
               <div>
                 <div className="flex items-center gap-3 mb-5">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg">
-                    <span className="font-bold text-white text-lg tracking-tight">[iK]</span>
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg overflow-hidden">
+                    <Image src="/images/notabener-icon-admin.png" alt="NotaBener" width={40} height={40} className="rounded-lg" />
                   </div>
                   <span className="font-bold text-2xl text-gray-900 tracking-tight">NotaBener</span>
                 </div>
