@@ -115,6 +115,22 @@ export default function AdminEmailSettingsPage() {
     setTestResult(null)
 
     try {
+      // First, save the settings to database (so test uses saved config)
+      const saveRes = await fetch('/api/admin/smtp-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+      })
+
+      if (!saveRes.ok) {
+        const saveData = await saveRes.json()
+        throw new Error(saveData.error || 'Gagal menyimpan pengaturan')
+      }
+
+      // Update hasSmtpPass flag after save
+      setSettings(prev => ({ ...prev, hasSmtpPass: true }))
+
+      // Then send test email using saved settings
       const res = await fetch('/api/admin/smtp-settings/test-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -123,12 +139,12 @@ export default function AdminEmailSettingsPage() {
 
       const data = await res.json()
       if (data.success) {
-        setTestResult({ success: true, message: `Email test berhasil dikirim ke ${settings.smtpUser}` })
+        setTestResult({ success: true, message: `Pengaturan disimpan & email test berhasil dikirim ke ${settings.smtpUser}` })
       } else {
         setTestResult({ success: false, message: data.error || 'Gagal mengirim email test' })
       }
-    } catch {
-      setTestResult({ success: false, message: 'Terjadi kesalahan saat mengirim email test' })
+    } catch (err) {
+      setTestResult({ success: false, message: err instanceof Error ? err.message : 'Terjadi kesalahan saat mengirim email test' })
     } finally {
       setIsTesting(false)
     }
@@ -342,12 +358,12 @@ export default function AdminEmailSettingsPage() {
               {isTesting ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                  <span>Mengirim...</span>
+                  <span>Menyimpan & Mengirim...</span>
                 </>
               ) : (
                 <>
                   <Mail className="w-4 h-4" />
-                  <span>Kirim Test Email</span>
+                  <span>Simpan & Kirim Test Email</span>
                 </>
               )}
             </button>
