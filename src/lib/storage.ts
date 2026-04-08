@@ -1,5 +1,5 @@
 /**
- * Storage Utility - Supports S3-compatible storage (MinIO, AWS S3, Cloudflare R2, etc.)
+ * Storage Utility - Supports S3-compatible storage (RustFS, MinIO, AWS S3, Cloudflare R2, etc.)
  * Falls back to local filesystem for development
  */
 
@@ -32,7 +32,7 @@ function getS3Client(): S3Client {
         accessKeyId: S3_ACCESS_KEY,
         secretAccessKey: S3_SECRET_KEY,
       },
-      forcePathStyle: true, // Required for MinIO and some S3-compatible services
+      forcePathStyle: true, // Required for RustFS, MinIO, and other S3-compatible services
     })
   }
   return s3Client
