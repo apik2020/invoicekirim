@@ -260,9 +260,9 @@ export default function RegisterPage() {
                 />
                 <span className="text-sm text-text-secondary">
                   Dengan mendaftar, Anda menyetujui{' '}
-                  <a href="#" className="auth-link">Syarat & Ketentuan</a>
+                  <Link href="/terms" target="_blank" className="auth-link">Syarat &amp; Ketentuan</Link>
                   {' '}dan{' '}
-                  <a href="#" className="auth-link">Kebijakan Privasi</a>
+                  <Link href="/privacy" target="_blank" className="auth-link">Kebijakan Privasi</Link>
                 </span>
               </div>
 
