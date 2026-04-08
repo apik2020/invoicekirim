@@ -1,21 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserSession } from '@/lib/session'
-import { writeFileSync, existsSync, mkdirSync } from 'fs'
-import { join } from 'path'
+import { uploadFile, generateFilename } from '@/lib/storage'
 
-const UPLOAD_DIR = join(process.cwd(), 'public', 'uploads', 'logos')
-
-function ensureUploadDir(): void {
-  try {
-    if (!existsSync(UPLOAD_DIR)) {
-      mkdirSync(UPLOAD_DIR, { recursive: true })
-    }
-  } catch (error) {
-    console.error('[UPLOAD] Error creating directory:', error)
-  }
-}
-
-ensureUploadDir()
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
@@ -26,6 +14,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     const formData = await req.formData()
     const file = formData.get('file') as File | null
+    const type = formData.get('type') as string || 'logo' // 'logo' | 'branding' | 'document'
 
     if (!file) {
       return NextResponse.json(
@@ -34,36 +23,45 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       )
     }
 
-    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp']
+    // Validate file type
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/svg+xml']
     if (!allowedTypes.includes(file.type)) {
       return NextResponse.json(
-        { error: 'Tipe file tidak didukung. Gunakan PNG, JPG, atau WebP.' },
+        { error: 'Tipe file tidak didukung. Gunakan PNG, JPG, WebP, atau SVG.' },
         { status: 400 }
       )
     }
 
-    const maxSize = 2 * 1024 * 1024
+    // Validate file size (max 5MB for branding, 2MB for others)
+    const maxSize = type === 'branding' ? 5 * 1024 * 1024 : 2 * 1024 * 1024
     if (file.size > maxSize) {
       return NextResponse.json(
-        { error: 'Ukuran file terlalu besar. Maksimal 2MB.' },
+        { error: `Ukuran file terlalu besar. Maksimal ${Math.round(maxSize / 1024 / 1024)}MB.` },
         { status: 400 }
       )
     }
 
-    const timestamp = Date.now()
-    const randomStr = Math.random().toString(36).substring(2, 8)
-    const ext = file.name.split('.').pop() || 'png'
-    const fileName = `logo-${timestamp}-${randomStr}.${ext}`
-    const filePath = join(UPLOAD_DIR, fileName)
+    // Generate filename
+    const prefix = type === 'branding' ? 'branding' : 'logo'
+    const fileName = generateFilename(file.name, `${prefix}-${session.id}`)
 
+    // Convert file to buffer
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
-    writeFileSync(filePath, buffer)
 
-    console.log('[UPLOAD] File saved:', fileName)
+    // Upload to storage (S3 or local)
+    const result = await uploadFile(
+      buffer,
+      fileName,
+      'logos', // subdirectory
+      file.type
+    )
+
+    console.log('[UPLOAD] File uploaded:', result.url)
 
     return NextResponse.json({
-      url: `/uploads/logos/${fileName}`,
+      url: result.url,
+      key: result.key,
       fileName: fileName,
     })
   } catch (error) {
