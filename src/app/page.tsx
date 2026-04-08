@@ -468,8 +468,13 @@ export default function Home() {
                   </a>
                 </li>
                 <li>
-                  <a href="#" className="text-white/80 hover:text-white transition-colors">
-                    Privasi
+                  <a href="/terms" className="text-white/80 hover:text-white transition-colors">
+                    Syarat &amp; Ketentuan
+                  </a>
+                </li>
+                <li>
+                  <a href="/privacy" className="text-white/80 hover:text-white transition-colors">
+                    Kebijakan Privasi
                   </a>
                 </li>
               </ul>

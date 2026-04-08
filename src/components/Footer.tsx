@@ -62,8 +62,13 @@ export default function Footer() {
                 </a>
               </li>
               <li>
-                <a href="#" className="font-body text-muted hover:text-arctic-blue transition-all duration-300">
-                  Privasi
+                <a href="/terms" className="font-body text-muted hover:text-arctic-blue transition-all duration-300">
+                  Syarat &amp; Ketentuan
+                </a>
+              </li>
+              <li>
+                <a href="/privacy" className="font-body text-muted hover:text-arctic-blue transition-all duration-300">
+                  Kebijakan Privasi
                 </a>
               </li>
             </ul>
