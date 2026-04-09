@@ -407,7 +407,7 @@ function NewInvoicePageContent() {
         // Refresh catalog items list
         await loadCatalogItems()
 
-        // Add the new item to invoice items
+        // Add the new item to invoice items — fill empty row if exists
         const newItem = {
           id: Date.now().toString(),
           description: data.name,
@@ -415,7 +415,14 @@ function NewInvoicePageContent() {
           price: data.price,
           priceFormatted: formatCurrencyInput(data.price.toString()),
         }
-        setItems([...items, newItem])
+        const emptyIndex = items.findIndex(item => !item.description || item.description.trim() === '')
+        if (emptyIndex !== -1) {
+          const updated = [...items]
+          updated[emptyIndex] = newItem
+          setItems(updated)
+        } else {
+          setItems([...items, newItem])
+        }
 
         // Close modal and show success
         handleCloseItemModal()
@@ -632,18 +639,9 @@ function NewInvoicePageContent() {
   }
 
   const addItem = () => {
-    // Check if there's an empty item (description is empty)
-    const emptyItemIndex = items.findIndex(item => !item.description || item.description.trim() === '')
-
-    if (emptyItemIndex !== -1) {
-      // Replace the first empty item
-      setItems(items.map((item, index) =>
-        index === emptyItemIndex
-          ? { id: Date.now().toString(), description: '', quantity: 1, price: 0, priceFormatted: '' }
-          : item
-      ))
-    } else {
-      // Add new item at the end if no empty item exists
+    // Check if there's already an empty item — don't add another
+    const hasEmpty = items.some(item => !item.description || item.description.trim() === '')
+    if (!hasEmpty) {
       setItems([
         ...items,
         { id: Date.now().toString(), description: '', quantity: 1, price: 0, priceFormatted: '' }

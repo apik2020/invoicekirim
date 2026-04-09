@@ -272,10 +272,13 @@ export default function EditInvoicePage() {
   }
 
   const addItem = () => {
-    setItems([
-      ...items,
-      { id: Date.now().toString(), description: '', quantity: 1, price: 0 }
-    ])
+    const hasEmpty = items.some(item => !item.description || item.description.trim() === '')
+    if (!hasEmpty) {
+      setItems([
+        ...items,
+        { id: Date.now().toString(), description: '', quantity: 1, price: 0 }
+      ])
+    }
   }
 
   const removeItem = (id: string) => {
