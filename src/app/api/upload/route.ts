@@ -7,14 +7,19 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
+    console.log('[UPLOAD] Request received, content-type:', req.headers.get('content-type'))
+
     const session = await getUserSession()
     if (!session) {
+      console.log('[UPLOAD] No session found')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const formData = await req.formData()
     const file = formData.get('file') as File | null
-    const type = formData.get('type') as string || 'logo' // 'logo' | 'branding' | 'document'
+    const type = formData.get('type') as string || 'logo'
+
+    console.log('[UPLOAD] File:', file?.name, 'Type:', file?.type, 'Size:', file?.size) // 'logo' | 'branding' | 'document'
 
     if (!file) {
       return NextResponse.json(
@@ -66,6 +71,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     })
   } catch (error) {
     console.error('[UPLOAD] Error:', error)
+    console.error('[UPLOAD] Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2))
     return NextResponse.json(
       { error: 'Gagal mengupload file' },
       { status: 500 }
