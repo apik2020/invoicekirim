@@ -56,7 +56,7 @@ export async function PATCH(
 
     // Send email notifications based on status change
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    const invoiceUrl = `${baseUrl}/invoices/${id}`
+    const invoiceUrl = `${baseUrl}/invoice/${invoice.accessToken}`
 
     // DRAFT → SENT: Send invoice email to client
     if (previousStatus === 'DRAFT' && status === 'SENT') {
