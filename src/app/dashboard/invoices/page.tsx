@@ -7,7 +7,6 @@ import { useAppSession } from '@/hooks/useAppSession'
 import { FileText, Plus, Search, Trash2, Eye, Loader2, Download, LayoutTemplate } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { DashboardLayout } from '@/components/DashboardLayout'
-import { InvoiceExportButton } from '@/components/invoices/InvoiceExportButton'
 
 interface InvoiceItem {
   id: string
@@ -232,10 +231,6 @@ export default function InvoicesPage() {
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
-            <InvoiceExportButton
-              status={statusFilter}
-              search={searchQuery}
-            />
             <Link
               href="/dashboard/invoices/create"
               className="inline-flex items-center justify-center gap-2 px-6 py-3 btn-primary font-bold"
