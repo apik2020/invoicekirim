@@ -1,6 +1,6 @@
 /**
  * Storage Configuration Check Script
- * Supports: RustFS, MinIO, AWS S3, Cloudflare R2
+ * Supports: Cloudflare R2, MinIO, AWS S3
  * Run: npx tsx scripts/check-storage.ts
  */
 
@@ -88,7 +88,7 @@ async function checkStorage() {
     console.error('========================================')
     console.error(`Error: ${error.message}`)
     console.error('\nPossible causes:')
-    console.error('- RustFS/MinIO server is not running')
+    console.error('- Cloudflare R2 credentials are incorrect')
     console.error('- Wrong endpoint URL')
     console.error('- Invalid credentials')
     console.error('- Bucket does not exist and cannot be created')

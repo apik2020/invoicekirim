@@ -1,5 +1,5 @@
 /**
- * Storage Utility - Supports S3-compatible storage (RustFS, MinIO, AWS S3, Cloudflare R2, etc.)
+ * Storage Utility - Supports S3-compatible storage (Cloudflare R2, AWS S3, etc.)
  * Falls back to local filesystem for development
  */
 
@@ -32,7 +32,7 @@ function getS3Client(): S3Client {
         accessKeyId: S3_ACCESS_KEY,
         secretAccessKey: S3_SECRET_KEY,
       },
-      forcePathStyle: true, // Required for RustFS, MinIO, and other S3-compatible services
+      forcePathStyle: false, // Cloudflare R2 uses virtual-hosted-style
     })
   }
   return s3Client
@@ -75,7 +75,6 @@ export async function uploadFile(
         Key: key,
         Body: buffer,
         ContentType: contentType,
-        ACL: 'public-read', // Make file publicly accessible
       })
     )
 
