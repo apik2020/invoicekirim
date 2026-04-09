@@ -399,16 +399,7 @@ Terima kasih!`
       // Build HTML matching the new A4 invoice design
       const buildInvoiceHTML = () => {
         const effectiveBranding = getEffectiveBranding()
-        const primaryColor = effectiveBranding.primaryColor
         const accentColor = effectiveBranding.accentColor
-
-        // Darken accent for footer
-        const hex = accentColor.replace('#', '')
-        const num = parseInt(hex, 16)
-        const r = Math.max(((num >> 16) & 0xff) - 20, 0)
-        const g = Math.max(((num >> 8) & 0xff) - 20, 0)
-        const b = Math.max((num & 0x0000ff) - 20, 0)
-        const accentDark = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`
 
         const items = invoice.items.map((item, index) => `
           <tr style="border-bottom: 1px solid #E2E8F0; background-color: ${index % 2 !== 0 ? '#f8fafc' : 'transparent'};">
@@ -434,17 +425,11 @@ Terima kasih!`
           : `<div style="width: 45px; height: 45px; border-radius: 6px; display: flex; align-items: center; justify-content: center; background-color: ${accentColor};"><span style="color: white; font-weight: bold; font-size: 18px;">${invoice.companyName?.charAt(0)?.toUpperCase() || 'I'}</span></div>`
 
         return `
-          <div style="font-family: system-ui, -apple-system, sans-serif; width: 794px; min-height: 1123px; margin: 0 auto; background: #FFFFFF; color: #333333;">
-            <!-- Top Accent Bar -->
-            <div style="height: 20px; background-color: ${accentColor};"></div>
-
-            <div style="position: relative; min-height: 1060px; padding: 45px 53px;">
-              <!-- Left/Right Orange Accent Bars -->
-              <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 12px; background-color: ${primaryColor};"></div>
-              <div style="position: absolute; right: 0; top: 0; bottom: 0; width: 12px; background-color: ${primaryColor};"></div>
+          <div style="font-family: system-ui, -apple-system, sans-serif; width: 794px; height: 1123px; margin: 0 auto; background: #FFFFFF; color: #333333;">
+            <div style="display: flex; flex-direction: column; height: 100%; padding: 38px 42px;">
 
               <!-- Header: Logo left, INVOICE + status right -->
-              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
                 <div>${logoHtml}</div>
                 <div style="text-align: right;">
                   <h1 style="font-size: 42px; font-weight: 800; color: ${accentColor}; margin: 0; line-height: 1;">INVOICE</h1>
@@ -454,7 +439,7 @@ Terima kasih!`
               </div>
 
               <!-- Date Fields -->
-              <div style="display: flex; gap: 24px; margin-bottom: 22px; padding-bottom: 22px; border-bottom: 1px solid #e2e8f0;">
+              <div style="display: flex; gap: 24px; margin-bottom: 18px; padding-bottom: 18px; border-bottom: 1px solid #e2e8f0;">
                 <div>
                   <span style="font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Tanggal</span>
                   <p style="font-size: 13px; font-weight: 600; color: #1e293b; margin: 3px 0 0 0;">${formatDate(invoice.date)}</p>
@@ -468,7 +453,7 @@ Terima kasih!`
               </div>
 
               <!-- DARI & KEPADA Side by Side -->
-              <div style="display: flex; gap: 48px; margin-bottom: 22px; padding-bottom: 22px; border-bottom: 1px solid #e2e8f0;">
+              <div style="display: flex; gap: 48px; margin-bottom: 18px; padding-bottom: 18px; border-bottom: 1px solid #e2e8f0;">
                 <div style="flex: 1;">
                   <h3 style="font-size: 10px; font-weight: 700; color: ${accentColor}; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 1px;">Dari:</h3>
                   <p style="font-size: 13px; font-weight: 700; color: #1e293b; margin: 0 0 3px 0;">${invoice.companyName}</p>
@@ -486,7 +471,7 @@ Terima kasih!`
               </div>
 
               <!-- Items Table -->
-              <div style="margin-bottom: 22px;">
+              <div style="margin-bottom: 18px;">
                 <table style="width: 100%; border-collapse: collapse;">
                   <thead>
                     <tr style="border-bottom: 2px solid ${accentColor};">
@@ -530,14 +515,12 @@ Terima kasih!`
                   </div>
                 </div>
               </div>
-            </div>
 
-            <!-- Footer Bar -->
-            <div style="background-color: ${accentDark}; padding: 14px 53px; display: flex; align-items: center; justify-content: space-between;">
-              <p style="font-size: 11px; color: rgba(255,255,255,0.9); margin: 0;">
-                Invoice ini dikirim oleh: <strong>${invoice.companyName}</strong>
-              </p>
-              <div style="width: 50px; height: 18px; background-color: ${primaryColor}; border-radius: 2px;"></div>
+              <!-- Simple Footer -->
+              <div style="margin-top: auto; padding-top: 12px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: flex-end;">
+                <p style="font-size: 9px; color: #94a3b8;">Invoice ini dikirim oleh <strong style="color: ${accentColor};">${invoice.companyName}</strong></p>
+                <p style="font-size: 8px; color: #cbd5e1;">NotaBener</p>
+              </div>
             </div>
           </div>
         `
@@ -993,20 +976,10 @@ Terima kasih!`
           </div>
 
           {/* Invoice Card - A4 Full Page */}
-          <div ref={printRef} id="invoice-card" className="bg-white shadow-2xl relative overflow-hidden animate-fade-in-up animation-delay-100" style={{ minHeight: '297mm' }}>
-            {/* Top Accent Bar */}
-            <div className="w-full" style={{ backgroundColor: getEffectiveBranding().accentColor, height: '6mm' }} />
-
-            {/* Content Area */}
-            <div className="relative" style={{ minHeight: '285mm' }}>
-              {/* Left Orange Accent Bar */}
-              <div className="absolute left-0 top-0 bottom-0" style={{ backgroundColor: getEffectiveBranding().primaryColor, width: '4mm' }} />
-              {/* Right Orange Accent Bar */}
-              <div className="absolute right-0 top-0 bottom-0" style={{ backgroundColor: getEffectiveBranding().primaryColor, width: '4mm' }} />
-
-              <div style={{ padding: '12mm 14mm' }}>
+          <div ref={printRef} id="invoice-card" className="bg-white shadow-2xl relative overflow-hidden animate-fade-in-up animation-delay-100" style={{ height: '297mm' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '14mm 16mm' }}>
                 {/* Header: Logo left, INVOICE + status right */}
-                <div className="flex justify-between items-start" style={{ marginBottom: '8mm' }}>
+                <div className="flex justify-between items-start" style={{ marginBottom: '6mm' }}>
                   {/* Left: Logo */}
                   <div className="flex items-center gap-3">
                     {getEffectiveBranding().logoUrl ? (
@@ -1096,7 +1069,7 @@ Terima kasih!`
                 {/* Date Fields */}
                 <div
                   className="flex gap-6"
-                  style={{ marginBottom: '6mm', paddingBottom: '6mm', borderBottom: '1px solid #e2e8f0' }}
+                  style={{ marginBottom: '5mm', paddingBottom: '5mm', borderBottom: '1px solid #e2e8f0' }}
                 >
                   <div>
                     <span style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
@@ -1121,7 +1094,7 @@ Terima kasih!`
                 {/* DARI & KEPADA - Side by Side */}
                 <div
                   className="grid grid-cols-2 gap-6"
-                  style={{ marginBottom: '6mm', paddingBottom: '6mm', borderBottom: '1px solid #e2e8f0' }}
+                  style={{ marginBottom: '5mm', paddingBottom: '5mm', borderBottom: '1px solid #e2e8f0' }}
                 >
                   {/* DARI */}
                   <div>
@@ -1181,7 +1154,7 @@ Terima kasih!`
                 </div>
 
                 {/* Items Table */}
-                <div style={{ marginBottom: '6mm' }}>
+                <div style={{ marginBottom: '5mm' }}>
                   <table className="w-full" style={{ borderCollapse: 'collapse' }}>
                     <thead>
                       <tr style={{ borderBottom: `2px solid ${getEffectiveBranding().accentColor}` }}>
@@ -1303,33 +1276,14 @@ Terima kasih!`
                     </div>
                   </div>
                 </div>
+
+                {/* Simple Footer */}
+                <div style={{ marginTop: 'auto', paddingTop: '4mm', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                  <p style={{ fontSize: '9px', color: '#94a3b8' }}>Invoice ini dikirim oleh <span style={{ fontWeight: 600, color: getEffectiveBranding().accentColor }}>{invoice.companyName}</span></p>
+                  <p style={{ fontSize: '8px', color: '#cbd5e1' }}>NotaBener</p>
+                </div>
               </div>
             </div>
-
-            {/* Footer Bar */}
-            <div
-              className="flex items-center justify-between"
-              style={{
-                backgroundColor: (() => {
-                  const hex = getEffectiveBranding().accentColor.replace('#', '')
-                  const num = parseInt(hex, 16)
-                  const r = Math.max(((num >> 16) & 0xff) - 20, 0)
-                  const g = Math.max(((num >> 8) & 0xff) - 20, 0)
-                  const b = Math.max((num & 0x0000ff) - 20, 0)
-                  return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`
-                })(),
-                padding: '4mm 14mm',
-              }}
-            >
-              <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.9)' }}>
-                Invoice ini dikirim oleh: <strong>{invoice.companyName}</strong>
-              </p>
-              <div
-                className="rounded-sm"
-                style={{ backgroundColor: getEffectiveBranding().primaryColor, width: '14mm', height: '5mm' }}
-              />
-            </div>
-          </div>
 
           {/* Bottom Action Buttons */}
           <div className="mt-8 flex flex-wrap gap-4 justify-center no-print animate-fade-in-up animation-delay-200">
