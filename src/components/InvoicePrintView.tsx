@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import { useReactToPrint } from 'react-to-print'
 import { Printer, FileText } from 'lucide-react'
 import type { BrandingSettings } from '@/lib/branding'
@@ -72,6 +72,23 @@ const FONT_FAMILIES: Record<string, string> = {
 
 export function InvoicePrintView({ invoice, branding }: InvoicePrintViewProps) {
   const printRef = useRef<HTMLDivElement>(null)
+  const [fontsLoaded, setFontsLoaded] = useState(false)
+
+  // Inject Google Fonts stylesheet so fonts are available during print
+  useEffect(() => {
+    const fonts = ['Inter', 'Roboto', 'Poppins', 'Open+Sans', 'Lato', 'Montserrat', 'Playfair+Display', 'Merriweather']
+    const weights = '300;400;500;600;700;800'
+    const linkId = 'invoice-google-fonts'
+    if (!document.getElementById(linkId)) {
+      const link = document.createElement('link')
+      link.id = linkId
+      link.rel = 'stylesheet'
+      link.href = `https://fonts.googleapis.com/css2?family=${fonts.map(f => `${f}:wght@${weights}`).join('&family=')}&display=swap`
+      document.head.appendChild(link)
+    }
+    // Wait for fonts to be ready
+    document.fonts.ready.then(() => setFontsLoaded(true))
+  }, [])
 
   const handlePrint = useReactToPrint({
     contentRef: printRef,
