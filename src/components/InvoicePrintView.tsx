@@ -157,7 +157,7 @@ export function InvoicePrintView({ invoice, branding }: InvoicePrintViewProps) {
           maxWidth: '100%',
         }}
       >
-        <div style={{ padding: '14mm 16mm', height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ padding: '0 16mm', height: '100%', display: 'flex', flexDirection: 'column' }}>
           {/* Header: Logo left, INVOICE + status right */}
           <div className="flex justify-between items-start" style={{ marginBottom: '7mm' }}>
             {/* Left: Logo */}

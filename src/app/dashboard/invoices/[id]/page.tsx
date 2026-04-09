@@ -426,7 +426,7 @@ Terima kasih!`
 
         return `
           <div style="font-family: system-ui, -apple-system, sans-serif; width: 794px; height: 1123px; margin: 0 auto; background: #FFFFFF; color: #333333;">
-            <div style="display: flex; flex-direction: column; height: 100%; padding: 38px 42px;">
+            <div style="display: flex; flex-direction: column; height: 100%; padding: 0 42px;">
 
               <!-- Header: Logo left, INVOICE + status right -->
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
@@ -977,7 +977,7 @@ Terima kasih!`
 
           {/* Invoice Card - A4 Full Page */}
           <div ref={printRef} id="invoice-card" className="bg-white shadow-2xl relative overflow-hidden animate-fade-in-up animation-delay-100" style={{ height: '297mm' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '14mm 16mm' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '0 16mm' }}>
                 {/* Header: Logo left, INVOICE + status right */}
                 <div className="flex justify-between items-start" style={{ marginBottom: '6mm' }}>
                   {/* Left: Logo */}

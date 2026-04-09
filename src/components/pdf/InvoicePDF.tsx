@@ -21,8 +21,8 @@ const styles = StyleSheet.create({
   page: {
     fontFamily: 'Helvetica',
     fontSize: 8.5,
-    paddingTop: 35,
-    paddingBottom: 25,
+    paddingTop: 0,
+    paddingBottom: 0,
     paddingHorizontal: 35,
     backgroundColor: '#FFFFFF',
   },

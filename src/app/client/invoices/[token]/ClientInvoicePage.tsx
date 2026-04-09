@@ -130,7 +130,7 @@ export default function ClientInvoicePage({
 
         return `
           <div style="font-family: system-ui, -apple-system, sans-serif; width: 794px; height: 1123px; margin: 0 auto; background: #FFFFFF; color: #333333;">
-            <div style="padding: 45px 50px; display: flex; flex-direction: column; height: 100%;">
+            <div style="padding: 0 50px; display: flex; flex-direction: column; height: 100%;">
               <!-- Header: Logo left, INVOICE + status right -->
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px;">
                 <div>${logoHtml}</div>
@@ -321,7 +321,7 @@ export default function ClientInvoicePage({
 
         return `
           <div style="font-family: system-ui, -apple-system, sans-serif; width: 794px; height: 1123px; margin: 0 auto; background: #FFFFFF; color: #333333;">
-            <div style="padding: 45px 50px; display: flex; flex-direction: column; height: 100%;">
+            <div style="padding: 0 50px; display: flex; flex-direction: column; height: 100%;">
               <!-- Header: Logo left, INVOICE + status right -->
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px;">
                 <div>${logoHtml}</div>
@@ -645,7 +645,7 @@ Terima kasih!`
 
           {/* Invoice Card - A4 Full Page */}
           <div ref={printRef} id="invoice-card" className="bg-white shadow-2xl overflow-hidden" style={{ height: '297mm', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ padding: '14mm 16mm', display: 'flex', flexDirection: 'column', flex: 1 }}>
+              <div style={{ padding: '0 16mm', display: 'flex', flexDirection: 'column', flex: 1 }}>
                 {/* Header: Logo left, INVOICE + status right */}
                 <div className="flex justify-between items-start mb-4">
                   {/* Left: Logo */}
