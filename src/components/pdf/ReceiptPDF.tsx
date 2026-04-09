@@ -18,10 +18,10 @@ interface ReceiptPDFProps {
   invoiceNumber?: string
 }
 
-// Define compact styles with Times-Roman font
+// Define compact styles with Helvetica font
 const styles = StyleSheet.create({
   page: {
-    fontFamily: 'Times-Roman',
+    fontFamily: 'Helvetica',
     fontSize: 10,
     paddingTop: 25,
     paddingBottom: 25,
@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
   },
   logoText: {
     color: '#ffffff',
-    fontFamily: 'Times-Bold',
+    fontFamily: 'Helvetica-Bold',
     fontSize: 12,
   },
   paidBadge: {
@@ -55,12 +55,12 @@ const styles = StyleSheet.create({
   },
   paidText: {
     fontSize: 10,
-    fontFamily: 'Times-Bold',
+    fontFamily: 'Helvetica-Bold',
     color: '#ffffff',
   },
   title: {
     fontSize: 24,
-    fontFamily: 'Times-Bold',
+    fontFamily: 'Helvetica-Bold',
     color: '#0A637D',
   },
   subtitle: {
@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 8,
-    fontFamily: 'Times-Bold',
+    fontFamily: 'Helvetica-Bold',
     color: '#0A637D',
     textTransform: 'uppercase',
     marginBottom: 6,
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
   },
   value: {
     fontSize: 10,
-    fontFamily: 'Times-Bold',
+    fontFamily: 'Helvetica-Bold',
     color: '#1e293b',
   },
   amountContainer: {
@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
   },
   amount: {
     fontSize: 22,
-    fontFamily: 'Times-Bold',
+    fontFamily: 'Helvetica-Bold',
     color: '#10b981',
   },
   divider: {
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
   checkmarkText: {
     color: '#ffffff',
     fontSize: 9,
-    fontFamily: 'Times-Bold',
+    fontFamily: 'Helvetica-Bold',
   },
   checkmarkLabel: {
     fontSize: 10,
@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
   },
   thankYou: {
     fontSize: 11,
-    fontFamily: 'Times-Bold',
+    fontFamily: 'Helvetica-Bold',
     color: '#0A637D',
     textAlign: 'center',
     marginTop: 10,

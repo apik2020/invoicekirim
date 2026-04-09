@@ -129,14 +129,14 @@ export default function ClientInvoicePage({
           : `<span style="background: #94a3b8; color: white; font-size: 10px; font-weight: 700; padding: 4px 12px; border-radius: 4px; text-transform: uppercase;">${invoice.status}</span>`
 
         return `
-          <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 800px; margin: 0 auto; background: #FFFFFF; color: #333333;">
+          <div style="font-family: system-ui, -apple-system, sans-serif; width: 794px; min-height: 1123px; margin: 0 auto; background: #FFFFFF; color: #333333;">
             <!-- Top Accent Bar -->
-            <div style="height: 8px; background-color: ${pdfAccentColor};"></div>
+            <div style="height: 20px; background-color: ${pdfAccentColor};"></div>
 
-            <div style="position: relative; padding: 40px 48px;">
+            <div style="position: relative; min-height: 1060px; padding: 45px 53px;">
               <!-- Left/Right Orange Accent Bars -->
-              <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 8px; background-color: ${pdfPrimaryColor};"></div>
-              <div style="position: absolute; right: 0; top: 0; bottom: 0; width: 8px; background-color: ${pdfPrimaryColor};"></div>
+              <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 12px; background-color: ${pdfPrimaryColor};"></div>
+              <div style="position: absolute; right: 0; top: 0; bottom: 0; width: 12px; background-color: ${pdfPrimaryColor};"></div>
 
               <!-- Header: Logo left, INVOICE + status right -->
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
@@ -228,7 +228,7 @@ export default function ClientInvoicePage({
             </div>
 
             <!-- Footer Bar -->
-            <div style="background-color: #0a5e56; padding: 16px 48px; display: flex; align-items: center; justify-content: space-between;">
+            <div style="background-color: #0a5e56; padding: 16px 53px; display: flex; align-items: center; justify-content: space-between;">
               <p style="font-size: 12px; color: rgba(255,255,255,0.9); margin: 0;">
                 Invoice ini dikirim oleh: <strong>${invoice.companyName}</strong>
               </p>
@@ -329,14 +329,14 @@ export default function ClientInvoicePage({
           : `<span style="background: #94a3b8; color: white; font-size: 10px; font-weight: 700; padding: 4px 12px; border-radius: 4px; text-transform: uppercase;">${invoice.status}</span>`
 
         return `
-          <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 800px; margin: 0 auto; background: #FFFFFF; color: #333333;">
+          <div style="font-family: system-ui, -apple-system, sans-serif; width: 794px; min-height: 1123px; margin: 0 auto; background: #FFFFFF; color: #333333;">
             <!-- Top Accent Bar -->
-            <div style="height: 8px; background-color: ${pdfAccentColor};"></div>
+            <div style="height: 20px; background-color: ${pdfAccentColor};"></div>
 
-            <div style="position: relative; padding: 40px 48px;">
+            <div style="position: relative; min-height: 1060px; padding: 45px 53px;">
               <!-- Left/Right Orange Accent Bars -->
-              <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 8px; background-color: ${pdfPrimaryColor};"></div>
-              <div style="position: absolute; right: 0; top: 0; bottom: 0; width: 8px; background-color: ${pdfPrimaryColor};"></div>
+              <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 12px; background-color: ${pdfPrimaryColor};"></div>
+              <div style="position: absolute; right: 0; top: 0; bottom: 0; width: 12px; background-color: ${pdfPrimaryColor};"></div>
 
               <!-- Header: Logo left, INVOICE + status right -->
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
@@ -428,7 +428,7 @@ export default function ClientInvoicePage({
             </div>
 
             <!-- Footer Bar -->
-            <div style="background-color: #0a5e56; padding: 16px 48px; display: flex; align-items: center; justify-content: space-between;">
+            <div style="background-color: #0a5e56; padding: 16px 53px; display: flex; align-items: center; justify-content: space-between;">
               <p style="font-size: 12px; color: rgba(255,255,255,0.9); margin: 0;">
                 Invoice ini dikirim oleh: <strong>${invoice.companyName}</strong>
               </p>
@@ -633,8 +633,8 @@ Terima kasih!`
       </header>
 
       {/* Invoice Content */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-[850px] mx-auto">
+      <div className="flex flex-col items-center px-4 py-8">
+        <div style={{ width: '210mm', maxWidth: '100%' }}>
           {/* Status Banner */}
           {isPaid ? (
             <div className="mb-6 p-4 rounded-xl bg-green-50 border-2 border-green-200 flex items-center gap-3">
@@ -661,19 +661,19 @@ Terima kasih!`
             </div>
           ) : null}
 
-          {/* Invoice Card */}
-          <div ref={printRef} id="invoice-card" className="bg-white shadow-xl relative overflow-hidden">
+          {/* Invoice Card - A4 Full Page */}
+          <div ref={printRef} id="invoice-card" className="bg-white shadow-2xl relative overflow-hidden" style={{ minHeight: '297mm' }}>
             {/* Top Accent Bar */}
-            <div className="h-2 w-full" style={{ backgroundColor: accentColor }} />
+            <div className="w-full" style={{ backgroundColor: accentColor, height: '6mm' }} />
 
             {/* Content Area with Side Accents */}
-            <div className="relative">
+            <div className="relative" style={{ minHeight: '285mm' }}>
               {/* Left Orange Accent Bar */}
-              <div className="absolute left-0 top-0 bottom-0 w-2" style={{ backgroundColor: primaryColor }} />
+              <div className="absolute left-0 top-0 bottom-0" style={{ backgroundColor: primaryColor, width: '4mm' }} />
               {/* Right Orange Accent Bar */}
-              <div className="absolute right-0 top-0 bottom-0 w-2" style={{ backgroundColor: primaryColor }} />
+              <div className="absolute right-0 top-0 bottom-0" style={{ backgroundColor: primaryColor, width: '4mm' }} />
 
-              <div className="px-8 md:px-12 py-8 md:py-10">
+              <div style={{ padding: '12mm 14mm' }}>
                 {/* Header: Logo left, INVOICE + status right */}
                 <div className="flex justify-between items-start mb-6">
                   {/* Left: Logo */}
@@ -956,8 +956,8 @@ Terima kasih!`
 
             {/* Footer Bar */}
             <div
-              className="px-8 md:px-12 py-4 flex items-center justify-between"
-              style={{ backgroundColor: '#0a5e56' }}
+              className="flex items-center justify-between"
+              style={{ backgroundColor: '#0a5e56', padding: '4mm 14mm' }}
             >
               <p className="text-xs" style={{ color: 'rgba(255,255,255,0.9)' }}>
                 Invoice ini dikirim oleh: <strong>{invoice.companyName}</strong>

@@ -58,15 +58,6 @@ interface InvoicePrintViewProps {
   branding?: BrandingSettings | null
 }
 
-// Convert hex to RGB for rgba usage
-function hexToRgba(hex: string, alpha: number): string {
-  const cleanHex = hex.replace('#', '')
-  const r = parseInt(cleanHex.substring(0, 2), 16)
-  const g = parseInt(cleanHex.substring(2, 4), 16)
-  const b = parseInt(cleanHex.substring(4, 6), 16)
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`
-}
-
 // Font family mapping
 const FONT_FAMILIES: Record<string, string> = {
   inter: "'Inter', system-ui, sans-serif",
@@ -104,7 +95,6 @@ export function InvoicePrintView({ invoice, branding }: InvoicePrintViewProps) {
 
   // Derived colors
   const accentDark = useMemo(() => {
-    // Darken the accent color for the footer bar
     const hex = accentColor.replace('#', '')
     const num = parseInt(hex, 16)
     const r = Math.max(((num >> 16) & 0xff) - 20, 0)
@@ -160,375 +150,413 @@ export function InvoicePrintView({ invoice, branding }: InvoicePrintViewProps) {
 
   return (
     <div
-      className="min-h-screen py-6 px-4 sm:py-10 sm:px-4"
+      className="min-h-screen flex flex-col items-center justify-start py-8 px-4"
       style={{
         fontFamily,
-        background: '#FAFAF9',
+        background: '#E5E7EB',
       }}
     >
-      <div className="max-w-[850px] mx-auto">
-        {/* Invoice Card */}
+      {/* A4 Page Container */}
+      <div
+        ref={printRef}
+        className="bg-white shadow-2xl relative overflow-hidden"
+        style={{
+          fontFamily,
+          width: '210mm',
+          minHeight: '297mm',
+          // Scale for screen if viewport is smaller
+          maxWidth: '100%',
+        }}
+      >
+        {/* Top Accent Bar */}
         <div
-          ref={printRef}
-          className="bg-white shadow-xl relative overflow-hidden"
-          style={{ fontFamily }}
-        >
-          {/* Top Accent Bar */}
+          className="w-full"
+          style={{ backgroundColor: accentColor, height: '6mm' }}
+        />
+
+        {/* Content Area */}
+        <div className="relative" style={{ minHeight: '285mm' }}>
+          {/* Left Orange Accent Bar */}
           <div
-            className="h-2 w-full"
-            style={{ backgroundColor: accentColor }}
+            className="absolute left-0 top-0 bottom-0"
+            style={{ backgroundColor: primaryColor, width: '4mm' }}
+          />
+          {/* Right Orange Accent Bar */}
+          <div
+            className="absolute right-0 top-0 bottom-0"
+            style={{ backgroundColor: primaryColor, width: '4mm' }}
           />
 
-          {/* Content Area with Side Accents */}
-          <div className="relative">
-            {/* Left Orange Accent Bar */}
-            <div
-              className="absolute left-0 top-0 bottom-0 w-2"
-              style={{ backgroundColor: primaryColor }}
-            />
-            {/* Right Orange Accent Bar */}
-            <div
-              className="absolute right-0 top-0 bottom-0 w-2"
-              style={{ backgroundColor: primaryColor }}
-            />
-
-            <div className="px-8 sm:px-12 py-8 sm:py-10">
-              {/* Header: Logo left, INVOICE + status right */}
-              <div className="flex justify-between items-start mb-6">
-                {/* Left: Logo */}
-                <div className="flex items-center gap-3">
-                  {logoUrl ? (
-                    <div
-                      className="flex items-center justify-center border rounded overflow-hidden"
-                      style={{
-                        width: '100px',
-                        height: '70px',
-                        borderColor: '#e2e8f0',
-                        backgroundColor: '#f8fafc',
-                      }}
-                    >
-                      <img
-                        src={logoUrl}
-                        alt="Company Logo"
-                        className="max-w-full max-h-full object-contain p-2"
-                      />
-                    </div>
-                  ) : (
-                    <div
-                      className="flex items-center justify-center rounded"
-                      style={{
-                        width: '48px',
-                        height: '48px',
-                        backgroundColor: accentColor,
-                      }}
-                    >
-                      <FileText className="w-6 h-6 text-white" />
-                    </div>
-                  )}
-                </div>
-
-                {/* Right: INVOICE title + number + status */}
-                <div className="text-right">
-                  <h1
-                    className="font-extrabold tracking-tight leading-none mb-1"
+          <div style={{ padding: '12mm 14mm' }}>
+            {/* Header: Logo left, INVOICE + status right */}
+            <div className="flex justify-between items-start" style={{ marginBottom: '8mm' }}>
+              {/* Left: Logo */}
+              <div className="flex items-center gap-3">
+                {logoUrl ? (
+                  <div
+                    className="flex items-center justify-center border rounded overflow-hidden"
                     style={{
-                      fontSize: '42px',
-                      color: accentColor,
-                      fontFamily,
+                      width: '28mm',
+                      height: '18mm',
+                      borderColor: '#e2e8f0',
+                      backgroundColor: '#f8fafc',
                     }}
                   >
-                    INVOICE
-                  </h1>
-                  <p
-                    className="font-mono text-sm mb-3"
-                    style={{ color: '#64748b' }}
+                    <img
+                      src={logoUrl}
+                      alt="Company Logo"
+                      className="max-w-full max-h-full object-contain p-1"
+                    />
+                  </div>
+                ) : (
+                  <div
+                    className="flex items-center justify-center rounded"
+                    style={{
+                      width: '12mm',
+                      height: '12mm',
+                      backgroundColor: accentColor,
+                    }}
                   >
-                    {invoice.invoiceNumber}
-                  </p>
-                  {getStatusBadge(invoice.status)}
-                </div>
-              </div>
-
-              {/* Date Fields */}
-              <div className="flex flex-wrap gap-6 mb-6 pb-6" style={{ borderBottom: '1px solid #e2e8f0' }}>
-                <div>
-                  <span className="text-xs uppercase tracking-wide" style={{ color: '#94a3b8' }}>
-                    Tanggal
-                  </span>
-                  <p className="font-semibold text-sm mt-1" style={{ color: '#1e293b' }}>
-                    {formatDate(invoice.date)}
-                  </p>
-                </div>
-                {invoice.dueDate && (
-                  <div>
-                    <span className="text-xs uppercase tracking-wide" style={{ color: '#94a3b8' }}>
-                      Jatuh Tempo
-                    </span>
-                    <p className="font-semibold text-sm mt-1" style={{ color: '#1e293b' }}>
-                      {formatDate(invoice.dueDate)}
-                    </p>
+                    <FileText className="w-5 h-5 text-white" />
                   </div>
                 )}
               </div>
 
-              {/* DARI & KEPADA - Side by Side */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 pb-6" style={{ borderBottom: '1px solid #e2e8f0' }}>
-                {/* DARI */}
+              {/* Right: INVOICE title + number + status */}
+              <div className="text-right">
+                <h1
+                  style={{
+                    fontSize: '42px',
+                    fontWeight: 800,
+                    color: accentColor,
+                    fontFamily,
+                    lineHeight: 1,
+                    marginBottom: '2mm',
+                    letterSpacing: '-0.5px',
+                  }}
+                >
+                  INVOICE
+                </h1>
+                <p
+                  style={{
+                    fontSize: '12px',
+                    color: '#64748b',
+                    fontFamily: 'monospace',
+                    marginBottom: '3mm',
+                  }}
+                >
+                  {invoice.invoiceNumber}
+                </p>
+                {getStatusBadge(invoice.status)}
+              </div>
+            </div>
+
+            {/* Date Fields */}
+            <div
+              className="flex gap-6"
+              style={{ marginBottom: '6mm', paddingBottom: '6mm', borderBottom: '1px solid #e2e8f0' }}
+            >
+              <div>
+                <span style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Tanggal
+                </span>
+                <p style={{ fontSize: '12px', fontWeight: 600, color: '#1e293b', marginTop: '1mm' }}>
+                  {formatDate(invoice.date)}
+                </p>
+              </div>
+              {invoice.dueDate && (
+                <div>
+                  <span style={{ fontSize: '10px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Jatuh Tempo
+                  </span>
+                  <p style={{ fontSize: '12px', fontWeight: 600, color: '#1e293b', marginTop: '1mm' }}>
+                    {formatDate(invoice.dueDate)}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* DARI & KEPADA - Side by Side */}
+            <div
+              className="grid grid-cols-2 gap-6"
+              style={{ marginBottom: '6mm', paddingBottom: '6mm', borderBottom: '1px solid #e2e8f0' }}
+            >
+              {/* DARI */}
+              <div>
+                <h3
+                  style={{
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    color: accentColor,
+                    textTransform: 'uppercase',
+                    letterSpacing: '1px',
+                    marginBottom: '3mm',
+                  }}
+                >
+                  Dari:
+                </h3>
+                <div>
+                  <p style={{ fontSize: '12px', fontWeight: 700, color: '#1e293b', marginBottom: '1mm' }}>
+                    {invoice.companyName}
+                  </p>
+                  <p style={{ fontSize: '11px', color: '#475569', marginBottom: '0.5mm' }}>{invoice.companyEmail}</p>
+                  {invoice.companyPhone && (
+                    <p style={{ fontSize: '11px', color: '#475569', marginBottom: '0.5mm' }}>{invoice.companyPhone}</p>
+                  )}
+                  {invoice.companyAddress && (
+                    <p style={{ fontSize: '11px', color: '#475569', whiteSpace: 'pre-line' }}>{invoice.companyAddress}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* KEPADA */}
+              {settings.showClientInfo && (
                 <div>
                   <h3
-                    className="font-bold text-xs uppercase tracking-wider mb-3"
-                    style={{ color: accentColor }}
+                    style={{
+                      fontSize: '10px',
+                      fontWeight: 700,
+                      color: accentColor,
+                      textTransform: 'uppercase',
+                      letterSpacing: '1px',
+                      marginBottom: '3mm',
+                    }}
                   >
-                    Dari:
+                    Kepada:
                   </h3>
                   <div>
-                    <p className="font-bold text-sm" style={{ color: '#1e293b' }}>
-                      {invoice.companyName}
+                    <p style={{ fontSize: '12px', fontWeight: 700, color: '#1e293b', marginBottom: '1mm' }}>
+                      {invoice.clientName}
                     </p>
-                    <p className="text-sm" style={{ color: '#475569' }}>{invoice.companyEmail}</p>
-                    {invoice.companyPhone && (
-                      <p className="text-sm" style={{ color: '#475569' }}>{invoice.companyPhone}</p>
+                    <p style={{ fontSize: '11px', color: '#475569', marginBottom: '0.5mm' }}>{invoice.clientEmail}</p>
+                    {invoice.clientPhone && (
+                      <p style={{ fontSize: '11px', color: '#475569', marginBottom: '0.5mm' }}>{invoice.clientPhone}</p>
                     )}
-                    {invoice.companyAddress && (
-                      <p className="text-sm whitespace-pre-line" style={{ color: '#475569' }}>{invoice.companyAddress}</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* KEPADA */}
-                {settings.showClientInfo && (
-                  <div>
-                    <h3
-                      className="font-bold text-xs uppercase tracking-wider mb-3"
-                      style={{ color: accentColor }}
-                    >
-                      Kepada:
-                    </h3>
-                    <div>
-                      <p className="font-bold text-sm" style={{ color: '#1e293b' }}>
-                        {invoice.clientName}
-                      </p>
-                      <p className="text-sm" style={{ color: '#475569' }}>{invoice.clientEmail}</p>
-                      {invoice.clientPhone && (
-                        <p className="text-sm" style={{ color: '#475569' }}>{invoice.clientPhone}</p>
-                      )}
-                      {invoice.clientAddress && (
-                        <p className="text-sm whitespace-pre-line" style={{ color: '#475569' }}>{invoice.clientAddress}</p>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Items Table */}
-              <div className="mb-6">
-                <table className="w-full" style={{ borderCollapse: 'collapse' }}>
-                  <thead>
-                    <tr style={{ borderBottom: `2px solid ${accentColor}` }}>
-                      <th
-                        className="text-left py-3 px-2 font-bold text-xs uppercase tracking-wider"
-                        style={{ color: accentColor }}
-                      >
-                        Deskripsi
-                      </th>
-                      <th
-                        className="text-center py-3 px-2 font-bold text-xs uppercase tracking-wider"
-                        style={{ color: accentColor }}
-                      >
-                        Qty
-                      </th>
-                      <th
-                        className="text-right py-3 px-2 font-bold text-xs uppercase tracking-wider"
-                        style={{ color: accentColor }}
-                      >
-                        Harga
-                      </th>
-                      <th
-                        className="text-right py-3 px-2 font-bold text-xs uppercase tracking-wider"
-                        style={{ color: accentColor }}
-                      >
-                        Total
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {invoice.items.map((item, index) => (
-                      <tr
-                        key={item.id}
-                        style={{
-                          borderBottom: '1px solid #e2e8f0',
-                          backgroundColor: index % 2 === 0 ? 'transparent' : '#f8fafc',
-                        }}
-                      >
-                        <td className="py-3 px-2 text-sm" style={{ color: '#334155' }}>
-                          {item.description || '-'}
-                        </td>
-                        <td className="py-3 px-2 text-center text-sm" style={{ color: '#334155' }}>
-                          {item.quantity}
-                        </td>
-                        <td className="py-3 px-2 text-right text-sm" style={{ color: '#334155' }}>
-                          {formatCurrency(item.price)}
-                        </td>
-                        <td className="py-3 px-2 text-right text-sm font-semibold" style={{ color: '#1e293b' }}>
-                          {formatCurrency(item.quantity * item.price)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Totals + Notes Row */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
-                {/* Notes - Left Side */}
-                <div>
-                  {invoice.notes && (
-                    <>
-                      <h3
-                        className="font-bold text-xs uppercase tracking-wider mb-2"
-                        style={{ color: accentColor }}
-                      >
-                        Catatan:
-                      </h3>
-                      <div
-                        className="p-4 rounded text-sm whitespace-pre-line"
-                        style={{
-                          color: '#475569',
-                          border: '1px solid #e2e8f0',
-                          backgroundColor: '#f8fafc',
-                          minHeight: '80px',
-                        }}
-                      >
-                        {invoice.notes}
-                      </div>
-                    </>
-                  )}
-                  {invoice.termsAndConditions && (
-                    <div className="mt-4">
-                      <h3
-                        className="font-bold text-xs uppercase tracking-wider mb-2"
-                        style={{ color: accentColor }}
-                      >
-                        Syarat & Ketentuan:
-                      </h3>
-                      <p className="text-xs whitespace-pre-line" style={{ color: '#64748b' }}>
-                        {invoice.termsAndConditions}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Totals - Right Side */}
-                <div className="flex justify-end">
-                  <div className="w-full max-w-[280px]">
-                    <div className="flex justify-between py-2">
-                      <span className="text-sm" style={{ color: '#64748b' }}>Subtotal</span>
-                      <span className="text-sm font-semibold" style={{ color: '#1e293b' }}>
-                        {formatCurrency(invoice.subtotal)}
-                      </span>
-                    </div>
-                    {settings.showDiscount && invoice.discountAmount && invoice.discountAmount > 0 && (
-                      <div className="flex justify-between py-2">
-                        <span className="text-sm" style={{ color: '#64748b' }}>
-                          Diskon {invoice.discountType === 'percentage' ? `(${invoice.discountValue}%)` : ''}
-                        </span>
-                        <span className="text-sm font-semibold" style={{ color: '#16a34a' }}>
-                          -{formatCurrency(invoice.discountAmount)}
-                        </span>
-                      </div>
-                    )}
-                    {settings.showAdditionalDiscount && invoice.additionalDiscountAmount && invoice.additionalDiscountAmount > 0 && (
-                      <div className="flex justify-between py-2">
-                        <span className="text-sm" style={{ color: '#64748b' }}>
-                          Diskon Tambahan {invoice.additionalDiscountType === 'percentage' ? `(${invoice.additionalDiscountValue}%)` : ''}
-                        </span>
-                        <span className="text-sm font-semibold" style={{ color: '#16a34a' }}>
-                          -{formatCurrency(invoice.additionalDiscountAmount)}
-                        </span>
-                      </div>
-                    )}
-                    {settings.showTax && (
-                      <div className="flex justify-between py-2">
-                        <span className="text-sm" style={{ color: '#64748b' }}>
-                          Pajak ({invoice.taxRate}%)
-                        </span>
-                        <span className="text-sm font-semibold" style={{ color: '#1e293b' }}>
-                          {formatCurrency(invoice.taxAmount)}
-                        </span>
-                      </div>
-                    )}
-                    <div
-                      className="flex justify-between py-3 mt-2"
-                      style={{ borderTop: `2px solid ${accentColor}` }}
-                    >
-                      <span
-                        className="text-lg font-extrabold"
-                        style={{ color: accentColor }}
-                      >
-                        TOTAL
-                      </span>
-                      <span
-                        className="text-lg font-extrabold"
-                        style={{ color: accentColor }}
-                      >
-                        {formatCurrency(invoice.total)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Signature Section */}
-              {settings.showSignature && (invoice.signatureUrl || invoice.signatoryName) && (
-                <div className="flex justify-end mb-6">
-                  <div className="text-center">
-                    {invoice.signatureUrl && (
-                      <div className="mb-2 pb-2" style={{ borderBottom: '1px solid #94a3b8' }}>
-                        <img
-                          src={invoice.signatureUrl}
-                          alt="Tanda tangan"
-                          className="h-16 object-contain mx-auto"
-                        />
-                      </div>
-                    )}
-                    {invoice.signatoryName && (
-                      <p className="font-bold text-sm" style={{ color: '#1e293b' }}>{invoice.signatoryName}</p>
-                    )}
-                    {invoice.signatoryTitle && (
-                      <p className="text-xs" style={{ color: '#64748b' }}>{invoice.signatoryTitle}</p>
+                    {invoice.clientAddress && (
+                      <p style={{ fontSize: '11px', color: '#475569', whiteSpace: 'pre-line' }}>{invoice.clientAddress}</p>
                     )}
                   </div>
                 </div>
               )}
             </div>
-          </div>
 
-          {/* Footer Bar */}
+            {/* Items Table */}
+            <div style={{ marginBottom: '6mm' }}>
+              <table className="w-full" style={{ borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: `2px solid ${accentColor}` }}>
+                    <th
+                      className="text-left"
+                      style={{ padding: '3mm 2mm', fontWeight: 700, fontSize: '10px', color: accentColor, textTransform: 'uppercase', letterSpacing: '0.5px' }}
+                    >
+                      Deskripsi
+                    </th>
+                    <th
+                      className="text-center"
+                      style={{ padding: '3mm 2mm', fontWeight: 700, fontSize: '10px', color: accentColor, textTransform: 'uppercase', letterSpacing: '0.5px' }}
+                    >
+                      Qty
+                    </th>
+                    <th
+                      className="text-right"
+                      style={{ padding: '3mm 2mm', fontWeight: 700, fontSize: '10px', color: accentColor, textTransform: 'uppercase', letterSpacing: '0.5px' }}
+                    >
+                      Harga
+                    </th>
+                    <th
+                      className="text-right"
+                      style={{ padding: '3mm 2mm', fontWeight: 700, fontSize: '10px', color: accentColor, textTransform: 'uppercase', letterSpacing: '0.5px' }}
+                    >
+                      Total
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {invoice.items.map((item, index) => (
+                    <tr
+                      key={item.id}
+                      style={{
+                        borderBottom: '1px solid #e2e8f0',
+                        backgroundColor: index % 2 === 0 ? 'transparent' : '#f8fafc',
+                      }}
+                    >
+                      <td style={{ padding: '2.5mm 2mm', fontSize: '11px', color: '#334155' }}>
+                        {item.description || '-'}
+                      </td>
+                      <td style={{ padding: '2.5mm 2mm', fontSize: '11px', color: '#334155', textAlign: 'center' }}>
+                        {item.quantity}
+                      </td>
+                      <td style={{ padding: '2.5mm 2mm', fontSize: '11px', color: '#334155', textAlign: 'right' }}>
+                        {formatCurrency(item.price)}
+                      </td>
+                      <td style={{ padding: '2.5mm 2mm', fontSize: '11px', color: '#1e293b', textAlign: 'right', fontWeight: 600 }}>
+                        {formatCurrency(item.quantity * item.price)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Totals + Notes Row */}
+            <div className="grid grid-cols-2 gap-8">
+              {/* Notes - Left Side */}
+              <div>
+                {invoice.notes && (
+                  <>
+                    <h3
+                      style={{
+                        fontSize: '10px',
+                        fontWeight: 700,
+                        color: accentColor,
+                        textTransform: 'uppercase',
+                        letterSpacing: '1px',
+                        marginBottom: '2mm',
+                      }}
+                    >
+                      Catatan:
+                    </h3>
+                    <div
+                      style={{
+                        padding: '3mm',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '3px',
+                        backgroundColor: '#f8fafc',
+                        minHeight: '18mm',
+                        fontSize: '10px',
+                        color: '#475569',
+                        whiteSpace: 'pre-line',
+                      }}
+                    >
+                      {invoice.notes}
+                    </div>
+                  </>
+                )}
+                {invoice.termsAndConditions && (
+                  <div style={{ marginTop: '3mm' }}>
+                    <h3
+                      style={{
+                        fontSize: '10px',
+                        fontWeight: 700,
+                        color: accentColor,
+                        textTransform: 'uppercase',
+                        letterSpacing: '1px',
+                        marginBottom: '2mm',
+                      }}
+                    >
+                      Syarat & Ketentuan:
+                    </h3>
+                    <p style={{ fontSize: '9px', color: '#64748b', whiteSpace: 'pre-line' }}>
+                      {invoice.termsAndConditions}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Totals - Right Side */}
+              <div className="flex justify-end">
+                <div style={{ width: '100%', maxWidth: '65mm' }}>
+                  <div className="flex justify-between" style={{ padding: '1.5mm 0' }}>
+                    <span style={{ fontSize: '11px', color: '#64748b' }}>Subtotal</span>
+                    <span style={{ fontSize: '11px', fontWeight: 600, color: '#1e293b' }}>
+                      {formatCurrency(invoice.subtotal)}
+                    </span>
+                  </div>
+                  {settings.showDiscount && invoice.discountAmount && invoice.discountAmount > 0 && (
+                    <div className="flex justify-between" style={{ padding: '1.5mm 0' }}>
+                      <span style={{ fontSize: '11px', color: '#64748b' }}>
+                        Diskon {invoice.discountType === 'percentage' ? `(${invoice.discountValue}%)` : ''}
+                      </span>
+                      <span style={{ fontSize: '11px', fontWeight: 600, color: '#16a34a' }}>
+                        -{formatCurrency(invoice.discountAmount)}
+                      </span>
+                    </div>
+                  )}
+                  {settings.showAdditionalDiscount && invoice.additionalDiscountAmount && invoice.additionalDiscountAmount > 0 && (
+                    <div className="flex justify-between" style={{ padding: '1.5mm 0' }}>
+                      <span style={{ fontSize: '11px', color: '#64748b' }}>
+                        Diskon Tambahan {invoice.additionalDiscountType === 'percentage' ? `(${invoice.additionalDiscountValue}%)` : ''}
+                      </span>
+                      <span style={{ fontSize: '11px', fontWeight: 600, color: '#16a34a' }}>
+                        -{formatCurrency(invoice.additionalDiscountAmount)}
+                      </span>
+                    </div>
+                  )}
+                  {settings.showTax && (
+                    <div className="flex justify-between" style={{ padding: '1.5mm 0' }}>
+                      <span style={{ fontSize: '11px', color: '#64748b' }}>
+                        Pajak ({invoice.taxRate}%)
+                      </span>
+                      <span style={{ fontSize: '11px', fontWeight: 600, color: '#1e293b' }}>
+                        {formatCurrency(invoice.taxAmount)}
+                      </span>
+                    </div>
+                  )}
+                  <div
+                    className="flex justify-between"
+                    style={{ paddingTop: '3mm', marginTop: '2mm', borderTop: `2px solid ${accentColor}` }}
+                  >
+                    <span style={{ fontSize: '16px', fontWeight: 800, color: accentColor }}>
+                      TOTAL
+                    </span>
+                    <span style={{ fontSize: '16px', fontWeight: 800, color: accentColor }}>
+                      {formatCurrency(invoice.total)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Signature Section */}
+            {settings.showSignature && (invoice.signatureUrl || invoice.signatoryName) && (
+              <div className="flex justify-end" style={{ marginTop: '6mm' }}>
+                <div className="text-center">
+                  {invoice.signatureUrl && (
+                    <div style={{ marginBottom: '2mm', paddingBottom: '2mm', borderBottom: '1px solid #94a3b8' }}>
+                      <img
+                        src={invoice.signatureUrl}
+                        alt="Tanda tangan"
+                        className="h-16 object-contain mx-auto"
+                      />
+                    </div>
+                  )}
+                  {invoice.signatoryName && (
+                    <p style={{ fontWeight: 700, fontSize: '11px', color: '#1e293b' }}>{invoice.signatoryName}</p>
+                  )}
+                  {invoice.signatoryTitle && (
+                    <p style={{ fontSize: '10px', color: '#64748b' }}>{invoice.signatoryTitle}</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Footer Bar */}
+        <div
+          className="flex items-center justify-between"
+          style={{ backgroundColor: accentDark, padding: '4mm 14mm' }}
+        >
+          <p style={{ fontSize: '10px', color: 'rgba(255,255,255,0.9)' }}>
+            Invoice ini dikirim oleh: <strong>{invoice.companyName}</strong>
+          </p>
           <div
-            className="px-8 sm:px-12 py-4 flex items-center justify-between"
-            style={{ backgroundColor: accentDark }}
-          >
-            <p className="text-xs" style={{ color: 'rgba(255,255,255,0.9)' }}>
-              Invoice ini dikirim oleh: <strong>{invoice.companyName}</strong>
-            </p>
-            <div
-              className="w-16 h-6 rounded-sm"
-              style={{ backgroundColor: primaryColor }}
-            />
-          </div>
+            className="rounded-sm"
+            style={{ backgroundColor: primaryColor, width: '14mm', height: '5mm' }}
+          />
         </div>
+      </div>
 
-        {/* Print Button - Outside printable area */}
-        <div className="mt-6 text-center print:hidden">
-          <button
-            onClick={handlePrint}
-            className="inline-flex items-center gap-2 px-6 py-3 font-bold rounded-lg transition-all shadow-lg text-white hover:opacity-90"
-            style={{ backgroundColor: accentColor }}
-          >
-            <Printer className="w-5 h-5" />
-            Cetak Invoice
-          </button>
-        </div>
+      {/* Print Button - Outside printable area */}
+      <div className="mt-6 text-center print:hidden">
+        <button
+          onClick={handlePrint}
+          className="inline-flex items-center gap-2 px-6 py-3 font-bold rounded-lg transition-all shadow-lg text-white hover:opacity-90"
+          style={{ backgroundColor: accentColor }}
+        >
+          <Printer className="w-5 h-5" />
+          Cetak Invoice
+        </button>
       </div>
     </div>
   )
