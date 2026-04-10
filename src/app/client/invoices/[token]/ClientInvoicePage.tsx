@@ -16,7 +16,9 @@ interface InvoiceItem {
 interface Branding {
   logoUrl: string | null
   primaryColor: string
+  accentColor: string | null
   showLogo: boolean
+  showColors: boolean
 }
 
 interface Invoice {
@@ -113,7 +115,9 @@ export default function ClientInvoicePage({
       const pdfPrimaryColor = invoice.branding?.primaryColor || '#F97316'
       const pdfShowLogo = invoice.branding?.showLogo ?? true
       const pdfLogoUrl = invoice.branding?.logoUrl
-      const pdfAccentColor = '#0F766E'
+      const pdfAccentColor = invoice.branding?.showColors !== false
+        ? (invoice.branding?.accentColor || invoice.branding?.primaryColor || '#0F766E')
+        : '#0F766E'
 
       // Convert image URL to base64 data URL to avoid CORS issues with html2canvas
       const imageToDataUrl = async (url: string): Promise<string | null> => {
@@ -358,7 +362,9 @@ export default function ClientInvoicePage({
       const pdfPrimaryColor = invoice.branding?.primaryColor || '#F97316'
       const pdfShowLogo = invoice.branding?.showLogo ?? true
       const pdfLogoUrl = invoice.branding?.logoUrl
-      const pdfAccentColor = '#0F766E'
+      const pdfAccentColor = invoice.branding?.showColors !== false
+        ? (invoice.branding?.accentColor || invoice.branding?.primaryColor || '#0F766E')
+        : '#0F766E'
 
       // Convert image URL to base64 data URL to avoid CORS issues with html2canvas
       const imageToDataUrl = async (url: string): Promise<string | null> => {
@@ -677,7 +683,9 @@ Terima kasih!`
 
   // Get branding colors with fallback
   const primaryColor = invoice.branding?.primaryColor || '#F97316'
-  const accentColor = '#0F766E'
+  const accentColor = invoice.branding?.showColors !== false
+    ? (invoice.branding?.accentColor || invoice.branding?.primaryColor || '#0F766E')
+    : '#0F766E'
   const showLogo = invoice.branding?.showLogo ?? true
   const logoUrl = invoice.branding?.logoUrl
 
