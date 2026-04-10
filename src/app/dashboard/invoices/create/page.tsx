@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAppSession } from '@/hooks/useAppSession'
 import { useFeatureAccess } from '@/hooks/useFeatureAccess'
@@ -51,6 +51,7 @@ function NewInvoicePageContent() {
   const [saving, setSaving] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [loadingTemplate, setLoadingTemplate] = useState(false)
+  const templateLoadedRef = useRef(false)
   const [clients, setClients] = useState<any[]>([])
   const [selectedClientId, setSelectedClientId] = useState('')
   const [catalogItems, setCatalogItems] = useState<any[]>([])
@@ -149,9 +150,10 @@ function NewInvoicePageContent() {
     }
 
     // Load template if templateId is provided (only if user has template access)
-    if (templateId && sessionResult.status === 'authenticated' && !checkingTemplateAccess) {
+    if (templateId && sessionResult.status === 'authenticated' && !checkingTemplateAccess && !templateLoadedRef.current) {
       // Check if user has access to templates before loading
       if (hasTemplateAccess) {
+        templateLoadedRef.current = true
         loadTemplate(templateId)
       } else {
         // Show message that templates are Pro only
