@@ -473,7 +473,9 @@ function NewInvoicePageContent() {
     try {
       const res = await fetch(`/api/templates/${id}`)
       if (!res.ok) {
-        throw new Error('Gagal memuat template')
+        const errData = await res.json().catch(() => ({}))
+        console.error('Template API error:', res.status, errData)
+        throw new Error(errData.error || `Gagal memuat template (HTTP ${res.status})`)
       }
 
       const template = await res.json()

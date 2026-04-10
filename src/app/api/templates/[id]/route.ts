@@ -10,10 +10,12 @@ export async function GET(
   try {
     const session = await getUserSession()
     if (!session) {
+      console.error('[Template GET] No session found')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const { id } = await params
+    console.log('[Template GET] Loading template:', id, 'for user:', session.id)
     const template = await prisma.invoice_templates.findFirst({
       where: {
         id,
