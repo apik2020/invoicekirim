@@ -157,7 +157,7 @@ export function InvoicePrintView({ invoice, branding }: InvoicePrintViewProps) {
 
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-start py-8 px-4"
+      className="min-h-screen flex flex-col items-center justify-start py-8 px-4 print:p-0 print:m-0 print:min-h-0 print:h-[297mm] print:w-[210mm]"
       style={{
         fontFamily,
         background: '#E5E7EB',
