@@ -121,15 +121,59 @@ export default function ClientInvoicePage({
 
       // Convert image URL to base64 data URL via server proxy to avoid CORS issues
       const imageToDataUrl = async (url: string): Promise<string | null> => {
+        // Method 1: Server-side proxy (bypasses CORS entirely)
         try {
           const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(url)}`
           const response = await fetch(proxyUrl)
-          if (!response.ok) return null
-          const { dataUrl } = await response.json()
-          return dataUrl || null
-        } catch {
-          return null
+          if (response.ok) {
+            const { dataUrl } = await response.json()
+            if (dataUrl) return dataUrl
+          }
+        } catch (e) {
+          console.warn('[PDF] Proxy failed for', url, e)
         }
+
+        // Method 2: Direct fetch with CORS
+        try {
+          const response = await fetch(url, { mode: 'cors' })
+          if (response.ok) {
+            const blob = await response.blob()
+            const dataUrl = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader()
+              reader.onloadend = () => resolve(reader.result as string)
+              reader.onerror = () => reject(new Error('FileReader failed'))
+              reader.readAsDataURL(blob)
+            })
+            if (dataUrl) return dataUrl
+          }
+        } catch (e) {
+          console.warn('[PDF] Direct CORS fetch failed for', url, e)
+        }
+
+        // Method 3: Load image into canvas (may work if same-origin)
+        try {
+          const img = new Image()
+          img.crossOrigin = 'anonymous'
+          img.src = url
+          await new Promise<void>((resolve, reject) => {
+            img.onload = () => resolve()
+            img.onerror = () => reject(new Error('Image load failed'))
+            setTimeout(() => reject(new Error('Image load timeout')), 5000)
+          })
+          const canvas = document.createElement('canvas')
+          canvas.width = img.naturalWidth
+          canvas.height = img.naturalHeight
+          const ctx = canvas.getContext('2d')
+          if (ctx) {
+            ctx.drawImage(img, 0, 0)
+            return canvas.toDataURL('image/png')
+          }
+        } catch (e) {
+          console.warn('[PDF] Canvas method failed for', url, e)
+        }
+
+        console.error('[PDF] All image conversion methods failed for', url)
+        return null
       }
 
       // Pre-load images to base64
@@ -364,15 +408,59 @@ export default function ClientInvoicePage({
 
       // Convert image URL to base64 data URL via server proxy to avoid CORS issues
       const imageToDataUrl = async (url: string): Promise<string | null> => {
+        // Method 1: Server-side proxy (bypasses CORS entirely)
         try {
           const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(url)}`
           const response = await fetch(proxyUrl)
-          if (!response.ok) return null
-          const { dataUrl } = await response.json()
-          return dataUrl || null
-        } catch {
-          return null
+          if (response.ok) {
+            const { dataUrl } = await response.json()
+            if (dataUrl) return dataUrl
+          }
+        } catch (e) {
+          console.warn('[PDF] Proxy failed for', url, e)
         }
+
+        // Method 2: Direct fetch with CORS
+        try {
+          const response = await fetch(url, { mode: 'cors' })
+          if (response.ok) {
+            const blob = await response.blob()
+            const dataUrl = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader()
+              reader.onloadend = () => resolve(reader.result as string)
+              reader.onerror = () => reject(new Error('FileReader failed'))
+              reader.readAsDataURL(blob)
+            })
+            if (dataUrl) return dataUrl
+          }
+        } catch (e) {
+          console.warn('[PDF] Direct CORS fetch failed for', url, e)
+        }
+
+        // Method 3: Load image into canvas (may work if same-origin)
+        try {
+          const img = new Image()
+          img.crossOrigin = 'anonymous'
+          img.src = url
+          await new Promise<void>((resolve, reject) => {
+            img.onload = () => resolve()
+            img.onerror = () => reject(new Error('Image load failed'))
+            setTimeout(() => reject(new Error('Image load timeout')), 5000)
+          })
+          const canvas = document.createElement('canvas')
+          canvas.width = img.naturalWidth
+          canvas.height = img.naturalHeight
+          const ctx = canvas.getContext('2d')
+          if (ctx) {
+            ctx.drawImage(img, 0, 0)
+            return canvas.toDataURL('image/png')
+          }
+        } catch (e) {
+          console.warn('[PDF] Canvas method failed for', url, e)
+        }
+
+        console.error('[PDF] All image conversion methods failed for', url)
+        return null
       }
 
       // Pre-load images to base64

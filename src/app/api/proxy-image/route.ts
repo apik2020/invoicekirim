@@ -11,31 +11,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Missing url parameter' }, { status: 400 })
   }
 
-  // Only allow image URLs from allowed domains
+  // Validate URL format
   try {
     const parsedUrl = new URL(url)
-    const allowedHosts = [
-      'storage.googleapis.com',
-      's3.amazonaws.com',
-      's3.us-east-1.amazonaws.com',
-      'cloudflare.com',
-      'r2.cloudflarestorage.com',
-    ]
-
-    // Also allow custom S3 endpoints from env
-    const s3Endpoint = process.env.S3_ENDPOINT
-    const s3PublicUrl = process.env.S3_PUBLIC_URL
-    if (s3Endpoint) {
-      const parsed = new URL(s3Endpoint)
-      allowedHosts.push(parsed.hostname)
-    }
-    if (s3PublicUrl) {
-      const parsed = new URL(s3PublicUrl)
-      allowedHosts.push(parsed.hostname)
-    }
-
-    // Allow any HTTPS URL as a fallback (images are public anyway)
-    // This ensures we don't block valid R2 custom domain URLs
     if (parsedUrl.protocol !== 'https:' && parsedUrl.protocol !== 'http:') {
       return NextResponse.json({ error: 'Invalid URL protocol' }, { status: 400 })
     }
@@ -44,21 +22,34 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    console.log('[ProxyImage] Fetching:', url)
+
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'NotaBener-ImageProxy/1.0',
+        'User-Agent': 'Mozilla/5.0 (compatible; NotaBener-ImageProxy/1.0)',
       },
+      signal: AbortSignal.timeout(10000), // 10 second timeout
     })
 
     if (!response.ok) {
-      return NextResponse.json({ error: 'Failed to fetch image' }, { status: 502 })
+      console.error('[ProxyImage] Fetch failed:', response.status, response.statusText)
+      return NextResponse.json({ error: `Upstream returned ${response.status}` }, { status: 502 })
     }
 
     const contentType = response.headers.get('content-type') || 'image/png'
     const arrayBuffer = await response.arrayBuffer()
+
+    // Limit to 10MB
+    if (arrayBuffer.byteLength > 10 * 1024 * 1024) {
+      console.error('[ProxyImage] Image too large:', arrayBuffer.byteLength)
+      return NextResponse.json({ error: 'Image too large' }, { status: 413 })
+    }
+
     const buffer = Buffer.from(arrayBuffer)
     const base64 = buffer.toString('base64')
     const dataUrl = `data:${contentType};base64,${base64}`
+
+    console.log('[ProxyImage] Success:', contentType, `${(arrayBuffer.byteLength / 1024).toFixed(1)}KB`)
 
     return NextResponse.json(
       { dataUrl },
