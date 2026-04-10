@@ -461,7 +461,7 @@ Terima kasih!`
                   ${invoice.companyPhone ? `<p style="font-size: 12px; color: #475569; margin: 0 0 2px 0;">${invoice.companyPhone}</p>` : ''}
                   ${invoice.companyAddress ? `<p style="font-size: 12px; color: #475569; margin: 0;">${invoice.companyAddress}</p>` : ''}
                 </div>
-                <div style="flex: 1;">
+                <div style="flex: 1; text-align: right;">
                   <h3 style="font-size: 10px; font-weight: 700; color: ${accentColor}; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 1px;">Kepada:</h3>
                   <p style="font-size: 13px; font-weight: 700; color: #1e293b; margin: 0 0 3px 0;">${invoice.clientName}</p>
                   <p style="font-size: 12px; color: #475569; margin: 0 0 2px 0;">${invoice.clientEmail}</p>
@@ -1125,7 +1125,7 @@ Terima kasih!`
                   </div>
 
                   {/* KEPADA */}
-                  <div>
+                  <div style={{ textAlign: 'right' }}>
                     <h3
                       style={{
                         fontSize: '10px',

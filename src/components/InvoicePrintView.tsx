@@ -298,7 +298,7 @@ export function InvoicePrintView({ invoice, branding }: InvoicePrintViewProps) {
 
             {/* KEPADA */}
             {settings.showClientInfo && (
-              <div>
+              <div style={{ textAlign: 'right' }}>
                 <h3
                   style={{
                     fontSize: '9px',
