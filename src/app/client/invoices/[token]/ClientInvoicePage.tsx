@@ -41,6 +41,16 @@ interface Invoice {
   status: 'DRAFT' | 'SENT' | 'PAID' | 'OVERDUE' | 'CANCELED'
   paidAt: string | null
   branding?: Branding | null
+  discountAmount?: number | null
+  discountType?: string | null
+  discountValue?: number | null
+  additionalDiscountAmount?: number | null
+  additionalDiscountType?: string | null
+  additionalDiscountValue?: number | null
+  termsAndConditions?: string | null
+  signatureUrl?: string | null
+  signatoryName?: string | null
+  signatoryTitle?: string | null
 }
 
 export default function ClientInvoicePage({
@@ -207,6 +217,18 @@ export default function ClientInvoicePage({
                       <span style="font-size: 10px; color: #64748b;">Subtotal</span>
                       <span style="font-size: 10px; font-weight: 600; color: #1e293b;">${formatCurrency(invoice.subtotal)}</span>
                     </div>
+                    ${invoice.discountAmount && invoice.discountAmount > 0 ? `
+                    <div style="display: flex; justify-content: space-between; padding: 1mm 0;">
+                      <span style="font-size: 10px; color: #64748b;">Diskon ${invoice.discountType === 'percentage' ? `(${invoice.discountValue}%)` : ''}</span>
+                      <span style="font-size: 10px; font-weight: 600; color: #16a34a;">-${formatCurrency(invoice.discountAmount!)}</span>
+                    </div>
+                    ` : ''}
+                    ${invoice.additionalDiscountAmount && invoice.additionalDiscountAmount > 0 ? `
+                    <div style="display: flex; justify-content: space-between; padding: 1mm 0;">
+                      <span style="font-size: 10px; color: #64748b;">Diskon Tambahan ${invoice.additionalDiscountType === 'percentage' ? `(${invoice.additionalDiscountValue}%)` : ''}</span>
+                      <span style="font-size: 10px; font-weight: 600; color: #16a34a;">-${formatCurrency(invoice.additionalDiscountAmount!)}</span>
+                    </div>
+                    ` : ''}
                     <div style="display: flex; justify-content: space-between; padding: 6px 0;">
                       <span style="font-size: 10px; color: #64748b;">Pajak (${invoice.taxRate}%)</span>
                       <span style="font-size: 10px; font-weight: 600; color: #1e293b;">${formatCurrency(invoice.taxAmount)}</span>
@@ -218,6 +240,23 @@ export default function ClientInvoicePage({
                   </div>
                 </div>
               </div>
+
+              ${invoice.termsAndConditions ? `
+              <div style="margin-top: 4mm;">
+                <h3 style="font-size: 9px; font-weight: 700; color: ${pdfAccentColor}; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1mm;">Syarat & Ketentuan:</h3>
+                <p style="font-size: 8px; color: #64748b; white-space: pre-line;">${invoice.termsAndConditions}</p>
+              </div>
+              ` : ''}
+
+              ${invoice.signatureUrl || invoice.signatoryName ? `
+              <div style="display: flex; justify-content: flex-end; margin-top: 4mm;">
+                <div style="text-align: center;">
+                  ${invoice.signatureUrl ? `<div style="margin-bottom: 1mm; padding-bottom: 1mm; border-bottom: 1px solid #94a3b8;"><img src="${invoice.signatureUrl}" alt="Tanda tangan" style="height: 56px; object-fit: contain; margin: 0 auto;" /></div>` : ''}
+                  ${invoice.signatoryName ? `<p style="font-weight: 700; font-size: 10px; color: #1e293b;">${invoice.signatoryName}</p>` : ''}
+                  ${invoice.signatoryTitle ? `<p style="font-size: 9px; color: #64748b;">${invoice.signatoryTitle}</p>` : ''}
+                </div>
+              </div>
+              ` : ''}
 
               <!-- Footer -->
               <div style="margin-top: auto; padding-top: 12px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: flex-end;">
@@ -398,6 +437,18 @@ export default function ClientInvoicePage({
                       <span style="font-size: 10px; color: #64748b;">Subtotal</span>
                       <span style="font-size: 10px; font-weight: 600; color: #1e293b;">${formatCurrency(invoice.subtotal)}</span>
                     </div>
+                    ${invoice.discountAmount && invoice.discountAmount > 0 ? `
+                    <div style="display: flex; justify-content: space-between; padding: 1mm 0;">
+                      <span style="font-size: 10px; color: #64748b;">Diskon ${invoice.discountType === 'percentage' ? `(${invoice.discountValue}%)` : ''}</span>
+                      <span style="font-size: 10px; font-weight: 600; color: #16a34a;">-${formatCurrency(invoice.discountAmount!)}</span>
+                    </div>
+                    ` : ''}
+                    ${invoice.additionalDiscountAmount && invoice.additionalDiscountAmount > 0 ? `
+                    <div style="display: flex; justify-content: space-between; padding: 1mm 0;">
+                      <span style="font-size: 10px; color: #64748b;">Diskon Tambahan ${invoice.additionalDiscountType === 'percentage' ? `(${invoice.additionalDiscountValue}%)` : ''}</span>
+                      <span style="font-size: 10px; font-weight: 600; color: #16a34a;">-${formatCurrency(invoice.additionalDiscountAmount!)}</span>
+                    </div>
+                    ` : ''}
                     <div style="display: flex; justify-content: space-between; padding: 6px 0;">
                       <span style="font-size: 10px; color: #64748b;">Pajak (${invoice.taxRate}%)</span>
                       <span style="font-size: 10px; font-weight: 600; color: #1e293b;">${formatCurrency(invoice.taxAmount)}</span>
@@ -409,6 +460,23 @@ export default function ClientInvoicePage({
                   </div>
                 </div>
               </div>
+
+              ${invoice.termsAndConditions ? `
+              <div style="margin-top: 4mm;">
+                <h3 style="font-size: 9px; font-weight: 700; color: ${pdfAccentColor}; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1mm;">Syarat & Ketentuan:</h3>
+                <p style="font-size: 8px; color: #64748b; white-space: pre-line;">${invoice.termsAndConditions}</p>
+              </div>
+              ` : ''}
+
+              ${invoice.signatureUrl || invoice.signatoryName ? `
+              <div style="display: flex; justify-content: flex-end; margin-top: 4mm;">
+                <div style="text-align: center;">
+                  ${invoice.signatureUrl ? `<div style="margin-bottom: 1mm; padding-bottom: 1mm; border-bottom: 1px solid #94a3b8;"><img src="${invoice.signatureUrl}" alt="Tanda tangan" style="height: 56px; object-fit: contain; margin: 0 auto;" /></div>` : ''}
+                  ${invoice.signatoryName ? `<p style="font-weight: 700; font-size: 10px; color: #1e293b;">${invoice.signatoryName}</p>` : ''}
+                  ${invoice.signatoryTitle ? `<p style="font-size: 9px; color: #64748b;">${invoice.signatoryTitle}</p>` : ''}
+                </div>
+              </div>
+              ` : ''}
 
               <!-- Footer -->
               <div style="margin-top: auto; padding-top: 12px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: flex-end;">
@@ -865,6 +933,18 @@ Terima kasih!`
                           {formatCurrency(invoice.subtotal)}
                         </span>
                       </div>
+                      {invoice.discountAmount != null && invoice.discountAmount > 0 && (
+                        <div className="flex justify-between" style={{ padding: '1mm 0' }}>
+                          <span style={{ fontSize: '10px', color: '#64748b' }}>Diskon {invoice.discountType === 'percentage' ? `(${invoice.discountValue}%)` : ''}</span>
+                          <span style={{ fontSize: '10px', fontWeight: 600, color: '#16a34a' }}>-{formatCurrency(invoice.discountAmount)}</span>
+                        </div>
+                      )}
+                      {invoice.additionalDiscountAmount != null && invoice.additionalDiscountAmount > 0 && (
+                        <div className="flex justify-between" style={{ padding: '1mm 0' }}>
+                          <span style={{ fontSize: '10px', color: '#64748b' }}>Diskon Tambahan {invoice.additionalDiscountType === 'percentage' ? `(${invoice.additionalDiscountValue}%)` : ''}</span>
+                          <span style={{ fontSize: '10px', fontWeight: 600, color: '#16a34a' }}>-{formatCurrency(invoice.additionalDiscountAmount)}</span>
+                        </div>
+                      )}
                       <div className="flex justify-between py-1.5">
                         <span style={{ color: '#64748b', fontSize: '10px' }}>Pajak ({invoice.taxRate}%)</span>
                         <span className="font-semibold" style={{ color: '#1e293b', fontSize: '10px' }}>
@@ -885,6 +965,29 @@ Terima kasih!`
                     </div>
                   </div>
                 </div>
+
+                {/* Terms & Conditions */}
+                {invoice.termsAndConditions && (
+                  <div style={{ marginTop: '2mm' }}>
+                    <h3 style={{ fontSize: '9px', fontWeight: 700, color: accentColor, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '1mm' }}>Syarat & Ketentuan:</h3>
+                    <p style={{ fontSize: '8px', color: '#64748b', whiteSpace: 'pre-line' }}>{invoice.termsAndConditions}</p>
+                  </div>
+                )}
+
+                {/* Signature */}
+                {(invoice.signatureUrl || invoice.signatoryName) && (
+                  <div className="flex justify-end" style={{ marginTop: '4mm' }}>
+                    <div className="text-center">
+                      {invoice.signatureUrl && (
+                        <div style={{ marginBottom: '1mm', paddingBottom: '1mm', borderBottom: '1px solid #94a3b8' }}>
+                          <img src={invoice.signatureUrl} alt="Tanda tangan" className="h-14 object-contain mx-auto" />
+                        </div>
+                      )}
+                      {invoice.signatoryName && <p style={{ fontWeight: 700, fontSize: '10px', color: '#1e293b' }}>{invoice.signatoryName}</p>}
+                      {invoice.signatoryTitle && <p style={{ fontSize: '9px', color: '#64748b' }}>{invoice.signatoryTitle}</p>}
+                    </div>
+                  </div>
+                )}
 
                 {/* Payment Info */}
                 {!isPaid && (

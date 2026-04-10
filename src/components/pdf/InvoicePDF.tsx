@@ -3,6 +3,7 @@ import {
   Page,
   Text,
   View,
+  Image,
   StyleSheet,
 } from '@react-pdf/renderer'
 import { invoices, invoice_items } from '@prisma/client'
@@ -407,9 +408,18 @@ export const InvoicePDF = ({ invoice }: InvoicePDFProps) => {
 
               {invoice.discountAmount && invoice.discountAmount > 0 && (
                 <View style={styles.totalRow}>
-                  <Text style={styles.totalLabel}>Diskon</Text>
+                  <Text style={styles.totalLabel}>Diskon {invoice.discountType === 'percentage' ? `(${invoice.discountValue}%)` : ''}</Text>
                   <Text style={[styles.totalValue, { color: '#16a34a' }]}>
                     -{formatCurrency(invoice.discountAmount)}
+                  </Text>
+                </View>
+              )}
+
+              {invoice.additionalDiscountAmount && invoice.additionalDiscountAmount > 0 && (
+                <View style={styles.totalRow}>
+                  <Text style={styles.totalLabel}>Diskon Tambahan {invoice.additionalDiscountType === 'percentage' ? `(${invoice.additionalDiscountValue}%)` : ''}</Text>
+                  <Text style={[styles.totalValue, { color: '#16a34a' }]}>
+                    -{formatCurrency(invoice.additionalDiscountAmount)}
                   </Text>
                 </View>
               )}
@@ -426,6 +436,29 @@ export const InvoicePDF = ({ invoice }: InvoicePDFProps) => {
             </View>
           </View>
         </View>
+
+        {/* Terms & Conditions */}
+        {invoice.termsAndConditions && (
+          <View style={{ marginTop: 10 }}>
+            <Text style={{ fontSize: 8, fontFamily: 'Helvetica-Bold', color: ACCENT_COLOR, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Syarat &amp; Ketentuan:</Text>
+            <Text style={{ fontSize: 7, color: '#64748b' }}>{invoice.termsAndConditions}</Text>
+          </View>
+        )}
+
+        {/* Signature */}
+        {(invoice.signatureUrl || invoice.signatoryName) && (
+          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 10 }}>
+            <View style={{ alignItems: 'center' }}>
+              {invoice.signatureUrl && (
+                <View style={{ borderBottomWidth: 1, borderBottomColor: '#94a3b8', paddingBottom: 4, marginBottom: 4 }}>
+                  <Image src={invoice.signatureUrl} style={{ height: 40 }} />
+                </View>
+              )}
+              {invoice.signatoryName && <Text style={{ fontFamily: 'Helvetica-Bold', fontSize: 9, color: '#1e293b' }}>{invoice.signatoryName}</Text>}
+              {invoice.signatoryTitle && <Text style={{ fontSize: 8, color: '#64748b' }}>{invoice.signatoryTitle}</Text>}
+            </View>
+          </View>
+        )}
 
         {/* Footer */}
         <View style={styles.footer} fixed>
