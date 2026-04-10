@@ -1,6 +1,6 @@
 {
   "name": "notabener",
-  "version": "0.1.43",
+  "version": "0.1.44",
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",
