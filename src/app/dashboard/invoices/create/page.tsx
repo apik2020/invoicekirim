@@ -1183,16 +1183,31 @@ function NewInvoicePageContent() {
             </div>
           </div>
 
-          {/* Notes */}
+          {/* Notes & Terms */}
           <div className="card p-6 sm:p-8 animate-fade-in-up animation-delay-400">
-            <h2 className="text-lg font-bold text-text-primary mb-4">Catatan</h2>
-            <textarea
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              className="textarea"
-              rows={3}
-              placeholder="Catatan tambahan untuk invoice..."
-            />
+            <h2 className="text-lg font-bold text-text-primary mb-4">Catatan & Ketentuan</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="input-label">Catatan</label>
+                <textarea
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  className="textarea"
+                  rows={3}
+                  placeholder="Catatan tambahan untuk invoice..."
+                />
+              </div>
+              <div>
+                <label className="input-label">Syarat & Ketentuan</label>
+                <textarea
+                  value={formData.termsAndConditions}
+                  onChange={(e) => setFormData({ ...formData, termsAndConditions: e.target.value })}
+                  className="textarea"
+                  rows={3}
+                  placeholder="Syarat dan ketentuan pembayaran..."
+                />
+              </div>
+            </div>
           </div>
 
           {/* Submit */}
