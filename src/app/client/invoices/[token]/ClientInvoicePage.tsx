@@ -115,6 +115,27 @@ export default function ClientInvoicePage({
       const pdfLogoUrl = invoice.branding?.logoUrl
       const pdfAccentColor = '#0F766E'
 
+      // Convert image URL to base64 data URL to avoid CORS issues with html2canvas
+      const imageToDataUrl = async (url: string): Promise<string | null> => {
+        try {
+          const response = await fetch(url, { mode: 'cors' })
+          if (!response.ok) return null
+          const blob = await response.blob()
+          return new Promise<string>((resolve) => {
+            const reader = new FileReader()
+            reader.onloadend = () => resolve(reader.result as string)
+            reader.onerror = () => resolve(url)
+            reader.readAsDataURL(blob)
+          })
+        } catch {
+          return null
+        }
+      }
+
+      // Pre-load images to base64
+      const logoDataUrl = pdfShowLogo && pdfLogoUrl ? await imageToDataUrl(pdfLogoUrl) : null
+      const signatureDataUrl = invoice.signatureUrl ? await imageToDataUrl(invoice.signatureUrl) : null
+
       // Build invoice HTML matching the new reference design
       const buildInvoiceHTML = () => {
         const items = invoice.items.map((item, index) => `
@@ -126,8 +147,8 @@ export default function ClientInvoicePage({
           </tr>
         `).join('')
 
-        const logoHtml = pdfShowLogo && pdfLogoUrl
-          ? `<div style="width: 80px; height: 56px; border: 1px solid #e2e8f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; background: #f8fafc; overflow: hidden;"><img src="${pdfLogoUrl}" alt="Logo" style="max-width: 100%; max-height: 100%; object-fit: contain; padding: 3px;" /></div>`
+        const logoHtml = logoDataUrl
+          ? `<div style="width: 80px; height: 56px; border: 1px solid #e2e8f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; background: #f8fafc; overflow: hidden;"><img src="${logoDataUrl}" alt="Logo" style="max-width: 100%; max-height: 100%; object-fit: contain; padding: 3px;" /></div>`
           : `<div style="width: 40px; height: 40px; border-radius: 6px; display: flex; align-items: center; justify-content: center; background-color: ${pdfAccentColor};"><span style="color: white; font-weight: bold; font-size: 16px;">${invoice.companyName?.charAt(0)?.toUpperCase() || 'I'}</span></div>`
 
         const statusBadge = invoice.status === 'PAID'
@@ -253,7 +274,7 @@ export default function ClientInvoicePage({
                 <div style="flex: 1; display: flex; justify-content: flex-end; align-items: flex-end;">
                   ${invoice.signatureUrl || invoice.signatoryName ? `
                   <div style="text-align: center;">
-                    ${invoice.signatureUrl ? `<div style="margin-bottom: 1mm; padding-bottom: 1mm; border-bottom: 1px solid #94a3b8;"><img src="${invoice.signatureUrl}" alt="Tanda tangan" style="height: 56px; object-fit: contain; margin: 0 auto;" /></div>` : ''}
+                    ${signatureDataUrl ? `<div style="margin-bottom: 1mm; padding-bottom: 1mm; border-bottom: 1px solid #94a3b8;"><img src="${signatureDataUrl}" alt="Tanda tangan" style="height: 56px; object-fit: contain; margin: 0 auto;" /></div>` : ''}
                     ${invoice.signatoryName ? `<p style="font-weight: 700; font-size: 10px; color: #1e293b;">${invoice.signatoryName}</p>` : ''}
                     ${invoice.signatoryTitle ? `<p style="font-size: 9px; color: #64748b;">${invoice.signatoryTitle}</p>` : ''}
                   </div>
@@ -290,7 +311,6 @@ export default function ClientInvoicePage({
         useCORS: true,
         logging: false,
         backgroundColor: '#ffffff',
-        allowTaint: true,
       })
 
       // Remove container
@@ -340,6 +360,27 @@ export default function ClientInvoicePage({
       const pdfLogoUrl = invoice.branding?.logoUrl
       const pdfAccentColor = '#0F766E'
 
+      // Convert image URL to base64 data URL to avoid CORS issues with html2canvas
+      const imageToDataUrl = async (url: string): Promise<string | null> => {
+        try {
+          const response = await fetch(url, { mode: 'cors' })
+          if (!response.ok) return null
+          const blob = await response.blob()
+          return new Promise<string>((resolve) => {
+            const reader = new FileReader()
+            reader.onloadend = () => resolve(reader.result as string)
+            reader.onerror = () => resolve(url)
+            reader.readAsDataURL(blob)
+          })
+        } catch {
+          return null
+        }
+      }
+
+      // Pre-load images to base64
+      const logoDataUrl = pdfShowLogo && pdfLogoUrl ? await imageToDataUrl(pdfLogoUrl) : null
+      const signatureDataUrl = invoice.signatureUrl ? await imageToDataUrl(invoice.signatureUrl) : null
+
       // Build invoice HTML matching the new reference design
       const buildInvoiceHTML = () => {
         const items = invoice.items.map((item, index) => `
@@ -351,8 +392,8 @@ export default function ClientInvoicePage({
           </tr>
         `).join('')
 
-        const logoHtml = pdfShowLogo && pdfLogoUrl
-          ? `<div style="width: 80px; height: 56px; border: 1px solid #e2e8f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; background: #f8fafc; overflow: hidden;"><img src="${pdfLogoUrl}" alt="Logo" style="max-width: 100%; max-height: 100%; object-fit: contain; padding: 3px;" /></div>`
+        const logoHtml = logoDataUrl
+          ? `<div style="width: 80px; height: 56px; border: 1px solid #e2e8f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; background: #f8fafc; overflow: hidden;"><img src="${logoDataUrl}" alt="Logo" style="max-width: 100%; max-height: 100%; object-fit: contain; padding: 3px;" /></div>`
           : `<div style="width: 40px; height: 40px; border-radius: 6px; display: flex; align-items: center; justify-content: center; background-color: ${pdfAccentColor};"><span style="color: white; font-weight: bold; font-size: 16px;">${invoice.companyName?.charAt(0)?.toUpperCase() || 'I'}</span></div>`
 
         const statusBadge = invoice.status === 'PAID'
@@ -478,7 +519,7 @@ export default function ClientInvoicePage({
                 <div style="flex: 1; display: flex; justify-content: flex-end; align-items: flex-end;">
                   ${invoice.signatureUrl || invoice.signatoryName ? `
                   <div style="text-align: center;">
-                    ${invoice.signatureUrl ? `<div style="margin-bottom: 1mm; padding-bottom: 1mm; border-bottom: 1px solid #94a3b8;"><img src="${invoice.signatureUrl}" alt="Tanda tangan" style="height: 56px; object-fit: contain; margin: 0 auto;" /></div>` : ''}
+                    ${signatureDataUrl ? `<div style="margin-bottom: 1mm; padding-bottom: 1mm; border-bottom: 1px solid #94a3b8;"><img src="${signatureDataUrl}" alt="Tanda tangan" style="height: 56px; object-fit: contain; margin: 0 auto;" /></div>` : ''}
                     ${invoice.signatoryName ? `<p style="font-weight: 700; font-size: 10px; color: #1e293b;">${invoice.signatoryName}</p>` : ''}
                     ${invoice.signatoryTitle ? `<p style="font-size: 9px; color: #64748b;">${invoice.signatoryTitle}</p>` : ''}
                   </div>
@@ -515,7 +556,6 @@ export default function ClientInvoicePage({
         useCORS: true,
         logging: false,
         backgroundColor: '#ffffff',
-        allowTaint: true,
       })
 
       // Remove container

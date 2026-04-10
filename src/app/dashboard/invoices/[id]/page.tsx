@@ -388,6 +388,42 @@ Terima kasih!`
       const html2canvas = await import('html2canvas')
       const { jsPDF } = await import('jspdf')
 
+      // Convert image URL to base64 data URL to avoid CORS issues with html2canvas
+      const imageToDataUrl = async (url: string): Promise<string | null> => {
+        try {
+          const response = await fetch(url, { mode: 'cors' })
+          if (!response.ok) {
+            // Fallback: try no-cors with canvas
+            const img = new Image()
+            img.crossOrigin = 'anonymous'
+            img.src = url
+            await new Promise<void>((resolve, reject) => {
+              img.onload = () => resolve()
+              img.onerror = () => reject(new Error('Image load failed'))
+            })
+            const canvas = document.createElement('canvas')
+            canvas.width = img.naturalWidth
+            canvas.height = img.naturalHeight
+            canvas.getContext('2d')!.drawImage(img, 0, 0)
+            return canvas.toDataURL('image/png')
+          }
+          const blob = await response.blob()
+          return new Promise<string>((resolve) => {
+            const reader = new FileReader()
+            reader.onloadend = () => resolve(reader.result as string)
+            reader.onerror = () => resolve(url) // fallback to original URL
+            reader.readAsDataURL(blob)
+          })
+        } catch {
+          return null
+        }
+      }
+
+      // Pre-load images to base64
+      const effectiveBranding = getEffectiveBranding()
+      const logoDataUrl = effectiveBranding.logoUrl ? await imageToDataUrl(effectiveBranding.logoUrl) : null
+      const signatureDataUrl = invoice.signatureUrl ? await imageToDataUrl(invoice.signatureUrl) : null
+
       // Helper function to convert RGB to hex
       const rgbToHex = (r: number, g: number, b: number): string => {
         return '#' + [r, g, b].map(x => {
@@ -416,7 +452,6 @@ Terima kasih!`
 
       // Build HTML matching the new A4 invoice design
       const buildInvoiceHTML = () => {
-        const effectiveBranding = getEffectiveBranding()
         const accentColor = effectiveBranding.accentColor
 
         const items = invoice.items.map((item, index) => `
@@ -438,8 +473,8 @@ Terima kasih!`
           ? `<span style="background: #94a3b8; color: white; font-size: 10px; font-weight: 700; padding: 4px 12px; border-radius: 4px; text-transform: uppercase;">BATAL</span>`
           : `<span style="background: #94a3b8; color: white; font-size: 10px; font-weight: 700; padding: 4px 12px; border-radius: 4px; text-transform: uppercase;">DRAFT</span>`
 
-        const logoHtml = effectiveBranding.logoUrl
-          ? `<div style="width: 106px; height: 68px; border: 1px solid #e2e8f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; background: #f8fafc; overflow: hidden;"><img src="${effectiveBranding.logoUrl}" alt="Logo" style="max-width: 100%; max-height: 100%; object-fit: contain; padding: 4px;" /></div>`
+        const logoHtml = logoDataUrl
+          ? `<div style="width: 106px; height: 68px; border: 1px solid #e2e8f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; background: #f8fafc; overflow: hidden;"><img src="${logoDataUrl}" alt="Logo" style="max-width: 100%; max-height: 100%; object-fit: contain; padding: 4px;" /></div>`
           : `<div style="width: 45px; height: 45px; border-radius: 6px; display: flex; align-items: center; justify-content: center; background-color: ${accentColor};"><span style="color: white; font-weight: bold; font-size: 18px;">${invoice.companyName?.charAt(0)?.toUpperCase() || 'I'}</span></div>`
 
         return `
@@ -558,7 +593,7 @@ Terima kasih!`
                 <div style="flex: 1; display: flex; justify-content: flex-end; align-items: flex-end;">
                   ${invoice.signatureUrl || invoice.signatoryName ? `
                   <div style="text-align: center;">
-                    ${invoice.signatureUrl ? `<div style="margin-bottom: 1mm; padding-bottom: 1mm; border-bottom: 1px solid #94a3b8;"><img src="${invoice.signatureUrl}" alt="Tanda tangan" style="height: 56px; object-fit: contain; margin: 0 auto;" /></div>` : ''}
+                    ${signatureDataUrl ? `<div style="margin-bottom: 1mm; padding-bottom: 1mm; border-bottom: 1px solid #94a3b8;"><img src="${signatureDataUrl}" alt="Tanda tangan" style="height: 56px; object-fit: contain; margin: 0 auto;" /></div>` : ''}
                     ${invoice.signatoryName ? `<p style="font-weight: 700; font-size: 10px; color: #1e293b;">${invoice.signatoryName}</p>` : ''}
                     ${invoice.signatoryTitle ? `<p style="font-size: 9px; color: #64748b;">${invoice.signatoryTitle}</p>` : ''}
                   </div>
@@ -595,7 +630,6 @@ Terima kasih!`
         useCORS: true,
         logging: false,
         backgroundColor: '#ffffff',
-        allowTaint: true,
       })
 
       // Remove container
