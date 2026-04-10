@@ -52,6 +52,7 @@ function NewInvoicePageContent() {
   const [mounted, setMounted] = useState(false)
   const [loadingTemplate, setLoadingTemplate] = useState(false)
   const templateLoadedRef = useRef(false)
+  const initDataLoadedRef = useRef(false)
   const [clients, setClients] = useState<any[]>([])
   const [selectedClientId, setSelectedClientId] = useState('')
   const [catalogItems, setCatalogItems] = useState<any[]>([])
@@ -134,18 +135,18 @@ function NewInvoicePageContent() {
       return
     }
 
-    // Load user profile for company info
-    if (sessionResult.status === 'authenticated' && !formData.companyName) {
-      loadUserProfile()
-    }
+    if (sessionResult.status === 'authenticated' && !initDataLoadedRef.current) {
+      initDataLoadedRef.current = true
 
-    // Load clients
-    if (sessionResult.status === 'authenticated') {
+      // Load user profile for company info
+      if (!formData.companyName) {
+        loadUserProfile()
+      }
+
+      // Load clients
       loadClients()
-    }
 
-    // Load catalog items
-    if (sessionResult.status === 'authenticated') {
+      // Load catalog items
       loadCatalogItems()
     }
 
