@@ -139,7 +139,7 @@ export default function ClientInvoicePage({
           : `<span style="background: #94a3b8; color: white; font-size: 9px; font-weight: 700; padding: 3px 10px; border-radius: 4px; text-transform: uppercase;">${invoice.status}</span>`
 
         return `
-          <div style="font-family: system-ui, -apple-system, sans-serif; width: 794px; height: 1123px; margin: 0 auto; background: #FFFFFF; color: #333333;">
+          <div style="font-family: var(--font-inter), 'Inter', 'Arial', sans-serif; width: 794px; height: 1123px; margin: 0 auto; background: #FFFFFF; color: #333333;">
             <div style="padding: 5mm 50px; display: flex; flex-direction: column; height: 100%;">
               <!-- Header: Logo left, INVOICE + status right -->
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px;">
@@ -273,7 +273,8 @@ export default function ClientInvoicePage({
       container.innerHTML = buildInvoiceHTML()
       document.body.appendChild(container)
 
-      // Wait for rendering
+      // Wait for fonts and rendering
+      await document.fonts.ready
       await new Promise(resolve => setTimeout(resolve, 100))
 
       // Capture with html2canvas
@@ -356,7 +357,7 @@ export default function ClientInvoicePage({
           : `<span style="background: #94a3b8; color: white; font-size: 9px; font-weight: 700; padding: 3px 10px; border-radius: 4px; text-transform: uppercase;">${invoice.status}</span>`
 
         return `
-          <div style="font-family: system-ui, -apple-system, sans-serif; width: 794px; height: 1123px; margin: 0 auto; background: #FFFFFF; color: #333333;">
+          <div style="font-family: var(--font-inter), 'Inter', 'Arial', sans-serif; width: 794px; height: 1123px; margin: 0 auto; background: #FFFFFF; color: #333333;">
             <div style="padding: 5mm 50px; display: flex; flex-direction: column; height: 100%;">
               <!-- Header: Logo left, INVOICE + status right -->
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px;">
@@ -490,7 +491,8 @@ export default function ClientInvoicePage({
       container.innerHTML = buildInvoiceHTML()
       document.body.appendChild(container)
 
-      // Wait for rendering
+      // Wait for fonts and rendering
+      await document.fonts.ready
       await new Promise(resolve => setTimeout(resolve, 100))
 
       // Capture with html2canvas
@@ -665,7 +667,7 @@ Terima kasih!`
                 <span className="hidden sm:inline">WhatsApp</span>
               </button>
               <button
-                onClick={handlePrint}
+                onClick={async () => { await document.fonts.ready; handlePrint() }}
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 rounded-xl btn-secondary"
               >
                 <Printer size={16} />

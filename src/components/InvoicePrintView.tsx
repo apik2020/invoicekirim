@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect, useState } from 'react'
+import { useRef } from 'react'
 import { useReactToPrint } from 'react-to-print'
 import { Printer, FileText } from 'lucide-react'
 import type { BrandingSettings } from '@/lib/branding'
@@ -58,42 +58,18 @@ interface InvoicePrintViewProps {
   branding?: BrandingSettings | null
 }
 
-// Font family mapping
-const FONT_FAMILIES: Record<string, string> = {
-  inter: "'Inter', system-ui, sans-serif",
-  roboto: "'Roboto', system-ui, sans-serif",
-  poppins: "'Poppins', system-ui, sans-serif",
-  opensans: "'Open Sans', system-ui, sans-serif",
-  lato: "'Lato', system-ui, sans-serif",
-  montserrat: "'Montserrat', system-ui, sans-serif",
-  playfair: "'Playfair Display', Georgia, serif",
-  merriweather: "'Merriweather', Georgia, serif",
-}
-
 export function InvoicePrintView({ invoice, branding }: InvoicePrintViewProps) {
   const printRef = useRef<HTMLDivElement>(null)
-  const [fontsLoaded, setFontsLoaded] = useState(false)
-
-  // Inject Google Fonts stylesheet so fonts are available during print
-  useEffect(() => {
-    const fonts = ['Inter', 'Roboto', 'Poppins', 'Open+Sans', 'Lato', 'Montserrat', 'Playfair+Display', 'Merriweather']
-    const weights = '300;400;500;600;700;800'
-    const linkId = 'invoice-google-fonts'
-    if (!document.getElementById(linkId)) {
-      const link = document.createElement('link')
-      link.id = linkId
-      link.rel = 'stylesheet'
-      link.href = `https://fonts.googleapis.com/css2?family=${fonts.map(f => `${f}:wght@${weights}`).join('&family=')}&display=swap`
-      document.head.appendChild(link)
-    }
-    // Wait for fonts to be ready
-    document.fonts.ready.then(() => setFontsLoaded(true))
-  }, [])
 
   const handlePrint = useReactToPrint({
     contentRef: printRef,
     documentTitle: `Invoice-${invoice.invoiceNumber}`,
   })
+
+  const onPrint = async () => {
+    await document.fonts.ready
+    handlePrint()
+  }
 
   // Get settings with defaults
   const settings: InvoiceSettings = {
@@ -105,10 +81,8 @@ export function InvoicePrintView({ invoice, branding }: InvoicePrintViewProps) {
   }
 
   // Extract branding colors with defaults
-  const primaryColor = branding?.primaryColor || '#F97316'
   const accentColor = branding?.accentColor || '#0F766E'
   const logoUrl = branding?.showLogo ? branding?.logoUrl : null
-  const fontFamily = FONT_FAMILIES[branding?.fontFamily || 'inter'] || FONT_FAMILIES.inter
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -147,7 +121,6 @@ export function InvoicePrintView({ invoice, branding }: InvoicePrintViewProps) {
           borderRadius: '4px',
           letterSpacing: '0.5px',
           textTransform: 'uppercase',
-          fontFamily,
         }}
       >
         {badge.text}
@@ -157,18 +130,16 @@ export function InvoicePrintView({ invoice, branding }: InvoicePrintViewProps) {
 
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-start py-8 px-4 print:p-0 print:m-0 print:min-h-0 print:h-[297mm] print:w-[210mm]"
+      className="min-h-screen flex flex-col items-center justify-start py-8 px-4 print:p-0 print:m-0 print:min-h-0 print:h-[297mm] print:w-[210mm] font-sans"
       style={{
-        fontFamily,
         background: '#E5E7EB',
       }}
     >
       {/* A4 Page Container */}
       <div
         ref={printRef}
-        className="bg-white shadow-2xl overflow-hidden"
+        className="bg-white shadow-2xl overflow-hidden font-sans"
         style={{
-          fontFamily,
           width: '210mm',
           height: '297mm',
           maxWidth: '100%',
@@ -212,12 +183,10 @@ export function InvoicePrintView({ invoice, branding }: InvoicePrintViewProps) {
             {/* Right: INVOICE title + number + status */}
             <div className="text-right">
               <h1
+                className="font-extrabold leading-none"
                 style={{
                   fontSize: '38px',
-                  fontWeight: 800,
                   color: accentColor,
-                  fontFamily,
-                  lineHeight: 1,
                   marginBottom: '2mm',
                   letterSpacing: '-0.5px',
                 }}
@@ -225,10 +194,10 @@ export function InvoicePrintView({ invoice, branding }: InvoicePrintViewProps) {
                 INVOICE
               </h1>
               <p
+                className="font-mono"
                 style={{
                   fontSize: '11px',
                   color: '#64748b',
-                  fontFamily: 'monospace',
                   marginBottom: '3mm',
                 }}
               >
@@ -534,7 +503,7 @@ export function InvoicePrintView({ invoice, branding }: InvoicePrintViewProps) {
       {/* Print Button */}
       <div className="mt-6 text-center print:hidden">
         <button
-          onClick={handlePrint}
+          onClick={onPrint}
           className="inline-flex items-center gap-2 px-6 py-3 font-bold rounded-lg transition-all shadow-lg text-white hover:opacity-90"
           style={{ backgroundColor: accentColor }}
         >

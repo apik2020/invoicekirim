@@ -443,7 +443,7 @@ Terima kasih!`
           : `<div style="width: 45px; height: 45px; border-radius: 6px; display: flex; align-items: center; justify-content: center; background-color: ${accentColor};"><span style="color: white; font-weight: bold; font-size: 18px;">${invoice.companyName?.charAt(0)?.toUpperCase() || 'I'}</span></div>`
 
         return `
-          <div style="font-family: system-ui, -apple-system, sans-serif; width: 794px; height: 1123px; margin: 0 auto; background: #FFFFFF; color: #333333;">
+          <div style="font-family: var(--font-inter), 'Inter', 'Arial', sans-serif; width: 794px; height: 1123px; margin: 0 auto; background: #FFFFFF; color: #333333;">
             <div style="display: flex; flex-direction: column; height: 100%; padding: 5mm 42px;">
 
               <!-- Header: Logo left, INVOICE + status right -->
@@ -578,7 +578,8 @@ Terima kasih!`
       container.innerHTML = buildInvoiceHTML()
       document.body.appendChild(container)
 
-      // Wait for rendering
+      // Wait for fonts and rendering
+      await document.fonts.ready
       await new Promise(resolve => setTimeout(resolve, 100))
 
       // Capture with html2canvas
@@ -759,7 +760,7 @@ Terima kasih!`
           <div
             className="inline-flex items-center justify-center px-6 py-3 border-4 rounded-lg transform -rotate-12 shadow-sm"
             style={{
-              fontFamily: 'system-ui, sans-serif',
+              fontFamily: "var(--font-inter), 'Inter', 'Arial', sans-serif",
               borderColor: effectiveBranding.primaryColor,
               color: effectiveBranding.primaryColor,
               backgroundColor: effectiveBranding.primaryColor + '1A', // 10% opacity
@@ -781,7 +782,7 @@ Terima kasih!`
             stamp.color,
             stamp.bgColor
           )}
-          style={{ fontFamily: 'system-ui, sans-serif' }}
+          style={{ fontFamily: "var(--font-inter), 'Inter', 'Arial', sans-serif" }}
         >
           <span className="text-xl font-black tracking-widest uppercase">
             {stamp.text}
@@ -841,7 +842,7 @@ Terima kasih!`
             {generatingPDF ? <Loader2 size={20} className="animate-spin" /> : <Download size={20} />}
           </button>
           <button
-            onClick={handlePrint}
+            onClick={async () => { await document.fonts.ready; handlePrint() }}
             className="p-2.5 text-text-secondary rounded-xl btn-secondary"
             title="Print"
           >

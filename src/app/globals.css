@@ -639,8 +639,10 @@ body {
     margin: 0;
   }
 
-  * {
-    font-family: var(--font-inter), var(--font-plus-jakarta), sans-serif !important;
+  *,
+  *::before,
+  *::after {
+    font-family: var(--font-inter), 'Inter', 'Arial', sans-serif !important;
   }
 
   html, body {
@@ -652,7 +654,7 @@ body {
   }
 
   body {
-    font-family: var(--font-inter), var(--font-plus-jakarta), sans-serif !important;
+    font-family: var(--font-inter), 'Inter', 'Arial', sans-serif !important;
     background: white !important;
     color: black !important;
     -webkit-print-color-adjust: exact !important;
