@@ -444,7 +444,7 @@ Terima kasih!`
 
         return `
           <div style="font-family: system-ui, -apple-system, sans-serif; width: 794px; height: 1123px; margin: 0 auto; background: #FFFFFF; color: #333333;">
-            <div style="display: flex; flex-direction: column; height: 100%; padding: 0 42px;">
+            <div style="display: flex; flex-direction: column; height: 100%; padding: 5mm 42px;">
 
               <!-- Header: Logo left, INVOICE + status right -->
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
@@ -542,6 +542,13 @@ Terima kasih!`
                       <span style="font-size: 16px; font-weight: 800; color: ${accentColor};">TOTAL</span>
                       <span style="font-size: 16px; font-weight: 800; color: ${accentColor};">${formatCurrency(invoice.total)}</span>
                     </div>
+                    ${invoice.signatureUrl || invoice.signatoryName ? `
+                    <div style="text-align: center; margin-top: 4mm;">
+                      ${invoice.signatureUrl ? `<div style="margin-bottom: 1mm; padding-bottom: 1mm; border-bottom: 1px solid #94a3b8;"><img src="${invoice.signatureUrl}" alt="Tanda tangan" style="height: 56px; object-fit: contain; margin: 0 auto;" /></div>` : ''}
+                      ${invoice.signatoryName ? `<p style="font-weight: 700; font-size: 10px; color: #1e293b;">${invoice.signatoryName}</p>` : ''}
+                      ${invoice.signatoryTitle ? `<p style="font-size: 9px; color: #64748b;">${invoice.signatoryTitle}</p>` : ''}
+                    </div>
+                    ` : ''}
                   </div>
                 </div>
               </div>
@@ -550,16 +557,6 @@ Terima kasih!`
               <div style="margin-top: 4mm;">
                 <h3 style="font-size: 9px; font-weight: 700; color: ${accentColor}; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1mm;">Syarat & Ketentuan:</h3>
                 <p style="font-size: 8px; color: #64748b; white-space: pre-line;">${invoice.termsAndConditions}</p>
-              </div>
-              ` : ''}
-
-              ${invoice.signatureUrl || invoice.signatoryName ? `
-              <div style="display: flex; justify-content: flex-end; margin-top: 4mm;">
-                <div style="text-align: center;">
-                  ${invoice.signatureUrl ? `<div style="margin-bottom: 1mm; padding-bottom: 1mm; border-bottom: 1px solid #94a3b8;"><img src="${invoice.signatureUrl}" alt="Tanda tangan" style="height: 56px; object-fit: contain; margin: 0 auto;" /></div>` : ''}
-                  ${invoice.signatoryName ? `<p style="font-weight: 700; font-size: 10px; color: #1e293b;">${invoice.signatoryName}</p>` : ''}
-                  ${invoice.signatoryTitle ? `<p style="font-size: 9px; color: #64748b;">${invoice.signatoryTitle}</p>` : ''}
-                </div>
               </div>
               ` : ''}
 
@@ -1024,7 +1021,7 @@ Terima kasih!`
 
           {/* Invoice Card - A4 Full Page */}
           <div ref={printRef} id="invoice-card" className="bg-white shadow-2xl relative overflow-hidden animate-fade-in-up animation-delay-100" style={{ height: '297mm' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '0 16mm' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '5mm 16mm' }}>
                 {/* Header: Logo left, INVOICE + status right */}
                 <div className="flex justify-between items-start" style={{ marginBottom: '6mm' }}>
                   {/* Left: Logo */}
@@ -1332,6 +1329,18 @@ Terima kasih!`
                           {formatCurrency(invoice.total)}
                         </span>
                       </div>
+                      {/* Signature */}
+                      {(invoice.signatureUrl || invoice.signatoryName) && (
+                        <div className="text-center" style={{ marginTop: '4mm' }}>
+                          {invoice.signatureUrl && (
+                            <div style={{ marginBottom: '1mm', paddingBottom: '1mm', borderBottom: '1px solid #94a3b8' }}>
+                              <img src={invoice.signatureUrl} alt="Tanda tangan" className="h-14 object-contain mx-auto" />
+                            </div>
+                          )}
+                          {invoice.signatoryName && <p style={{ fontWeight: 700, fontSize: '10px', color: '#1e293b' }}>{invoice.signatoryName}</p>}
+                          {invoice.signatoryTitle && <p style={{ fontSize: '9px', color: '#64748b' }}>{invoice.signatoryTitle}</p>}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1341,21 +1350,6 @@ Terima kasih!`
                   <div style={{ marginTop: '2mm' }}>
                     <h3 style={{ fontSize: '9px', fontWeight: 700, color: getEffectiveBranding().accentColor, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '1mm' }}>Syarat & Ketentuan:</h3>
                     <p style={{ fontSize: '8px', color: '#64748b', whiteSpace: 'pre-line' }}>{invoice.termsAndConditions}</p>
-                  </div>
-                )}
-
-                {/* Signature */}
-                {(invoice.signatureUrl || invoice.signatoryName) && (
-                  <div className="flex justify-end" style={{ marginTop: '4mm' }}>
-                    <div className="text-center">
-                      {invoice.signatureUrl && (
-                        <div style={{ marginBottom: '1mm', paddingBottom: '1mm', borderBottom: '1px solid #94a3b8' }}>
-                          <img src={invoice.signatureUrl} alt="Tanda tangan" className="h-14 object-contain mx-auto" />
-                        </div>
-                      )}
-                      {invoice.signatoryName && <p style={{ fontWeight: 700, fontSize: '10px', color: '#1e293b' }}>{invoice.signatoryName}</p>}
-                      {invoice.signatoryTitle && <p style={{ fontSize: '9px', color: '#64748b' }}>{invoice.signatoryTitle}</p>}
-                    </div>
                   </div>
                 )}
 

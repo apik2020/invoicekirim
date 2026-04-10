@@ -22,8 +22,8 @@ const styles = StyleSheet.create({
   page: {
     fontFamily: 'Helvetica',
     fontSize: 8.5,
-    paddingTop: 0,
-    paddingBottom: 0,
+    paddingTop: 15,
+    paddingBottom: 10,
     paddingHorizontal: 35,
     backgroundColor: '#FFFFFF',
   },
@@ -433,6 +433,19 @@ export const InvoicePDF = ({ invoice }: InvoicePDFProps) => {
                 <Text style={styles.grandTotalLabel}>TOTAL</Text>
                 <Text style={styles.grandTotalValue}>{formatCurrency(invoice.total)}</Text>
               </View>
+
+              {/* Signature */}
+              {(invoice.signatureUrl || invoice.signatoryName) && (
+                <View style={{ alignItems: 'center', marginTop: 10 }}>
+                  {invoice.signatureUrl && (
+                    <View style={{ borderBottomWidth: 1, borderBottomColor: '#94a3b8', paddingBottom: 4, marginBottom: 4 }}>
+                      <Image src={invoice.signatureUrl} style={{ height: 40 }} />
+                    </View>
+                  )}
+                  {invoice.signatoryName && <Text style={{ fontFamily: 'Helvetica-Bold', fontSize: 9, color: '#1e293b' }}>{invoice.signatoryName}</Text>}
+                  {invoice.signatoryTitle && <Text style={{ fontSize: 8, color: '#64748b' }}>{invoice.signatoryTitle}</Text>}
+                </View>
+              )}
             </View>
           </View>
         </View>
@@ -442,21 +455,6 @@ export const InvoicePDF = ({ invoice }: InvoicePDFProps) => {
           <View style={{ marginTop: 10 }}>
             <Text style={{ fontSize: 8, fontFamily: 'Helvetica-Bold', color: ACCENT_COLOR, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Syarat &amp; Ketentuan:</Text>
             <Text style={{ fontSize: 7, color: '#64748b' }}>{invoice.termsAndConditions}</Text>
-          </View>
-        )}
-
-        {/* Signature */}
-        {(invoice.signatureUrl || invoice.signatoryName) && (
-          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 10 }}>
-            <View style={{ alignItems: 'center' }}>
-              {invoice.signatureUrl && (
-                <View style={{ borderBottomWidth: 1, borderBottomColor: '#94a3b8', paddingBottom: 4, marginBottom: 4 }}>
-                  <Image src={invoice.signatureUrl} style={{ height: 40 }} />
-                </View>
-              )}
-              {invoice.signatoryName && <Text style={{ fontFamily: 'Helvetica-Bold', fontSize: 9, color: '#1e293b' }}>{invoice.signatoryName}</Text>}
-              {invoice.signatoryTitle && <Text style={{ fontSize: 8, color: '#64748b' }}>{invoice.signatoryTitle}</Text>}
-            </View>
           </View>
         )}
 

@@ -174,7 +174,7 @@ export function InvoicePrintView({ invoice, branding }: InvoicePrintViewProps) {
           maxWidth: '100%',
         }}
       >
-        <div style={{ padding: '0 16mm', height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ padding: '5mm 16mm', height: '100%', display: 'flex', flexDirection: 'column' }}>
           {/* Header: Logo left, INVOICE + status right */}
           <div className="flex justify-between items-start" style={{ marginBottom: '7mm' }}>
             {/* Left: Logo */}
@@ -490,32 +490,31 @@ export function InvoicePrintView({ invoice, branding }: InvoicePrintViewProps) {
                     {formatCurrency(invoice.total)}
                   </span>
                 </div>
+                {/* Signature - right aligned below total */}
+                {settings.showSignature && (invoice.signatureUrl || invoice.signatoryName) && (
+                  <div style={{ marginTop: '4mm', textAlign: 'right' }}>
+                    <div style={{ display: 'inline-block', textAlign: 'center' }}>
+                      {invoice.signatureUrl && (
+                        <div style={{ marginBottom: '1mm', paddingBottom: '1mm', borderBottom: '1px solid #94a3b8' }}>
+                          <img
+                            src={invoice.signatureUrl}
+                            alt="Tanda tangan"
+                            className="h-14 object-contain mx-auto"
+                          />
+                        </div>
+                      )}
+                      {invoice.signatoryName && (
+                        <p style={{ fontWeight: 700, fontSize: '10px', color: '#1e293b' }}>{invoice.signatoryName}</p>
+                      )}
+                      {invoice.signatoryTitle && (
+                        <p style={{ fontSize: '9px', color: '#64748b' }}>{invoice.signatoryTitle}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
-
-          {/* Signature Section */}
-          {settings.showSignature && (invoice.signatureUrl || invoice.signatoryName) && (
-            <div className="flex justify-end" style={{ marginTop: '4mm' }}>
-              <div className="text-center">
-                {invoice.signatureUrl && (
-                  <div style={{ marginBottom: '1mm', paddingBottom: '1mm', borderBottom: '1px solid #94a3b8' }}>
-                    <img
-                      src={invoice.signatureUrl}
-                      alt="Tanda tangan"
-                      className="h-14 object-contain mx-auto"
-                    />
-                  </div>
-                )}
-                {invoice.signatoryName && (
-                  <p style={{ fontWeight: 700, fontSize: '10px', color: '#1e293b' }}>{invoice.signatoryName}</p>
-                )}
-                {invoice.signatoryTitle && (
-                  <p style={{ fontSize: '9px', color: '#64748b' }}>{invoice.signatoryTitle}</p>
-                )}
-              </div>
-            </div>
-          )}
 
           {/* Footer */}
           <div
