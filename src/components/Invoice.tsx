@@ -162,7 +162,7 @@ export function Invoice({
               {from.address && <p className="text-[10px] text-gray-600 leading-tight whitespace-pre-line">{from.address}</p>}
             </div>
             {/* KEPADA */}
-            <div>
+            <div className="text-right">
               <h3 className="text-[9px] font-bold text-yellow-500 uppercase tracking-widest mb-[2mm]">Kepada:</h3>
               <p className="text-[11px] font-bold text-gray-800 leading-tight">{to.name}</p>
               <p className="text-[10px] text-gray-600 leading-tight">{to.email}</p>
