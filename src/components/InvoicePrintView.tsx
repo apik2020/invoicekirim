@@ -354,8 +354,8 @@ export function InvoicePrintView({ invoice, branding }: InvoicePrintViewProps) {
             </table>
           </div>
 
-          {/* Totals + Notes Row - flex-grow to fill space */}
-          <div className="grid grid-cols-2 gap-6 flex-1">
+          {/* Totals + Notes Row */}
+          <div className="grid grid-cols-2 gap-6">
             {/* Notes - Left Side */}
             <div>
               {invoice.notes && (
@@ -387,25 +387,6 @@ export function InvoicePrintView({ invoice, branding }: InvoicePrintViewProps) {
                     {invoice.notes}
                   </div>
                 </>
-              )}
-              {invoice.termsAndConditions && (
-                <div style={{ marginTop: '2mm' }}>
-                  <h3
-                    style={{
-                      fontSize: '9px',
-                      fontWeight: 700,
-                      color: accentColor,
-                      textTransform: 'uppercase',
-                      letterSpacing: '1px',
-                      marginBottom: '1mm',
-                    }}
-                  >
-                    Syarat & Ketentuan:
-                  </h3>
-                  <p style={{ fontSize: '8px', color: '#64748b', whiteSpace: 'pre-line' }}>
-                    {invoice.termsAndConditions}
-                  </p>
-                </div>
               )}
             </div>
 
@@ -459,9 +440,51 @@ export function InvoicePrintView({ invoice, branding }: InvoicePrintViewProps) {
                     {formatCurrency(invoice.total)}
                   </span>
                 </div>
-                {/* Signature - right aligned below total */}
+              </div>
+            </div>
+          </div>
+
+          {/* Terms & Signature Row - left: terms box, right: signature */}
+          {((invoice.termsAndConditions) || (settings.showSignature && (invoice.signatureUrl || invoice.signatoryName))) && (
+            <div className="grid grid-cols-2 gap-6 flex-1" style={{ marginTop: '3mm' }}>
+              {/* Terms & Conditions - Left Side */}
+              <div>
+                {invoice.termsAndConditions && (
+                  <>
+                    <h3
+                      style={{
+                        fontSize: '9px',
+                        fontWeight: 700,
+                        color: accentColor,
+                        textTransform: 'uppercase',
+                        letterSpacing: '1px',
+                        marginBottom: '2mm',
+                      }}
+                    >
+                      Syarat & Ketentuan:
+                    </h3>
+                    <div
+                      style={{
+                        padding: '2mm',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '3px',
+                        backgroundColor: '#f8fafc',
+                        minHeight: '14mm',
+                        fontSize: '8px',
+                        color: '#475569',
+                        whiteSpace: 'pre-line',
+                      }}
+                    >
+                      {invoice.termsAndConditions}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Signature - Right Side */}
+              <div className="flex justify-end items-end">
                 {settings.showSignature && (invoice.signatureUrl || invoice.signatoryName) && (
-                  <div style={{ marginTop: '4mm', textAlign: 'right' }}>
+                  <div style={{ textAlign: 'right' }}>
                     <div style={{ display: 'inline-block', textAlign: 'center' }}>
                       {invoice.signatureUrl && (
                         <div style={{ marginBottom: '1mm', paddingBottom: '1mm', borderBottom: '1px solid #94a3b8' }}>
@@ -483,7 +506,7 @@ export function InvoicePrintView({ invoice, branding }: InvoicePrintViewProps) {
                 )}
               </div>
             </div>
-          </div>
+          )}
 
           {/* Footer */}
           <div

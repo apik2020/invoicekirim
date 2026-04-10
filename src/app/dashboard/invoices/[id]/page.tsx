@@ -542,21 +542,28 @@ Terima kasih!`
                       <span style="font-size: 16px; font-weight: 800; color: ${accentColor};">TOTAL</span>
                       <span style="font-size: 16px; font-weight: 800; color: ${accentColor};">${formatCurrency(invoice.total)}</span>
                     </div>
-                    ${invoice.signatureUrl || invoice.signatoryName ? `
-                    <div style="text-align: center; margin-top: 4mm;">
-                      ${invoice.signatureUrl ? `<div style="margin-bottom: 1mm; padding-bottom: 1mm; border-bottom: 1px solid #94a3b8;"><img src="${invoice.signatureUrl}" alt="Tanda tangan" style="height: 56px; object-fit: contain; margin: 0 auto;" /></div>` : ''}
-                      ${invoice.signatoryName ? `<p style="font-weight: 700; font-size: 10px; color: #1e293b;">${invoice.signatoryName}</p>` : ''}
-                      ${invoice.signatoryTitle ? `<p style="font-size: 9px; color: #64748b;">${invoice.signatoryTitle}</p>` : ''}
-                    </div>
-                    ` : ''}
                   </div>
                 </div>
               </div>
 
-              ${invoice.termsAndConditions ? `
-              <div style="margin-top: 4mm;">
-                <h3 style="font-size: 9px; font-weight: 700; color: ${accentColor}; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 1mm;">Syarat & Ketentuan:</h3>
-                <p style="font-size: 8px; color: #64748b; white-space: pre-line;">${invoice.termsAndConditions}</p>
+              <!-- Terms & Signature Row -->
+              ${invoice.termsAndConditions || invoice.signatureUrl || invoice.signatoryName ? `
+              <div style="display: flex; gap: 48px; margin-top: 4mm;">
+                <div style="flex: 1;">
+                  ${invoice.termsAndConditions ? `
+                  <h3 style="font-size: 9px; font-weight: 700; color: ${accentColor}; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2mm;">Syarat & Ketentuan:</h3>
+                  <div style="padding: 2mm; border: 1px solid #e2e8f0; border-radius: 3px; background: #f8fafc; font-size: 8px; color: #475569; white-space: pre-line; min-height: 56px;">${invoice.termsAndConditions}</div>
+                  ` : ''}
+                </div>
+                <div style="flex: 1; display: flex; justify-content: flex-end; align-items: flex-end;">
+                  ${invoice.signatureUrl || invoice.signatoryName ? `
+                  <div style="text-align: center;">
+                    ${invoice.signatureUrl ? `<div style="margin-bottom: 1mm; padding-bottom: 1mm; border-bottom: 1px solid #94a3b8;"><img src="${invoice.signatureUrl}" alt="Tanda tangan" style="height: 56px; object-fit: contain; margin: 0 auto;" /></div>` : ''}
+                    ${invoice.signatoryName ? `<p style="font-weight: 700; font-size: 10px; color: #1e293b;">${invoice.signatoryName}</p>` : ''}
+                    ${invoice.signatoryTitle ? `<p style="font-size: 9px; color: #64748b;">${invoice.signatoryTitle}</p>` : ''}
+                  </div>
+                  ` : ''}
+                </div>
               </div>
               ` : ''}
 
@@ -1330,9 +1337,40 @@ Terima kasih!`
                           {formatCurrency(invoice.total)}
                         </span>
                       </div>
-                      {/* Signature */}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Terms & Signature Row */}
+                {(invoice.termsAndConditions || invoice.signatureUrl || invoice.signatoryName) && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                      {invoice.termsAndConditions && (
+                        <>
+                          <h3
+                            className="font-bold uppercase tracking-wider mb-1"
+                            style={{ color: getEffectiveBranding().accentColor, fontSize: '9px' }}
+                          >
+                            Syarat & Ketentuan:
+                          </h3>
+                          <div
+                            className="p-2 rounded whitespace-pre-line"
+                            style={{
+                              color: '#475569',
+                              border: '1px solid #e2e8f0',
+                              backgroundColor: '#f8fafc',
+                              fontSize: '8px',
+                              minHeight: '56px',
+                            }}
+                          >
+                            {invoice.termsAndConditions}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                    <div className="flex justify-end items-end">
                       {(invoice.signatureUrl || invoice.signatoryName) && (
-                        <div className="text-center" style={{ marginTop: '4mm' }}>
+                        <div className="text-center">
                           {invoice.signatureUrl && (
                             <div style={{ marginBottom: '1mm', paddingBottom: '1mm', borderBottom: '1px solid #94a3b8' }}>
                               <img src={invoice.signatureUrl} alt="Tanda tangan" className="h-14 object-contain mx-auto" />
@@ -1343,14 +1381,6 @@ Terima kasih!`
                         </div>
                       )}
                     </div>
-                  </div>
-                </div>
-
-                {/* Terms & Conditions */}
-                {invoice.termsAndConditions && (
-                  <div style={{ marginTop: '2mm' }}>
-                    <h3 style={{ fontSize: '9px', fontWeight: 700, color: getEffectiveBranding().accentColor, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '1mm' }}>Syarat & Ketentuan:</h3>
-                    <p style={{ fontSize: '8px', color: '#64748b', whiteSpace: 'pre-line' }}>{invoice.termsAndConditions}</p>
                   </div>
                 )}
 

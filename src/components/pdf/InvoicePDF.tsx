@@ -433,8 +433,27 @@ export const InvoicePDF = ({ invoice }: InvoicePDFProps) => {
                 <Text style={styles.grandTotalLabel}>TOTAL</Text>
                 <Text style={styles.grandTotalValue}>{formatCurrency(invoice.total)}</Text>
               </View>
+            </View>
+          </View>
+        </View>
 
-              {/* Signature */}
+        {/* Terms & Signature Row */}
+        {(invoice.termsAndConditions || invoice.signatureUrl || invoice.signatoryName) && (
+          <View style={styles.totalsNotesRow}>
+            {/* Terms Left */}
+            <View style={styles.notesSection}>
+              {invoice.termsAndConditions && (
+                <>
+                  <Text style={{ fontSize: 8, fontFamily: 'Helvetica-Bold', color: ACCENT_COLOR, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Syarat &amp; Ketentuan:</Text>
+                  <View style={styles.notesBox}>
+                    <Text style={{ fontSize: 7, color: '#475569', lineHeight: 1.4 }}>{invoice.termsAndConditions}</Text>
+                  </View>
+                </>
+              )}
+            </View>
+
+            {/* Signature Right */}
+            <View style={[styles.totalsSection, { justifyContent: 'flex-end' }]}>
               {(invoice.signatureUrl || invoice.signatoryName) && (
                 <View style={{ alignItems: 'center', marginTop: 10 }}>
                   {invoice.signatureUrl && (
@@ -447,14 +466,6 @@ export const InvoicePDF = ({ invoice }: InvoicePDFProps) => {
                 </View>
               )}
             </View>
-          </View>
-        </View>
-
-        {/* Terms & Conditions */}
-        {invoice.termsAndConditions && (
-          <View style={{ marginTop: 10 }}>
-            <Text style={{ fontSize: 8, fontFamily: 'Helvetica-Bold', color: ACCENT_COLOR, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Syarat &amp; Ketentuan:</Text>
-            <Text style={{ fontSize: 7, color: '#64748b' }}>{invoice.termsAndConditions}</Text>
           </View>
         )}
 
