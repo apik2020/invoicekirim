@@ -388,32 +388,14 @@ Terima kasih!`
       const html2canvas = await import('html2canvas')
       const { jsPDF } = await import('jspdf')
 
-      // Convert image URL to base64 data URL to avoid CORS issues with html2canvas
+      // Convert image URL to base64 data URL via server proxy to avoid CORS issues
       const imageToDataUrl = async (url: string): Promise<string | null> => {
         try {
-          const response = await fetch(url, { mode: 'cors' })
-          if (!response.ok) {
-            // Fallback: try no-cors with canvas
-            const img = new Image()
-            img.crossOrigin = 'anonymous'
-            img.src = url
-            await new Promise<void>((resolve, reject) => {
-              img.onload = () => resolve()
-              img.onerror = () => reject(new Error('Image load failed'))
-            })
-            const canvas = document.createElement('canvas')
-            canvas.width = img.naturalWidth
-            canvas.height = img.naturalHeight
-            canvas.getContext('2d')!.drawImage(img, 0, 0)
-            return canvas.toDataURL('image/png')
-          }
-          const blob = await response.blob()
-          return new Promise<string>((resolve) => {
-            const reader = new FileReader()
-            reader.onloadend = () => resolve(reader.result as string)
-            reader.onerror = () => resolve(url) // fallback to original URL
-            reader.readAsDataURL(blob)
-          })
+          const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(url)}`
+          const response = await fetch(proxyUrl)
+          if (!response.ok) return null
+          const { dataUrl } = await response.json()
+          return dataUrl || null
         } catch {
           return null
         }

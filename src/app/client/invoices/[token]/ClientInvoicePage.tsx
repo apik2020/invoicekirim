@@ -119,18 +119,14 @@ export default function ClientInvoicePage({
         ? (invoice.branding?.accentColor || invoice.branding?.primaryColor || '#0F766E')
         : '#0F766E'
 
-      // Convert image URL to base64 data URL to avoid CORS issues with html2canvas
+      // Convert image URL to base64 data URL via server proxy to avoid CORS issues
       const imageToDataUrl = async (url: string): Promise<string | null> => {
         try {
-          const response = await fetch(url, { mode: 'cors' })
+          const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(url)}`
+          const response = await fetch(proxyUrl)
           if (!response.ok) return null
-          const blob = await response.blob()
-          return new Promise<string>((resolve) => {
-            const reader = new FileReader()
-            reader.onloadend = () => resolve(reader.result as string)
-            reader.onerror = () => resolve(url)
-            reader.readAsDataURL(blob)
-          })
+          const { dataUrl } = await response.json()
+          return dataUrl || null
         } catch {
           return null
         }
@@ -366,18 +362,14 @@ export default function ClientInvoicePage({
         ? (invoice.branding?.accentColor || invoice.branding?.primaryColor || '#0F766E')
         : '#0F766E'
 
-      // Convert image URL to base64 data URL to avoid CORS issues with html2canvas
+      // Convert image URL to base64 data URL via server proxy to avoid CORS issues
       const imageToDataUrl = async (url: string): Promise<string | null> => {
         try {
-          const response = await fetch(url, { mode: 'cors' })
+          const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(url)}`
+          const response = await fetch(proxyUrl)
           if (!response.ok) return null
-          const blob = await response.blob()
-          return new Promise<string>((resolve) => {
-            const reader = new FileReader()
-            reader.onloadend = () => resolve(reader.result as string)
-            reader.onerror = () => resolve(url)
-            reader.readAsDataURL(blob)
-          })
+          const { dataUrl } = await response.json()
+          return dataUrl || null
         } catch {
           return null
         }
