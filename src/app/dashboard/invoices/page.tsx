@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAppSession } from '@/hooks/useAppSession'
@@ -72,7 +72,7 @@ const getEffectiveStatus = (invoice: Invoice): 'DRAFT' | 'SENT' | 'PAID' | 'OVER
 
 export default function InvoicesPage() {
   const router = useRouter()
-  const sessionResult = useAppSession()
+  const { status: sessionStatus } = useAppSession()
   const [invoices, setInvoices] = useState<Invoice[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
@@ -87,6 +87,7 @@ export default function InvoicesPage() {
     OVERDUE: 0,
     CANCELED: 0,
   })
+  const initDataLoadedRef = useRef(false)
 
   const fetchInvoices = useCallback(async () => {
     try {
@@ -144,22 +145,23 @@ export default function InvoicesPage() {
   useEffect(() => {
     setMounted(true)
 
-    if (!sessionResult || sessionResult.status === 'unauthenticated') {
+    if (sessionStatus === 'unauthenticated') {
       router.push('/login')
-    } else if (sessionResult.status === 'authenticated') {
+    } else if (sessionStatus === 'authenticated' && !initDataLoadedRef.current) {
+      initDataLoadedRef.current = true
       fetchInvoices()
     }
-  }, [sessionResult, router, fetchInvoices])
+  }, [sessionStatus, router, fetchInvoices])
 
   useEffect(() => {
-    if (sessionResult?.status === 'authenticated') {
+    if (sessionStatus === 'authenticated' && initDataLoadedRef.current) {
       const delayedFetch = setTimeout(() => {
         fetchInvoices()
       }, 500)
 
       return () => clearTimeout(delayedFetch)
     }
-  }, [statusFilter, searchQuery, sessionResult?.status, fetchInvoices])
+  }, [statusFilter, searchQuery, sessionStatus, fetchInvoices])
 
   const handleDelete = async (id: string) => {
     if (!confirm('Apakah Anda yakin ingin menghapus invoice ini?')) return
@@ -202,7 +204,7 @@ export default function InvoicesPage() {
     )
   }
 
-  if (!mounted || loading || !sessionResult || sessionResult.status === 'loading') {
+  if (!mounted || loading || sessionStatus === 'loading') {
     return (
       <DashboardLayout title="Invoice">
         <div className="flex items-center justify-center py-20">
@@ -215,7 +217,7 @@ export default function InvoicesPage() {
     )
   }
 
-  if (sessionResult.status === 'unauthenticated') {
+  if (sessionStatus === 'unauthenticated') {
     return null
   }
 

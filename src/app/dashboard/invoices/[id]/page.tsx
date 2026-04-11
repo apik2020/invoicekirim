@@ -148,7 +148,8 @@ export default function InvoiceDetailPage({
       fetchInvoice()
       fetchBranding()
     }
-  }, [status, router, id])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, id])
 
   const fetchBranding = async () => {
     try {
