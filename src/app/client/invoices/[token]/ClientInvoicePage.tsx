@@ -684,14 +684,7 @@ export default function ClientInvoicePage({
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin
     const invoiceUrl = `${baseUrl}/invoice/${token}`
 
-    const statusLabels: Record<string, string> = {
-      DRAFT: 'DRAFT',
-      SENT: 'TERKIRIM',
-      PAID: 'LUNAS',
-      OVERDUE: 'JATUH TEMPO',
-      CANCELED: 'BATAL',
-    }
-    const statusText = statusLabels[invoice.status] || invoice.status
+    const paymentStatus = invoice.paidAt || invoice.status === 'PAID' ? 'LUNAS' : 'Belum Dibayar'
 
     const message = `*INVOICE ${invoice.invoiceNumber}*
 
@@ -701,7 +694,7 @@ ${invoice.companyName} telah mengirimkan invoice kepada Anda. Berikut detail inv
 
 💰 *Total:* ${formatCurrency(invoice.total)}
 📅 *Jatuh Tempo:* ${invoice.dueDate ? formatDate(invoice.dueDate) : '-'}
-✅ *Status Pembayaran:* ${statusText}
+✅ *Status Pembayaran:* ${paymentStatus}
 
 📄 Lihat Invoice:
 ${invoiceUrl}
