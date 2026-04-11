@@ -349,6 +349,15 @@ export default function InvoiceDetailPage({
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin
     const invoiceUrl = `${baseUrl}/invoice/${invoice.accessToken}`
 
+    const statusLabels: Record<string, string> = {
+      DRAFT: 'DRAFT',
+      SENT: 'TERKIRIM',
+      PAID: 'LUNAS',
+      OVERDUE: 'JATUH TEMPO',
+      CANCELED: 'BATAL',
+    }
+    const statusText = statusLabels[invoice.status] || invoice.status
+
     const message = `*INVOICE ${invoice.invoiceNumber}*
 
 Halo ${invoice.clientName},
@@ -357,6 +366,7 @@ ${invoice.companyName} telah mengirimkan invoice kepada Anda. Berikut detail inv
 
 💰 *Total:* ${formatCurrency(invoice.total)}
 📅 *Jatuh Tempo:* ${invoice.dueDate ? formatDate(invoice.dueDate) : '-'}
+✅ *Status Pembayaran:* ${statusText}
 
 📄 Lihat Invoice:
 ${invoiceUrl}
