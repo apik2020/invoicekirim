@@ -1,6 +1,6 @@
 'use client'
 
-import { AlertCircle, Clock, Calendar, X } from 'lucide-react'
+import { AlertCircle, Clock, Calendar, X, Send, Loader2, CheckCircle2 } from 'lucide-react'
 import { formatDistanceToNow, format } from 'date-fns'
 import { id } from 'date-fns/locale'
 import { formatCurrency } from '@/lib/utils'
@@ -23,6 +23,9 @@ interface DueDateAlertsProps {
 
 export function DueDateAlerts({ overdue, dueToday, dueThisWeek }: DueDateAlertsProps) {
   const [dismissed, setDismissed] = useState<Set<string>>(new Set())
+  const [sendingId, setSendingId] = useState<string | null>(null)
+  const [sentIds, setSentIds] = useState<Set<string>>(new Set())
+  const [error, setError] = useState<string | null>(null)
 
   // Don't show alerts if there's nothing to show
   if (overdue.length === 0 && dueToday.length === 0 && dueThisWeek.length === 0) {
@@ -33,6 +36,30 @@ export function DueDateAlerts({ overdue, dueToday, dueThisWeek }: DueDateAlertsP
     setDismissed((prev) => new Set([...prev, key]))
   }
 
+  const handleSendReminder = async (invoiceId: string) => {
+    setSendingId(invoiceId)
+    setError(null)
+
+    try {
+      const res = await fetch(`/api/invoices/${invoiceId}/remind`, {
+        method: 'POST',
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error || 'Gagal mengirim reminder')
+        return
+      }
+
+      setSentIds((prev) => new Set([...prev, invoiceId]))
+    } catch {
+      setError('Terjadi kesalahan saat mengirim reminder')
+    } finally {
+      setSendingId(null)
+    }
+  }
+
   // Get first item from each category
   const firstOverdue = overdue[0]
   const firstDueToday = dueToday[0]
@@ -40,6 +67,16 @@ export function DueDateAlerts({ overdue, dueToday, dueThisWeek }: DueDateAlertsP
 
   return (
     <div className="space-y-4">
+      {/* Error toast */}
+      {error && (
+        <div className="card p-4 bg-red-50 border border-red-200 flex items-center justify-between">
+          <p className="text-sm text-red-700 font-medium">{error}</p>
+          <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600">
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
       {/* Overdue Alert */}
       {firstOverdue && !dismissed.has('overdue') && (
         <div className="card p-6 bg-gradient-to-r from-pink-50 to-red-50 border-pink-300 border-2 relative">
@@ -80,13 +117,26 @@ export function DueDateAlerts({ overdue, dueToday, dueThisWeek }: DueDateAlertsP
                   Lihat Invoice
                 </Link>
                 <button
-                  onClick={() => {
-                    // Implement send reminder functionality
-                    alert('Fitur reminder akan segera hadir!')
-                  }}
-                  className="px-4 py-2 bg-white hover:bg-gray-50 text-pink-600 font-bold rounded-lg text-sm border border-pink-300 transition-colors"
+                  onClick={() => handleSendReminder(firstOverdue.id)}
+                  disabled={sendingId === firstOverdue.id || sentIds.has(firstOverdue.id)}
+                  className="px-4 py-2 bg-white hover:bg-gray-50 text-pink-600 font-bold rounded-lg text-sm border border-pink-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
-                  Kirim Reminder
+                  {sendingId === firstOverdue.id ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Mengirim...
+                    </>
+                  ) : sentIds.has(firstOverdue.id) ? (
+                    <>
+                      <CheckCircle2 className="w-4 h-4 text-green-500" />
+                      Terkirim
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      Kirim Reminder
+                    </>
+                  )}
                 </button>
               </div>
 
@@ -136,12 +186,26 @@ export function DueDateAlerts({ overdue, dueToday, dueThisWeek }: DueDateAlertsP
                   Lihat Invoice
                 </Link>
                 <button
-                  onClick={() => {
-                    alert('Fitur reminder akan segera hadir!')
-                  }}
-                  className="px-4 py-2 bg-white hover:bg-gray-50 text-orange-600 font-bold rounded-lg text-sm border border-orange-300 transition-colors"
+                  onClick={() => handleSendReminder(firstDueToday.id)}
+                  disabled={sendingId === firstDueToday.id || sentIds.has(firstDueToday.id)}
+                  className="px-4 py-2 bg-white hover:bg-gray-50 text-orange-600 font-bold rounded-lg text-sm border border-orange-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
-                  Kirim Reminder
+                  {sendingId === firstDueToday.id ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Mengirim...
+                    </>
+                  ) : sentIds.has(firstDueToday.id) ? (
+                    <>
+                      <CheckCircle2 className="w-4 h-4 text-green-500" />
+                      Terkirim
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      Kirim Reminder
+                    </>
+                  )}
                 </button>
               </div>
 
