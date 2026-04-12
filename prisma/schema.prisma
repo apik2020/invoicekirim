@@ -466,6 +466,12 @@ model users {
   smtpPort             String?             @default("587")
   smtpSecure           Boolean?            @default(false)
   smtpUser             String?
+  emailProviderMode    String?             @default("default")
+  emailProvider        String?             @default("custom")
+  emailFallbackEnabled Boolean?            @default(true)
+  emailProviderStatus  String?             @default("untested")
+  emailLastTestedAt    DateTime?
+  emailTestTarget      String?
   activeTeamId         String?
   twoFactorBackupCodes String?
   twoFactorEnabled     Boolean             @default(false)

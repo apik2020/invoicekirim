@@ -49,17 +49,6 @@ export default function BrandingSettingsPage() {
     companyAddress: '',
   })
 
-  // Email Settings State
-  const [emailSettings, setEmailSettings] = useState({
-    smtpHost: '',
-    smtpPort: '587',
-    smtpSecure: false,
-    smtpUser: '',
-    smtpPass: '',
-  })
-  const [showEmailPassword, setShowEmailPassword] = useState(false)
-  const [testingEmail, setTestingEmail] = useState(false)
-
   // Logo Upload State
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -93,13 +82,6 @@ export default function BrandingSettingsPage() {
           companyEmail: profileData.companyEmail || '',
           companyPhone: profileData.companyPhone || '',
           companyAddress: profileData.companyAddress || '',
-        })
-        setEmailSettings({
-          smtpHost: profileData.smtpHost || '',
-          smtpPort: profileData.smtpPort || '587',
-          smtpSecure: profileData.smtpSecure ?? false,
-          smtpUser: profileData.smtpUser || '',
-          smtpPass: '',
         })
       }
     } catch (error) {
@@ -245,61 +227,6 @@ export default function BrandingSettingsPage() {
     }
   }
 
-  const handleSubmitEmailSettings = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setSaving(true)
-    setMessage(null)
-
-    try {
-      const res = await fetch('/api/user/email-settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(emailSettings),
-      })
-
-      const data = await res.json()
-
-      if (res.ok) {
-        setMessage({ type: 'success', text: 'Pengaturan email berhasil disimpan!' })
-      } else {
-        setMessage({ type: 'error', text: data.error || 'Gagal menyimpan pengaturan email' })
-      }
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Terjadi kesalahan' })
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const handleTestConnection = async () => {
-    setTestingEmail(true)
-    setMessage(null)
-
-    try {
-      const res = await fetch('/api/user/test-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(emailSettings),
-      })
-
-      const data = await res.json()
-
-      if (res.ok) {
-        setMessage({ type: 'success', text: 'Email test berhasil dikirim ke ' + emailSettings.smtpUser })
-      } else {
-        setMessage({
-          type: 'error',
-          text: data.error || 'Gagal mengirim email test',
-          details: data.details || []
-        })
-      }
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Terjadi kesalahan' })
-    } finally {
-      setTestingEmail(false)
-    }
-  }
-
   if (!session) {
     return (
       <DashboardLayout title="Pengaturan Invoice">
@@ -382,20 +309,13 @@ export default function BrandingSettingsPage() {
           <Palette className="w-5 h-5" />
           <span>Tampilan</span>
         </button>
-        <button
-          onClick={() => {
-            setActiveTab('email')
-            setMessage(null)
-          }}
-          className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${
-            activeTab === 'email'
-              ? 'btn-primary'
-              : 'btn-secondary'
-          }`}
+        <Link
+          href="/dashboard/settings/email"
+          className="flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all btn-secondary"
         >
           <Mail className="w-5 h-5" />
           <span>Email</span>
-        </button>
+        </Link>
       </div>
 
       {loading ? (
@@ -931,196 +851,24 @@ export default function BrandingSettingsPage() {
             </FeatureGate>
           )}
 
-          {/* Tab 3: Email */}
+          {/* Tab 3: Email — moved to dedicated page */}
           {activeTab === 'email' && (
-            <FeatureGate
-              featureKey="EMAIL_SEND"
-              fallback={
-                <div className="card p-12 text-center">
-                  <div className="w-20 h-20 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                    <Mail className="w-10 h-10 text-white" />
-                  </div>
-                  <h2 className="text-2xl font-bold text-brand-500 mb-3">
-                    Pengaturan Email SMTP
-                  </h2>
-                  <p className="text-text-secondary mb-6 max-w-md mx-auto">
-                    Konfigurasi SMTP untuk mengirim invoice langsung ke email klien. Fitur ini hanya tersedia untuk pengguna Pro.
-                  </p>
-                  <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                    <Link
-                      href="/checkout"
-                      className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-                    >
-                      <Crown className="w-5 h-5" />
-                      Upgrade ke Pro Sekarang
-                    </Link>
-                    <Link
-                      href="/pricing"
-                      className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors"
-                    >
-                      Pelajari Lebih
-                    </Link>
-                  </div>
-                </div>
-              }
-            >
-              <div className="card p-8">
-              <div className="mb-8">
-                <h2 className="text-xl font-bold text-brand-500 mb-2">
-                  Pengaturan Email
-                </h2>
-                <p className="text-text-secondary">
-                  Konfigurasi SMTP untuk mengirim invoice ke klien
-                </p>
-              </div>
-
-              <form onSubmit={handleSubmitEmailSettings} className="space-y-6">
-                {/* SMTP Host */}
-                <div>
-                  <label className="input-label">SMTP Host</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <Server className="w-5 h-5 text-text-muted" />
-                    </div>
-                    <input
-                      type="text"
-                      value={emailSettings.smtpHost}
-                      onChange={(e) => setEmailSettings({ ...emailSettings, smtpHost: e.target.value })}
-                      className="input pl-12"
-                      placeholder="smtp.gmail.com"
-                    />
-                  </div>
-                  <p className="text-xs text-text-muted mt-1">
-                    Contoh: smtp.gmail.com untuk Gmail, smtp-mail.outlook.com untuk Outlook
-                  </p>
-                </div>
-
-                {/* SMTP Port & Secure */}
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="input-label">SMTP Port</label>
-                    <input
-                      type="text"
-                      value={emailSettings.smtpPort}
-                      onChange={(e) => setEmailSettings({ ...emailSettings, smtpPort: e.target.value })}
-                      className="input"
-                      placeholder="587"
-                    />
-                    <p className="text-xs text-text-muted mt-1">
-                      Port 587 untuk TLS, 465 untuk SSL
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="input-label">Koneksi Aman</label>
-                    <select
-                      value={emailSettings.smtpSecure.toString()}
-                      onChange={(e) => setEmailSettings({ ...emailSettings, smtpSecure: e.target.value === 'true' })}
-                      className="select"
-                    >
-                      <option value="false">TLS (STARTTLS)</option>
-                      <option value="true">SSL</option>
-                    </select>
-                    <p className="text-xs text-text-muted mt-1">
-                      TLS untuk port 587, SSL untuk port 465
-                    </p>
-                  </div>
-                </div>
-
-                {/* SMTP User (Email) */}
-                <div>
-                  <label className="input-label">Email Pengirim</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <Mail className="w-5 h-5 text-text-muted" />
-                    </div>
-                    <input
-                      type="email"
-                      value={emailSettings.smtpUser}
-                      onChange={(e) => setEmailSettings({ ...emailSettings, smtpUser: e.target.value })}
-                      className="input pl-12"
-                      placeholder="your-email@gmail.com"
-                    />
-                  </div>
-                </div>
-
-                {/* SMTP Password */}
-                <div>
-                  <label className="input-label">Password / App Password</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <Lock className="w-5 h-5 text-text-muted" />
-                    </div>
-                    <input
-                      type={showEmailPassword ? 'text' : 'password'}
-                      value={emailSettings.smtpPass}
-                      onChange={(e) => setEmailSettings({ ...emailSettings, smtpPass: e.target.value })}
-                      className="input pl-12 pr-12"
-                      placeholder="Masukkan password atau app password"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowEmailPassword(!showEmailPassword)}
-                      className="absolute inset-y-0 right-0 pr-4 flex items-center text-text-muted hover:text-brand-500 transition-colors"
-                    >
-                      {showEmailPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
-                  </div>
-                  <p className="text-xs text-text-muted mt-1">
-                    Untuk Gmail, gunakan App Password dari Google Account Settings
-                  </p>
-                </div>
-
-                {/* Info Box */}
-                <div className="p-4 rounded-xl bg-secondary-50 border border-secondary-200">
-                  <p className="text-sm text-secondary-800">
-                    <strong>Tips:</strong> Gunakan App Password untuk keamanan lebih baik.
-                    Untuk Gmail, buat App Password di Google Account - Security - 2-Step Verification - App passwords.
-                  </p>
-                </div>
-
-                {/* Buttons */}
-                <div className="flex flex-col md:flex-row gap-4 pt-4">
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className="flex-1 btn-primary px-8 py-4 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {saving ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        <span>Memproses...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Check className="w-5 h-5" />
-                        <span>Simpan Pengaturan</span>
-                      </>
-                    )}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleTestConnection}
-                    disabled={testingEmail || !emailSettings.smtpHost || !emailSettings.smtpUser || !emailSettings.smtpPass}
-                    className="flex-1 btn-secondary px-8 py-4 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {testingEmail ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        <span>Menguji...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Mail className="w-5 h-5" />
-                        <span>Kirim Test Email</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
+            <div className="card p-12 text-center">
+              <Mail className="w-12 h-12 text-brand-500 mx-auto mb-4" />
+              <h2 className="text-xl font-bold text-brand-500 mb-2">
+                Pengaturan Email
+              </h2>
+              <p className="text-text-secondary mb-6">
+                Pengaturan email sekarang tersedia di halaman terpisah
+              </p>
+              <Link
+                href="/dashboard/settings/email"
+                className="inline-flex items-center gap-2 px-6 py-3 btn-primary font-bold"
+              >
+                <Mail size={18} />
+                Buka Pengaturan Email
+              </Link>
             </div>
-            </FeatureGate>
           )}
         </>
       )}

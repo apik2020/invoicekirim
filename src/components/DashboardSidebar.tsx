@@ -19,6 +19,7 @@ import {
   HelpCircle,
   Palette,
   Shield,
+  Mail,
   Menu,
   X,
   Plus,
@@ -45,6 +46,7 @@ const mainNavItems: NavItem[] = [
 const settingsNavItems: NavItem[] = [
   { name: 'Profil', href: '/dashboard/settings', icon: Settings },
   { name: 'Branding', href: '/dashboard/settings/branding', icon: Palette },
+  { name: 'Email', href: '/dashboard/settings/email', icon: Mail },
   { name: 'Billing', href: '/dashboard/billing', icon: CreditCard },
   { name: 'Keamanan', href: '/dashboard/settings/security', icon: Shield },
 ]

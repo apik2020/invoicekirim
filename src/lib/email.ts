@@ -14,6 +14,7 @@ try {
 import nodemailer from 'nodemailer'
 import { prisma } from './prisma'
 import { resolveEmailTemplate } from './email-templates'
+import { decrypt } from './encryption'
 
 /**
  * Send email via SMTP using user's settings
@@ -41,13 +42,16 @@ async function sendViaSMTP(
       return { success: false, error: 'SMTP not configured' }
     }
 
+    // Decrypt password
+    const password = decrypt(user.smtpPass)
+
     const transporter = nodemailer.createTransport({
       host: user.smtpHost,
       port: parseInt(user.smtpPort || '587'),
       secure: user.smtpSecure === true,
       auth: {
         user: user.smtpUser,
-        pass: user.smtpPass,
+        pass: password,
       },
     })
 
@@ -790,6 +794,7 @@ export async function sendSystemEmail({
 
 /**
  * Send email using SMTP (user's settings) or fall back to admin SMTP
+ * Supports provider mode: 'default' uses system email, 'custom' uses user SMTP
  */
 export async function sendEmail({
   to,
@@ -813,18 +818,32 @@ export async function sendEmail({
           smtpSecure: true,
           smtpUser: true,
           smtpPass: true,
+          emailProviderMode: true,
+          emailFallbackEnabled: true,
         },
       })
 
+      // Check provider mode
+      const mode = user?.emailProviderMode || (user?.smtpHost ? 'custom' : 'default')
+      const fallbackEnabled = user?.emailFallbackEnabled ?? true
+
+      // If mode is 'default', skip user SMTP entirely
+      if (mode === 'default') {
+        return sendSystemEmail({ to, subject, html })
+      }
+
+      // Mode is 'custom' — try user's SMTP
       if (user?.smtpHost && user?.smtpUser && user?.smtpPass) {
-        // User has SMTP configured, use it
+        // Decrypt password
+        const password = decrypt(user.smtpPass)
+
         const transporter = nodemailer.createTransport({
           host: user.smtpHost,
           port: parseInt(user.smtpPort || '587'),
           secure: user.smtpSecure === true,
           auth: {
             user: user.smtpUser,
-            pass: user.smtpPass,
+            pass: password,
           },
         })
 
@@ -839,11 +858,21 @@ export async function sendEmail({
       }
     } catch (smtpError) {
       console.error('User SMTP send failed:', smtpError)
+      // Check if fallback is enabled before using system email
+      if (userId) {
+        const user = await prisma.users.findUnique({
+          where: { id: userId },
+          select: { emailFallbackEnabled: true },
+        })
+        if (user && user.emailFallbackEnabled === false) {
+          return { success: false, error: smtpError }
+        }
+      }
       // Fall back to admin SMTP
     }
   }
 
-  // Fall back to admin SMTP (for system emails)
+  // Fall back to admin SMTP (for system emails or when user SMTP fails)
   return sendSystemEmail({ to, subject, html })
 }
 
