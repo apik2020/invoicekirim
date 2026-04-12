@@ -18,6 +18,7 @@ export interface AdminSession {
 export async function verifyAdminCredentials(email: string, password: string) {
   const admin = await prisma.admins.findUnique({
     where: { email },
+    select: { id: true, email: true, name: true, password: true },
   })
 
   if (!admin || !admin.password) {
