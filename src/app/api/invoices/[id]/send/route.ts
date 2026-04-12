@@ -1,9 +1,9 @@
 import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import nodemailer from 'nodemailer'
 import { checkFeatureAccess, trackEmailSend } from '@/lib/feature-access'
 import { logInvoiceSent } from '@/lib/activity-log'
+import { sendInvoiceSent } from '@/lib/email'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -51,225 +51,7 @@ export async function POST(
       return NextResponse.json({ error: 'Invoice not found' }, { status: 404 })
     }
 
-    // Generate invoice URL
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    const invoiceUrl = `${baseUrl}/invoice/${invoice.accessToken}`
-
-    // Create HTML email template
-    const emailHtml = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Invoice ${invoice.invoiceNumber}</title>
-          <style>
-            body {
-              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-              line-height: 1.6;
-              color: #333;
-              background-color: #f4f4f4;
-              margin: 0;
-              padding: 20px;
-            }
-            .container {
-              max-width: 600px;
-              margin: 0 auto;
-              background-color: #fff;
-              border-radius: 8px;
-              overflow: hidden;
-              box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            }
-            .header {
-              background: linear-gradient(135deg, #f97316 0%, #ec4899 100%);
-              color: white;
-              padding: 30px;
-              text-align: center;
-            }
-            .header h1 {
-              margin: 0;
-              font-size: 24px;
-              font-weight: bold;
-            }
-            .content {
-              padding: 30px;
-            }
-            .invoice-info {
-              background-color: #fff7ed;
-              border-left: 4px solid #f97316;
-              padding: 15px;
-              margin-bottom: 20px;
-              border-radius: 4px;
-            }
-            .invoice-info p {
-              margin: 5px 0;
-              font-size: 14px;
-            }
-            .invoice-info strong {
-              color: #f97316;
-            }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              margin: 20px 0;
-            }
-            th, td {
-              padding: 12px;
-              text-align: left;
-              border-bottom: 1px solid #eee;
-            }
-            th {
-              background-color: #f97316;
-              color: white;
-              font-weight: bold;
-              font-size: 14px;
-            }
-            td {
-              font-size: 14px;
-            }
-            .totals {
-              margin-top: 20px;
-              text-align: right;
-            }
-            .total-row {
-              display: flex;
-              justify-content: flex-end;
-              padding: 8px 0;
-              font-size: 14px;
-            }
-            .total-row.grand-total {
-              border-top: 2px solid #f97316;
-              padding-top: 15px;
-              margin-top: 10px;
-            }
-            .total-row span:first-child {
-              margin-right: 20px;
-              color: #666;
-            }
-            .total-row.grand-total span {
-              font-size: 18px;
-              font-weight: bold;
-              color: #f97316;
-            }
-            .button {
-              display: inline-block;
-              padding: 12px 30px;
-              background: linear-gradient(135deg, #f97316 0%, #ec4899 100%);
-              color: white;
-              text-decoration: none;
-              border-radius: 6px;
-              font-weight: bold;
-              text-align: center;
-              margin-top: 20px;
-            }
-            .footer {
-              background-color: #f9f9f9;
-              padding: 20px;
-              text-align: center;
-              font-size: 12px;
-              color: #666;
-            }
-            .company-info, .client-info {
-              margin-bottom: 20px;
-            }
-            .company-info h3, .client-info h3 {
-              color: #f97316;
-              margin-bottom: 10px;
-              font-size: 16px;
-            }
-            .company-info p, .client-info p {
-              margin: 5px 0;
-              font-size: 14px;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>📄 Invoice ${invoice.invoiceNumber}</h1>
-            </div>
-
-            <div class="content">
-              <div class="invoice-info">
-                <p><strong>No. Invoice:</strong> ${invoice.invoiceNumber}</p>
-                <p><strong>Tanggal:</strong> ${new Date(invoice.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-                ${invoice.dueDate ? `<p><strong>Jatuh Tempo:</strong> ${new Date(invoice.dueDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>` : ''}
-              </div>
-
-              <div class="company-info">
-                <h3>Dari:</h3>
-                <p><strong>${invoice.companyName}</strong></p>
-                ${invoice.companyEmail ? `<p>📧 ${invoice.companyEmail}</p>` : ''}
-                ${invoice.companyPhone ? `<p>📱 ${invoice.companyPhone}</p>` : ''}
-                ${invoice.companyAddress ? `<p>📍 ${invoice.companyAddress}</p>` : ''}
-              </div>
-
-              <div class="client-info">
-                <h3>Kepada:</h3>
-                <p><strong>${invoice.clientName}</strong></p>
-                <p>📧 ${invoice.clientEmail}</p>
-                ${invoice.clientPhone ? `<p>📱 ${invoice.clientPhone}</p>` : ''}
-                ${invoice.clientAddress ? `<p>📍 ${invoice.clientAddress}</p>` : ''}
-              </div>
-
-              <table>
-                <thead>
-                  <tr>
-                    <th>Deskripsi</th>
-                    <th style="text-align: center;">Jumlah</th>
-                    <th style="text-align: right;">Harga</th>
-                    <th style="text-align: right;">Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${invoice.invoice_items.map((item: { description: string; quantity: number; price: number }) => `
-                    <tr>
-                      <td>${item.description}</td>
-                      <td style="text-align: center;">${item.quantity}</td>
-                      <td style="text-align: right;">${formatCurrency(item.price)}</td>
-                      <td style="text-align: right;">${formatCurrency(item.quantity * item.price)}</td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-
-              <div class="totals">
-                <div class="total-row">
-                  <span>Subtotal:</span>
-                  <span>${formatCurrency(invoice.subtotal)}</span>
-                </div>
-                <div class="total-row">
-                  <span>Pajak (${invoice.taxRate}%):</span>
-                  <span>${formatCurrency(invoice.taxAmount)}</span>
-                </div>
-                <div class="total-row grand-total">
-                  <span>Total:</span>
-                  <span>${formatCurrency(invoice.total)}</span>
-                </div>
-              </div>
-
-              ${invoice.notes ? `
-                <div style="margin-top: 20px; padding: 15px; background-color: #f9f9f9; border-radius: 4px;">
-                  <strong>Catatan:</strong>
-                  <p style="margin: 5px 0 0 0; font-size: 14px;">${invoice.notes}</p>
-                </div>
-              ` : ''}
-
-              <div style="text-align: center; margin-top: 30px;">
-                <a href="${invoiceUrl}" class="button">Lihat Invoice Online</a>
-              </div>
-            </div>
-
-            <div class="footer">
-              <p>Invoice ini dikirim secara otomatis oleh NotaBener</p>
-              <p>Jika ada pertanyaan, silakan hubungi pengirim invoice ini</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `
-
-    // Fetch user to get SMTP settings
+    // Check user SMTP settings
     const user = await prisma.users.findUnique({
       where: { id: session.id },
       select: {
@@ -288,23 +70,24 @@ export async function POST(
       )
     }
 
-    // Create transporter with user's SMTP settings
-    const userTransporter = nodemailer.createTransport({
-      host: user.smtpHost,
-      port: parseInt(user.smtpPort || '587'),
-      secure: user.smtpSecure ?? false,
-      auth: {
-        user: user.smtpUser,
-        pass: user.smtpPass,
-      },
-    })
+    // Generate invoice URL
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const invoiceUrl = `${baseUrl}/invoice/${invoice.accessToken}`
 
-    // Send email
-    await userTransporter.sendMail({
-      from: user.smtpUser,
+    // Send email using the shared sendInvoiceSent function
+    // This will resolve the template from database (if configured) or fall back to hardcoded
+    await sendInvoiceSent({
       to: invoice.clientEmail,
-      subject: `Invoice ${invoice.invoiceNumber} dari ${invoice.companyName}`,
-      html: emailHtml,
+      invoiceNumber: invoice.invoiceNumber,
+      clientName: invoice.clientName,
+      companyName: invoice.companyName,
+      total: formatCurrency(invoice.total),
+      dueDate: invoice.dueDate
+        ? new Date(invoice.dueDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+        : '-',
+      invoiceUrl,
+      userId: session.id,
+      teamId: invoice.teamId ?? undefined,
     })
 
     // Update invoice status to SENT and track sent timestamp

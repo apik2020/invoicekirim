@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { name, subject, body: templateBody, variables, isActive } = body
+    const { name, subject, body: templateBody, variables, isActive, headerImageUrl } = body
 
     if (!name || !subject || !templateBody) {
       return NextResponse.json(
@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
         subject,
         body: templateBody,
         variables,
+        headerImageUrl: headerImageUrl || null,
         isActive: isActive !== undefined ? isActive : true,
         updatedAt: new Date(),
       },

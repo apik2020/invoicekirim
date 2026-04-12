@@ -65,6 +65,7 @@ export async function POST(
         daysOverdue,
         invoiceUrl,
         userId: session.id,
+        teamId: invoice.teamId ?? undefined,
       })
     } else {
       // Send payment reminder for upcoming due dates
@@ -78,6 +79,7 @@ export async function POST(
         daysUntilDue: daysUntilDue > 0 ? daysUntilDue : 0,
         invoiceUrl,
         userId: session.id,
+        teamId: invoice.teamId ?? undefined,
       })
     }
 

@@ -118,6 +118,7 @@ export async function GET(req: NextRequest) {
           dueDate: formatDate(invoice.dueDate),
           daysUntilDue,
           invoiceUrl,
+          teamId: invoice.teamId ?? undefined,
         })
 
         // Log the reminder
@@ -186,6 +187,7 @@ export async function GET(req: NextRequest) {
           dueDate: formatDate(invoice.dueDate),
           daysOverdue,
           invoiceUrl,
+          teamId: invoice.teamId ?? undefined,
         })
 
         // Log the overdue notice

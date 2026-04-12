@@ -161,10 +161,11 @@ model email_templates {
   name      String   @unique
   subject   String
   body      String
-  variables Json?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime
+  variables      Json?
+  headerImageUrl String?
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime
 }
 
 model invoice_items {

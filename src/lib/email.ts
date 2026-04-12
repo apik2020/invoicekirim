@@ -13,6 +13,7 @@ try {
 // Import nodemailer for SMTP
 import nodemailer from 'nodemailer'
 import { prisma } from './prisma'
+import { resolveEmailTemplate } from './email-templates'
 
 /**
  * Send email via SMTP using user's settings
@@ -858,12 +859,21 @@ export async function sendInvoiceSent(data: {
   dueDate: string
   invoiceUrl: string
   userId?: string
+  teamId?: string
 }) {
-  const template = emailTemplates.invoiceSent(data)
+  const resolved = await resolveEmailTemplate('INVOICE_SENT', {
+    clientName: data.clientName,
+    invoiceNumber: data.invoiceNumber,
+    companyName: data.companyName,
+    amount: data.total,
+    dueDate: data.dueDate,
+    invoiceUrl: data.invoiceUrl,
+  }, { userId: data.userId, teamId: data.teamId })
+
   return sendEmail({
     to: data.to,
-    subject: template.subject,
-    html: template.html,
+    subject: resolved.subject,
+    html: resolved.html,
     userId: data.userId,
   })
 }
@@ -881,12 +891,22 @@ export async function sendPaymentReminder(data: {
   daysUntilDue: number
   invoiceUrl: string
   userId?: string
+  teamId?: string
 }) {
-  const template = emailTemplates.paymentReminder(data)
+  const resolved = await resolveEmailTemplate('PAYMENT_REMINDER', {
+    clientName: data.clientName,
+    invoiceNumber: data.invoiceNumber,
+    companyName: data.companyName,
+    amount: data.total,
+    dueDate: data.dueDate,
+    daysUntilDue: String(data.daysUntilDue),
+    invoiceUrl: data.invoiceUrl,
+  }, { userId: data.userId, teamId: data.teamId })
+
   return sendEmail({
     to: data.to,
-    subject: template.subject,
-    html: template.html,
+    subject: resolved.subject,
+    html: resolved.html,
     userId: data.userId,
   })
 }
@@ -904,12 +924,22 @@ export async function sendInvoiceOverdue(data: {
   daysOverdue: number
   invoiceUrl: string
   userId?: string
+  teamId?: string
 }) {
-  const template = emailTemplates.invoiceOverdue(data)
+  const resolved = await resolveEmailTemplate('OVERDUE_NOTICE', {
+    clientName: data.clientName,
+    invoiceNumber: data.invoiceNumber,
+    companyName: data.companyName,
+    amount: data.total,
+    dueDate: data.dueDate,
+    daysOverdue: String(data.daysOverdue),
+    invoiceUrl: data.invoiceUrl,
+  }, { userId: data.userId, teamId: data.teamId })
+
   return sendEmail({
     to: data.to,
-    subject: template.subject,
-    html: template.html,
+    subject: resolved.subject,
+    html: resolved.html,
     userId: data.userId,
   })
 }
@@ -925,12 +955,20 @@ export async function sendInvoicePaid(data: {
   total: string
   paidDate: string
   userId?: string
+  teamId?: string
 }) {
-  const template = emailTemplates.invoicePaid(data)
+  const resolved = await resolveEmailTemplate('PAYMENT_CONFIRMATION', {
+    clientName: data.clientName,
+    invoiceNumber: data.invoiceNumber,
+    companyName: data.companyName,
+    amount: data.total,
+    paidDate: data.paidDate,
+  }, { userId: data.userId, teamId: data.teamId })
+
   return sendEmail({
     to: data.to,
-    subject: template.subject,
-    html: template.html,
+    subject: resolved.subject,
+    html: resolved.html,
     userId: data.userId,
   })
 }

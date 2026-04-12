@@ -50,7 +50,7 @@ export async function PATCH(
 
     const { id } = await params
     const body = await req.json()
-    const { subject, body: templateBody, variables, isActive } = body
+    const { subject, body: templateBody, variables, isActive, headerImageUrl } = body
 
     const template = await prisma.email_templates.update({
       where: { id },
@@ -59,6 +59,7 @@ export async function PATCH(
         ...(templateBody !== undefined && { body: templateBody }),
         ...(variables !== undefined && { variables }),
         ...(isActive !== undefined && { isActive }),
+        ...(headerImageUrl !== undefined && { headerImageUrl }),
       },
     })
 

@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Mail, Save, Eye, Send, RotateCcw, Code, Plus, X } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Mail, Save, Eye, Send, RotateCcw, Code, Plus, X, ImagePlus, Trash2, Loader2 } from 'lucide-react'
 
 interface EmailTemplate {
   id: string
@@ -9,6 +9,7 @@ interface EmailTemplate {
   subject: string
   body: string
   variables: any
+  headerImageUrl: string | null
   isActive: boolean
   createdAt: string
   updatedAt: string
@@ -20,13 +21,13 @@ interface EmailTemplateEditorProps {
   onSave: () => void
 }
 
-// Default template variables
-const DEFAULT_VARIABLES = {
-  INVOICE_SENT: ['clientName', 'invoiceNumber', 'amount', 'dueDate', 'companyName'],
-  PAYMENT_REMINDER: ['clientName', 'invoiceNumber', 'amount', 'dueDate', 'daysUntilDue'],
-  OVERDUE_NOTICE: ['clientName', 'invoiceNumber', 'amount', 'daysOverdue', 'companyName'],
-  PAYMENT_CONFIRMATION: ['clientName', 'amount', 'paymentDate', 'receiptNumber'],
-  WELCOME_EMAIL: ['userName', 'email', 'companyName'],
+// Default template variables — added logoUrl and headerImageUrl
+const DEFAULT_VARIABLES: Record<string, string[]> = {
+  INVOICE_SENT: ['clientName', 'invoiceNumber', 'amount', 'dueDate', 'companyName', 'invoiceUrl', 'logoUrl'],
+  PAYMENT_REMINDER: ['clientName', 'invoiceNumber', 'amount', 'dueDate', 'daysUntilDue', 'companyName', 'invoiceUrl', 'logoUrl'],
+  OVERDUE_NOTICE: ['clientName', 'invoiceNumber', 'amount', 'daysOverdue', 'companyName', 'invoiceUrl', 'logoUrl'],
+  PAYMENT_CONFIRMATION: ['clientName', 'amount', 'paymentDate', 'receiptNumber', 'companyName', 'logoUrl'],
+  WELCOME_EMAIL: ['userName', 'email', 'companyName', 'logoUrl'],
 }
 
 const TEMPLATE_NAMES: Record<string, string> = {
@@ -65,7 +66,7 @@ const DEFAULT_TEMPLATES: Record<string, { subject: string; body: string }> = {
         <li><strong>Jumlah:</strong> {{amount}}</li>
         <li><strong>Jatuh Tempo:</strong> {{dueDate}}</li>
       </ul>
-      <a href="#" class="button">Lihat Invoice</a>
+      <a href="{{invoiceUrl}}" class="button">Lihat Invoice</a>
     </div>
     <div class="footer">
       <p>Invoice dikirim oleh {{companyName}} melalui NotaBener</p>
@@ -90,7 +91,7 @@ const DEFAULT_TEMPLATES: Record<string, { subject: string; body: string }> = {
 <body>
   <div class="container">
     <div class="header">
-      <h1>⏰ Pengingat Pembayaran</h1>
+      <h1>Pengingat Pembayaran</h1>
     </div>
     <div class="content">
       <p>Halo {{clientName}},</p>
@@ -118,12 +119,14 @@ export function EmailTemplateEditor({ templateId, onClose, onSave }: EmailTempla
   const [showPreview, setShowPreview] = useState(false)
   const [selectedVariable, setSelectedVariable] = useState('')
   const [newTemplateName, setNewTemplateName] = useState('')
+  const [headerImageUrl, setHeaderImageUrl] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (templateId) {
       fetchTemplate()
     } else {
-      // Default to new template
       setTemplate(null)
       setIsActive(true)
     }
@@ -142,12 +145,61 @@ export function EmailTemplateEditor({ templateId, onClose, onSave }: EmailTempla
         setSubject(data.subject)
         setBody(data.body)
         setIsActive(data.isActive)
+        setHeaderImageUrl(data.headerImageUrl || null)
       }
     } catch (error) {
       console.error('Error fetching template:', error)
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/svg+xml']
+    if (!validTypes.includes(file.type)) {
+      alert('Format file tidak didukung. Gunakan PNG, JPEG, WebP, atau SVG.')
+      return
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      alert('Ukuran file terlalu besar. Maksimal 2MB.')
+      return
+    }
+
+    try {
+      setUploading(true)
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('type', 'email-template')
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Upload gagal')
+      }
+
+      const data = await res.json()
+      setHeaderImageUrl(data.url)
+    } catch (error: any) {
+      alert(error.message || 'Gagal upload gambar')
+    } finally {
+      setUploading(false)
+      // Reset file input
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  const handleRemoveImage = () => {
+    setHeaderImageUrl(null)
   }
 
   const handleSave = async () => {
@@ -168,6 +220,7 @@ export function EmailTemplateEditor({ templateId, onClose, onSave }: EmailTempla
           subject,
           body,
           isActive,
+          headerImageUrl,
         }),
       })
 
@@ -198,6 +251,7 @@ export function EmailTemplateEditor({ templateId, onClose, onSave }: EmailTempla
     if (defaultTemplate && confirm('Reset template ke default? Perubahan Anda akan hilang.')) {
       setSubject(defaultTemplate.subject)
       setBody(defaultTemplate.body)
+      setHeaderImageUrl(null)
     }
   }
 
@@ -224,9 +278,21 @@ export function EmailTemplateEditor({ templateId, onClose, onSave }: EmailTempla
         receiptNumber: 'RCP-20241225-0001',
         userName: 'Jane Smith',
         email: 'jane@example.com',
+        invoiceUrl: '#',
+        logoUrl: 'https://notabener.com/images/notabener-icon-admin.png',
+        headerImageUrl: headerImageUrl || '',
       }
       previewBody = previewBody.replace(regex, sampleValue[v] || `[${v}]`)
     })
+
+    // Also replace headerImageUrl variable if present
+    previewBody = previewBody.replace(/\{\{headerImageUrl\}\}/g, headerImageUrl || '')
+
+    // If body is partial HTML and has a header image, inject it
+    if (headerImageUrl && !previewBody.toLowerCase().includes('<html')) {
+      const headerBlock = `<div style="text-align: center; margin-bottom: 20px;"><img src="${headerImageUrl}" alt="Header" style="max-width: 100%; border-radius: 12px;" /></div>`
+      previewBody = headerBlock + previewBody
+    }
 
     return previewBody
   }
@@ -311,6 +377,56 @@ export function EmailTemplateEditor({ templateId, onClose, onSave }: EmailTempla
             </div>
           )}
 
+          {/* Header Image Upload */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Gambar Header
+            </label>
+            <div className="space-y-3">
+              {headerImageUrl ? (
+                <div className="relative group">
+                  <img
+                    src={headerImageUrl}
+                    alt="Header"
+                    className="w-full max-h-40 object-cover rounded-lg border border-gray-200"
+                  />
+                  <button
+                    onClick={handleRemoveImage}
+                    className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Hapus gambar"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ) : null}
+              <div className="flex items-center gap-3">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg,image/webp,image/svg+xml"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-dashed border-gray-300 text-gray-600 hover:border-orange-300 hover:text-orange-600 transition-colors disabled:opacity-50"
+                >
+                  {uploading ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <ImagePlus size={16} />
+                  )}
+                  {uploading ? 'Mengupload...' : headerImageUrl ? 'Ganti Gambar' : 'Upload Gambar Header'}
+                </button>
+                <span className="text-xs text-gray-400">PNG, JPEG, WebP, SVG (maks 2MB)</span>
+              </div>
+              <p className="text-xs text-gray-500">
+                Gambar header akan ditampilkan di bagian atas email. Gunakan variabel {'{{headerImageUrl}}'} untuk menempatkan gambar secara manual di template.
+              </p>
+            </div>
+          </div>
+
           {/* Subject */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -326,13 +442,16 @@ export function EmailTemplateEditor({ templateId, onClose, onSave }: EmailTempla
           </div>
 
           {/* Variables Helper */}
-          {template && getTemplateVariables().length > 0 && (
+          {(template || newTemplateName) && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Variabel Tersedia
               </label>
               <div className="flex flex-wrap gap-2 p-4 bg-gray-50 rounded-lg border">
-                {getTemplateVariables().map((variable) => (
+                {(template
+                  ? getTemplateVariables()
+                  : DEFAULT_VARIABLES[newTemplateName as keyof typeof DEFAULT_VARIABLES] || []
+                ).map((variable) => (
                   <button
                     key={variable}
                     onClick={() => insertVariable(variable)}
