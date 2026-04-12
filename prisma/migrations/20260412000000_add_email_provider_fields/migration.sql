@@ -10,3 +10,6 @@ ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "emailTestTarget" TEXT;
 ALTER TABLE "admins" ADD COLUMN IF NOT EXISTS "emailProvider" TEXT DEFAULT 'custom';
 ALTER TABLE "admins" ADD COLUMN IF NOT EXISTS "emailProviderStatus" TEXT DEFAULT 'untested';
 ALTER TABLE "admins" ADD COLUMN IF NOT EXISTS "emailLastTestedAt" TIMESTAMP(3);
+
+-- AlterTable: Add headerImageUrl to `email_templates`
+ALTER TABLE "email_templates" ADD COLUMN IF NOT EXISTS "headerImageUrl" TEXT;
