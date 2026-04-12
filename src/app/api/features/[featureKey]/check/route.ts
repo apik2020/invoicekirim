@@ -90,6 +90,7 @@ function getLockedMessage(
     INVOICE_TEMPLATE: 'Template invoice kustom',
     EXPORT_PDF: 'Export PDF',
     EMAIL_SEND: 'Kirim invoice via email',
+    CUSTOM_SMTP: 'Konfigurasi SMTP sendiri',
     CUSTOM_BRANDING: 'Kustomisasi branding',
     ANALYTICS_VIEW: 'Analitik bisnis',
     TEAM_MEMBERS: 'Kolaborasi tim',
