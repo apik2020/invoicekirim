@@ -178,10 +178,89 @@ export async function GET(_req: NextRequest) {
     const overdueAmount = overdue.reduce((sum, inv) => sum + inv.total, 0)
     const dueThisWeekAmount = [...dueToday, ...dueThisWeek].reduce((sum, inv) => sum + inv.total, 0)
 
-    // Fetch analytics
-    const analytics = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/user/analytics?months=6`)
-      .then(res => res.json())
-      .catch(() => ({ revenueByMonth: [], revenueByStatus: [], summary: {} }))
+    // Compute analytics directly (avoid internal HTTP fetch which lacks auth)
+    const analyticsMonths = 6
+    const analyticsStartDate = new Date()
+    analyticsStartDate.setMonth(analyticsStartDate.getMonth() - analyticsMonths)
+
+    const [analyticsInvoices, statusBreakdown] = await Promise.all([
+      withRetry(() => prisma.invoices.findMany({
+        where: {
+          userId,
+          date: { gte: analyticsStartDate },
+        },
+        orderBy: { date: 'asc' },
+      })),
+      withRetry(() => prisma.invoices.groupBy({
+        by: ['status'],
+        where: { userId },
+        _sum: { total: true },
+        _count: { id: true },
+      })),
+    ])
+
+    // Initialize all months
+    const monthlyData = new Map<string, { month: string; revenue: number; paid: number; pending: number; count: number }>()
+    for (let i = 0; i < analyticsMonths; i++) {
+      const date = new Date()
+      date.setMonth(date.getMonth() - (analyticsMonths - 1 - i))
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+      monthlyData.set(key, {
+        month: date.toISOString(),
+        revenue: 0,
+        paid: 0,
+        pending: 0,
+        count: 0,
+      })
+    }
+
+    // Aggregate monthly data
+    analyticsInvoices.forEach((invoice) => {
+      const date = new Date(invoice.date)
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+      const data = monthlyData.get(key)
+      if (data) {
+        data.count += 1
+        data.revenue += invoice.total
+        if (invoice.status === 'PAID') {
+          data.paid += invoice.total
+        } else if (invoice.status === 'SENT' || invoice.status === 'OVERDUE') {
+          data.pending += invoice.total
+        }
+      }
+    })
+
+    // Revenue by status
+    const revenueByStatus = statusBreakdown.map((item) => ({
+      status: item.status,
+      total: item._sum.total || 0,
+      count: item._count.id,
+    }))
+
+    // Summary
+    const analyticsPaid = analyticsInvoices.filter((inv) => inv.status === 'PAID').reduce((sum, inv) => sum + inv.total, 0)
+    const analyticsPending = analyticsInvoices.filter((inv) => inv.status === 'SENT' || inv.status === 'OVERDUE').reduce((sum, inv) => sum + inv.total, 0)
+
+    const dataArr = Array.from(monthlyData.values()).filter((d) => d.count > 0)
+    let growthRate = 0
+    if (dataArr.length >= 2) {
+      const lastMonth = dataArr[dataArr.length - 1].revenue
+      const prevMonth = dataArr[dataArr.length - 2].revenue
+      if (prevMonth > 0) {
+        growthRate = ((lastMonth - prevMonth) / prevMonth) * 100
+      }
+    }
+
+    const analytics = {
+      revenueByMonth: Array.from(monthlyData.values()),
+      revenueByStatus,
+      summary: {
+        totalRevenue: analyticsInvoices.reduce((sum, inv) => sum + inv.total, 0),
+        paidRevenue: analyticsPaid,
+        pendingRevenue: analyticsPending,
+        growthRate: Math.round(growthRate * 10) / 10,
+      },
+    }
 
     return NextResponse.json({
       invoices: invoices.slice(0, 5),
