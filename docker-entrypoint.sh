@@ -9,22 +9,24 @@ echo "========================================="
 # Run Prisma migrations (safe for production)
 echo "[Entrypoint] Running Prisma migrations..."
 
-# First, generate Prisma Client (in case it's missing)
-npx prisma generate --schema=./prisma/schema.prisma 2>/dev/null || true
+# Use node to invoke prisma CLI directly (npx doesn't work in standalone container)
+PRISMA_CLI="./node_modules/prisma/build/index.js"
 
-# Try to run migrations
-# Use migrate deploy for production (applies pending migrations without creating new ones)
-# Falls back to db push if no migrations exist (for new databases)
-if npx prisma migrate deploy 2>&1; then
-  echo "[Entrypoint] Migrations applied successfully!"
+if [ ! -f "$PRISMA_CLI" ]; then
+  echo "[Entrypoint] WARNING: Prisma CLI not found at $PRISMA_CLI"
+  echo "[Entrypoint] Skipping database schema sync..."
 else
-  echo "[Entrypoint] No migrations found or migrate failed, trying db push..."
-  if npx prisma db push --accept-data-loss 2>&1; then
-    echo "[Entrypoint] Database schema pushed successfully!"
+  # Try migrate deploy first (applies pending migrations)
+  if node "$PRISMA_CLI" migrate deploy 2>&1; then
+    echo "[Entrypoint] Migrations applied successfully!"
   else
-    echo "[Entrypoint] ERROR: Could not sync database schema!"
-    echo "[Entrypoint] Check DATABASE_URL and DIRECT_URL environment variables."
-    echo "[Entrypoint] Attempting to start anyway..."
+    echo "[Entrypoint] Migrate failed, trying db push..."
+    if node "$PRISMA_CLI" db push --accept-data-loss 2>&1; then
+      echo "[Entrypoint] Database schema pushed successfully!"
+    else
+      echo "[Entrypoint] ERROR: Could not sync database schema!"
+      echo "[Entrypoint] Check DATABASE_URL and DIRECT_URL environment variables."
+    fi
   fi
 fi
 
