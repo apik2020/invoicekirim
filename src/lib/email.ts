@@ -769,7 +769,7 @@ export async function sendSystemEmail({
       secure: admin.smtpSecure === true,
       auth: {
         user: admin.smtpUser,
-        pass: admin.smtpPass,
+        pass: decrypt(admin.smtpPass),
       },
     })
 
