@@ -1,8 +1,91 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
+// NextAuth cookie names to clear when secret rotation is detected
+const NEXTAUTH_COOKIES = [
+  'next-auth.session-token',
+  '__Secure-next-auth.session-token',
+  'next-auth.callback-url',
+  '__Secure-next-auth.callback-url',
+  'next-auth.csrf-token',
+  '__Host-next-auth.csrf-token',
+  'next-auth.pkce.code_verifier',
+  '__Secure-next-auth.pkce.code_verifier',
+]
+
+// Marker cookie — once set, we know cleanup is done for this browser
+const CLEANUP_DONE_COOKIE = '__nb_secret_v2'
+
+/**
+ * Clear all stale NextAuth cookies from a previous NEXTAUTH_SECRET.
+ * Runs once per browser until the cleanup marker is set.
+ */
+function clearStaleNextAuthCookies(req: NextRequest): NextResponse | null {
+  // Already cleaned up — skip
+  if (req.cookies.get(CLEANUP_DONE_COOKIE)) {
+    return null
+  }
+
+  // Only run cleanup if user has ANY next-auth cookie (means they had a session before)
+  const hasStaleCookie = NEXTAUTH_COOKIES.some(name => req.cookies.get(name))
+  if (!hasStaleCookie) {
+    // No stale cookies — just set the marker so we never check again
+    const resp = NextResponse.next()
+    resp.cookies.set(CLEANUP_DONE_COOKIE, '1', {
+      path: '/',
+      maxAge: 60 * 60 * 24 * 365, // 1 year
+      httpOnly: true,
+      sameSite: 'lax',
+    })
+    return resp
+  }
+
+  // Clear all stale NextAuth cookies and set marker
+  const resp = NextResponse.next()
+  for (const name of NEXTAUTH_COOKIES) {
+    if (req.cookies.get(name)) {
+      resp.cookies.set(name, '', { maxAge: 0, path: '/' })
+    }
+  }
+  resp.cookies.set(CLEANUP_DONE_COOKIE, '1', {
+    path: '/',
+    maxAge: 60 * 60 * 24 * 365,
+    httpOnly: true,
+    sameSite: 'lax',
+  })
+  console.log('[MIDDLEWARE] Cleared stale NextAuth cookies (secret rotation cleanup)')
+  return resp
+}
+
 export default async function middleware(req: NextRequest) {
   const { pathname, origin } = req.nextUrl
+
+  // === SECRET ROTATION CLEANUP ===
+  // Must run BEFORE any NextAuth processing to prevent decryption errors
+  const cleanupResponse = clearStaleNextAuthCookies(req)
+  if (cleanupResponse) {
+    // If this is a dashboard page request and we just cleared cookies,
+    // redirect to login instead of continuing with no session
+    if (pathname.startsWith('/dashboard')) {
+      const url = new URL('/login', origin)
+      url.searchParams.set('callbackUrl', encodeURI(pathname))
+      const redirectResp = NextResponse.redirect(url)
+      // Preserve the cookie cleanup on redirect
+      for (const name of NEXTAUTH_COOKIES) {
+        if (req.cookies.get(name)) {
+          redirectResp.cookies.set(name, '', { maxAge: 0, path: '/' })
+        }
+      }
+      redirectResp.cookies.set(CLEANUP_DONE_COOKIE, '1', {
+        path: '/',
+        maxAge: 60 * 60 * 24 * 365,
+        httpOnly: true,
+        sameSite: 'lax',
+      })
+      return redirectResp
+    }
+    return cleanupResponse
+  }
 
   // Handle static files - force correct MIME types and skip other middleware
   if (pathname.startsWith('/_next/static/')) {
@@ -108,15 +191,6 @@ export default async function middleware(req: NextRequest) {
                          pathname.startsWith('/api/templates') ||
                          pathname.startsWith('/api/payments') ||
                          pathname.startsWith('/api/subscriptions')
-
-  // Handle stale OAuth state cookies — if user lands on callback with
-  // mismatched secret (e.g. after NEXTAUTH_SECRET rotation), clear all
-  // NextAuth cookies and redirect to login instead of showing error
-  if (isAuthCallback) {
-    // Let NextAuth handle the callback; if it fails due to stale cookies,
-    // the session route will clear them on next request
-    return response
-  }
 
   // Allow access to auth pages
   if (isAuthPage) {
