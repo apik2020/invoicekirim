@@ -17,7 +17,7 @@ import {
 } from 'lucide-react'
 
 export default function SecurityPage() {
-  const { data: session } = useAppSession()
+  const { data: session, status } = useAppSession()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
@@ -35,12 +35,12 @@ export default function SecurityPage() {
     confirm: false,
   })
 
-  // Redirect if not authenticated
+  // Redirect if not authenticated (only after loading completes)
   useEffect(() => {
-    if (!session) {
+    if (status === 'unauthenticated') {
       router.push('/login')
     }
-  }, [session, router])
+  }, [status, router])
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault()
