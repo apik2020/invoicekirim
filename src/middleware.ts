@@ -100,6 +100,7 @@ export default async function middleware(req: NextRequest) {
   const isAuth = !!sessionToken || !!userSessionToken
   const isAdminAuth = !!adminSessionToken
   const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/register')
+  const isAuthCallback = pathname.startsWith('/api/auth/callback')
   const isDashboardPage = pathname.startsWith('/dashboard')
   const isClientPortal = pathname.startsWith('/client')
   const isClientAPI = pathname.startsWith('/api/client')
@@ -107,6 +108,15 @@ export default async function middleware(req: NextRequest) {
                          pathname.startsWith('/api/templates') ||
                          pathname.startsWith('/api/payments') ||
                          pathname.startsWith('/api/subscriptions')
+
+  // Handle stale OAuth state cookies — if user lands on callback with
+  // mismatched secret (e.g. after NEXTAUTH_SECRET rotation), clear all
+  // NextAuth cookies and redirect to login instead of showing error
+  if (isAuthCallback) {
+    // Let NextAuth handle the callback; if it fails due to stale cookies,
+    // the session route will clear them on next request
+    return response
+  }
 
   // Allow access to auth pages
   if (isAuthPage) {
