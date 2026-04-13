@@ -4,6 +4,12 @@ Semua perubahan penting di project NotaBener akan didokumentasikan di file ini.
 
 ## [Unreleased]
 
+## [0.1.71] - 2026-04-14 — Bug Fix
+
+### Fixed
+- **Security settings page logout bug**: Race condition di `/dashboard/settings/security` — `useEffect` redirect ke `/login` saat session masih loading (`null`). Diperbaiki dengan cek `status === 'unauthenticated'` alih-alih `!session`.
+- **Auth debug flag**: `debug: true` yang di-hardcode di `auth.ts` sekarang membaca dari `NEXTAUTH_DEBUG` env var.
+
 ## [0.1.70] - 2026-04-13 — Security Hardening & Production Readiness
 
 ### Security
