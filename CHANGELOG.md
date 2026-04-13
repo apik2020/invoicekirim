@@ -4,6 +4,84 @@ Semua perubahan penting di project NotaBener akan didokumentasikan di file ini.
 
 ## [Unreleased]
 
+## [0.1.70] - 2026-04-13 — Security Hardening & Production Readiness
+
+### Security
+
+- **NEXTAUTH_SECRET**: Ganti default value lemah dengan key yang kuat. **Wajib update di server production.**
+- **NEXTAUTH_DEBUG**: Set `false` untuk mencegah information leakage di response.
+- **Client session HMAC signing**: Session client portal sekarang menggunakan HMAC-SHA256 + `timingSafeEqual`. Sebelumnya hanya base64 tanpa signature — attacker bisa memalsukan `clientId` untuk mengakses invoice user lain.
+- **SSRF protection (image proxy)**: Block private IP (`10.x`, `172.16-31.x`, `192.168.x`, `127.0.0.1`), cloud metadata endpoint (`169.254.169.254`), dan validasi redirect destination. Hanya allow content-type `image/*`.
+- **Admin impersonation secret**: Hapus fallback `"your-secret-key"`. Sekarang throw error jika `NEXTAUTH_SECRET` tidak diset.
+- **File magic bytes validation**: Upload validasi signature binary (PNG: `89504E47`, JPEG: `FFD8FF`, WebP: `RIFF....WEBP`, SVG: marker `<svg`) untuk mencegah MIME type spoofing.
+- **Remove debug/test endpoints**: Hapus `api/debug-auth`, `api/test-error`, `api/auth-simple`, dan `test-error` page — semua bisa diakses tanpa auth dan mengekspos informasi internal.
+
+### Data Integrity
+
+- **Webhook idempotency**: Duitku dan Midtrans webhook cek `payment.status === 'COMPLETED'` sebelum memproses — mencegah duplikasi pembayaran dan aktivasi subscription dari retry webhook.
+- **Webhook `$transaction()`**: Payment update + subscription activation + activity log dibungkus dalam Prisma transaction. Jika satu gagal, semua di-rollback.
+- **Payment verification transaction**: `api/payments/verify` menggunakan `$transaction()` dengan idempotency re-check di dalam transaksi.
+- **Invoice send flow fix**: Status invoice hanya update ke `SENT` jika email berhasil terkirim. Jika gagal, tetap `DRAFT` dan user mendapat error message yang jelas.
+
+### Performance
+
+- **Clients pagination**: `GET /api/clients` mendukung `page`, `limit`, `search`. Default 50 per halaman dengan response format baru `{ clients, pagination }`.
+- **Dashboard parallel fetch**: `fetchDashboardData()` dan `fetchSubscription()` sekarang jalan paralel dengan `Promise.all()`.
+- **Login rate limiting DB-backed**: Dari in-memory `Map` ke database-backed via `activity_logs` table, dengan in-memory fallback. Mendukung multi-instance deployment (pod restart tidak reset rate limit).
+
+### Cron Jobs
+
+- **Concurrency guard**: Trial expiration dan subscription expiration cron menggunakan DB-based lock (valid 10 menit) untuk mencegah eksekusi duplikat saat dipanggil bersamaan.
+
+### Schema Changes
+
+- **`client_accounts` model**: Tambah kolom `name` (String?), `phone` (String?), `magicLinkToken` (String?), `magicLinkExpires` (DateTime?). Kolom `password` jadi optional (String?).
+
+### Breaking Changes
+
+- **Client portal sessions invalid**: Semua existing client sessions akan invalid karena format token berubah (base64 → HMAC-signed). User perlu re-login via magic link.
+- **Clients API response format**: `GET /api/clients` sekarang mengembalikan `{ clients, pagination }` bukan array langsung. Frontend perlu disesuaikan jika ada yang consume langsung.
+
+### Deployment Checklist
+
+1. Update `NEXTAUTH_SECRET` di server — generate baru: `openssl rand -base64 32`
+2. Set `NEXTAUTH_DEBUG=false` di environment server
+3. Jalankan `npx prisma db push` untuk update schema
+4. Clear browser cache setelah deploy
+
+### Regression Watch
+
+- Client portal: existing sessions invalid, perlu re-login
+- Invoice send: jika SMTP sering timeout, invoice tetap DRAFT (bukan auto-SENT)
+- File upload: file dengan ekstensi benar tapi header corrupt akan ditolak
+- Image proxy: gambar dari internal URL (localhost) akan ditolak
+- Webhook: verify Duitku/Midtrans webhook masih diterima setelah refactor
+
+### Files Changed (20 files, +795 / -702)
+
+```
+next.config.ts                                    |   5 +-
+prisma/schema.prisma                              |   6 +-
+src/app/api/admin/users/[id]/impersonate/route.ts |   6 +-
+src/app/api/auth-simple/route.ts                  |  32 --- (deleted)
+src/app/api/client/auth/verify/route.ts           |  15 +-
+src/app/api/clients/route.ts                      |  57 ++++-
+src/app/api/cron/subscription-expiration/route.ts |  31 +++
+src/app/api/cron/trial-expiration/route.ts        |  33 ++++
+src/app/api/debug-auth/route.ts                   |  46 --- (deleted)
+src/app/api/invoices/[id]/send/route.ts           |  80 ++++--
+src/app/api/payments/verify/route.ts              | 172 ++++++-----
+src/app/api/proxy-image/route.ts                  |  65 ++++-
+src/app/api/test-error/route.ts                   |  58 --- (deleted)
+src/app/api/upload/route.ts                       |  49 ++++-
+src/app/api/webhooks/duitku/route.ts              | 221 ++++++--------
+src/app/api/webhooks/midtrans/route.ts            | 230 ++++++++---------
+src/app/dashboard/page.tsx                        |   4 +-
+src/app/test-error/page.tsx                       | 140 ---------- (deleted)
+src/lib/client-auth.ts                            |  81 ++++--
+src/lib/login-attempts.ts                         | 166 ++++++++---
+```
+
 ## [2026-04-05] - Invoice PDF Redesign & Bug Fixes
 
 ### Changed
