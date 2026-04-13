@@ -254,5 +254,5 @@ export const authOptions: NextAuthOptions = {
       }
     },
   },
-  debug: true,
+  debug: process.env.NEXTAUTH_DEBUG === 'true',
 }
