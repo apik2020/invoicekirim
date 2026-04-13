@@ -37,6 +37,17 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       )
     }
 
+    // Validate file magic bytes (signature) to prevent MIME type spoofing
+    const bytes = await file.arrayBuffer()
+    const buffer = Buffer.from(bytes)
+
+    if (!validateFileSignature(buffer, file.type)) {
+      return NextResponse.json(
+        { error: 'Konten file tidak sesuai dengan tipe yang dideklarasikan.' },
+        { status: 400 }
+      )
+    }
+
     // Validate file size (max 5MB for branding, 2MB for others)
     const maxSize = type === 'branding' ? 5 * 1024 * 1024 : 2 * 1024 * 1024
     if (file.size > maxSize) {
@@ -49,10 +60,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // Generate filename
     const prefix = type === 'branding' ? 'branding' : 'logo'
     const fileName = generateFilename(file.name, `${prefix}-${session.id}`)
-
-    // Convert file to buffer
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
 
     // Upload to storage (S3 or local)
     const result = await uploadFile(
@@ -77,4 +84,38 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       { status: 500 }
     )
   }
+}
+
+/**
+ * Validate file magic bytes (signatures) against declared MIME type.
+ * Prevents MIME type spoofing attacks.
+ */
+function validateFileSignature(buffer: Buffer, declaredType: string): boolean {
+  if (buffer.length < 4) return false
+
+  // SVG is text-based — check for XML/SVG markers
+  if (declaredType === 'image/svg+xml') {
+    const header = buffer.toString('utf8', 0, Math.min(256, buffer.length)).toLowerCase()
+    return header.includes('<svg') || header.includes('<?xml')
+  }
+
+  // PNG: 89 50 4E 47
+  if (declaredType === 'image/png') {
+    return buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47
+  }
+
+  // JPEG: FF D8 FF
+  if (declaredType === 'image/jpeg' || declaredType === 'image/jpg') {
+    return buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF
+  }
+
+  // WebP: RIFF....WEBP
+  if (declaredType === 'image/webp') {
+    const riff = buffer.toString('ascii', 0, 4) === 'RIFF'
+    const webp = buffer.toString('ascii', 8, 12) === 'WEBP'
+    return riff && webp
+  }
+
+  // Unknown type — reject
+  return false
 }

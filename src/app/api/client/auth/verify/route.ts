@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { createSignedSessionToken } from '@/lib/client-auth'
 
 // Verify magic link token
 export async function GET(request: NextRequest) {
@@ -40,14 +41,12 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    // Create session token
-    const sessionToken = Buffer.from(
-      JSON.stringify({
-        clientId: client.id,
-        email: client.email,
-        exp: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
-      })
-    ).toString('base64')
+    // Create HMAC-signed session token
+    const sessionToken = createSignedSessionToken({
+      clientId: client.id,
+      email: client.email,
+      exp: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days
+    })
 
     // Redirect to client dashboard with session
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL

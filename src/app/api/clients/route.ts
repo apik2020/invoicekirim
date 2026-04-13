@@ -5,8 +5,8 @@ import { prisma } from '@/lib/prisma'
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
 
-// GET - Get all clients for current user
-export async function GET(_req: NextRequest) {
+// GET - Get all clients for current user (with pagination)
+export async function GET(req: NextRequest) {
   try {
     const session = await getUserSession()
 
@@ -14,12 +14,40 @@ export async function GET(_req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const clients = await prisma.clients.findMany({
-      where: { userId: session.id },
-      orderBy: { createdAt: 'desc' },
-    })
+    const { searchParams } = new URL(req.url)
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '50')
+    const search = searchParams.get('search')
 
-    return NextResponse.json(clients)
+    const where: any = { userId: session.id }
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+        { company: { contains: search, mode: 'insensitive' } },
+      ]
+    }
+
+    const [clients, total] = await Promise.all([
+      prisma.clients.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.clients.count({ where }),
+    ])
+
+    return NextResponse.json({
+      clients,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    })
   } catch (error) {
     console.error('Get clients error:', error)
     return NextResponse.json(
@@ -49,11 +77,20 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Check if client with same email already exists for this user
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { error: 'Format email tidak valid' },
+        { status: 400 }
+      )
+    }
+
+    // Check if client with same email already exists for this user (case-insensitive)
     const existingClient = await prisma.clients.findFirst({
       where: {
         userId: session.id,
-        email,
+        email: { equals: email, mode: 'insensitive' },
       },
     })
 
@@ -69,7 +106,7 @@ export async function POST(req: NextRequest) {
         id: crypto.randomUUID(),
         userId: session.id,
         name,
-        email,
+        email: email.toLowerCase(),
         phone,
         address,
         company,

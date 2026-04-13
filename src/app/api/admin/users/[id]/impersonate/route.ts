@@ -5,7 +5,11 @@ import { SignJWT } from 'jose'
 
 export const dynamic = 'force-dynamic'
 
-const JWT_SECRET = process.env.NEXTAUTH_SECRET || 'your-secret-key'
+const JWT_SECRET = process.env.NEXTAUTH_SECRET
+
+if (!JWT_SECRET) {
+  throw new Error('NEXTAUTH_SECRET environment variable is required for admin impersonation')
+}
 
 export async function POST(
   req: NextRequest,

@@ -74,41 +74,59 @@ export async function POST(
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
     const invoiceUrl = `${baseUrl}/invoice/${invoice.accessToken}`
 
-    // Send email using the shared sendInvoiceSent function
-    // This will resolve the template from database (if configured) or fall back to hardcoded
-    await sendInvoiceSent({
-      to: invoice.clientEmail,
-      invoiceNumber: invoice.invoiceNumber,
-      clientName: invoice.clientName,
-      companyName: invoice.companyName,
-      total: formatCurrency(invoice.total),
-      dueDate: invoice.dueDate
-        ? new Date(invoice.dueDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
-        : '-',
-      invoiceUrl,
-      userId: session.id,
-      teamId: invoice.teamId ?? undefined,
-    })
+    // Send email — if this fails, status stays DRAFT and user gets clear error
+    let emailSent = false
+    let emailError: string | null = null
+    try {
+      await sendInvoiceSent({
+        to: invoice.clientEmail,
+        invoiceNumber: invoice.invoiceNumber,
+        clientName: invoice.clientName,
+        companyName: invoice.companyName,
+        total: formatCurrency(invoice.total),
+        dueDate: invoice.dueDate
+          ? new Date(invoice.dueDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+          : '-',
+        invoiceUrl,
+        userId: session.id,
+        teamId: invoice.teamId ?? undefined,
+      })
+      emailSent = true
+    } catch (err) {
+      console.error('Send invoice email error:', err)
+      emailError = err instanceof Error ? err.message : 'Email gagal terkirim'
+    }
 
-    // Update invoice status to SENT and track sent timestamp
-    await prisma.invoices.update({
-      where: { id },
-      data: {
-        status: 'SENT',
-        sentAt: new Date(),
-      },
-    })
+    // Only update status to SENT if email actually sent successfully
+    if (emailSent) {
+      await prisma.invoices.update({
+        where: { id },
+        data: {
+          status: 'SENT',
+          sentAt: new Date(),
+        },
+      })
 
-    // Log activity
-    await logInvoiceSent(session.id, invoice.invoiceNumber, invoice.clientEmail)
+      // Log activity
+      await logInvoiceSent(session.id, invoice.invoiceNumber, invoice.clientEmail)
 
-    // 🔍 Track email usage
-    await trackEmailSend(session.id)
+      // Track email usage
+      await trackEmailSend(session.id)
 
-    return NextResponse.json({
-      success: true,
-      message: 'Invoice berhasil dikirim ke ' + invoice.clientEmail
-    })
+      return NextResponse.json({
+        success: true,
+        message: 'Invoice berhasil dikirim ke ' + invoice.clientEmail
+      })
+    } else {
+      // Email failed — keep status as DRAFT, return error to user
+      return NextResponse.json(
+        {
+          error: 'GAGAL_KIRIM',
+          message: `Email gagal dikirim: ${emailError}. Invoice tetap dalam status DRAFT. Silakan coba lagi.`,
+        },
+        { status: 500 }
+      )
+    }
   } catch (error) {
     console.error('Send invoice error:', error)
     return NextResponse.json(

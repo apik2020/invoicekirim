@@ -6,17 +6,7 @@ import crypto from 'crypto'
 
 /**
  * Duitku Webhook Handler
- * Handles payment callbacks from Duitku
- *
- * Duitku sends callback with:
- * - merchantCode
- * - amount
- * - merchantOrderId
- * - productDetails
- * - additionalParam
- * - paymentCode
- * - resultCode
- * - signature
+ * Handles payment callbacks from Duitku with idempotency protection
  */
 export async function POST(req: NextRequest) {
   try {
@@ -25,18 +15,15 @@ export async function POST(req: NextRequest) {
     let body: Record<string, string>
 
     if (contentType.includes('application/x-www-form-urlencoded')) {
-      // Parse form-urlencoded data
       const formData = await req.formData()
       body = {}
       formData.forEach((value, key) => {
         body[key] = value.toString()
       })
     } else {
-      // Fallback to JSON for testing
       body = await req.json()
     }
 
-    // Get Duitku callback parameters
     const {
       merchantCode,
       amount,
@@ -59,12 +46,19 @@ export async function POST(req: NextRequest) {
 
     // Find payment by order ID
     const payment = await prisma.payments.findFirst({
-      where: { dokuOrderId: merchantOrderId }, // Using same field for compatibility
+      where: { dokuOrderId: merchantOrderId },
     })
 
     if (!payment) {
       console.error('[Duitku Webhook] Payment not found for order:', merchantOrderId)
       return NextResponse.json({ error: 'Payment not found' }, { status: 404 })
+    }
+
+    // === IDEMPOTENCY CHECK ===
+    // If payment is already COMPLETED, return success without reprocessing
+    if (payment.status === 'COMPLETED') {
+      console.log('[Duitku Webhook] Payment already completed, skipping:', merchantOrderId)
+      return NextResponse.json({ status: 'success', message: 'Already processed' })
     }
 
     // Verify signature
@@ -80,101 +74,99 @@ export async function POST(req: NextRequest) {
     }
 
     // Handle payment result
-    // resultCode: 00 = Success, 01 = Pending, 02 = Failed/Expired
     if (resultCode === '00') {
-      // Payment successful
-      await prisma.payments.update({
-        where: { id: payment.id },
-        data: {
-          status: 'COMPLETED',
-          dokuTransactionId: paymentCode, // Store payment code as transaction ID
-          paymentMethod: mapDuitkuPaymentMethod(paymentCode, additionalParam),
-        },
-      })
-
-      // Get pricing plan info
-      const pricingPlan = payment.pricingPlanId
-        ? await prisma.pricing_plans.findUnique({
-            where: { id: payment.pricingPlanId },
-            select: {
-              id: true,
-              slug: true,
-              name: true,
-              price: true,
-              trialDays: true,
-            },
-          })
-        : null
-
-      // Get existing subscription
-      const existingSubscription = await prisma.subscriptions.findFirst({
-        where: { userId: payment.userId },
-        select: {
-          id: true,
-          status: true,
-          trialStartsAt: true,
-          trialEndsAt: true,
-          pricingPlanId: true,
-          stripeCurrentPeriodEnd: true,
-        },
-      })
-
-      // Determine subscription updates
-      const wasTrialing = existingSubscription?.status === 'TRIALING'
-      const shouldClearTrialFields = wasTrialing
-
-      // Calculate period end date (1 month from now)
-      const periodEndDate = new Date()
-      periodEndDate.setMonth(periodEndDate.getMonth() + 1)
-
-      // Update or create subscription
-      if (existingSubscription) {
-        await prisma.subscriptions.update({
-          where: { id: existingSubscription.id },
+      // === TRANSACTION: Payment update + subscription activation ===
+      await prisma.$transaction(async (tx) => {
+        // Update payment status
+        await tx.payments.update({
+          where: { id: payment.id },
           data: {
-            status: 'ACTIVE',
-            planType: 'PRO',
-            pricingPlanId: pricingPlan?.id || null,
-            stripeCurrentPeriodEnd: periodEndDate,
-            trialStartsAt: shouldClearTrialFields ? null : existingSubscription.trialStartsAt,
-            trialEndsAt: shouldClearTrialFields ? null : existingSubscription.trialEndsAt,
-            updatedAt: new Date(),
+            status: 'COMPLETED',
+            dokuTransactionId: paymentCode,
+            paymentMethod: mapDuitkuPaymentMethod(paymentCode, additionalParam),
           },
         })
-      } else {
-        await prisma.subscriptions.create({
+
+        // Get pricing plan info
+        const pricingPlan = payment.pricingPlanId
+          ? await tx.pricing_plans.findUnique({
+              where: { id: payment.pricingPlanId },
+              select: {
+                id: true,
+                slug: true,
+                name: true,
+                price: true,
+                trialDays: true,
+              },
+            })
+          : null
+
+        // Calculate period end date
+        const periodEndDate = new Date()
+        periodEndDate.setMonth(periodEndDate.getMonth() + 1)
+
+        // Get existing subscription
+        const existingSubscription = await tx.subscriptions.findFirst({
+          where: { userId: payment.userId },
+          select: {
+            id: true,
+            status: true,
+            trialStartsAt: true,
+            trialEndsAt: true,
+            pricingPlanId: true,
+          },
+        })
+
+        const wasTrialing = existingSubscription?.status === 'TRIALING'
+
+        if (existingSubscription) {
+          await tx.subscriptions.update({
+            where: { id: existingSubscription.id },
+            data: {
+              status: 'ACTIVE',
+              planType: 'PRO',
+              pricingPlanId: pricingPlan?.id || null,
+              stripeCurrentPeriodEnd: periodEndDate,
+              trialStartsAt: wasTrialing ? null : existingSubscription.trialStartsAt,
+              trialEndsAt: wasTrialing ? null : existingSubscription.trialEndsAt,
+              updatedAt: new Date(),
+            },
+          })
+        } else {
+          await tx.subscriptions.create({
+            data: {
+              id: crypto.randomUUID(),
+              userId: payment.userId,
+              status: 'ACTIVE',
+              planType: 'PRO',
+              pricingPlanId: pricingPlan?.id || null,
+              stripeCurrentPeriodEnd: periodEndDate,
+              updatedAt: new Date(),
+            },
+          })
+        }
+
+        // Log activity
+        await tx.activity_logs.create({
           data: {
             id: crypto.randomUUID(),
             userId: payment.userId,
-            status: 'ACTIVE',
-            planType: 'PRO',
-            pricingPlanId: pricingPlan?.id || null,
-            stripeCurrentPeriodEnd: periodEndDate,
-            updatedAt: new Date(),
+            action: 'CREATED',
+            entityType: 'Subscription',
+            entityId: payment.id,
+            title: 'Pembayaran Berhasil - Langganan Pro Aktif',
+            description: `Pembayaran ${pricingPlan?.name} berhasil melalui Duitku`,
+            metadata: {
+              paymentMethod: paymentCode,
+              transactionId: paymentCode,
+              pricingPlan: pricingPlan?.name,
+              amount: amount,
+            },
           },
         })
-      }
-
-      // Log activity
-      await prisma.activity_logs.create({
-        data: {
-          id: crypto.randomUUID(),
-          userId: payment.userId,
-          action: 'CREATED',
-          entityType: 'Subscription',
-          entityId: payment.id,
-          title: 'Pembayaran Berhasil - Langganan Pro Aktif',
-          description: `Pembayaran ${pricingPlan?.name} berhasil melalui Duitku`,
-          metadata: {
-            paymentMethod: paymentCode,
-            transactionId: paymentCode,
-            pricingPlan: pricingPlan?.name,
-            amount: amount,
-          },
-        },
       })
 
-      // Generate receipt
+      // Generate receipt (outside transaction — non-critical)
       try {
         await createReceipt(payment.id)
       } catch (receiptError) {
@@ -185,9 +177,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ status: 'success' })
     }
 
-    // Payment pending or failed
+    // Payment pending
     if (resultCode === '01') {
-      // Payment still pending
       return NextResponse.json({ status: 'pending' })
     }
 
@@ -231,7 +222,6 @@ export async function POST(req: NextRequest) {
 
 // Helper function to map Duitku payment methods
 function mapDuitkuPaymentMethod(paymentCode: string, additionalParam?: string): string {
-  // Duitku payment codes: BC=BCA, M1=Mandiri, B1=BNI, etc.
   const vaMapping: Record<string, string> = {
     'BC': 'VA_BCA',
     'M1': 'VA_MANDIRI',
@@ -250,37 +240,12 @@ function mapDuitkuPaymentMethod(paymentCode: string, additionalParam?: string): 
     'GQ': 'E_WALLET_GOPAY',
   }
 
-  // QRIS
   if (paymentCode === 'QP' || additionalParam?.includes('QRIS')) {
     return 'QRIS'
   }
 
-  // Check VA mapping
-  if (vaMapping[paymentCode]) {
-    return vaMapping[paymentCode]
-  }
-
-  // Check e-wallet mapping
-  if (ewalletMapping[paymentCode]) {
-    return ewalletMapping[paymentCode]
-  }
+  if (vaMapping[paymentCode]) return vaMapping[paymentCode]
+  if (ewalletMapping[paymentCode]) return ewalletMapping[paymentCode]
 
   return paymentCode
-}
-
-// GET endpoint for testing
-export async function GET() {
-  return NextResponse.json({
-    status: 'Duitku webhook endpoint is ready',
-    message: 'Send POST requests to handle Duitku payment callbacks',
-    expectedFields: [
-      'merchantCode',
-      'amount',
-      'merchantOrderId',
-      'productDetails',
-      'paymentCode',
-      'resultCode',
-      'signature',
-    ],
-  })
 }

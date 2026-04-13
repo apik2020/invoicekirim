@@ -20,6 +20,39 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // === CONCURRENCY GUARD ===
+    // Use a lightweight DB-based lock to prevent concurrent execution
+    const lockId = `trial-expiration-${new Date().toISOString().split('T')[0]}`
+    const existingLock = await prisma.activity_logs.findFirst({
+      where: {
+        action: 'CRON_LOCK',
+        entityType: 'trial_expiration',
+        entityId: lockId,
+        createdAt: { gte: new Date(Date.now() - 10 * 60 * 1000) }, // Lock valid for 10 min
+      },
+    })
+
+    if (existingLock) {
+      return NextResponse.json({
+        success: true,
+        message: 'Trial expiration already processed recently',
+        skipped: true,
+      })
+    }
+
+    // Create lock entry
+    await prisma.activity_logs.create({
+      data: {
+        id: crypto.randomUUID(),
+        userId: 'system',
+        action: 'CRON_LOCK',
+        entityType: 'trial_expiration',
+        entityId: lockId,
+        title: 'Trial expiration cron lock',
+        description: 'Processing started',
+      },
+    })
+
     const now = new Date()
     let expiredCount = 0
     let reminderCount = 0

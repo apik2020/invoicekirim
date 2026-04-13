@@ -90,8 +90,8 @@ export default function DashboardPage() {
     }
 
     if (status === 'authenticated' && session?.user) {
-      fetchDashboardData()
-      fetchSubscription()
+      // Fetch dashboard data and subscription in parallel
+      Promise.all([fetchDashboardData(), fetchSubscription()])
     }
   }, [status, session, router, fetchDashboardData, fetchSubscription])
 

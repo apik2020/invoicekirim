@@ -26,6 +26,37 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // === CONCURRENCY GUARD ===
+    const lockId = `sub-expiration-${new Date().toISOString().split('T')[0]}`
+    const existingLock = await prisma.activity_logs.findFirst({
+      where: {
+        action: 'CRON_LOCK',
+        entityType: 'subscription_expiration',
+        entityId: lockId,
+        createdAt: { gte: new Date(Date.now() - 10 * 60 * 1000) },
+      },
+    })
+
+    if (existingLock) {
+      return NextResponse.json({
+        success: true,
+        message: 'Subscription expiration already processed recently',
+        skipped: true,
+      })
+    }
+
+    await prisma.activity_logs.create({
+      data: {
+        id: crypto.randomUUID(),
+        userId: 'system',
+        action: 'CRON_LOCK',
+        entityType: 'subscription_expiration',
+        entityId: lockId,
+        title: 'Subscription expiration cron lock',
+        description: 'Processing started',
+      },
+    })
+
     const now = new Date()
     let processedCount = 0
     let errorCount = 0

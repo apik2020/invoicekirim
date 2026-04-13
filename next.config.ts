@@ -15,8 +15,9 @@ const nextConfig: NextConfig = {
     return Date.now().toString()
   },
 
-  // Temporarily skip TypeScript errors during build
-  // TODO: Fix all Prisma schema issues and remove this
+  // Skip TypeScript errors during build — pre-existing Prisma schema mismatches
+  // in client portal routes (client_messages, client_preferences, support tickets)
+  // TODO: Fix remaining Prisma field mismatches in client portal API routes
   typescript: {
     ignoreBuildErrors: true,
   },
