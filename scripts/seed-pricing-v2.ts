@@ -81,6 +81,13 @@ const features = [
     description: 'Dukungan prioritas',
     sortOrder: 11,
   },
+  {
+    id: 'feat-custom-smtp',
+    key: 'CUSTOM_SMTP',
+    name: 'SMTP Sendiri',
+    description: 'Konfigurasi SMTP sendiri untuk branding email profesional',
+    sortOrder: 12,
+  },
 ]
 
 const plans = [
@@ -110,6 +117,7 @@ const plans = [
       { featureId: 'feat-client-management', included: true },
       { featureId: 'feat-analytics-view', included: true },
       { featureId: 'feat-support', included: true },
+      { featureId: 'feat-custom-smtp', included: false },
     ],
   },
   {
@@ -138,6 +146,7 @@ const plans = [
       { featureId: 'feat-client-management', included: true },
       { featureId: 'feat-analytics-view', included: true },
       { featureId: 'feat-support', included: true },
+      { featureId: 'feat-custom-smtp', included: true },
     ],
   },
   {
@@ -166,6 +175,7 @@ const plans = [
       { featureId: 'feat-client-management', included: true },
       { featureId: 'feat-analytics-view', included: true },
       { featureId: 'feat-support', included: true },
+      { featureId: 'feat-custom-smtp', included: true },
     ],
   },
 ]

@@ -250,9 +250,46 @@ export async function checkFeatureAccess(
   // Get feature configuration from plan
   const featureConfig = getPlanFeatureConfig(subscription, featureKey)
 
-  // Feature not found in plan - check if it's a free feature
+  // Feature not found in plan - try fallbacks
   if (!featureConfig) {
-    // Check if there's a global free plan with this feature
+    // Fallback 1: For PRO users without a linked pricing plan or with incomplete plan mapping,
+    // check the PRO plan directly
+    if (subscription.planType === 'PRO' && subscription.status === 'ACTIVE') {
+      const proPlanSlug = subscription.pricing_plans?.slug || 'plan-pro'
+      const proPlanFeature = await prisma.pricing_plan_features.findFirst({
+        where: {
+          feature: { key: featureKey, isActive: true },
+          plan: { slug: proPlanSlug, isActive: true },
+          included: true,
+        },
+        include: { feature: true, plan: true },
+      })
+
+      if (proPlanFeature) {
+        const currentUsage = await getFeatureUsage(userId, featureKey)
+        const limit = proPlanFeature.limitValue
+
+        if (limit !== null && currentUsage >= limit) {
+          return {
+            allowed: false,
+            reason: 'usage_exceeded',
+            limit,
+            currentUsage,
+            upgradeUrl: '/dashboard/billing',
+            planName: proPlanFeature.plan.name,
+          }
+        }
+
+        return {
+          allowed: true,
+          limit,
+          currentUsage,
+          planName: proPlanFeature.plan.name,
+        }
+      }
+    }
+
+    // Fallback 2: Check if there's a global free plan with this feature
     const freePlanFeature = await prisma.pricing_plan_features.findFirst({
       where: {
         feature: { key: featureKey },
