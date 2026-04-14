@@ -58,6 +58,7 @@ const navItems: NavItem[] = [
     icon: Settings,
     children: [
       { name: 'Email', href: '/admin/settings/email' },
+      { name: 'WhatsApp', href: '/admin/settings/whatsapp' },
       { name: 'Pricing Plans', href: '/admin/settings/pricing' },
       { name: 'Pricing Features', href: '/admin/settings/pricing-features' },
     ],

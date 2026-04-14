@@ -97,6 +97,7 @@ export default function InvoiceDetailPage({
   const [updating, setUpdating] = useState(false)
   const [sendingReminder, setSendingReminder] = useState(false)
   const [sendingEmail, setSendingEmail] = useState(false)
+  const [sendingWhatsApp, setSendingWhatsApp] = useState(false)
   const [generatingPDF, setGeneratingPDF] = useState(false)
   const printRef = useRef<HTMLDivElement>(null)
   const messageBox = useMessageBox()
@@ -344,12 +345,42 @@ export default function InvoiceDetailPage({
     })
   }
 
-  const handleWhatsApp = () => {
+  const handleWhatsApp = async () => {
     if (!invoice) return
 
+    // If client has a phone number, try OpenWA API first
+    if (invoice.clientPhone) {
+      setSendingWhatsApp(true)
+      try {
+        const res = await fetch(`/api/whatsapp/invoice/${invoice.id}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'invoice' }),
+        })
+
+        const data = await res.json()
+
+        if (res.ok && data.success) {
+          setSendingWhatsApp(false)
+          showMessageBox({
+            title: 'Berhasil!',
+            message: `Invoice berhasil dikirim via WhatsApp ke ${invoice.clientPhone}`,
+            type: 'success',
+          })
+          return
+        }
+
+        // OpenWA not configured or failed — fall through to wa.me
+        console.warn('[WA] OpenWA failed, falling back to wa.me:', data.error)
+      } catch (err) {
+        console.warn('[WA] OpenWA error, falling back to wa.me:', err)
+      }
+      setSendingWhatsApp(false)
+    }
+
+    // Fallback: open wa.me link
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin
     const invoiceUrl = `${baseUrl}/invoice/${invoice.accessToken}`
-
     const paymentStatus = invoice.paidAt || invoice.status === 'PAID' ? 'LUNAS' : 'Belum Dibayar'
 
     const message = `*INVOICE ${invoice.invoiceNumber}*
@@ -369,11 +400,8 @@ Terima kasih!`
 
     const encoded = encodeURIComponent(message)
 
-    // Try to get phone number if available
     if (invoice.clientPhone) {
-      // Clean phone number (remove spaces, dashes, etc.)
       const cleanPhone = invoice.clientPhone.replace(/[\s\-\(\)]/g, '')
-      // Add country code if not present
       const phoneWithCode = cleanPhone.startsWith('+') ? cleanPhone.substring(1) :
                             cleanPhone.startsWith('0') ? '62' + cleanPhone.substring(1) :
                             cleanPhone
@@ -970,14 +998,15 @@ Terima kasih!`
                 </button>
                 <button
                   onClick={handleWhatsApp}
-                  className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 text-white font-bold rounded-xl transition-colors text-sm"
+                  disabled={sendingWhatsApp}
+                  className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 text-white font-bold rounded-xl transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
                     background: 'linear-gradient(145deg, #25D366, #128C7E)',
                   }}
                 >
-                  <MessageCircle size={18} />
-                  <span className="hidden sm:inline">Kirim via WhatsApp</span>
-                  <span className="sm:hidden">WhatsApp</span>
+                  {sendingWhatsApp ? <Loader2 size={18} className="animate-spin" /> : <MessageCircle size={18} />}
+                  <span className="hidden sm:inline">{sendingWhatsApp ? 'Mengirim...' : 'Kirim via WhatsApp'}</span>
+                  <span className="sm:hidden">{sendingWhatsApp ? '...' : 'WhatsApp'}</span>
                 </button>
                 <Link
                   href={`/dashboard/invoices/${invoice.id}/edit`}
@@ -1016,14 +1045,15 @@ Terima kasih!`
                 </button>
                 <button
                   onClick={handleWhatsApp}
-                  className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 text-white font-bold rounded-xl transition-colors text-sm"
+                  disabled={sendingWhatsApp}
+                  className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 text-white font-bold rounded-xl transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
                     background: 'linear-gradient(145deg, #25D366, #128C7E)',
                   }}
                 >
-                  <MessageCircle size={18} />
-                  <span className="hidden sm:inline">Kirim via WhatsApp</span>
-                  <span className="sm:hidden">WhatsApp</span>
+                  {sendingWhatsApp ? <Loader2 size={18} className="animate-spin" /> : <MessageCircle size={18} />}
+                  <span className="hidden sm:inline">{sendingWhatsApp ? 'Mengirim...' : 'Kirim via WhatsApp'}</span>
+                  <span className="sm:hidden">{sendingWhatsApp ? '...' : 'WhatsApp'}</span>
                 </button>
               </>
             )}
@@ -1047,14 +1077,15 @@ Terima kasih!`
                 </button>
                 <button
                   onClick={handleWhatsApp}
-                  className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 text-white font-bold rounded-xl transition-colors text-sm"
+                  disabled={sendingWhatsApp}
+                  className="flex items-center gap-2 px-4 sm:px-6 py-2.5 sm:py-3 text-white font-bold rounded-xl transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
                     background: 'linear-gradient(145deg, #25D366, #128C7E)',
                   }}
                 >
-                  <MessageCircle size={18} />
-                  <span className="hidden sm:inline">Kirim via WhatsApp</span>
-                  <span className="sm:hidden">WhatsApp</span>
+                  {sendingWhatsApp ? <Loader2 size={18} className="animate-spin" /> : <MessageCircle size={18} />}
+                  <span className="hidden sm:inline">{sendingWhatsApp ? 'Mengirim...' : 'Kirim via WhatsApp'}</span>
+                  <span className="sm:hidden">{sendingWhatsApp ? '...' : 'WhatsApp'}</span>
                 </button>
               </>
             )}
@@ -1078,13 +1109,14 @@ Terima kasih!`
                 </div>
                 <button
                   onClick={handleWhatsApp}
-                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl transition-colors w-full justify-center"
+                  disabled={sendingWhatsApp}
+                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl transition-colors w-full justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
                     background: 'linear-gradient(145deg, #25D366, #128C7E)',
                   }}
                 >
-                  <MessageCircle size={18} />
-                  Kirim via WhatsApp
+                  {sendingWhatsApp ? <Loader2 size={18} className="animate-spin" /> : <MessageCircle size={18} />}
+                  {sendingWhatsApp ? 'Mengirim...' : 'Kirim via WhatsApp'}
                 </button>
               </div>
             )}
@@ -1478,13 +1510,14 @@ Terima kasih!`
                 </button>
                 <button
                   onClick={handleWhatsApp}
-                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl transition-colors"
+                  disabled={sendingWhatsApp}
+                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
                     background: 'linear-gradient(145deg, #25D366, #128C7E)',
                   }}
                 >
-                  <MessageCircle size={18} />
-                  Kirim via WhatsApp
+                  {sendingWhatsApp ? <Loader2 size={18} className="animate-spin" /> : <MessageCircle size={18} />}
+                  {sendingWhatsApp ? 'Mengirim...' : 'Kirim via WhatsApp'}
                 </button>
                 <Link
                   href={`/dashboard/invoices/${invoice.id}/edit`}
@@ -1522,13 +1555,14 @@ Terima kasih!`
                 </button>
                 <button
                   onClick={handleWhatsApp}
-                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl transition-colors"
+                  disabled={sendingWhatsApp}
+                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
                     background: 'linear-gradient(145deg, #25D366, #128C7E)',
                   }}
                 >
-                  <MessageCircle size={18} />
-                  Kirim via WhatsApp
+                  {sendingWhatsApp ? <Loader2 size={18} className="animate-spin" /> : <MessageCircle size={18} />}
+                  {sendingWhatsApp ? 'Mengirim...' : 'Kirim via WhatsApp'}
                 </button>
               </>
             )}
@@ -1551,13 +1585,14 @@ Terima kasih!`
                 </button>
                 <button
                   onClick={handleWhatsApp}
-                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl transition-colors"
+                  disabled={sendingWhatsApp}
+                  className="flex items-center gap-2 px-6 py-3 text-white font-bold rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
                     background: 'linear-gradient(145deg, #25D366, #128C7E)',
                   }}
                 >
-                  <MessageCircle size={18} />
-                  Kirim via WhatsApp
+                  {sendingWhatsApp ? <Loader2 size={18} className="animate-spin" /> : <MessageCircle size={18} />}
+                  {sendingWhatsApp ? 'Mengirim...' : 'Kirim via WhatsApp'}
                 </button>
               </>
             )}

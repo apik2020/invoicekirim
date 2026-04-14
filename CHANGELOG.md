@@ -4,6 +4,55 @@ Semua perubahan penting di project NotaBener akan didokumentasikan di file ini.
 
 ## [Unreleased]
 
+## [0.1.72] - 2026-04-14 — WhatsApp Integration (OpenWA)
+
+### Added
+
+- **WhatsApp integration via OpenWA**: Kirim invoice dan reminder otomatis melalui WhatsApp menggunakan OpenWA API.
+  - Library `src/lib/whatsapp.ts` — client untuk koneksi ke OpenWA instance (health check, send text, send image)
+  - API routes: `/api/whatsapp/health` (connection test), `/api/whatsapp/send` (send message), `/api/whatsapp/invoice/[id]` (send invoice/reminder)
+  - Invoice detail page (`/dashboard/invoices/[id]`): Tombol "Kirim via WhatsApp" sekarang otomatis mengirim via OpenWA API, dengan fallback ke `wa.me` jika OpenWA tidak tersedia
+  - Admin settings: `/admin/settings/whatsapp` — Status koneksi, konfigurasi read-only (via env vars), dan test koneksi
+  - Message templates: invoice notification, payment reminder, payment confirmation
+  - Activity logging: setiap pesan WhatsApp yang terkirim dicatat di `activity_logs`
+- **Environment variables**:
+  - `OPENWA_BASE_URL` — URL OpenWA instance (default: `http://localhost:55111`)
+  - `OPENWA_API_KEY` — API key untuk X-API-Key header
+  - `OPENWA_SESSION_ID` — WhatsApp session ID (default: `notabener`)
+
+### Changed
+
+- **Invoice WhatsApp button**: Dari membuka `wa.me` link (manual) ke OpenWA API call (otomatis) dengan graceful fallback
+- **Admin navigation**: Tambah menu "WhatsApp" di Settings dropdown
+
+### Technical Details
+
+- Phone number formatting: strip non-digits, convert leading `0` to `62` (Indonesia country code)
+- OpenWA auth: `X-API-Key` header, `POST /api/messages/send` endpoint
+- Graceful degradation: jika OpenWA tidak dikonfigurasi/gagal, otomatis fallback ke `wa.me` deep link
+- Tombol WhatsApp menampilkan loading state saat mengirim via OpenWA
+
+### Deployment Checklist
+
+1. Deploy OpenWA instance (Docker: `nicbarker/open-wa`)
+2. Set env vars: `OPENWA_BASE_URL`, `OPENWA_API_KEY`, `OPENWA_SESSION_ID`
+3. Scan QR code di OpenWA dashboard untuk connect nomor WhatsApp
+4. Test koneksi di `/admin/settings/whatsapp`
+
+### Files Changed
+
+```
+src/lib/whatsapp.ts                                     | 280 +++ (new)
+src/app/api/whatsapp/health/route.ts                    |  38 +++ (new)
+src/app/api/whatsapp/send/route.ts                      |  52 +++ (new)
+src/app/api/whatsapp/invoice/[id]/route.ts              | 110 +++ (new)
+src/app/api/admin/whatsapp-settings/route.ts            |  38 +++ (new)
+src/app/admin/settings/whatsapp/page.tsx                | 245 +++ (new)
+src/app/dashboard/invoices/[id]/page.tsx                |  60 +-
+src/components/admin/AdminLayout.tsx                    |   1 +
+.env.example                                           |  12 ++
+```
+
 ## [0.1.71] - 2026-04-14 — Bug Fix
 
 ### Fixed
