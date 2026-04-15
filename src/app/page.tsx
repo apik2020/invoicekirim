@@ -1,13 +1,40 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Sparkles, Check, ArrowRight, Menu, X, Zap, Shield, TrendingUp, FileText, Send, CreditCard, Clock, Users, BarChart3, Bell } from 'lucide-react'
+import { Sparkles, Check, ArrowRight, Menu, X, Zap, Shield, TrendingUp, FileText, Send, CreditCard, Clock, Users, BarChart3, Bell, Briefcase, Wrench, Armchair, Gem, Pencil, Monitor, Sprout, Scissors, Package, Gift, Smartphone, HeartPulse, Cog, Laptop, UtensilsCrossed, Apple, Truck } from 'lucide-react'
 import { Logo } from '@/components/Logo'
 import LandingPricing from '@/components/LandingPricing'
+import type { LucideIcon } from 'lucide-react'
+
+const businessTypes: { icon: LucideIcon; label: string; color: string }[] = [
+  { icon: Briefcase, label: 'Konsultan', color: 'text-blue-600 bg-blue-100' },
+  { icon: Wrench, label: 'Perkakas', color: 'text-orange-600 bg-orange-100' },
+  { icon: Armchair, label: 'Furnitur', color: 'text-amber-600 bg-amber-100' },
+  { icon: Sparkles, label: 'Kosmetik', color: 'text-pink-600 bg-pink-100' },
+  { icon: Gem, label: 'Perhiasan', color: 'text-purple-600 bg-purple-100' },
+  { icon: Pencil, label: 'Alat Tulis (ATK)', color: 'text-teal-600 bg-teal-100' },
+  { icon: Monitor, label: 'Servis & Toko Komputer', color: 'text-indigo-600 bg-indigo-100' },
+  { icon: Sprout, label: 'Peternakan', color: 'text-green-600 bg-green-100' },
+  { icon: Sprout, label: 'Pertanian', color: 'text-lime-600 bg-lime-100' },
+  { icon: Scissors, label: 'Penjahit', color: 'text-rose-600 bg-rose-100' },
+  { icon: Package, label: 'Barang Bekas', color: 'text-slate-600 bg-slate-100' },
+  { icon: Gift, label: 'Kado dan Mainan', color: 'text-fuchsia-600 bg-fuchsia-100' },
+  { icon: Smartphone, label: 'Elektronik', color: 'text-cyan-600 bg-cyan-100' },
+  { icon: HeartPulse, label: 'Medis & Kesehatan', color: 'text-red-600 bg-red-100' },
+  { icon: Cog, label: 'Suku Cadang / Bengkel', color: 'text-gray-600 bg-gray-200' },
+  { icon: Laptop, label: 'Freelancer', color: 'text-brand-600 bg-brand-100' },
+  { icon: UtensilsCrossed, label: 'Makanan dan Minuman', color: 'text-yellow-600 bg-yellow-100' },
+  { icon: Apple, label: 'Snack / Camilan', color: 'text-emerald-600 bg-emerald-100' },
+  { icon: Sprout, label: 'Sayuran dan Buah', color: 'text-green-600 bg-green-100' },
+  { icon: Truck, label: 'Logistik', color: 'text-sky-600 bg-sky-100' },
+]
 
 export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => { setMounted(true) }, [])
 
   return (
     <div className="min-h-screen bg-white">
@@ -335,6 +362,63 @@ export default function Home() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Business Types Marquee Section */}
+      <section className="py-16 bg-white overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center mb-10">
+          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-brand-500">
+            Dibuat untuk Semua Jenis Bisnis yang Sedang Berkembang
+          </h2>
+        </div>
+
+        <div className="relative">
+          {/* Gradient masks */}
+          <div className="absolute left-0 top-0 bottom-0 w-16 md:w-24 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-0 w-16 md:w-24 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+
+          {/* Marquee Track */}
+          {mounted ? (
+            <div className="flex animate-marquee w-max">
+              {businessTypes.map((item, i) => {
+                const Icon = item.icon
+                return (
+                  <div key={i} className="marquee-card mx-2">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.color}`}>
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <span className="text-sm font-semibold text-text-primary">{item.label}</span>
+                  </div>
+                )
+              })}
+              {businessTypes.map((item, i) => {
+                const Icon = item.icon
+                return (
+                  <div key={`dup-${i}`} className="marquee-card mx-2">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.color}`}>
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <span className="text-sm font-semibold text-text-primary">{item.label}</span>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="flex overflow-hidden">
+              {businessTypes.map((item, i) => {
+                const Icon = item.icon
+                return (
+                  <div key={i} className="marquee-card mx-2">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.color}`}>
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <span className="text-sm font-semibold text-text-primary">{item.label}</span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       </section>
 
