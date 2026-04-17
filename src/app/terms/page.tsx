@@ -47,7 +47,7 @@ export default function TermsPage() {
             <h2 className="text-lg font-bold text-gray-900 mb-3">Pasal 1. Definisi Layanan</h2>
             <ol className="list-decimal list-inside space-y-2">
               <li>
-                <strong>&quot;NotaBener&quot;</strong> (&quot;Platform&quot;) adalah layanan berbasis web yang disediakan oleh <strong>TRUST Solusi Digital</strong> (&quot;Penyedia&quot;) yang memungkinkan Pengguna untuk membuat, mengelola, dan mengirimkan dokumen penagihan (invoice/faktur) secara digital melalui email dan WhatsApp.
+                <strong>&quot;NotaBener&quot;</strong> (&quot;Platform&quot;) adalah layanan berbasis web yang disediakan oleh <strong>Heru Sigit Pramono (Software Developer)</strong> (&quot;Penyedia&quot;) yang memungkinkan Pengguna untuk membuat, mengelola, dan mengirimkan dokumen penagihan (invoice/faktur) secara digital melalui email dan WhatsApp.
               </li>
               <li>
                 <strong>&quot;Pengguna&quot;</strong> adalah individu atau badan usaha yang mendaftar dan menggunakan layanan NotaBener, termasuk UMKM, freelancer, dan pebisnis pemula di Indonesia.
@@ -161,7 +161,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-lg font-bold text-gray-900 mb-3">Pasal 8. Hak Kekayaan Intelektual</h2>
             <ol className="list-decimal list-inside space-y-2">
-              <li>Seluruh konten, desain, logo, merek dagang, kode sumber, dan fitur-fitur pada Platform merupakan hak kekayaan intelektual milik <strong>TRUST Solusi Digital</strong> yang dilindungi oleh hukum hak cipta dan merek dagang yang berlaku di Indonesia.</li>
+              <li>Seluruh konten, desain, logo, merek dagang, kode sumber, dan fitur-fitur pada Platform merupakan hak kekayaan intelektual milik <strong>Heru Sigit Pramono (Software Developer)</strong> yang dilindungi oleh hukum hak cipta dan merek dagang yang berlaku di Indonesia.</li>
               <li>Pengguna dilarang menyalin, memodifikasi, mendistribusikan, atau menggunakan bagian dari Platform untuk tujuan komersial tanpa izin tertulis dari Penyedia.</li>
               <li>Konten invoice yang dibuat oleh Pengguna melalui Platform tetap menjadi hak milik Pengguna. NotaBener tidak mengklaim kepemilikan atas konten tersebut.</li>
             </ol>

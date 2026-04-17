@@ -46,7 +46,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-lg font-bold text-gray-900 mb-3">Pendahuluan</h2>
             <p className="mb-2">
-              <strong>TRUST Solusi Digital</strong> (&quot;Kami&quot;), selaku penyedia layanan <strong>NotaBener</strong> (&quot;Platform&quot;), berkomitmen untuk melindungi privasi dan data pribadi Pengguna sesuai dengan ketentuan <strong>Undang-Undang No. 27 Tahun 2022 tentang Pelindungan Data Pribadi (UU PDP)</strong> dan peraturan perundang-undangan terkait lainnya.
+              <strong>Heru Sigit Pramono (Software Developer)</strong> (&quot;Kami&quot;), selaku penyedia layanan <strong>NotaBener</strong> (&quot;Platform&quot;), berkomitmen untuk melindungi privasi dan data pribadi Pengguna sesuai dengan ketentuan <strong>Undang-Undang No. 27 Tahun 2022 tentang Pelindungan Data Pribadi (UU PDP)</strong> dan peraturan perundang-undangan terkait lainnya.
             </p>
             <p>
               Kebijakan Privasi ini menjelaskan jenis data yang kami kumpulkan, tujuan pemrosesan, dasar hukum, hak-hak Pengguna sebagai subjek data, serta langkah-langkah keamanan yang kami terapkan.
@@ -265,7 +265,7 @@ export default function PrivacyPage() {
             <ul className="space-y-2">
               <li className="flex gap-2">
                 <span className="font-semibold min-w-[80px]">Nama:</span>
-                <span>TRUST Solusi Digital - Petugas Pelindungan Data</span>
+                <span>Heru Sigit Pramono (Software Developer) - Petugas Pelindungan Data</span>
               </li>
               <li className="flex gap-2">
                 <span className="font-semibold min-w-[80px]">Email:</span>
