@@ -101,10 +101,10 @@ export default function LandingPricing() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-brand-500 mb-4">
-            Pilih Paket yang Tepat
+            Pilih Paket yang Tepat untuk Bisnis Anda
           </h2>
           <p className="text-lg text-text-secondary max-w-2xl mx-auto">
-            Mulai gratis, upgrade kapan saja bisnis Anda berkembang
+            Mulai secara gratis, tingkatkan saat bisnis Anda semakin melesat.
           </p>
         </div>
 
@@ -120,13 +120,13 @@ export default function LandingPricing() {
                   {plans.map((plan, index) => (
                     <th
                       key={plan.id}
-                      className={`p-4 ${plan.isFeatured ? 'bg-primary-500' : 'bg-gray-50'} ${index === plans.length - 1 ? 'rounded-tr-xl' : ''}`}
+                      className={`p-4 ${plan.isFeatured ? 'bg-primary-500 border-2 border-primary-500' : 'bg-gray-50 border-2 border-transparent'} ${index === plans.length - 1 ? 'rounded-tr-xl' : ''}`}
                     >
                       <div className="text-center">
                         {plan.isFeatured && (
                           <div className="inline-flex items-center gap-1 text-white/80 text-xs mb-1">
                             <Star className="w-3 h-3" />
-                            POPULER
+                            Paling Banyak Dipilih
                           </div>
                         )}
                         <h3 className={`text-xl font-bold ${plan.isFeatured ? 'text-white' : 'text-brand-500'}`}>
@@ -225,7 +225,7 @@ export default function LandingPricing() {
                 <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-10">
                   <div className="badge bg-primary-500 text-white shadow-primary flex items-center gap-2">
                     <Star className="w-4 h-4" />
-                    POPULER
+                    Paling Banyak Dipilih
                   </div>
                 </div>
               )}
