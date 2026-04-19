@@ -26,7 +26,20 @@ interface Plan {
   features: PlanFeature[]
 }
 
-export default function LandingPricing() {
+interface LandingPricingProps {
+  locale: string
+  t: {
+    headline: string
+    subheadline: string
+    popularLabel: string
+    perMonth: string
+    noCreditCard: string
+    needHelp: string
+    contactUs: string
+  }
+}
+
+export default function LandingPricing({ t }: LandingPricingProps) {
   const [plans, setPlans] = useState<Plan[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
@@ -101,10 +114,10 @@ export default function LandingPricing() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-brand-500 mb-4">
-            Pilih Paket yang Tepat untuk Bisnis Anda
+            {t.headline}
           </h2>
           <p className="text-lg text-text-secondary max-w-2xl mx-auto">
-            Mulai secara gratis, tingkatkan saat bisnis Anda semakin melesat.
+            {t.subheadline}
           </p>
         </div>
 
@@ -126,7 +139,7 @@ export default function LandingPricing() {
                         {plan.isFeatured && (
                           <div className="inline-flex items-center gap-1 text-white/80 text-xs mb-1">
                             <Star className="w-3 h-3" />
-                            Paling Banyak Dipilih
+                            {t.popularLabel}
                           </div>
                         )}
                         <h3 className={`text-xl font-bold ${plan.isFeatured ? 'text-white' : 'text-brand-500'}`}>
@@ -139,7 +152,7 @@ export default function LandingPricing() {
                           <span className={`text-3xl font-bold ${plan.isFeatured ? 'text-white' : 'text-brand-500'}`}>
                             {formatPrice(plan.price)}
                           </span>
-                          <span className={plan.isFeatured ? 'text-white/80' : 'text-text-muted'}>/bulan</span>
+                          <span className={plan.isFeatured ? 'text-white/80' : 'text-text-muted'}>{t.perMonth}</span>
                         </div>
                         <Link
                           href="/login"
@@ -202,7 +215,7 @@ export default function LandingPricing() {
                     >
                       {plan.isFeatured && (
                         <p className="text-text-muted text-xs mt-2">
-                          Tidak perlu kartu kredit
+                          {t.noCreditCard}
                         </p>
                       )}
                     </td>
@@ -225,7 +238,7 @@ export default function LandingPricing() {
                 <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-10">
                   <div className="badge bg-primary-500 text-white shadow-primary flex items-center gap-2">
                     <Star className="w-4 h-4" />
-                    Paling Banyak Dipilih
+                    {t.popularLabel}
                   </div>
                 </div>
               )}
@@ -245,7 +258,7 @@ export default function LandingPricing() {
                   <span className={`text-4xl font-bold ${plan.isFeatured ? 'text-primary-500' : 'text-brand-500'}`}>
                     {formatPrice(plan.price)}
                   </span>
-                  <span className="text-text-muted">/bulan</span>
+                  <span className="text-text-muted">{t.perMonth}</span>
                 </div>
               </div>
 
@@ -285,7 +298,7 @@ export default function LandingPricing() {
 
               {plan.isFeatured && (
                 <p className="text-center text-text-muted mt-4 text-sm">
-                  Tidak perlu kartu kredit • Batalkan kapan saja
+                  {t.noCreditCard}
                 </p>
               )}
             </div>
@@ -294,9 +307,9 @@ export default function LandingPricing() {
 
         <div className="mt-12 text-center">
           <p className="text-text-secondary">
-            Butuh bantuan atau ada pertanyaan?{' '}
+            {t.needHelp}{' '}
             <a href="mailto:hello@notabener.com" className="text-primary-500 font-semibold hover:text-primary-600">
-              Hubungi kami
+              {t.contactUs}
             </a>
           </p>
         </div>
