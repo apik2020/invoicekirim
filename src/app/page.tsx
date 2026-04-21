@@ -194,115 +194,23 @@ export default function Home() {
                   </div>
                   <span>{t.hero.trust2}</span>
                 </div>
+                <div className="flex items-center gap-2 text-text-secondary text-sm">
+                  <div className="w-5 h-5 rounded-full bg-success-400 flex items-center justify-center">
+                    <Check className="w-3 h-3 text-white" />
+                  </div>
+                  <span>{t.hero.trust3}</span>
+                </div>
               </div>
             </div>
 
             {/* Dashboard Preview */}
             <div className="relative">
-              <div className="bg-white rounded-3xl shadow-card-hover p-6 md:p-8 border border-gray-100 animate-float">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-brand">
-                      <span className="font-bold text-white text-sm tracking-tight">NotaBener</span>
-                    </div>
-                    <div>
-                      <span className="font-bold text-brand-500 text-lg">Dashboard</span>
-                      <p className="text-xs text-text-muted">{t.hero.dashboardWelcome}</p>
-                    </div>
-                  </div>
-                  <div className="relative">
-                    <Bell className="w-5 h-5 text-text-muted" />
-                    <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div className="bg-gradient-to-br from-brand-50 to-brand-100 rounded-2xl p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center">
-                        <FileText className="w-4 h-4 text-white" />
-                      </div>
-                      <span className="text-xs text-text-muted">{t.hero.invoice}</span>
-                    </div>
-                    <div className="text-2xl font-bold text-brand-500">24</div>
-                    <div className="text-xs text-success-600 flex items-center gap-1 mt-1">
-                      <TrendingUp className="w-3 h-3" />
-                      +12% {t.hero.thisMonth}
-                    </div>
-                  </div>
-                  <div className="bg-gradient-to-br from-success-50 to-success-100 rounded-2xl p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-8 h-8 rounded-lg bg-success-500 flex items-center justify-center">
-                        <CreditCard className="w-4 h-4 text-white" />
-                      </div>
-                      <span className="text-xs text-text-muted">{t.hero.revenue}</span>
-                    </div>
-                    <div className="text-2xl font-bold text-success-600">Rp 12.5 jt</div>
-                    <div className="text-xs text-success-600 flex items-center gap-1 mt-1">
-                      <TrendingUp className="w-3 h-3" />
-                      +23% {t.hero.thisMonth}
-                    </div>
-                  </div>
-                  <div className="bg-gradient-to-br from-primary-50 to-primary-100 rounded-2xl p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-8 h-8 rounded-lg bg-primary-500 flex items-center justify-center">
-                        <Users className="w-4 h-4 text-white" />
-                      </div>
-                      <span className="text-xs text-text-muted">{t.hero.client}</span>
-                    </div>
-                    <div className="text-2xl font-bold text-primary-600">18</div>
-                    <div className="text-xs text-text-muted mt-1">3 {t.hero.newClients}</div>
-                  </div>
-                  <div className="bg-gradient-to-br from-amber-50 to-amber-100 rounded-2xl p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center">
-                        <Clock className="w-4 h-4 text-white" />
-                      </div>
-                      <span className="text-xs text-text-muted">{t.hero.pending}</span>
-                    </div>
-                    <div className="text-2xl font-bold text-amber-600">5</div>
-                    <div className="text-xs text-amber-600 mt-1">Rp 3.2 jt</div>
-                  </div>
-                </div>
-
-                <div className="bg-gray-50 rounded-2xl p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-semibold text-text-primary">{t.hero.recentInvoice}</span>
-                    <span className="text-xs text-primary-500">{t.hero.viewAll}</span>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between bg-white rounded-xl p-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-success-100 flex items-center justify-center">
-                          <Check className="w-5 h-5 text-success-600" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-text-primary">INV-2024-024</p>
-                          <p className="text-xs text-text-muted">PT Maju Jaya</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-success-600">Rp 2.500.000</p>
-                        <span className="badge-paid text-xs">Lunas</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between bg-white rounded-xl p-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
-                          <Clock className="w-5 h-5 text-amber-600" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-text-primary">INV-2024-023</p>
-                          <p className="text-xs text-text-muted">CV Berkah Abadi</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-bold text-amber-600">Rp 1.800.000</p>
-                        <span className="badge-overdue text-xs">Pending</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <div className="relative w-full max-w-lg mx-auto">
+                <img
+                  src="/images/hero-illustration.jpg"
+                  alt="NotaBener - Invoice Platform"
+                  className="w-full h-auto rounded-2xl"
+                />
               </div>
 
               {/* Floating Cards */}
@@ -472,6 +380,44 @@ export default function Home() {
                     <Zap className="w-3 h-3" />
                     {feature.benefit}
                   </span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section className="py-20 bg-surface-light">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-brand-500 mb-4">{t.howItWorks.title}</h2>
+            <p className="text-lg text-text-secondary max-w-2xl mx-auto">{t.howItWorks.subtitle}</p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            {t.howItWorks.steps.map((step, i) => {
+              const icons: LucideIcon[] = [FileText, Send, BarChart3]
+              const colors = [
+                'from-primary-500 to-primary-600',
+                'from-green-500 to-green-600',
+                'from-brand-500 to-brand-600',
+              ]
+              const Icon = icons[i]
+              return (
+                <div key={i} className="relative text-center">
+                  <div className={`w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br ${colors[i]} flex items-center justify-center shadow-lg`}>
+                    <Icon className="w-8 h-8 text-white" />
+                  </div>
+                  <span className="inline-block px-3 py-1 rounded-full bg-brand-100 text-brand-600 text-xs font-bold mb-3">
+                    Step {step.number}
+                  </span>
+                  <h3 className="text-xl font-bold text-brand-500 mb-3">{step.title}</h3>
+                  <p className="text-text-secondary leading-relaxed">{step.desc}</p>
+                  {i < 2 && (
+                    <div className="hidden md:block absolute top-8 -right-4 w-8 text-primary-300">
+                      <ArrowRight className="w-8 h-8" />
+                    </div>
+                  )}
                 </div>
               )
             })}

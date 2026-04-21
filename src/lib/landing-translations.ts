@@ -11,16 +11,17 @@ export const translations = {
     },
     hero: {
       badge: 'Gratis untuk mulai, powerful untuk berkembang',
-      headline1: 'Bikin Nota Tagihan ',
-      headlineHighlight1: 'Profesional',
+      headline1: '',
+      headlineHighlight1: 'Kirim Invoice',
       headline2: ' dalam ',
-      headlineHighlight2: '60 Detik',
-      headlineEnd: '.',
-      subheadline: 'Gak pakai ribet Excel, Word atau Canva. NotaBener membantu Freelancer & UMKM kirim tagihan instan. Kelola tagihan dengan NotaBener, platform yang intuitif dan mudah digunakan.',
-      cta1: 'Mulai Kirim Nota (Gratis!)',
+      headlineHighlight2: '1 Menit',
+      headlineEnd: ', Dibayar Lebih Cepat.',
+      subheadline: 'Buat, kirim via WhatsApp, dan pantau pembayaran — tanpa ribet Excel atau aplikasi yang membingungkan.',
+      cta1: 'Buat Invoice Pertama (Gratis)',
       cta2: 'Kenapa NotaBener',
-      trust1: 'Tanpa Ribet',
-      trust2: 'Tanpa kartu kredit',
+      trust1: 'Tanpa kartu kredit',
+      trust2: 'Gratis mulai',
+      trust3: 'Setup < 1 menit',
       dashboardWelcome: 'Selamat datang kembali!',
       invoice: 'Invoice',
       revenue: 'Revenue',
@@ -34,6 +35,7 @@ export const translations = {
       toWhatsApp: 'Ke WhatsApp',
       targetReached: 'Target Tercapai!',
       dataSecure: 'Data Aman & Terenkripsi',
+      easyToUse: 'Mudah digunakan di mana saja',
     },
     marquee: {
       title: 'Dibuat untuk Semua Jenis Bisnis yang Sedang Berkembang',
@@ -46,8 +48,8 @@ export const translations = {
       ],
     },
     problem: {
-      title: 'Capek Urus Invoice Manual?',
-      subtitle: 'Kami paham rasa sakitnya. Itulah kenapa NotaBener dibuat.',
+      title: 'Ucapkan Selamat Tinggal pada Administrasi yang Kacau.',
+      subtitle: 'Kelola penagihan Anda dengan presisi dan profesional. Bukan sekadar nota, ini adalah otoritas bisnis Anda.',
       painTitle: 'Tanpa NotaBener',
       cureTitle: 'Dengan NotaBener',
       pains: [
@@ -63,8 +65,8 @@ export const translations = {
       ],
     },
     features: {
-      title: 'Fitur yang Bikin Tagihan Jadi Gampang',
-      subtitle: 'Setiap fitur dirancang untuk mempermudah hidup Anda',
+      title: 'Fitur Cerdas untuk Efisiensi Maksimal',
+      subtitle: 'Kami merancang setiap detail untuk mempermudah alur kerja Penagihan Anda.',
       items: [
         {
           title: 'Bikin Nota Cepat',
@@ -95,6 +97,27 @@ export const translations = {
           title: 'Berbasis Cloud',
           desc: 'Akses data invoice dari mana saja dan kapan saja — cukup dengan browser.',
           benefit: 'Kerja dari Mana Saja',
+        },
+      ],
+    },
+    howItWorks: {
+      title: 'Cara Kerja NotaBener',
+      subtitle: 'Tiga langkah sederhana untuk mulai mengelola invoice Anda',
+      steps: [
+        {
+          number: '01',
+          title: 'Buat Invoice',
+          desc: 'Isi detail invoice, pilih template profesional, dan tambahkan logo bisnis Anda.',
+        },
+        {
+          number: '02',
+          title: 'Kirim via WhatsApp',
+          desc: 'Kirim invoice langsung ke WhatsApp klien atau email dalam satu klik.',
+        },
+        {
+          number: '03',
+          title: 'Pantau Pembayaran',
+          desc: 'Lacak status invoice — lunas, pending, atau jatuh tempo — secara real-time.',
         },
       ],
     },
@@ -176,8 +199,8 @@ export const translations = {
     cta: {
       headline: 'Yuk, Mulai Mengelola Invoice yang Bener!',
       subheadline: 'Ribet pakai Excel, Word atau Canva? NotaBener bikin urusan invoice jadi gampang. Daftar gratis, upgrade kapan saja bisnis Anda berkembang.',
-      button: 'Coba Gratis Sekarang',
-      badge: 'Data tersimpan aman • Siap dalam 2 menit',
+      button: 'Kirim Invoice ke WhatsApp Sekarang',
+      badge: 'Tanpa kartu kredit • Setup cepat • Langsung bisa dipakai',
     },
     footer: {
       description: 'Platform invoice profesional untuk UMKM dan bisnis Indonesia. Buat invoice profesional dalam hitungan detik.',
@@ -204,16 +227,17 @@ export const translations = {
     },
     hero: {
       badge: 'Free to start, powerful to grow',
-      headline1: 'Create Professional ',
-      headlineHighlight1: 'Invoices',
+      headline1: '',
+      headlineHighlight1: 'Send Invoice',
       headline2: ' in ',
-      headlineHighlight2: '60 Seconds',
-      headlineEnd: '.',
-      subheadline: 'No more messing with Excel, Word or Canva. NotaBener helps Freelancers & SMEs send invoices instantly. Manage your billing with NotaBener — an intuitive and easy-to-use platform.',
-      cta1: 'Start Sending Invoices (Free!)',
+      headlineHighlight2: '1 Minute',
+      headlineEnd: ', Get Paid Faster.',
+      subheadline: 'Create, send via WhatsApp, and track payments — no more Excel hassle or confusing apps.',
+      cta1: 'Create Your First Invoice (Free)',
       cta2: 'Why NotaBener',
-      trust1: 'No Hassle',
-      trust2: 'No credit card required',
+      trust1: 'No credit card',
+      trust2: 'Free to start',
+      trust3: 'Setup < 1 min',
       dashboardWelcome: 'Welcome back!',
       invoice: 'Invoice',
       revenue: 'Revenue',
@@ -227,6 +251,7 @@ export const translations = {
       toWhatsApp: 'Via WhatsApp',
       targetReached: 'Target Reached!',
       dataSecure: 'Data Secure & Encrypted',
+      easyToUse: 'Easy to use anywhere',
     },
     marquee: {
       title: 'Built for Every Growing Business',
@@ -239,8 +264,8 @@ export const translations = {
       ],
     },
     problem: {
-      title: 'Tired of Manual Invoicing?',
-      subtitle: 'We understand the pain. That\'s why NotaBener was built.',
+      title: 'Say Goodbye to Messy Administration.',
+      subtitle: 'Manage your billing with precision and professionalism. Not just a receipt, this is your business authority.',
       painTitle: 'Without NotaBener',
       cureTitle: 'With NotaBener',
       pains: [
@@ -256,8 +281,8 @@ export const translations = {
       ],
     },
     features: {
-      title: 'Features That Make Billing Easy',
-      subtitle: 'Every feature is designed to simplify your life',
+      title: 'Smart Features for Maximum Efficiency',
+      subtitle: 'We designed every detail to streamline your billing workflow.',
       items: [
         {
           title: 'Create Invoices Fast',
@@ -288,6 +313,27 @@ export const translations = {
           title: 'Cloud-Based',
           desc: 'Access your invoice data from anywhere, anytime — just a browser.',
           benefit: 'Work From Anywhere',
+        },
+      ],
+    },
+    howItWorks: {
+      title: 'How NotaBener Works',
+      subtitle: 'Three simple steps to start managing your invoices',
+      steps: [
+        {
+          number: '01',
+          title: 'Create Invoice',
+          desc: 'Fill in invoice details, choose a professional template, and add your business logo.',
+        },
+        {
+          number: '02',
+          title: 'Send via WhatsApp',
+          desc: 'Send invoices directly to your client\'s WhatsApp or email in one click.',
+        },
+        {
+          number: '03',
+          title: 'Track Payment',
+          desc: 'Monitor invoice status — paid, pending, or overdue — in real-time.',
         },
       ],
     },
@@ -369,8 +415,8 @@ export const translations = {
     cta: {
       headline: 'Start Managing Invoices the Right Way!',
       subheadline: 'Tired of Excel, Word or Canva? NotaBener makes invoicing easy. Sign up for free, upgrade anytime as your business grows.',
-      button: 'Try Free Now',
-      badge: 'Data stored securely • Ready in 2 minutes',
+      button: 'Send Invoice to WhatsApp Now',
+      badge: 'No credit card • Quick setup • Ready to use instantly',
     },
     footer: {
       description: 'Professional invoice platform for SMEs and Indonesian businesses. Create professional invoices in seconds.',
