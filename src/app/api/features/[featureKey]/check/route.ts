@@ -93,9 +93,7 @@ function getLockedMessage(
     CUSTOM_SMTP: 'Konfigurasi SMTP sendiri',
     CUSTOM_BRANDING: 'Kustomisasi branding',
     ANALYTICS_VIEW: 'Analitik bisnis',
-    TEAM_MEMBERS: 'Kolaborasi tim',
-    API_ACCESS: 'Akses API',
-    CLIENT_MANAGEMENT: 'Manajemen klien',
+    WHATSAPP: 'Kirim via WhatsApp',
   }
 
   const featureName = featureNames[featureKey] || 'Fitur ini'

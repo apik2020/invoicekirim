@@ -185,7 +185,7 @@ export async function validatePaymentForUpgrade(
     // Get target plan pricing
     const targetPlan = await prisma.pricing_plans.findUnique({
       where: { slug: targetPlanSlug },
-      select: { price: true },
+      select: { price_monthly: true },
     })
 
     if (!targetPlan) {
@@ -197,11 +197,11 @@ export async function validatePaymentForUpgrade(
 
     // Verify payment amount matches plan price (with small tolerance for rounding)
     const tolerance = 0.01 // 1 cent tolerance
-    if (Math.abs(payment.amount - targetPlan.price) > tolerance) {
+    if (Math.abs(payment.amount - targetPlan.price_monthly) > tolerance) {
       await logSuspiciousActivity(userId, 'Payment amount mismatch', {
         paymentId,
         paymentAmount: payment.amount,
-        expectedAmount: targetPlan.price,
+        expectedAmount: targetPlan.price_monthly,
         targetPlanSlug,
       })
       return {

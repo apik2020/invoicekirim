@@ -32,9 +32,9 @@ export async function POST(_req: NextRequest) {
       const now = new Date()
       const trialEndsAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000) // 7 days
 
-      // Get the pro trial plan ID
-      const proTrialPlan = await prisma.pricing_plans.findFirst({
-        where: { slug: 'plan-pro-trial', isActive: true },
+      // Get the basic plan ID for trial
+      const basicPlan = await prisma.pricing_plans.findFirst({
+        where: { slug: 'plan-basic', isActive: true },
         select: { id: true },
       })
 
@@ -44,7 +44,7 @@ export async function POST(_req: NextRequest) {
           userId: session.id,
           status: 'TRIALING',
           planType: 'PRO',
-          pricingPlanId: proTrialPlan?.id || null,
+          pricingPlanId: basicPlan?.id || null,
           trialStartsAt: now,
           trialEndsAt: trialEndsAt,
           updatedAt: new Date(),
@@ -130,7 +130,7 @@ export async function POST(_req: NextRequest) {
 
     // Get the pro trial plan ID
     const proTrialPlan = await prisma.pricing_plans.findFirst({
-      where: { slug: 'plan-pro-trial', isActive: true },
+      where: { slug: 'plan-basic', isActive: true },
       select: { id: true },
     })
 

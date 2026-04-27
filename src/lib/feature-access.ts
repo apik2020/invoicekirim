@@ -1,24 +1,20 @@
 import { prisma } from '@/lib/prisma'
+import { parsePlanFeatures, getFeatureValue, toOldKey } from './pricing-features'
 
 // Feature keys as constants for type safety
-// These map the code's constant names to database feature keys
 export const FEATURE_KEYS = {
   INVOICE_CREATE: 'invoice_limit',
   INVOICE_LIMIT: 'invoice_limit',
-  TEMPLATES: 'templates',
-  INVOICE_TEMPLATE: 'INVOICE_TEMPLATE',
-  CLOUD_STORAGE: 'cloud_storage',
+  INVOICE_TEMPLATE: 'custom_template',
   PDF_EXPORT: 'pdf_export',
-  EXPORT_PDF: 'pdf_export', // Alias for compatibility
+  EXPORT_PDF: 'pdf_export',
   WHATSAPP: 'whatsapp',
-  BRANDING: 'branding',
-  CUSTOM_BRANDING: 'branding', // Maps to branding for now
-  EMAIL_SEND: 'EMAIL_SEND',
-  CUSTOM_SMTP: 'CUSTOM_SMTP',
-  CLIENT_MANAGEMENT: 'CLIENT_MANAGEMENT',
-  ANALYTICS_VIEW: 'ANALYTICS_VIEW',
-  API_ACCESS: 'API_ACCESS',
-  PRIORITY_SUPPORT: 'priority_support',
+  BRANDING: 'custom_branding',
+  CUSTOM_BRANDING: 'custom_branding',
+  EMAIL_SEND: 'email_send',
+  CUSTOM_SMTP: 'custom_smtp',
+  CLIENT_MANAGEMENT: 'client_management',
+  ANALYTICS_VIEW: 'analytics_view',
 } as const
 
 export type FeatureKey = (typeof FEATURE_KEYS)[keyof typeof FEATURE_KEYS]
@@ -26,7 +22,7 @@ export type FeatureKey = (typeof FEATURE_KEYS)[keyof typeof FEATURE_KEYS]
 export interface FeatureAccessResult {
   allowed: boolean
   reason?: 'plan_limit' | 'feature_locked' | 'usage_exceeded' | 'trial_expired' | 'no_subscription'
-  limit?: number | null  // null means unlimited
+  limit?: number | null
   currentUsage?: number
   upgradeUrl?: string
   planName?: string
@@ -43,36 +39,23 @@ interface SubscriptionWithPlan {
     id: string
     name: string
     slug: string
-    features: {
-      included: boolean
-      limitValue: number | null
-      feature: {
-        key: string
-        name: string
-      }
-    }[]
+    features_json: unknown
   } | null
 }
 
 /**
- * Get user's subscription with plan and features
+ * Get user's subscription with plan
  */
 async function getUserSubscription(userId: string): Promise<SubscriptionWithPlan | null> {
   return prisma.subscriptions.findUnique({
     where: { userId },
     include: {
       pricing_plans: {
-        include: {
-          features: {
-            where: {
-              feature: {
-                isActive: true,
-              },
-            },
-            include: {
-              feature: true,
-            },
-          },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          features_json: true,
         },
       },
     },
@@ -89,7 +72,7 @@ function isTrialActive(subscription: SubscriptionWithPlan): boolean {
 }
 
 /**
- * Get feature configuration for a plan
+ * Get feature config from plan's JSON features
  */
 function getPlanFeatureConfig(
   subscription: SubscriptionWithPlan,
@@ -97,11 +80,14 @@ function getPlanFeatureConfig(
 ): { included: boolean; limitValue: number | null } | null {
   if (!subscription.pricing_plans) return null
 
-  const featureConfig = subscription.pricing_plans.features.find(
-    (pf) => pf.feature.key === featureKey
-  )
+  const features = parsePlanFeatures(subscription.pricing_plans.features_json)
+  const result = getFeatureValue(features, featureKey)
 
-  return featureConfig ? { included: featureConfig.included, limitValue: featureConfig.limitValue } : null
+  if (!result.included && result.limitValue === null) {
+    return null
+  }
+
+  return result
 }
 
 /**
@@ -121,8 +107,6 @@ async function getFeatureUsage(userId: string, featureKey: string): Promise<numb
       })
 
     case FEATURE_KEYS.EXPORT_PDF:
-      // Track PDF exports via activity_logs
-      // Look for logs where entityType is 'feature_usage' and entityId is 'pdf_export'
       const exportLogs = await prisma.activity_logs.count({
         where: {
           userId,
@@ -134,8 +118,7 @@ async function getFeatureUsage(userId: string, featureKey: string): Promise<numb
       })
       return exportLogs
 
-    case 'EMAIL_SEND':
-      // Track email sends via activity_logs
+    case 'email_send':
       const emailLogs = await prisma.activity_logs.count({
         where: {
           userId,
@@ -159,31 +142,18 @@ async function getFeatureUsage(userId: string, featureKey: string): Promise<numb
 
 /**
  * Check if user can access a feature
- * Returns detailed access result with reason and usage info
  */
 export async function checkFeatureAccess(
   userId: string,
   featureKey: string
 ): Promise<FeatureAccessResult> {
-  // Get user's subscription
   const subscription = await getUserSubscription(userId)
 
-  // No subscription = free plan limits
+  // No subscription — check free plan features
   if (!subscription) {
-    // Try to get free plan features
     const freePlan = await prisma.pricing_plans.findFirst({
       where: { slug: 'plan-free', isActive: true },
-      include: {
-        features: {
-          where: {
-            feature: {
-              key: featureKey,
-              isActive: true,
-            },
-          },
-          include: { feature: true },
-        },
-      },
+      select: { id: true, name: true, slug: true, features_json: true },
     })
 
     if (!freePlan) {
@@ -194,8 +164,10 @@ export async function checkFeatureAccess(
       }
     }
 
-    const featureConfig = freePlan.features[0]
-    if (!featureConfig || !featureConfig.included) {
+    const features = parsePlanFeatures(freePlan.features_json)
+    const { included, limitValue } = getFeatureValue(features, featureKey)
+
+    if (!included) {
       return {
         allowed: false,
         reason: 'feature_locked',
@@ -204,15 +176,12 @@ export async function checkFeatureAccess(
       }
     }
 
-    // Check usage limits
     const currentUsage = await getFeatureUsage(userId, featureKey)
-    const limit = featureConfig.limitValue
-
-    if (limit !== null && currentUsage >= limit) {
+    if (limitValue !== null && currentUsage >= limitValue) {
       return {
         allowed: false,
         reason: 'usage_exceeded',
-        limit,
+        limit: limitValue,
         currentUsage,
         upgradeUrl: '/dashboard/billing',
         planName: freePlan.name,
@@ -221,24 +190,24 @@ export async function checkFeatureAccess(
 
     return {
       allowed: true,
-      limit,
+      limit: limitValue,
       currentUsage,
       planName: freePlan.name,
     }
   }
 
-  // Check if trial is active - give full access during trial
+  // Trial active — full access
   if (isTrialActive(subscription)) {
     const currentUsage = await getFeatureUsage(userId, featureKey)
     return {
       allowed: true,
-      limit: null, // Unlimited during trial
+      limit: null,
       currentUsage,
       planName: 'Trial Pro',
     }
   }
 
-  // Check if trial expired
+  // Trial expired
   if (subscription.status === 'TRIALING' && subscription.trialEndsAt && new Date(subscription.trialEndsAt) <= new Date()) {
     return {
       allowed: false,
@@ -247,78 +216,61 @@ export async function checkFeatureAccess(
     }
   }
 
-  // Get feature configuration from plan
+  // Get feature from plan JSON
   const featureConfig = getPlanFeatureConfig(subscription, featureKey)
 
-  // Feature not found in plan - try fallbacks
   if (!featureConfig) {
-    // Fallback 1: For PRO users without a linked pricing plan or with incomplete plan mapping,
-    // check the PRO plan directly
+    // Fallback for PRO users without matching feature
     if (subscription.planType === 'PRO' && subscription.status === 'ACTIVE') {
-      const proPlanSlug = subscription.pricing_plans?.slug || 'plan-pro'
-      const proPlanFeature = await prisma.pricing_plan_features.findFirst({
-        where: {
-          feature: { key: featureKey, isActive: true },
-          plan: { slug: proPlanSlug, isActive: true },
-          included: true,
-        },
-        include: { feature: true, plan: true },
+      const proPlan = await prisma.pricing_plans.findFirst({
+        where: { slug: 'plan-professional', isActive: true },
+        select: { id: true, name: true, slug: true, features_json: true },
       })
 
-      if (proPlanFeature) {
-        const currentUsage = await getFeatureUsage(userId, featureKey)
-        const limit = proPlanFeature.limitValue
+      if (proPlan) {
+        const features = parsePlanFeatures(proPlan.features_json)
+        const { included, limitValue } = getFeatureValue(features, featureKey)
 
-        if (limit !== null && currentUsage >= limit) {
-          return {
-            allowed: false,
-            reason: 'usage_exceeded',
-            limit,
-            currentUsage,
-            upgradeUrl: '/dashboard/billing',
-            planName: proPlanFeature.plan.name,
+        if (included) {
+          const currentUsage = await getFeatureUsage(userId, featureKey)
+          if (limitValue !== null && currentUsage >= limitValue) {
+            return {
+              allowed: false,
+              reason: 'usage_exceeded',
+              limit: limitValue,
+              currentUsage,
+              upgradeUrl: '/dashboard/billing',
+              planName: proPlan.name,
+            }
           }
-        }
-
-        return {
-          allowed: true,
-          limit,
-          currentUsage,
-          planName: proPlanFeature.plan.name,
+          return { allowed: true, limit: limitValue, currentUsage, planName: proPlan.name }
         }
       }
     }
 
-    // Fallback 2: Check if there's a global free plan with this feature
-    const freePlanFeature = await prisma.pricing_plan_features.findFirst({
-      where: {
-        feature: { key: featureKey },
-        plan: { slug: 'plan-free', isActive: true },
-        included: true,
-      },
-      include: { feature: true, plan: true },
+    // Fallback: check free plan
+    const freePlan = await prisma.pricing_plans.findFirst({
+      where: { slug: 'plan-free', isActive: true },
+      select: { id: true, name: true, slug: true, features_json: true },
     })
 
-    if (freePlanFeature) {
-      const currentUsage = await getFeatureUsage(userId, featureKey)
-      const limit = freePlanFeature.limitValue
+    if (freePlan) {
+      const features = parsePlanFeatures(freePlan.features_json)
+      const { included, limitValue } = getFeatureValue(features, featureKey)
 
-      if (limit !== null && currentUsage >= limit) {
-        return {
-          allowed: false,
-          reason: 'usage_exceeded',
-          limit,
-          currentUsage,
-          upgradeUrl: '/dashboard/billing',
-          planName: freePlanFeature.plan.name,
+      if (included) {
+        const currentUsage = await getFeatureUsage(userId, featureKey)
+        if (limitValue !== null && currentUsage >= limitValue) {
+          return {
+            allowed: false,
+            reason: 'usage_exceeded',
+            limit: limitValue,
+            currentUsage,
+            upgradeUrl: '/dashboard/billing',
+            planName: freePlan.name,
+          }
         }
-      }
-
-      return {
-        allowed: true,
-        limit,
-        currentUsage,
-        planName: freePlanFeature.plan.name,
+        return { allowed: true, limit: limitValue, currentUsage, planName: freePlan.name }
       }
     }
 
@@ -330,7 +282,6 @@ export async function checkFeatureAccess(
     }
   }
 
-  // Feature not included in plan
   if (!featureConfig.included) {
     return {
       allowed: false,
@@ -340,11 +291,9 @@ export async function checkFeatureAccess(
     }
   }
 
-  // Check usage limits
   const currentUsage = await getFeatureUsage(userId, featureKey)
   const limit = featureConfig.limitValue
 
-  // null limit means unlimited
   if (limit !== null && currentUsage >= limit) {
     return {
       allowed: false,
@@ -366,7 +315,6 @@ export async function checkFeatureAccess(
 
 /**
  * Simple boolean check for feature access
- * Use this when you don't need detailed access info
  */
 export async function canAccessFeature(
   userId: string,
@@ -377,8 +325,7 @@ export async function canAccessFeature(
 }
 
 /**
- * Track feature usage (for analytics/auditing)
- * This creates an activity log entry
+ * Track feature usage
  */
 export async function trackFeatureUsage(
   userId: string,
@@ -390,7 +337,7 @@ export async function trackFeatureUsage(
       data: {
         id: crypto.randomUUID(),
         userId,
-        action: 'CREATED', // Using CREATED for feature usage
+        action: 'CREATED',
         entityType: 'feature_usage',
         entityId: featureKey,
         title: `Feature used: ${featureKey}`,
@@ -403,14 +350,12 @@ export async function trackFeatureUsage(
       },
     })
   } catch (error) {
-    // Log error but don't throw - tracking should not break functionality
     console.error('Failed to track feature usage:', error)
   }
 }
 
 /**
- * Batch check multiple features at once
- * Returns a map of feature key to access result
+ * Batch check multiple features
  */
 export async function checkMultipleFeatures(
   userId: string,
@@ -418,7 +363,6 @@ export async function checkMultipleFeatures(
 ): Promise<Record<string, FeatureAccessResult>> {
   const results: Record<string, FeatureAccessResult> = {}
 
-  // Run all checks in parallel
   const checks = await Promise.all(
     featureKeys.map(async (key) => ({
       key,
@@ -439,22 +383,23 @@ export async function checkMultipleFeatures(
 export async function getUserFeatures(userId: string): Promise<
   Record<string, FeatureAccessResult & { featureName: string; featureDescription: string | null }>
 > {
-  // Get all active features
-  const features = await prisma.pricing_features.findMany({
-    where: { isActive: true },
-    orderBy: { sortOrder: 'asc' },
-  })
+  const { FEATURE_DEFINITIONS } = await import('./pricing-features')
 
-  const featureKeys = features.map((f) => f.key)
+  const featureKeys = FEATURE_DEFINITIONS.map(f => f.key)
   const accessResults = await checkMultipleFeatures(userId, featureKeys)
 
   const result: Record<string, FeatureAccessResult & { featureName: string; featureDescription: string | null }> = {}
 
-  for (const feature of features) {
+  for (const feature of FEATURE_DEFINITIONS) {
     result[feature.key] = {
       ...accessResults[feature.key],
       featureName: feature.name,
       featureDescription: feature.description,
+    }
+    // Also map to old key for backward compatibility
+    const oldKey = toOldKey(feature.key)
+    if (oldKey !== feature.key) {
+      result[oldKey] = result[feature.key]
     }
   }
 
@@ -462,8 +407,7 @@ export async function getUserFeatures(userId: string): Promise<
 }
 
 /**
- * Track PDF export usage for limiting purposes
- * Call this whenever a user exports an invoice to PDF
+ * Track PDF export usage
  */
 export async function trackPdfExport(userId: string): Promise<void> {
   try {
@@ -483,14 +427,12 @@ export async function trackPdfExport(userId: string): Promise<void> {
       },
     })
   } catch (error) {
-    // Log error but don't throw - tracking should not break functionality
     console.error('Failed to track PDF export:', error)
   }
 }
 
 /**
- * Track email send usage for limiting purposes
- * Call this whenever an invoice is sent via email
+ * Track email send usage
  */
 export async function trackEmailSend(userId: string): Promise<void> {
   try {
@@ -504,7 +446,7 @@ export async function trackEmailSend(userId: string): Promise<void> {
         title: 'Email Sent',
         description: 'User sent invoice via email',
         metadata: {
-          featureKey: 'EMAIL_SEND',
+          featureKey: 'email_send',
           timestamp: new Date().toISOString(),
         },
       },

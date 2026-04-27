@@ -11,7 +11,7 @@ import {
   MessageCircle, XCircle, ChevronDown, Quote,
 } from 'lucide-react'
 import { Logo } from '@/components/Logo'
-import LandingPricing from '@/components/LandingPricing'
+import PricingSection from '@/components/PricingSection'
 import { useLandingLocale } from '@/hooks/useLandingLocale'
 import type { Locale } from '@/lib/landing-translations'
 import type { LucideIcon } from 'lucide-react'
@@ -459,7 +459,7 @@ export default function Home() {
       </section>
 
       {/* E. Pricing */}
-      <LandingPricing locale={locale} t={t.pricing} />
+      <PricingSection locale={locale} t={t.pricing} />
 
       {/* F. FAQ */}
       {mounted && (

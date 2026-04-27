@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { parsePlanFeatures, getFeatureValue } from './pricing-features'
 
 interface SubscriptionLimit {
   invoiceLimit: number | -1  // -1 means unlimited
@@ -8,26 +9,16 @@ interface SubscriptionLimit {
 
 /**
  * Get subscription limits for a user based on their pricing plan
- * Returns dynamic limits from pricing_plans table
+ * Reads from features_json column
  */
 export async function getUserSubscriptionLimits(userId: string): Promise<SubscriptionLimit> {
-  // Get user's subscription
   const subscription = await prisma.subscriptions.findUnique({
     where: { userId },
     include: {
-      pricing_plans: {
-        include: {
-          features: {
-            include: {
-              feature: true,
-            },
-          },
-        },
-      },
+      pricing_plans: true,
     },
   })
 
-  // Default limits (fallback)
   const defaultFreeLimit: SubscriptionLimit = {
     invoiceLimit: 10,
     planName: 'Gratis',
@@ -35,17 +26,15 @@ export async function getUserSubscriptionLimits(userId: string): Promise<Subscri
   }
 
   const defaultProLimit: SubscriptionLimit = {
-    invoiceLimit: -1,  // Unlimited
+    invoiceLimit: -1,
     planName: 'Pro',
     planType: 'PRO',
   }
 
-  // If no subscription, return default free limit
   if (!subscription) {
     return defaultFreeLimit
   }
 
-  // If trialing, return unlimited
   if (subscription.status === 'TRIALING') {
     return {
       invoiceLimit: -1,
@@ -54,48 +43,26 @@ export async function getUserSubscriptionLimits(userId: string): Promise<Subscri
     }
   }
 
-  // If user has a pricing plan linked, get limits from there
   if (subscription.pricing_plans) {
     const plan = subscription.pricing_plans
-    const invoiceLimitFeature = plan.features.find(
-      (pf) => pf.feature.key === 'invoice_limit' && pf.included
-    )
+    const features = parsePlanFeatures(plan.features_json)
+    const { included, limitValue } = getFeatureValue(features, 'invoice_limit')
+
+    if (included && typeof limitValue === 'number') {
+      return {
+        invoiceLimit: limitValue,
+        planName: plan.name,
+        planType: plan.slug.includes('free') ? 'FREE' : 'PRO',
+      }
+    }
 
     return {
-      invoiceLimit: invoiceLimitFeature?.limitValue || -1,  // null = unlimited
+      invoiceLimit: included ? -1 : 0,
       planName: plan.name,
-      planType: plan.slug.toUpperCase() === 'FREE' ? 'FREE' : 'PRO',
+      planType: plan.slug.includes('free') ? 'FREE' : 'PRO',
     }
   }
 
-  // If no pricing plan linked, try to find matching plan by planType
-  const matchingPlan = await prisma.pricing_plans.findFirst({
-    where: {
-      slug: subscription.planType.toLowerCase(),
-      isActive: true,
-    },
-    include: {
-      features: {
-        include: {
-          feature: true,
-        },
-      },
-    },
-  })
-
-  if (matchingPlan) {
-    const invoiceLimitFeature = matchingPlan.features.find(
-      (pf) => pf.feature.key === 'invoice_limit' && pf.included
-    )
-
-    return {
-      invoiceLimit: invoiceLimitFeature?.limitValue || -1,
-      planName: matchingPlan.name,
-      planType: matchingPlan.slug.toUpperCase() === 'FREE' ? 'FREE' : 'PRO',
-    }
-  }
-
-  // Fallback to planType-based limits
   if (subscription.planType === 'FREE') {
     return defaultFreeLimit
   }
@@ -114,7 +81,6 @@ export async function canUserCreateInvoice(userId: string): Promise<{
 }> {
   const limits = await getUserSubscriptionLimits(userId)
 
-  // Unlimited
   if (limits.invoiceLimit === -1) {
     return {
       allowed: true,
@@ -123,12 +89,11 @@ export async function canUserCreateInvoice(userId: string): Promise<{
     }
   }
 
-  // Get current month's invoice count
   const currentCount = await prisma.invoices.count({
     where: {
       userId,
       createdAt: {
-        gte: new Date(new Date().setDate(1)),  // Start of current month
+        gte: new Date(new Date().setDate(1)),
       },
     },
   })

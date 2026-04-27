@@ -1,45 +1,41 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { FEATURE_DEFINITIONS, parsePlanFeatures } from '@/lib/pricing-features'
 
-// GET - Public API for active pricing plans
 export async function GET() {
   try {
     const plans = await prisma.pricing_plans.findMany({
       where: { isActive: true },
-      include: {
-        features: {
-          include: {
-            feature: true,
-          },
-        },
-      },
       orderBy: { sortOrder: 'asc' },
     }).catch((err) => {
       console.error('Prisma query error:', err)
       return []
     })
 
-    // Transform data for frontend
     const transformedPlans = plans.map((plan) => ({
       id: plan.id,
       name: plan.name,
       slug: plan.slug,
       description: plan.description,
-      price: plan.price,
+      price_monthly: plan.price_monthly,
+      price_yearly: plan.price_yearly,
+      yearly_discount_percent: plan.yearly_discount_percent,
       currency: plan.currency,
       stripePriceId: plan.stripePriceId,
       trialDays: plan.trialDays,
-      isFeatured: plan.isFeatured,
+      is_popular: plan.is_popular,
       ctaText: plan.ctaText,
-      features: plan.features
-        .sort((a, b) => a.feature.sortOrder - b.feature.sortOrder)
-        .map((pf) => ({
-          id: pf.feature.id,
-          name: pf.feature.name,
-          key: pf.feature.key,
-          included: pf.included,
-          limitValue: pf.limitValue,
-        })),
+      features: FEATURE_DEFINITIONS.map((def) => {
+        const featuresJson = parsePlanFeatures(plan.features_json)
+        const value = featuresJson[def.key]
+        return {
+          key: def.key,
+          name: def.name,
+          nameEn: def.nameEn,
+          type: def.type,
+          value: value === undefined ? false : value,
+        }
+      }),
     }))
 
     return NextResponse.json({ plans: transformedPlans })

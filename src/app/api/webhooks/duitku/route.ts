@@ -95,15 +95,21 @@ export async function POST(req: NextRequest) {
                 id: true,
                 slug: true,
                 name: true,
-                price: true,
                 trialDays: true,
               },
             })
           : null
 
+        // Determine billing cycle from payment metadata
+        const paymentBillingCycle = (payment.metadata as Record<string, unknown>)?.billingCycle as string || 'monthly'
+
         // Calculate period end date
         const periodEndDate = new Date()
-        periodEndDate.setMonth(periodEndDate.getMonth() + 1)
+        if (paymentBillingCycle === 'yearly') {
+          periodEndDate.setFullYear(periodEndDate.getFullYear() + 1)
+        } else {
+          periodEndDate.setMonth(periodEndDate.getMonth() + 1)
+        }
 
         // Get existing subscription
         const existingSubscription = await tx.subscriptions.findFirst({
@@ -127,6 +133,7 @@ export async function POST(req: NextRequest) {
               planType: 'PRO',
               pricingPlanId: pricingPlan?.id || null,
               stripeCurrentPeriodEnd: periodEndDate,
+              billingCycle: paymentBillingCycle === 'yearly' ? 'YEARLY' : 'MONTHLY',
               trialStartsAt: wasTrialing ? null : existingSubscription.trialStartsAt,
               trialEndsAt: wasTrialing ? null : existingSubscription.trialEndsAt,
               updatedAt: new Date(),
@@ -141,6 +148,7 @@ export async function POST(req: NextRequest) {
               planType: 'PRO',
               pricingPlanId: pricingPlan?.id || null,
               stripeCurrentPeriodEnd: periodEndDate,
+              billingCycle: paymentBillingCycle === 'yearly' ? 'YEARLY' : 'MONTHLY',
               updatedAt: new Date(),
             },
           })

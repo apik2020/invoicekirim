@@ -7,39 +7,33 @@ const planSchema = z.object({
   name: z.string().min(1, 'Nama paket harus diisi'),
   slug: z.string().min(1, 'Slug harus diisi').regex(/^[a-z0-9-]+$/, 'Slug hanya boleh huruf kecil, angka, dan tanda hubung'),
   description: z.string().optional().nullable(),
-  price: z.number().min(0, 'Harga tidak boleh negatif'),
+  price_monthly: z.number().min(0, 'Harga bulanan tidak boleh negatif'),
+  price_yearly: z.number().min(0, 'Harga tahunan tidak boleh negatif'),
+  yearly_discount_percent: z.number().min(0).max(100).optional().nullable(),
   stripePriceId: z.string().optional().nullable(),
   trialDays: z.number().min(0).default(0),
-  isFeatured: z.boolean().default(false),
+  is_popular: z.boolean().default(false),
   isActive: z.boolean().default(true),
   sortOrder: z.number().default(0),
   ctaText: z.string().optional().nullable(),
-  features: z.array(z.object({
-    featureId: z.string(),
-    included: z.boolean(),
-    limitValue: z.number().nullable().optional(),
-  })),
+  features: z.object({}).passthrough(),
+}).refine((data) => {
+  if (data.price_monthly > 0 && data.price_yearly > 0) {
+    return data.price_yearly < data.price_monthly * 12
+  }
+  return true
+}, {
+  message: 'Harga tahunan harus lebih murah dari harga bulanan × 12',
 })
 
-// GET - List all plans and features (public endpoint - no auth required)
+// GET - List all plans (admin)
 export async function GET() {
   try {
     const plans = await prisma.pricing_plans.findMany({
-      include: {
-        features: {
-          include: {
-            feature: true,
-          },
-        },
-      },
       orderBy: { sortOrder: 'asc' },
     })
 
-    const features = await prisma.pricing_features.findMany({
-      orderBy: { sortOrder: 'asc' },
-    })
-
-    return NextResponse.json({ plans, features })
+    return NextResponse.json({ plans })
   } catch (error: any) {
     console.error('Error fetching pricing:', error)
     return NextResponse.json(
@@ -49,10 +43,13 @@ export async function GET() {
   }
 }
 
-// POST - Create new plan (requires admin auth)
+// POST - Create new plan
 export async function POST(req: NextRequest) {
   try {
-    await requireAdminAuth()
+    const auth = await requireAdminAuth()
+    if (auth.error) {
+      return NextResponse.json({ error: auth.error }, { status: 401 })
+    }
     const body = await req.json()
     const validation = planSchema.safeParse(body)
 
@@ -64,9 +61,8 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { features: planFeatures, ...planData } = validation.data
+    const { features: featuresJson, ...planData } = validation.data
 
-    // Check if slug already exists
     const existingPlan = await prisma.pricing_plans.findUnique({
       where: { slug: planData.slug },
     })
@@ -78,47 +74,32 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Create plan
+    // Auto-calculate discount if not provided and both prices are set
+    if (!planData.yearly_discount_percent && planData.price_monthly > 0 && planData.price_yearly > 0) {
+      const fullYearly = planData.price_monthly * 12
+      const discount = Math.round(((fullYearly - planData.price_yearly) / fullYearly) * 100)
+      planData.yearly_discount_percent = discount > 0 ? discount : null
+    }
+
     const plan = await prisma.pricing_plans.create({
       data: {
         name: planData.name,
         slug: planData.slug,
         description: planData.description || null,
-        price: planData.price,
+        price_monthly: planData.price_monthly,
+        price_yearly: planData.price_yearly,
+        yearly_discount_percent: planData.yearly_discount_percent || null,
         stripePriceId: planData.stripePriceId || null,
         trialDays: planData.trialDays,
-        isFeatured: planData.isFeatured,
+        is_popular: planData.is_popular,
         isActive: planData.isActive,
         sortOrder: planData.sortOrder,
         ctaText: planData.ctaText || null,
+        features_json: featuresJson as Record<string, boolean | number | null>,
       },
     })
 
-    // Create features
-    if (planFeatures && planFeatures.length > 0) {
-      await prisma.pricing_plan_features.createMany({
-        data: planFeatures.map((pf) => ({
-          planId: plan.id,
-          featureId: pf.featureId,
-          included: pf.included,
-          limitValue: pf.limitValue,
-        })),
-      })
-    }
-
-    // Fetch the complete plan with features
-    const completePlan = await prisma.pricing_plans.findUnique({
-      where: { id: plan.id },
-      include: {
-        features: {
-          include: {
-            feature: true,
-          },
-        },
-      },
-    })
-
-    return NextResponse.json({ plan: completePlan })
+    return NextResponse.json({ plan })
   } catch (error: any) {
     console.error('Error creating plan:', error)
     return NextResponse.json(

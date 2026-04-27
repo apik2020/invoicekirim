@@ -47,8 +47,8 @@ interface PricingPlan {
   id: string
   name: string
   slug: string
-  price: number
-  features: any[]
+  price_monthly: number
+  price_yearly: number
 }
 
 export default function AdminClientAccessPage() {
@@ -522,7 +522,7 @@ export default function AdminClientAccessPage() {
                 >
                   <option value="">Gratis (Tanpa Paket)</option>
                   {pricingPlans.map((plan) => (
-                    <option key={plan.id} value={plan.id}>{plan.name} - Rp {plan.price.toLocaleString('id-ID')}</option>
+                    <option key={plan.id} value={plan.id}>{plan.name} - Rp {plan.price_monthly.toLocaleString('id-ID')}/bulan</option>
                   ))}
                 </select>
               </div>

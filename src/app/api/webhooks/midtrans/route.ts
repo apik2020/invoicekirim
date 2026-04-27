@@ -76,11 +76,13 @@ export async function POST(req: NextRequest) {
                   id: true,
                   slug: true,
                   name: true,
-                  price: true,
                   trialDays: true,
                 },
               })
             : null
+
+          // Determine billing cycle from payment metadata
+          const paymentBillingCycle = (payment.metadata as Record<string, unknown>)?.billingCycle as string || 'monthly'
 
           // Get existing subscription
           const existingSubscription = await tx.subscriptions.findFirst({
@@ -101,19 +103,11 @@ export async function POST(req: NextRequest) {
           let planType: PlanType = 'PRO'
           let subscriptionStatus: SubscriptionStatus = 'ACTIVE'
 
-          if (pricingPlan?.slug === 'plan-pro-trial') {
-            const trialStartsAt = new Date()
-            const trialEndsAt = new Date(trialStartsAt)
-            trialEndsAt.setDate(trialEndsAt.getDate() + (pricingPlan.trialDays || 7))
-
-            periodEndDate = trialEndsAt
-            planType = 'PRO'
-            subscriptionStatus = 'TRIALING'
+          periodEndDate = new Date()
+          if (paymentBillingCycle === 'yearly') {
+            periodEndDate.setFullYear(periodEndDate.getFullYear() + 1)
           } else {
-            periodEndDate = new Date()
             periodEndDate.setMonth(periodEndDate.getMonth() + 1)
-            planType = 'PRO'
-            subscriptionStatus = 'ACTIVE'
           }
 
           if (existingSubscription) {
@@ -124,10 +118,11 @@ export async function POST(req: NextRequest) {
                 status: subscriptionStatus,
                 pricingPlanId: pricingPlan?.id || existingSubscription.pricingPlanId,
                 stripeCurrentPeriodEnd: periodEndDate,
-                trialStartsAt: pricingPlan?.slug === 'plan-pro-trial'
+                billingCycle: paymentBillingCycle === 'yearly' ? 'YEARLY' : 'MONTHLY',
+                trialStartsAt: false
                   ? new Date()
                   : (shouldClearTrialFields ? null : existingSubscription.trialStartsAt),
-                trialEndsAt: pricingPlan?.slug === 'plan-pro-trial'
+                trialEndsAt: false
                   ? periodEndDate
                   : (shouldClearTrialFields ? null : existingSubscription.trialEndsAt),
               },
@@ -141,8 +136,9 @@ export async function POST(req: NextRequest) {
                 status: subscriptionStatus,
                 pricingPlanId: pricingPlan?.id || null,
                 stripeCurrentPeriodEnd: periodEndDate,
-                trialStartsAt: pricingPlan?.slug === 'plan-pro-trial' ? new Date() : null,
-                trialEndsAt: pricingPlan?.slug === 'plan-pro-trial' ? periodEndDate : null,
+                billingCycle: paymentBillingCycle === 'yearly' ? 'YEARLY' : 'MONTHLY',
+                trialStartsAt: false ? new Date() : null,
+                trialEndsAt: false ? periodEndDate : null,
                 updatedAt: new Date(),
               },
             })
@@ -156,7 +152,7 @@ export async function POST(req: NextRequest) {
               action: 'UPDATED',
               entityType: 'Subscription',
               entityId: payment.userId,
-              title: pricingPlan?.slug === 'plan-pro-trial' ? 'Trial PRO Dimulai' : 'Berlangganan Pro',
+              title: false ? 'Trial PRO Dimulai' : 'Berlangganan Pro',
               description: `Pembayaran berhasil via ${payment_type}${wasTrialing ? ' setelah trial' : ''}`,
               metadata: {
                 pricingPlanId: pricingPlan?.id,

@@ -5,11 +5,11 @@ import Link from 'next/link'
 import { Check, X, Star, Loader2 } from 'lucide-react'
 
 interface PlanFeature {
-  id: string
-  name: string
   key: string
-  included: boolean
-  limitValue: number | null
+  name: string
+  nameEn: string
+  type: string
+  value: boolean | number | null
 }
 
 interface Plan {
@@ -17,12 +17,13 @@ interface Plan {
   name: string
   slug: string
   description: string | null
-  price: number
+  price_monthly: number
+  price_yearly: number
+  yearly_discount_percent: number | null
   currency: string
-  billingPeriod: 'MONTHLY' | 'YEARLY'
   stripePriceId: string | null
   trialDays: number
-  isFeatured: boolean
+  is_popular: boolean
   ctaText: string | null
   features: PlanFeature[]
 }
@@ -42,17 +43,29 @@ interface LandingPricingProps {
     noCreditCard: string
     needHelp: string
     contactUs: string
+    yearlyDiscount: string
   }
 }
 
-export default function LandingPricing({ t }: LandingPricingProps) {
+export default function PricingSection({ locale, t }: LandingPricingProps) {
   const [plans, setPlans] = useState<Plan[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [billingPeriod, setBillingPeriod] = useState<'MONTHLY' | 'YEARLY'>('MONTHLY')
+  const [billing, setBilling] = useState<'monthly' | 'yearly'>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('pricing-billing') as 'monthly' | 'yearly') || 'monthly'
+    }
+    return 'monthly'
+  })
 
   useEffect(() => {
     fetchPlans()
   }, [])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('pricing-billing', billing)
+    }
+  }, [billing])
 
   const fetchPlans = async () => {
     try {
@@ -69,7 +82,7 @@ export default function LandingPricing({ t }: LandingPricingProps) {
   }
 
   const formatPrice = (price: number) => {
-    if (price === 0) return 'Rp 0'
+    if (price === 0) return locale === 'en' ? 'Rp 0' : 'Rp 0'
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: 'IDR',
@@ -86,22 +99,27 @@ export default function LandingPricing({ t }: LandingPricingProps) {
     }).format(monthly)
   }
 
-  const getFeatureDisplayText = (feature: PlanFeature) => {
-    if (!feature.included) {
-      return feature.name
-    }
-    if (feature.key === 'invoice_limit') {
-      if (feature.limitValue) {
-        return `${feature.limitValue} invoice/bulan`
-      }
-      return 'Invoice unlimited'
-    }
-    return feature.name
+  const getDisplayPrice = (plan: Plan) => {
+    if (plan.slug === 'plan-free') return 0
+    return billing === 'yearly' ? plan.price_yearly : plan.price_monthly
   }
 
   const getPriceSuffix = (plan: Plan) => {
-    if (plan.price === 0) return ''
-    return plan.billingPeriod === 'YEARLY' ? t.perYear : t.perMonth
+    if (plan.slug === 'plan-free') return ''
+    return billing === 'yearly' ? t.perYear : t.perMonth
+  }
+
+  const getFeatureDisplayText = (feature: PlanFeature) => {
+    if (feature.value === false || feature.value === null || feature.value === undefined) {
+      return feature.name
+    }
+    if (feature.key === 'invoice_limit' && typeof feature.value === 'number') {
+      return locale === 'en' ? `${feature.value} invoices/month` : `${feature.value} invoice/bulan`
+    }
+    if (feature.key === 'invoice_limit' && feature.value === true) {
+      return locale === 'en' ? 'Unlimited invoices' : 'Invoice unlimited'
+    }
+    return feature.name
   }
 
   if (isLoading) {
@@ -116,21 +134,13 @@ export default function LandingPricing({ t }: LandingPricingProps) {
     )
   }
 
-  if (plans.length === 0) {
-    return null
-  }
+  if (plans.length === 0) return null
 
-  // Filter plans: always show free & trial, show paid plans matching selected billing period
-  const displayedPlans = plans.filter(plan => {
-    if (plan.slug === 'plan-free' || plan.slug === 'plan-basic') return true
-    return plan.billingPeriod === billingPeriod
-  })
-
-  // Get all unique feature names across displayed plans
-  const allFeatures = displayedPlans.reduce((acc: { id: string; name: string }[], plan) => {
+  // Get all unique features across plans
+  const allFeatures = plans.reduce((acc: { key: string; name: string; nameEn: string }[], plan) => {
     plan.features.forEach(f => {
-      if (!acc.find(a => a.id === f.id)) {
-        acc.push({ id: f.id, name: f.name })
+      if (!acc.find(a => a.key === f.key)) {
+        acc.push({ key: f.key, name: f.name, nameEn: f.nameEn })
       }
     })
     return acc
@@ -152,9 +162,9 @@ export default function LandingPricing({ t }: LandingPricingProps) {
         <div className="flex items-center justify-center mb-12">
           <div className="inline-flex items-center bg-gray-100 rounded-full p-1">
             <button
-              onClick={() => setBillingPeriod('MONTHLY')}
+              onClick={() => setBilling('monthly')}
               className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all ${
-                billingPeriod === 'MONTHLY'
+                billing === 'monthly'
                   ? 'bg-white text-brand-500 shadow-md'
                   : 'text-text-secondary hover:text-text-primary'
               }`}
@@ -162,9 +172,9 @@ export default function LandingPricing({ t }: LandingPricingProps) {
               {t.monthly}
             </button>
             <button
-              onClick={() => setBillingPeriod('YEARLY')}
+              onClick={() => setBilling('yearly')}
               className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all flex items-center gap-2 ${
-                billingPeriod === 'YEARLY'
+                billing === 'yearly'
                   ? 'bg-white text-brand-500 shadow-md'
                   : 'text-text-secondary hover:text-text-primary'
               }`}
@@ -183,44 +193,49 @@ export default function LandingPricing({ t }: LandingPricingProps) {
             <table className="w-full border-collapse">
               <thead>
                 <tr>
-                  <th className="text-left p-4 bg-gray-50 rounded-tl-xl w-1/3">
+                  <th className="text-left p-4 bg-gray-50 rounded-tl-xl w-1/4">
                     <span className="text-lg font-semibold text-text-primary">Fitur</span>
                   </th>
-                  {displayedPlans.map((plan, index) => (
+                  {plans.map((plan, index) => (
                     <th
                       key={plan.id}
-                      className={`p-4 ${plan.isFeatured ? 'bg-primary-500 border-2 border-primary-500' : 'bg-gray-50 border-2 border-transparent'} ${index === displayedPlans.length - 1 ? 'rounded-tr-xl' : ''}`}
+                      className={`p-4 ${plan.is_popular ? 'bg-primary-500 border-2 border-primary-500' : 'bg-gray-50 border-2 border-transparent'} ${index === plans.length - 1 ? 'rounded-tr-xl' : ''}`}
                     >
                       <div className="text-center">
-                        {plan.isFeatured && (
+                        {plan.is_popular && (
                           <div className="inline-flex items-center gap-1 text-white/80 text-xs mb-1">
                             <Star className="w-3 h-3" />
                             {t.popularLabel}
                           </div>
                         )}
-                        <h3 className={`text-xl font-bold ${plan.isFeatured ? 'text-white' : 'text-brand-500'}`}>
+                        <h3 className={`text-xl font-bold ${plan.is_popular ? 'text-white' : 'text-brand-500'}`}>
                           {plan.name}
                         </h3>
-                        <p className={`text-sm ${plan.isFeatured ? 'text-white/80' : 'text-text-secondary'}`}>
+                        <p className={`text-sm ${plan.is_popular ? 'text-white/80' : 'text-text-secondary'}`}>
                           {plan.description || ''}
                         </p>
                         <div className="mt-4">
-                          <span className={`text-3xl font-bold ${plan.isFeatured ? 'text-white' : 'text-brand-500'}`}>
-                            {formatPrice(plan.price)}
+                          <span className={`text-3xl font-bold ${plan.is_popular ? 'text-white' : 'text-brand-500'}`}>
+                            {formatPrice(getDisplayPrice(plan))}
                           </span>
-                          <span className={plan.isFeatured ? 'text-white/80' : 'text-text-muted'}>
+                          <span className={plan.is_popular ? 'text-white/80' : 'text-text-muted'}>
                             {getPriceSuffix(plan)}
                           </span>
                         </div>
-                        {plan.billingPeriod === 'YEARLY' && plan.price > 0 && (
-                          <p className={`text-sm mt-1 ${plan.isFeatured ? 'text-white/70' : 'text-text-muted'}`}>
-                            ~{formatMonthlyEquiv(plan.price)}{t.perMonthEquivalent}
+                        {billing === 'yearly' && getDisplayPrice(plan) > 0 && (
+                          <p className={`text-sm mt-1 ${plan.is_popular ? 'text-white/70' : 'text-text-muted'}`}>
+                            ~{formatMonthlyEquiv(getDisplayPrice(plan))}{t.perMonthEquivalent}
+                          </p>
+                        )}
+                        {plan.yearly_discount_percent && billing === 'yearly' && (
+                          <p className={`text-xs mt-1 font-bold ${plan.is_popular ? 'text-white/90' : 'text-success-600'}`}>
+                            {t.yearlyDiscount.replace('{percent}', String(plan.yearly_discount_percent))}
                           </p>
                         )}
                         <Link
                           href="/login"
                           className={`inline-block mt-4 px-6 py-2.5 rounded-lg font-semibold text-sm ${
-                            plan.isFeatured
+                            plan.is_popular
                               ? 'bg-white text-primary-500 hover:bg-gray-100'
                               : 'bg-brand-500 text-white hover:bg-brand-600'
                           }`}
@@ -234,27 +249,27 @@ export default function LandingPricing({ t }: LandingPricingProps) {
               </thead>
               <tbody>
                 {allFeatures.map((feature, rowIndex) => (
-                  <tr key={feature.id} className={rowIndex === allFeatures.length - 1 ? 'last:child:border-b-0' : ''}>
+                  <tr key={feature.key}>
                     <td className="p-4 border-b border-gray-100 bg-gray-50/50">
-                      <span className="text-text-secondary">{feature.name}</span>
+                      <span className="text-text-secondary">{locale === 'en' ? feature.nameEn : feature.name}</span>
                     </td>
-                    {displayedPlans.map((plan) => {
-                      const planFeature = plan.features.find(f => f.id === feature.id)
-                      const isIncluded = planFeature?.included
+                    {plans.map((plan) => {
+                      const planFeature = plan.features.find(f => f.key === feature.key)
+                      const isIncluded = planFeature?.value !== false && planFeature?.value !== null && planFeature?.value !== undefined
 
                       return (
                         <td
-                          key={`${plan.id}-${feature.id}`}
-                          className={`p-4 border-b border-gray-100 text-center ${plan.isFeatured ? 'bg-primary-50/30' : ''}`}
+                          key={`${plan.id}-${feature.key}`}
+                          className={`p-4 border-b border-gray-100 text-center ${plan.is_popular ? 'bg-primary-50/30' : ''}`}
                         >
                           {isIncluded ? (
                             <div className="flex items-center justify-center gap-2">
                               <div className="w-6 h-6 rounded-full bg-success-400 flex items-center justify-center">
                                 <Check className="w-4 h-4 text-white" />
                               </div>
-                              {planFeature?.key === 'invoice_limit' && planFeature.limitValue && (
+                              {planFeature?.key === 'invoice_limit' && typeof planFeature.value === 'number' && (
                                 <span className="text-sm text-text-secondary">
-                                  {planFeature.limitValue}
+                                  {planFeature.value}
                                 </span>
                               )}
                             </div>
@@ -268,15 +283,14 @@ export default function LandingPricing({ t }: LandingPricingProps) {
                     })}
                   </tr>
                 ))}
-                {/* Bottom row with CTA */}
                 <tr>
                   <td className="p-4 bg-gray-50 rounded-bl-xl"></td>
-                  {displayedPlans.map((plan, index) => (
+                  {plans.map((plan, index) => (
                     <td
                       key={`cta-${plan.id}`}
-                      className={`p-4 text-center ${plan.isFeatured ? 'bg-primary-50/30' : ''} ${index === displayedPlans.length - 1 ? 'rounded-br-xl' : ''}`}
+                      className={`p-4 text-center ${plan.is_popular ? 'bg-primary-50/30' : ''} ${index === plans.length - 1 ? 'rounded-br-xl' : ''}`}
                     >
-                      {plan.isFeatured && (
+                      {plan.is_popular && (
                         <p className="text-text-muted text-xs mt-2">
                           {t.noCreditCard}
                         </p>
@@ -291,13 +305,12 @@ export default function LandingPricing({ t }: LandingPricingProps) {
 
         {/* Mobile: Card View */}
         <div className="md:hidden space-y-6">
-          {displayedPlans.map((plan) => (
+          {plans.map((plan) => (
             <div
               key={plan.id}
-              className={plan.isFeatured ? 'pricing-card-featured' : 'pricing-card'}
+              className={plan.is_popular ? 'pricing-card-featured' : 'pricing-card'}
             >
-              {/* Featured Badge */}
-              {plan.isFeatured && (
+              {plan.is_popular && (
                 <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-10">
                   <div className="badge bg-primary-500 text-white shadow-primary flex items-center gap-2">
                     <Star className="w-4 h-4" />
@@ -306,34 +319,31 @@ export default function LandingPricing({ t }: LandingPricingProps) {
                 </div>
               )}
 
-              {/* Plan Header */}
-              <div className={plan.isFeatured ? 'mt-2' : ''}>
+              <div className={plan.is_popular ? 'mt-2' : ''}>
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-2xl font-bold text-brand-500">{plan.name}</h3>
-                  {!plan.isFeatured && plan.price === 0 && (
+                  {!plan.is_popular && plan.slug === 'plan-free' && (
                     <div className="badge-paid">FREE</div>
                   )}
                 </div>
                 <p className="text-text-secondary mb-6">{plan.description || ''}</p>
 
-                {/* Price */}
                 <div className="mb-6">
-                  <span className={`text-4xl font-bold ${plan.isFeatured ? 'text-primary-500' : 'text-brand-500'}`}>
-                    {formatPrice(plan.price)}
+                  <span className={`text-4xl font-bold ${plan.is_popular ? 'text-primary-500' : 'text-brand-500'}`}>
+                    {formatPrice(getDisplayPrice(plan))}
                   </span>
                   <span className="text-text-muted">{getPriceSuffix(plan)}</span>
                 </div>
-                {plan.billingPeriod === 'YEARLY' && plan.price > 0 && (
+                {billing === 'yearly' && getDisplayPrice(plan) > 0 && (
                   <p className="text-text-muted text-sm -mt-4 mb-6">
-                    ~{formatMonthlyEquiv(plan.price)}{t.perMonthEquivalent}
+                    ~{formatMonthlyEquiv(getDisplayPrice(plan))}{t.perMonthEquivalent}
                   </p>
                 )}
               </div>
 
-              {/* Features */}
               <ul className="space-y-4 mb-8">
-                {(plan.features || []).filter(f => f.included).map((feature) => (
-                  <li key={feature.id} className="flex items-start gap-3">
+                {plan.features.filter(f => f.value !== false && f.value !== null && f.value !== undefined).map((feature) => (
+                  <li key={feature.key} className="flex items-start gap-3">
                     <div className="checkmark mt-0.5">
                       <Check className="w-4 h-4 text-white" />
                     </div>
@@ -342,8 +352,8 @@ export default function LandingPricing({ t }: LandingPricingProps) {
                     </span>
                   </li>
                 ))}
-                {(plan.features || []).filter(f => !f.included).map((feature) => (
-                  <li key={feature.id} className="flex items-start gap-3">
+                {plan.features.filter(f => f.value === false || f.value === null || f.value === undefined).map((feature) => (
+                  <li key={feature.key} className="flex items-start gap-3">
                     <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center mt-0.5">
                       <X className="w-3 h-3 text-gray-400" />
                     </div>
@@ -354,17 +364,16 @@ export default function LandingPricing({ t }: LandingPricingProps) {
                 ))}
               </ul>
 
-              {/* CTA Button */}
               <Link
                 href="/login"
                 className={`block w-full px-6 py-3 text-center font-semibold ${
-                  plan.isFeatured ? 'btn-primary' : 'btn-secondary'
+                  plan.is_popular ? 'btn-primary' : 'btn-secondary'
                 }`}
               >
                 {plan.ctaText || 'Mulai Sekarang'}
               </Link>
 
-              {plan.isFeatured && (
+              {plan.is_popular && (
                 <p className="text-center text-text-muted mt-4 text-sm">
                   {t.noCreditCard}
                 </p>

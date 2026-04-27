@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { FEATURE_DEFINITIONS, parsePlanFeatures } from '@/lib/pricing-features'
 
 export async function GET(
   req: NextRequest,
@@ -9,18 +10,6 @@ export async function GET(
     const { id } = await params
     const plan = await prisma.pricing_plans.findUnique({
       where: { id },
-      include: {
-        features: {
-          include: {
-            feature: true
-          },
-          orderBy: {
-            feature: {
-              sortOrder: 'asc'
-            }
-          }
-        }
-      }
     })
 
     if (!plan) {
@@ -30,23 +19,26 @@ export async function GET(
       )
     }
 
-    // Transform the data to match the expected format
+    const featuresJson = parsePlanFeatures(plan.features_json)
+
     const transformedPlan = {
       id: plan.id,
       name: plan.name,
       slug: plan.slug,
       description: plan.description,
-      price: plan.price,
+      price_monthly: plan.price_monthly,
+      price_yearly: plan.price_yearly,
+      yearly_discount_percent: plan.yearly_discount_percent,
       currency: plan.currency,
       trialDays: plan.trialDays,
-      isFeatured: plan.isFeatured,
-      features: plan.features.map(pf => ({
-        id: pf.feature.id,
-        name: pf.feature.name,
-        key: pf.feature.key,
-        included: pf.included,
-        limitValue: pf.limitValue
-      }))
+      is_popular: plan.is_popular,
+      ctaText: plan.ctaText,
+      features: FEATURE_DEFINITIONS.map((def) => ({
+        key: def.key,
+        name: def.name,
+        type: def.type,
+        value: featuresJson[def.key] === undefined ? false : featuresJson[def.key],
+      })),
     }
 
     return NextResponse.json(transformedPlan)

@@ -30,6 +30,8 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    const { billingCycle = 'monthly' } = body
+
     // Get pricing plan details
     const pricingPlan = await prisma.pricing_plans.findUnique({
       where: { id: pricingPlanId },
@@ -37,7 +39,8 @@ export async function POST(req: NextRequest) {
         id: true,
         slug: true,
         name: true,
-        price: true,
+        price_monthly: true,
+        price_yearly: true,
         currency: true,
         trialDays: true,
       },
@@ -88,8 +91,8 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Calculate amount - use pricing plan price
-    const amount = pricingPlan.price
+    // Calculate amount based on billing cycle
+    const amount = billingCycle === 'yearly' ? pricingPlan.price_yearly : pricingPlan.price_monthly
 
     // Generate Duitku order ID
     const orderId = generateDuitkuOrderId(session.id)
@@ -117,6 +120,7 @@ export async function POST(req: NextRequest) {
         paymentMethod,
         paymentGateway: 'Duitku',
         pricingPlanId, // Link to pricing plan for webhook processing
+        metadata: { billingCycle },
         updatedAt: new Date(),
       },
     })

@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient, BillingPeriod } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
@@ -158,12 +158,42 @@ const plans = [
     currency: 'IDR',
     stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID || null,
     trialDays: 0,
+    billingPeriod: 'MONTHLY' as BillingPeriod,
     isFeatured: false,
     isActive: true,
     sortOrder: 3,
     ctaText: 'Berlangganan Pro',
     features: [
       // All features included
+      { featureId: 'feat-invoice-limit', included: true, limitValue: null },
+      { featureId: 'feat-templates', included: true },
+      { featureId: 'feat-invoice-template', included: true },
+      { featureId: 'feat-cloud-storage', included: true },
+      { featureId: 'feat-pdf-export', included: true },
+      { featureId: 'feat-whatsapp', included: true },
+      { featureId: 'feat-branding', included: true },
+      { featureId: 'feat-email-send', included: true },
+      { featureId: 'feat-client-management', included: true },
+      { featureId: 'feat-analytics-view', included: true },
+      { featureId: 'feat-support', included: true },
+      { featureId: 'feat-custom-smtp', included: true },
+    ],
+  },
+  {
+    id: 'plan-pro-yearly',
+    name: 'Pro Tahunan',
+    slug: 'plan-pro-yearly',
+    description: 'Untuk freelancer profesional - bayar 1 tahun',
+    price: 490000,
+    currency: 'IDR',
+    stripePriceId: null,
+    trialDays: 0,
+    billingPeriod: 'YEARLY' as BillingPeriod,
+    isFeatured: false,
+    isActive: true,
+    sortOrder: 4,
+    ctaText: 'Berlangganan Pro Tahunan',
+    features: [
       { featureId: 'feat-invoice-limit', included: true, limitValue: null },
       { featureId: 'feat-templates', included: true },
       { featureId: 'feat-invoice-template', included: true },

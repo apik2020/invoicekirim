@@ -7,18 +7,16 @@ const planUpdateSchema = z.object({
   name: z.string().min(1, 'Nama paket harus diisi').optional(),
   slug: z.string().min(1, 'Slug harus diisi').regex(/^[a-z0-9-]+$/, 'Slug hanya boleh huruf kecil, angka, dan tanda hubung').optional(),
   description: z.string().optional().nullable(),
-  price: z.number().min(0, 'Harga tidak boleh negatif').optional(),
+  price_monthly: z.number().min(0, 'Harga bulanan tidak boleh negatif').optional(),
+  price_yearly: z.number().min(0, 'Harga tahunan tidak boleh negatif').optional(),
+  yearly_discount_percent: z.number().min(0).max(100).optional().nullable(),
   stripePriceId: z.string().optional().nullable(),
   trialDays: z.number().min(0).optional(),
-  isFeatured: z.boolean().optional(),
+  is_popular: z.boolean().optional(),
   isActive: z.boolean().optional(),
   sortOrder: z.number().optional(),
   ctaText: z.string().optional().nullable(),
-  features: z.array(z.object({
-    featureId: z.string(),
-    included: z.boolean(),
-    limitValue: z.number().nullable().optional(),
-  })).optional(),
+  features: z.object({}).passthrough().optional(),
 })
 
 // GET - Get single plan
@@ -27,18 +25,14 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAdminAuth()
+    const auth = await requireAdminAuth()
+    if (auth.error) {
+      return NextResponse.json({ error: auth.error }, { status: 401 })
+    }
     const { id } = await params
 
     const plan = await prisma.pricing_plans.findUnique({
       where: { id },
-      include: {
-        features: {
-          include: {
-            feature: true,
-          },
-        },
-      },
     })
 
     if (!plan) {
@@ -64,7 +58,10 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAdminAuth()
+    const auth = await requireAdminAuth()
+    if (auth.error) {
+      return NextResponse.json({ error: auth.error }, { status: 401 })
+    }
     const { id } = await params
 
     const body = await req.json()
@@ -78,14 +75,12 @@ export async function PUT(
       )
     }
 
-    const { features: planFeatures, ...planData } = validation.data
+    const { features: featuresJson, ...planData } = validation.data
 
-    // Convert empty strings to null for nullable unique fields
     if (planData.stripePriceId === '') {
       planData.stripePriceId = null
     }
 
-    // Check if plan exists
     const existingPlan = await prisma.pricing_plans.findUnique({
       where: { id },
     })
@@ -97,7 +92,6 @@ export async function PUT(
       )
     }
 
-    // Check slug uniqueness if slug is being updated
     if (planData.slug && planData.slug !== existingPlan.slug) {
       const slugExists = await prisma.pricing_plans.findUnique({
         where: { slug: planData.slug },
@@ -110,34 +104,26 @@ export async function PUT(
       }
     }
 
-    // Update features if provided
-    if (planFeatures) {
-      // Delete existing features
-      await prisma.pricing_plan_features.deleteMany({
-        where: { planId: id },
-      })
+    // Auto-calculate discount
+    const monthly = planData.price_monthly ?? existingPlan.price_monthly
+    const yearly = planData.price_yearly ?? existingPlan.price_yearly
+    if (planData.price_monthly !== undefined || planData.price_yearly !== undefined) {
+      if (monthly > 0 && yearly > 0 && yearly < monthly * 12) {
+        planData.yearly_discount_percent = Math.round(((monthly * 12 - yearly) / (monthly * 12)) * 100)
+      } else {
+        planData.yearly_discount_percent = null
+      }
+    }
 
-      // Create new features
-      await prisma.pricing_plan_features.createMany({
-        data: planFeatures.map((pf) => ({
-          planId: id,
-          featureId: pf.featureId,
-          included: pf.included,
-          limitValue: pf.limitValue,
-        })),
-      })
+    // Build update data
+    const updateData: Record<string, unknown> = { ...planData }
+    if (featuresJson) {
+      updateData.features_json = featuresJson
     }
 
     const plan = await prisma.pricing_plans.update({
       where: { id },
-      data: planData,
-      include: {
-        features: {
-          include: {
-            feature: true,
-          },
-        },
-      },
+      data: updateData,
     })
 
     return NextResponse.json({ plan })
@@ -156,10 +142,12 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await requireAdminAuth()
+    const auth = await requireAdminAuth()
+    if (auth.error) {
+      return NextResponse.json({ error: auth.error }, { status: 401 })
+    }
     const { id } = await params
 
-    // Check if plan exists
     const existingPlan = await prisma.pricing_plans.findUnique({
       where: { id },
     })
@@ -171,7 +159,6 @@ export async function DELETE(
       )
     }
 
-    // Delete plan (features will be cascade deleted)
     await prisma.pricing_plans.delete({
       where: { id },
     })

@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const { planSlug } = body
 
-    if (!planSlug || !['free', 'pro'].includes(planSlug.toLowerCase())) {
+    if (!planSlug || !['plan-free', 'plan-basic', 'plan-professional'].includes(planSlug)) {
       return NextResponse.json(
         { error: 'Paket tidak valid' },
         { status: 400 }
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     // Get the pricing plan
     const pricingPlan = await prisma.pricing_plans.findFirst({
       where: {
-        slug: planSlug.toLowerCase(),
+        slug: planSlug,
         isActive: true,
       },
     })
@@ -47,8 +47,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Update subscription
-    const planType = planSlug.toUpperCase() === 'FREE' ? 'FREE' : 'PRO'
-    const status = planSlug.toUpperCase() === 'FREE' ? 'FREE' : 'ACTIVE'
+    const planType = planSlug === 'plan-free' ? 'FREE' : 'PRO'
+    const status = planSlug === 'plan-free' ? 'FREE' : 'ACTIVE'
 
     const updatedSubscription = await prisma.subscriptions.update({
       where: { id: subscription.id },

@@ -7,7 +7,10 @@ import { SubscriptionStatus, PlanType } from '@prisma/client'
 // GET - List all users with their subscriptions
 export async function GET(req: NextRequest) {
   try {
-    await requireAdminAuth()
+    const auth = await requireAdminAuth()
+    if (auth.error) {
+      return NextResponse.json({ error: auth.error }, { status: 401 })
+    }
 
     const { searchParams } = new URL(req.url)
     const page = parseInt(searchParams.get('page') || '1')
@@ -28,12 +31,6 @@ export async function GET(req: NextRequest) {
     // Get pricing plans for dropdown
     const pricingPlans = await prisma.pricing_plans.findMany({
       where: { isActive: true },
-      include: {
-        features: {
-          include: { feature: true },
-          orderBy: { feature: { sortOrder: 'asc' } },
-        },
-      },
       orderBy: { sortOrder: 'asc' },
     })
 
@@ -60,13 +57,7 @@ export async function GET(req: NextRequest) {
         include: {
           subscriptions: {
             include: {
-              pricing_plans: {
-                include: {
-                  features: {
-                    include: { feature: true },
-                  },
-                },
-              },
+              pricing_plans: true,
             },
           },
           _count: {
@@ -93,11 +84,10 @@ export async function GET(req: NextRequest) {
       const subscription = user.subscriptions
       const invoiceCountThisMonth = user._count?.invoices || 0
 
-      // Find invoice limit from plan features
-      const invoiceLimitFeature = subscription?.pricing_plans?.features?.find(
-        (f: any) => f.feature?.key === 'invoice_limit'
-      )
-      const monthlyInvoiceLimit = invoiceLimitFeature?.limitValue || null
+      // Find invoice limit from plan features JSON
+      const planFeatures = (subscription?.pricing_plans?.features_json || {}) as Record<string, boolean | number | null>
+      const invoiceLimit = planFeatures.invoice_limit
+      const monthlyInvoiceLimit = typeof invoiceLimit === 'number' ? invoiceLimit : null
 
       return {
         id: user.id,
@@ -142,7 +132,10 @@ export async function GET(req: NextRequest) {
 // PUT - Update user subscription
 export async function PUT(req: NextRequest) {
   try {
-    await requireAdminAuth()
+    const auth = await requireAdminAuth()
+    if (auth.error) {
+      return NextResponse.json({ error: auth.error }, { status: 401 })
+    }
 
     const { searchParams } = new URL(req.url)
     const userId = searchParams.get('userId')
@@ -247,7 +240,10 @@ export async function PUT(req: NextRequest) {
 // DELETE - Reset user to free plan
 export async function DELETE(req: NextRequest) {
   try {
-    await requireAdminAuth()
+    const auth = await requireAdminAuth()
+    if (auth.error) {
+      return NextResponse.json({ error: auth.error }, { status: 401 })
+    }
 
     const { searchParams } = new URL(req.url)
     const userId = searchParams.get('userId')

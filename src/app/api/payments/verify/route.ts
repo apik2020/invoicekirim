@@ -22,6 +22,7 @@ export async function GET(req: NextRequest) {
 
   // Step 1: Find payment in database
   let payment = null
+  let planName = 'PRO'
   try {
     payment = await prisma.payments.findFirst({
       where: {
@@ -29,19 +30,19 @@ export async function GET(req: NextRequest) {
           { dokuOrderId: reference },
           { dokuTransactionId: reference },
         ]
-      },
-      include: {
-        pricing_planss: {
-          select: {
-            name: true,
-            slug: true,
-          }
-        }
       }
     })
+
+    // Look up plan name separately (no direct relation on payments)
+    if (payment?.pricingPlanId) {
+      const plan = await prisma.pricing_plans.findUnique({
+        where: { id: payment.pricingPlanId },
+        select: { name: true },
+      })
+      planName = plan?.name || 'PRO'
+    }
   } catch (dbError) {
     console.error('[Payment Verify] Database error:', dbError)
-    // Never trust client-side resultCode alone when DB is unreachable
     return NextResponse.json({
       success: false,
       status: 'ERROR',
@@ -77,7 +78,7 @@ export async function GET(req: NextRequest) {
       status: 'COMPLETED',
       payment: {
         orderId: payment.dokuOrderId,
-        planName: payment.pricing_plans?.name || 'PRO',
+        planName,
         amount: payment.amount,
         paymentMethod: payment.paymentMethod,
         activatedAt: subscription?.updatedAt || payment.updatedAt,
@@ -92,15 +93,13 @@ export async function GET(req: NextRequest) {
     try {
       const duitkuStatus = await getDuitkuPaymentStatus(payment.dokuOrderId || '')
       if (duitkuStatus.status === 'COMPLETED') {
-        return await completePayment(payment, duitkuStatus.reference, duitkuStatus.paymentMethod)
+        return await completePayment(payment, planName, duitkuStatus.reference, duitkuStatus.paymentMethod)
       }
-      // If Duitku API doesn't confirm, still complete as trust on redirect
       console.log('[Payment Verify] Duitku API not confirmed but resultCode=00, completing')
-      return await completePayment(payment)
+      return await completePayment(payment, planName)
     } catch {
-      // If Duitku API fails but redirect says success, trust the redirect
       console.log('[Payment Verify] Duitku API error but resultCode=00, completing')
-      return await completePayment(payment)
+      return await completePayment(payment, planName)
     }
   }
 
@@ -110,7 +109,7 @@ export async function GET(req: NextRequest) {
     console.log('[Payment Verify] Duitku status:', duitkuStatus)
 
     if (duitkuStatus.status === 'COMPLETED') {
-      return await completePayment(payment, duitkuStatus.reference, duitkuStatus.paymentMethod)
+      return await completePayment(payment, planName, duitkuStatus.reference, duitkuStatus.paymentMethod)
     }
 
     return NextResponse.json({
@@ -118,7 +117,7 @@ export async function GET(req: NextRequest) {
       status: duitkuStatus.status || 'PENDING',
       payment: {
         orderId: payment.dokuOrderId,
-        planName: payment.pricing_plans?.name,
+        planName,
         amount: payment.amount,
       }
     })
@@ -129,24 +128,21 @@ export async function GET(req: NextRequest) {
       status: payment.status || 'PENDING',
       payment: {
         orderId: payment.dokuOrderId,
-        planName: payment.pricing_plans?.name,
+        planName,
         amount: payment.amount,
       }
     })
   }
 }
 
-/**
- * Complete a payment and activate subscription — atomic transaction
- */
 async function completePayment(
   payment: any,
+  planName: string,
   duitkuReference?: string,
   duitkuPaymentMethod?: string
 ): Promise<NextResponse> {
   try {
     const result = await prisma.$transaction(async (tx) => {
-      // Idempotency: re-check status inside transaction
       const currentPayment = await tx.payments.findUnique({
         where: { id: payment.id },
         select: { status: true },
@@ -156,7 +152,6 @@ async function completePayment(
         return { alreadyCompleted: true }
       }
 
-      // Update payment status
       await tx.payments.update({
         where: { id: payment.id },
         data: {
@@ -166,11 +161,15 @@ async function completePayment(
         }
       })
 
-      // Calculate period end date
+      // Calculate period end based on billing cycle from metadata
+      const billingCycle = (payment.metadata as Record<string, unknown>)?.billingCycle as string || 'monthly'
       const periodEndDate = new Date()
-      periodEndDate.setMonth(periodEndDate.getMonth() + 1)
+      if (billingCycle === 'yearly') {
+        periodEndDate.setFullYear(periodEndDate.getFullYear() + 1)
+      } else {
+        periodEndDate.setMonth(periodEndDate.getMonth() + 1)
+      }
 
-      // Update or create subscription
       const existingSubscription = await tx.subscriptions.findFirst({
         where: { userId: payment.userId }
       })
@@ -183,6 +182,7 @@ async function completePayment(
             planType: 'PRO',
             pricingPlanId: payment.pricingPlanId,
             stripeCurrentPeriodEnd: periodEndDate,
+            billingCycle: billingCycle === 'yearly' ? 'YEARLY' : 'MONTHLY',
             trialStartsAt: null,
             trialEndsAt: null,
             updatedAt: new Date(),
@@ -197,6 +197,7 @@ async function completePayment(
             planType: 'PRO',
             pricingPlanId: payment.pricingPlanId,
             stripeCurrentPeriodEnd: periodEndDate,
+            billingCycle: billingCycle === 'yearly' ? 'YEARLY' : 'MONTHLY',
             updatedAt: new Date(),
           }
         })
@@ -207,8 +208,6 @@ async function completePayment(
         periodEndDate: periodEndDate.toISOString(),
       }
     })
-
-    const planName = payment.pricing_plans?.name || 'PRO'
 
     if (result.alreadyCompleted) {
       return NextResponse.json({

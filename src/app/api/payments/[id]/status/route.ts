@@ -56,7 +56,7 @@ export async function GET(
                     id: true,
                     slug: true,
                     name: true,
-                    price: true,
+                    price_monthly: true,
                     trialDays: true,
                   },
                 })

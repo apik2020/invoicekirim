@@ -38,17 +38,19 @@ interface PricingPlan {
   name: string
   slug: string
   description: string | null
-  price: number
+  price_monthly: number
+  price_yearly: number
+  yearly_discount_percent: number | null
   currency: string
   trialDays: number
-  isFeatured: boolean
+  is_popular: boolean
   ctaText: string | null
   features: {
-    id: string
-    name: string
     key: string
-    included: boolean
-    limitValue: number | null
+    name: string
+    nameEn: string
+    type: string
+    value: boolean | number | null
   }[]
 }
 
@@ -56,11 +58,12 @@ interface AvailableUpgradePlan {
   id: string
   name: string
   slug: string
-  price: number
+  price_monthly: number
+  price_yearly: number
   currency: string
   trialDays: number
   isTrial: boolean
-  isFeatured: boolean
+  is_popular: boolean
   ctaText: string | null
   canUpgrade: boolean
   reason?: string
@@ -290,14 +293,17 @@ export default function CheckoutPage() {
   const getFeatureDisplayText = (featureItem: {
     name: string
     key: string
-    included: boolean
-    limitValue: number | null
+    type: string
+    value: boolean | number | null
   }) => {
-    if (!featureItem.included) {
+    if (featureItem.value === false || featureItem.value === null || featureItem.value === undefined) {
       return featureItem.name
     }
-    if (featureItem.key === 'invoice_limit' && featureItem.limitValue) {
-      return `${featureItem.limitValue} invoice per bulan`
+    if (featureItem.key === 'invoice_limit' && typeof featureItem.value === 'number') {
+      return `${featureItem.value} invoice per bulan`
+    }
+    if (featureItem.key === 'invoice_limit' && featureItem.value === true) {
+      return 'Invoice tanpa batas'
     }
     return featureItem.name
   }
@@ -412,6 +418,39 @@ export default function CheckoutPage() {
             )}
 
             {/* Available Plans */}
+            {/* Billing Period Toggle */}
+            <div className="flex items-center justify-center mb-8">
+              <div className="inline-flex items-center bg-gray-200 rounded-full p-1">
+                <button
+                  onClick={() => {
+                    setBillingCycle('monthly')
+                  }}
+                  className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all ${
+                    billingCycle === 'monthly'
+                      ? 'bg-white text-brand-500 shadow-md'
+                      : 'text-text-secondary hover:text-text-primary'
+                  }`}
+                >
+                  Bulanan
+                </button>
+                <button
+                  onClick={() => {
+                    setBillingCycle('yearly')
+                  }}
+                  className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all flex items-center gap-2 ${
+                    billingCycle === 'yearly'
+                      ? 'bg-white text-brand-500 shadow-md'
+                      : 'text-text-secondary hover:text-text-primary'
+                  }`}
+                >
+                  Tahunan
+                  <span className="px-2 py-0.5 bg-success-100 text-success-700 text-xs font-bold rounded-full">
+                    Hemat!
+                  </span>
+                </button>
+              </div>
+            </div>
+
             <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
               {availablePlansData?.availableUpgrades
                 .filter(plan => plan.canUpgrade)
@@ -423,9 +462,9 @@ export default function CheckoutPage() {
                       selectedPlanSlug === plan.slug
                         ? 'border-primary-500 bg-primary-50 shadow-lg shadow-primary-500/10'
                         : 'border-gray-200 bg-white hover:border-primary-300 hover:shadow-md'
-                    } ${plan.isFeatured ? 'ring-2 ring-primary-200 ring-offset-2' : ''}`}
+                    } ${plan.is_popular ? 'ring-2 ring-primary-200 ring-offset-2' : ''}`}
                   >
-                    {plan.isFeatured && (
+                    {plan.is_popular && (
                       <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                         <span className="px-4 py-1.5 bg-gradient-to-r from-primary-500 to-highlight-500 text-white text-xs font-bold rounded-full shadow-lg flex items-center gap-1">
                           <Zap className="w-3 h-3" />
@@ -459,25 +498,27 @@ export default function CheckoutPage() {
 
                     <div className="mb-4">
                       <span className="text-3xl font-bold text-text-primary">
-                        {formatCurrency(plan.price)}
+                        {formatCurrency(plan.isTrial ? 0 : (billingCycle === 'yearly' ? plan.price_yearly : plan.price_monthly))}
                       </span>
                       {!plan.isTrial && (
-                        <span className="text-text-secondary"> /bulan</span>
+                        <span className="text-text-secondary">
+                          {billingCycle === 'yearly' ? ' /tahun' : ' /bulan'}
+                        </span>
                       )}
                     </div>
 
                     {selectedPlanSlug === plan.slug && selectedPlan && (
                       <ul className="space-y-2.5 mb-4 pt-4 border-t border-gray-100">
                         {selectedPlan.features.slice(0, 5).map((featureItem) => (
-                          <li key={featureItem.id} className="flex items-center gap-3 text-sm">
-                            {featureItem.included ? (
+                          <li key={featureItem.key} className="flex items-center gap-3 text-sm">
+                            {featureItem.value !== false && featureItem.value !== null ? (
                               <div className="w-5 h-5 rounded-full bg-success-400 flex items-center justify-center flex-shrink-0">
                                 <Check className="w-3 h-3 text-white" />
                               </div>
                             ) : (
                               <span className="w-5 h-5" />
                             )}
-                            <span className={featureItem.included ? 'text-text-primary' : 'text-text-muted'}>
+                            <span className={featureItem.value !== false && featureItem.value !== null ? 'text-text-primary' : 'text-text-muted'}>
                               {getFeatureDisplayText(featureItem)}
                             </span>
                           </li>
@@ -551,17 +592,15 @@ export default function CheckoutPage() {
                   <p className="text-white/80 text-sm mb-1">Paket yang dipilih</p>
                   <p className="font-bold text-lg">
                     {selectedPlan?.name}
-                    {billingCycle === 'yearly' && selectedPlan && !selectedPlan.slug.includes('trial') && ' - Tahunan'}
-                    {selectedPlan?.slug.includes('trial') && ' - Trial Gratis'}
+                    {billingCycle === 'yearly' && ' - Tahunan'}
+                    {billingCycle === 'monthly' && ' - Bulanan'}
                   </p>
                   <p className="text-white/70 text-sm mt-1">NotaBener Subscription</p>
                 </div>
                 <div className="text-right">
                   <p className="text-white/80 text-sm mb-1">Total</p>
                   <p className="text-2xl font-bold">
-                    {selectedPlan?.slug.includes('trial')
-                      ? 'Gratis'
-                      : formatCurrency(selectedPlan?.price || 0)}
+                    {formatCurrency(billingCycle === 'yearly' ? (selectedPlan?.price_yearly || 0) : (selectedPlan?.price_monthly || 0))}
                   </p>
                 </div>
               </div>
@@ -686,10 +725,8 @@ export default function CheckoutPage() {
                     <Loader2 className="w-5 h-5 animate-spin" />
                     Memproses...
                   </>
-                ) : selectedPlan?.slug.includes('trial') ? (
-                  'Mulai Trial Gratis'
                 ) : (
-                  `Bayar ${formatCurrency(selectedPlan?.price || 0)}`
+                  `Bayar ${formatCurrency(billingCycle === 'yearly' ? (selectedPlan?.price_yearly || 0) : (selectedPlan?.price_monthly || 0))}`
                 )}
               </button>
             </div>

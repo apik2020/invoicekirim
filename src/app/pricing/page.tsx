@@ -8,11 +8,11 @@ import { Check, Star, Loader2, ArrowRight, CheckCircle2, X, Info } from 'lucide-
 import Header from '@/components/Header'
 
 interface PlanFeature {
-  id: string
-  name: string
   key: string
-  included: boolean
-  limitValue: number | null
+  name: string
+  nameEn: string
+  type: string
+  value: boolean | number | null
 }
 
 interface Plan {
@@ -20,11 +20,13 @@ interface Plan {
   name: string
   slug: string
   description: string | null
-  price: number
+  price_monthly: number
+  price_yearly: number
+  yearly_discount_percent: number | null
   currency: string
   stripePriceId: string | null
   trialDays: number
-  isFeatured: boolean
+  is_popular: boolean
   ctaText: string | null
   features: PlanFeature[]
 }
@@ -33,11 +35,12 @@ interface AvailableUpgradePlan {
   id: string
   name: string
   slug: string
-  price: number
+  price_monthly: number
+  price_yearly: number
   currency: string
   trialDays: number
   isTrial: boolean
-  isFeatured: boolean
+  is_popular: boolean
   ctaText: string | null
   canUpgrade: boolean
   reason?: string
@@ -184,13 +187,13 @@ function PricingContent() {
   }
 
   const getFeatureDisplayText = (feature: PlanFeature) => {
-    if (!feature.included) {
+    if (feature.value === false || feature.value === null || feature.value === undefined) {
       return feature.name
     }
-    if (feature.key === 'invoice_limit') {
-      if (feature.limitValue) {
-        return `${feature.limitValue} invoice per bulan`
-      }
+    if (feature.key === 'invoice_limit' && typeof feature.value === 'number') {
+      return `${feature.value} invoice per bulan`
+    }
+    if (feature.key === 'invoice_limit' && feature.value === true) {
       return 'Invoice tanpa batas'
     }
     return feature.name
@@ -278,11 +281,11 @@ function PricingContent() {
                     <div
                       key={plan.id}
                       className={`card p-6 relative ${
-                        plan.isFeatured ? 'ring-2 ring-brand-200' : ''
+                        plan.is_popular ? 'ring-2 ring-brand-200' : ''
                       } ${!canUpgrade && !isCurrentPlan ? 'opacity-60' : ''}`}
                     >
                       {/* Featured Badge */}
-                      {plan.isFeatured && (
+                      {plan.is_popular && (
                         <div className="absolute -top-3 left-6">
                           <span className="px-3 py-1 bg-brand-500 text-white text-xs font-bold rounded-full">
                             POPULER
@@ -291,7 +294,7 @@ function PricingContent() {
                       )}
 
                       {/* Trial Used Badge */}
-                      {plan.slug === 'plan-pro-trial' && availablePlansData?.trialUsed && (
+                      {plan.slug === 'plan-basic' && availablePlansData?.trialUsed && (
                         <div className="absolute -top-3 left-6">
                           <span className="px-3 py-1 bg-gray-500 text-white text-xs font-bold rounded-full">
                             Trial Sudah Digunakan
@@ -317,14 +320,14 @@ function PricingContent() {
                       {/* Price */}
                       <div className="mb-4">
                         <span className="text-3xl font-bold text-text-primary">
-                          {formatPrice(plan.price)}
+                          {formatPrice(plan.price_monthly)}
                         </span>
                         <span className="text-text-secondary text-sm"> /bulan</span>
                       </div>
 
                       {/* Status Tags */}
                       <div className="flex items-center gap-4 mb-4 text-sm">
-                        {!plan.isFeatured && (
+                        {!plan.is_popular && (
                           <span className="px-2 py-1 bg-lime-100 text-lime-700 rounded-full text-xs font-bold">
                             FREE
                           </span>
@@ -337,8 +340,8 @@ function PricingContent() {
                       {/* Features */}
                       <div className="space-y-2 mb-6 border-t border-gray-100 pt-4">
                         {/* Included features first */}
-                        {(plan.features || []).filter(f => f.included).map((feature) => (
-                          <div key={feature.id} className="flex items-center gap-2 text-sm">
+                        {(plan.features || []).filter(f => f.value !== false && f.value !== null && f.value !== undefined).map((feature) => (
+                          <div key={feature.key} className="flex items-center gap-2 text-sm">
                             <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
                             <span className="text-text-primary">
                               {getFeatureDisplayText(feature)}
@@ -346,8 +349,8 @@ function PricingContent() {
                           </div>
                         ))}
                         {/* Not included features below */}
-                        {(plan.features || []).filter(f => !f.included).map((feature) => (
-                          <div key={feature.id} className="flex items-center gap-2 text-sm">
+                        {(plan.features || []).filter(f => f.value === false || f.value === null || f.value === undefined).map((feature) => (
+                          <div key={feature.key} className="flex items-center gap-2 text-sm">
                             <X className="w-4 h-4 text-gray-300 flex-shrink-0" />
                             <span className="text-text-muted">
                               {getFeatureDisplayText(feature)}
@@ -361,7 +364,7 @@ function PricingContent() {
                         <div className="block w-full px-6 py-4 bg-gray-100 text-gray-500 text-center font-semibold rounded-xl cursor-not-allowed">
                           Paket Aktif
                         </div>
-                      ) : plan.slug === 'plan-pro-trial' && plan.trialDays > 0 ? (
+                      ) : plan.slug === 'plan-basic' && plan.trialDays > 0 ? (
                         canUpgrade ? (
                           <button
                             onClick={handleStartTrial}
@@ -393,7 +396,7 @@ function PricingContent() {
                             )}
                           </div>
                         )
-                      ) : plan.isFeatured && plan.stripePriceId ? (
+                      ) : plan.is_popular && plan.stripePriceId ? (
                         canUpgrade ? (
                           <button
                             onClick={() => handleSubscribe(plan.stripePriceId!, plan.name)}
@@ -436,7 +439,7 @@ function PricingContent() {
                       )}
 
                       {/* Trust Note for featured plan */}
-                      {plan.isFeatured && canUpgrade && (
+                      {plan.is_popular && canUpgrade && (
                         <p className="text-center text-text-secondary mt-4 text-sm">
                           Tidak perlu kartu kredit • Batalkan kapan saja
                         </p>

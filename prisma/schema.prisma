@@ -363,6 +363,7 @@ model subscriptions {
   stripePriceId          String?
   stripeCurrentPeriodEnd DateTime?
   status                 SubscriptionStatus @default(FREE)
+  billingCycle           BillingPeriod      @default(MONTHLY)
   planType               PlanType           @default(FREE)
   pricingPlanId          String?
   createdAt              DateTime           @default(now())
@@ -563,57 +564,37 @@ enum PaymentStatus {
   EXPIRED
 }
 
+enum BillingPeriod {
+  MONTHLY
+  YEARLY
+}
+
 enum PlanType {
   FREE
   PRO
 }
 
 model pricing_plans {
-  id            String   @id @default(uuid())
-  name          String
-  slug          String   @unique
-  description   String?
-  price         Float    @default(0)
-  currency      String   @default("IDR")
-  stripePriceId String?  @unique
-  trialDays     Int      @default(0)
-  isFeatured    Boolean  @default(false)
-  isActive      Boolean  @default(true)
-  sortOrder     Int      @default(0)
-  ctaText       String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  features      pricing_plan_features[]
-  subscriptions subscriptions[]
+  id                      String        @id @default(uuid())
+  name                    String
+  slug                    String        @unique
+  description             String?
+  currency                String        @default("IDR")
+  stripePriceId           String?       @unique
+  trialDays               Int           @default(0)
+  isActive                Boolean       @default(true)
+  sortOrder               Int           @default(0)
+  ctaText                 String?
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
+  price_monthly           Float         @default(0)
+  price_yearly            Float         @default(0)
+  yearly_discount_percent Int?
+  features_json           Json          @default("{}")
+  is_popular              Boolean       @default(false)
+  subscriptions           subscriptions[]
 
   @@index([isActive, sortOrder])
-}
-
-model pricing_features {
-  id          String   @id @default(uuid())
-  name        String
-  key         String   @unique
-  description String?
-  sortOrder   Int      @default(0)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  plans       pricing_plan_features[]
-
-  @@index([isActive, sortOrder])
-}
-
-model pricing_plan_features {
-  planId    String
-  featureId String
-  included  Boolean @default(true)
-  limitValue Int?
-  plan      pricing_plans    @relation(fields: [planId], references: [id], onDelete: Cascade)
-  feature   pricing_features @relation(fields: [featureId], references: [id], onDelete: Cascade)
-
-  @@id([planId, featureId])
-  @@index([planId])
-  @@index([featureId])
 }
 
 enum SubscriptionStatus {

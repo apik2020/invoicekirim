@@ -31,11 +31,17 @@ interface PricingPlan {
   name: string
   slug: string
   description: string | null
-  price: number
+  price_monthly: number
+  price_yearly: number
   currency: string
   trialDays: number
-  isFeatured: boolean
-  features: PlanFeature[]
+  is_popular: boolean
+  features: {
+    key: string
+    name: string
+    type: string
+    value: boolean | number | null
+  }[]
 }
 
 interface AvailablePlansData {
@@ -125,7 +131,7 @@ export function SubscriptionManager({
   const trialUsed = availablePlansData?.trialUsed ?? false
 
   // Check if PRO plan is available for upgrade
-  const proPlanAvailable = availablePlansData?.availableUpgrades.find(p => p.slug === 'plan-pro')
+  const proPlanAvailable = availablePlansData?.availableUpgrades.find(p => p.slug === 'plan-professional')
   const canUpgradeToPro = proPlanAvailable?.canUpgrade ?? false
 
   const handleStartTrial = async () => {
@@ -320,11 +326,11 @@ export function SubscriptionManager({
           <div className="space-y-3">
             {currentPlanFeatures.features.map((feature) => (
               <FeatureRow
-                key={feature.id}
+                key={feature.key}
                 feature={feature.name}
-                available={feature.included}
-                limited={feature.included && feature.limitValue !== null}
-                limitValue={feature.limitValue}
+                available={feature.value !== false && feature.value !== null && feature.value !== undefined}
+                limited={typeof feature.value === 'number'}
+                limitValue={typeof feature.value === 'number' ? feature.value : null}
               />
             ))}
           </div>

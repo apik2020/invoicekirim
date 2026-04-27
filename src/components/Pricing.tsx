@@ -6,11 +6,11 @@ import { Check, X, Star, Loader2 } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 
 interface PlanFeature {
-  id: string
-  name: string
   key: string
-  included: boolean
-  limitValue: number | null
+  name: string
+  nameEn: string
+  type: string
+  value: boolean | number | null
 }
 
 interface Plan {
@@ -18,11 +18,13 @@ interface Plan {
   name: string
   slug: string
   description: string | null
-  price: number
+  price_monthly: number
+  price_yearly: number
+  yearly_discount_percent: number | null
   currency: string
   stripePriceId: string | null
   trialDays: number
-  isFeatured: boolean
+  is_popular: boolean
   ctaText: string | null
   features: PlanFeature[]
 }
@@ -94,13 +96,13 @@ function PricingContent() {
   }
 
   const getFeatureDisplayText = (feature: PlanFeature) => {
-    if (!feature.included) {
+    if (feature.value === false || feature.value === null || feature.value === undefined) {
       return feature.name
     }
-    if (feature.key === 'invoice_limit') {
-      if (feature.limitValue) {
-        return `${feature.limitValue} invoice per bulan`
-      }
+    if (feature.key === 'invoice_limit' && typeof feature.value === 'number') {
+      return `${feature.value} invoice per bulan`
+    }
+    if (feature.key === 'invoice_limit' && feature.value === true) {
       return 'Unlimited invoice'
     }
     return feature.name
@@ -157,13 +159,13 @@ function PricingContent() {
             <div
               key={plan.id}
               className={`relative p-10 transition-all duration-300 ${
-                plan.isFeatured
+                plan.is_popular
                   ? 'neu-card transform md:-translate-y-4 border-2 border-arctic-blue/20'
                   : 'neu-card hover:-translate-y-2'
               }`}
             >
               {/* Featured Badge */}
-              {plan.isFeatured && (
+              {plan.is_popular && (
                 <div className="absolute -top-5 left-1/2 transform -translate-x-1/2">
                   <div className="px-6 py-2 bg-arctic-blue text-snow text-sm font-bold rounded-2xl neu-button-primary animate-scale-pulse">
                     POPULER
@@ -183,7 +185,7 @@ function PricingContent() {
               <div className="text-center mb-10 pb-8 border-b border-slate/10">
                 <div className="flex items-baseline justify-center gap-2">
                   <span className="font-display text-5xl md:text-6xl font-extrabold text-slate tracking-tight">
-                    {formatPrice(plan.price)}
+                    {formatPrice(plan.price_monthly)}
                   </span>
                   <span className="font-body text-muted text-lg">/bulan</span>
                 </div>
@@ -192,8 +194,8 @@ function PricingContent() {
               {/* Features */}
               <div className="space-y-4 mb-10">
                 {/* Included features first */}
-                {plan.features.filter(f => f.included).map((feature) => (
-                  <div key={feature.id} className="flex items-start gap-4">
+                {plan.features.filter(f => f.value !== false && f.value !== null && f.value !== undefined).map((feature) => (
+                  <div key={feature.key} className="flex items-start gap-4">
                     <div className="flex-shrink-0 mt-0.5">
                       <div className="w-6 h-6 rounded-xl shadow-extruded-sm flex items-center justify-center">
                         <Check className="w-4 h-4 text-navy" />
@@ -205,8 +207,8 @@ function PricingContent() {
                   </div>
                 ))}
                 {/* Not included features below */}
-                {plan.features.filter(f => !f.included).map((feature) => (
-                  <div key={feature.id} className="flex items-start gap-4">
+                {plan.features.filter(f => f.value === false || f.value === null || f.value === undefined).map((feature) => (
+                  <div key={feature.key} className="flex items-start gap-4">
                     <div className="flex-shrink-0 mt-0.5">
                       <div className="w-6 h-6 rounded-xl shadow-inset-sm flex items-center justify-center">
                         <X className="w-4 h-4 text-slate/30" />
@@ -220,7 +222,7 @@ function PricingContent() {
               </div>
 
               {/* CTA Button */}
-              {plan.isFeatured && plan.stripePriceId ? (
+              {plan.is_popular && plan.stripePriceId ? (
                 <button
                   onClick={() => handleSubscribe(plan.stripePriceId!, plan.name)}
                   disabled={loadingPlan === plan.name}
@@ -239,7 +241,7 @@ function PricingContent() {
                 <a
                   href={session ? '/dashboard/invoices/create' : '/login'}
                   className={`block w-full text-center py-4 font-display font-bold rounded-2xl transition-all duration-300 focus-ring ${
-                    plan.isFeatured
+                    plan.is_popular
                       ? 'neu-button-primary hover:-translate-y-1'
                       : 'neu-button hover:text-arctic-blue hover:-translate-y-1'
                   }`}
@@ -249,7 +251,7 @@ function PricingContent() {
               )}
 
               {/* Note for featured plan */}
-              {plan.isFeatured && (
+              {plan.is_popular && (
                 <p className="text-center text-sm text-muted mt-6 font-body">
                   Tidak perlu kartu kredit • Batalkan kapan saja
                 </p>
