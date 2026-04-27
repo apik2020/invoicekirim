@@ -828,7 +828,7 @@ function NewInvoicePageContent() {
               <div className="mt-4 p-4 rounded-xl bg-amber-50 border border-amber-200">
                 <p className="text-sm text-amber-700">
                   <span className="font-semibold">Plan Free:</span> Isi info perusahaan secara manual setiap kali membuat invoice.{' '}
-                  <a href="/checkout" className="font-bold underline hover:text-amber-800">
+                  <a href="/dashboard/checkout" className="font-bold underline hover:text-amber-800">
                     Upgrade ke Pro
                   </a>
                   {' '}untuk menyimpan profil perusahaan dan auto-fill di invoice selanjutnya.

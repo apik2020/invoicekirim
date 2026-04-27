@@ -105,7 +105,7 @@ export function LockedFeatureCard({
       )}
 
       <Link
-        href="/checkout"
+        href="/dashboard/checkout"
         className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-500 text-white font-semibold rounded-xl hover:bg-brand-600 transition-colors"
       >
         <Crown className="w-4 h-4" />

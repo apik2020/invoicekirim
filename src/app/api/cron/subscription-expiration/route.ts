@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
                   </ul>
                   <p>Untuk melanjutkan akses PRO tanpa batasan, Anda dapat upgrade kembali kapan saja.</p>
                   <div style="margin: 30px 0;">
-                    <a href="${process.env.NEXT_PUBLIC_APP_URL}/pricing"
+                    <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/pricing"
                        style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
                       Upgrade Kembali ke PRO
                     </a>

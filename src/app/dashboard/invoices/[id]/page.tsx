@@ -772,7 +772,7 @@ Terima kasih!`
         if (errorData.error === 'FEATURE_LOCKED') {
           setSendingEmail(false)
           // Redirect to checkout
-          window.location.href = errorData.upgradeUrl || '/checkout'
+          window.location.href = errorData.upgradeUrl || '/dashboard/checkout'
           return
         }
 

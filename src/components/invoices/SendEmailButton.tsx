@@ -54,7 +54,7 @@ export function SendEmailButton({
         if (errorData.error === 'FEATURE_LOCKED') {
           setShowDropdown(false)
           // Redirect to checkout
-          window.location.href = errorData.upgradeUrl || '/checkout'
+          window.location.href = errorData.upgradeUrl || '/dashboard/checkout'
           return
         }
 
@@ -127,7 +127,7 @@ export function SendEmailButton({
               Anda telah menggunakan <strong>{usage}</strong> dari <strong>{limit}</strong> kirim email bulanan.
             </p>
             <Link
-              href="/checkout"
+              href="/dashboard/checkout"
               className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-brand-500 hover:text-brand-600"
             >
               <Crown className="w-4 h-4" />

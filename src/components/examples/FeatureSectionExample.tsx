@@ -66,7 +66,7 @@ export function FeatureSection({
             {/* Upgrade options */}
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link
-                href="/checkout"
+                href="/dashboard/checkout"
                 className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
               >
                 <Crown className="w-5 h-5" />

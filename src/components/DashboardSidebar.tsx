@@ -23,6 +23,7 @@ import {
   Menu,
   X,
   Plus,
+  Star,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -48,6 +49,7 @@ const settingsNavItems: NavItem[] = [
   { name: 'Branding', href: '/dashboard/settings/branding', icon: Palette },
   { name: 'Email', href: '/dashboard/settings/email', icon: Mail },
   { name: 'Billing', href: '/dashboard/billing', icon: CreditCard },
+  { name: 'Pricing', href: '/dashboard/pricing', icon: Star },
   { name: 'Keamanan', href: '/dashboard/settings/security', icon: Shield },
 ]
 
@@ -381,7 +383,7 @@ export function MobileBottomNav() {
       )}
 
       {/* Bottom Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 lg:hidden safe-bottom">
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 lg:hidden safe-bottom" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
         <div className="flex items-center justify-around h-16 px-2">
           {mobileNavItems.map((item) => {
             const active = isActive(item.href)

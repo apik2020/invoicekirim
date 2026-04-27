@@ -244,7 +244,7 @@ export function SubscriptionManager({
 
   const handleUpgrade = async () => {
     // Redirect to checkout page
-    window.location.href = '/checkout'
+    window.location.href = '/dashboard/checkout'
   }
 
   const getDaysUntilExpiration = () => {

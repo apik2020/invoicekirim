@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
         {
           error: 'FEATURE_LOCKED',
           message: getExportLockedMessage(exportAccess.reason, exportAccess.limit, exportAccess.currentUsage),
-          upgradeUrl: exportAccess.upgradeUrl || '/checkout',
+          upgradeUrl: exportAccess.upgradeUrl || '/dashboard/checkout',
           planRequired: exportAccess.planName,
         },
         { status: 403 }

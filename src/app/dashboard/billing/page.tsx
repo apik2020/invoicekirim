@@ -117,7 +117,7 @@ export default function BillingPage() {
             </p>
           </div>
           <a
-            href="/checkout"
+            href="/dashboard/checkout"
             className="btn-primary px-4 py-2 font-bold"
           >
             Upgrade PRO

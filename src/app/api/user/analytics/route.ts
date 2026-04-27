@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
         {
           error: 'FEATURE_LOCKED',
           message: getAnalyticsLockedMessage(analyticsAccess.reason),
-          upgradeUrl: analyticsAccess.upgradeUrl || '/checkout',
+          upgradeUrl: analyticsAccess.upgradeUrl || '/dashboard/checkout',
           planRequired: analyticsAccess.planName,
         },
         { status: 403 }

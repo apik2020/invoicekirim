@@ -74,10 +74,11 @@ export default function ClientsPage() {
 
       const data = await res.json()
 
-      if (Array.isArray(data)) {
+      if (Array.isArray(data.clients)) {
+        setClients(data.clients)
+      } else if (Array.isArray(data)) {
         setClients(data)
       } else {
-        console.error('Invalid data format:', data)
         setClients([])
       }
     } catch (error) {

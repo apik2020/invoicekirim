@@ -29,7 +29,7 @@ export async function POST(
         {
           error: 'FEATURE_LOCKED',
           message: getEmailLockedMessage(emailAccess.reason, emailAccess.limit, emailAccess.currentUsage),
-          upgradeUrl: emailAccess.upgradeUrl || '/checkout',
+          upgradeUrl: emailAccess.upgradeUrl || '/dashboard/checkout',
           planRequired: emailAccess.planName,
         },
         { status: 403 }

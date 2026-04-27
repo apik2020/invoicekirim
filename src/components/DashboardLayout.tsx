@@ -27,7 +27,7 @@ export function DashboardLayout({
 
   return (
     <SubscriptionGuard>
-      <div className="min-h-screen bg-surface-light pb-20 lg:pb-0"> {/* Add bottom padding for mobile nav */}
+      <div className="min-h-screen bg-surface-light pb-24 lg:pb-0">
         {/* Modal and Toast Announcements - Global */}
         <AnnouncementBanner displayType="modal" />
         <AnnouncementBanner displayType="toast" />

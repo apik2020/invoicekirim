@@ -20,7 +20,7 @@ import {
   Zap,
   Crown,
 } from 'lucide-react'
-import { Logo } from '@/components/Logo'
+import { DashboardLayout } from '@/components/DashboardLayout'
 
 const VA_BANKS = [
   { code: 'BCA', name: 'BCA', description: 'Virtual Account BCA' },
@@ -103,7 +103,7 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (status === 'unauthenticated') {
-      router.push('/login?redirect=/checkout')
+      router.push('/login?redirect=/dashboard/checkout')
     }
   }, [status, router])
 
@@ -310,35 +310,20 @@ export default function CheckoutPage() {
 
   if (status === 'loading' || plansLoading) {
     return (
-      <div className="min-h-screen bg-[#F5F0E6] flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-10 h-10 animate-spin text-primary-500 mx-auto mb-4" />
-          <p className="text-text-secondary">Memuat halaman checkout...</p>
+      <DashboardLayout title="Checkout">
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <Loader2 className="w-10 h-10 animate-spin text-brand-500 mx-auto mb-4" />
+            <p className="text-text-secondary">Memuat halaman checkout...</p>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#F5F0E6]"> {/* Warna pasir pantai */}
-      {/* Header */}
-      <header className="bg-[#0A637D] backdrop-blur-md border-b border-[#095469] sticky top-0 z-50">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-4">
-          <div className="flex items-center justify-between">
-            <Logo />
-            <button
-              onClick={() => router.back()}
-              className="flex items-center gap-2 text-white/80 hover:text-white transition-colors font-medium"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Kembali
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-        {/* Progress Steps */}
+    <DashboardLayout title="Checkout">
+      {/* Progress Steps */}
         <div className="flex items-center justify-center gap-2 sm:gap-4 mb-8 sm:mb-12">
           {step === 'success' ? (
             <div className="flex items-center">
@@ -969,7 +954,6 @@ export default function CheckoutPage() {
             </div>
           </div>
         )}
-      </main>
-    </div>
+    </DashboardLayout>
   )
 }

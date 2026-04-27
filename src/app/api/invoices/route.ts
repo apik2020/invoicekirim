@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
         {
           error: 'FEATURE_LOCKED',
           message,
-          upgradeUrl: invoiceAccess.upgradeUrl || '/checkout',
+          upgradeUrl: invoiceAccess.upgradeUrl || '/dashboard/checkout',
           planRequired: invoiceAccess.planName,
           currentUsage: invoiceAccess.currentUsage,
           limit: invoiceAccess.limit,

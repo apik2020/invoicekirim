@@ -341,14 +341,14 @@ export default function BrandingSettingsPage() {
                   </p>
                   <div className="flex flex-col sm:flex-row gap-3 justify-center">
                     <Link
-                      href="/checkout"
+                      href="/dashboard/checkout"
                       className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                     >
                       <Crown className="w-5 h-5" />
                       Upgrade ke Pro Sekarang
                     </Link>
                     <Link
-                      href="/pricing"
+                      href="/dashboard/pricing"
                       className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors"
                     >
                       Pelajari Lebih
@@ -505,14 +505,14 @@ export default function BrandingSettingsPage() {
                   </p>
                   <div className="flex flex-col sm:flex-row gap-3 justify-center">
                     <Link
-                      href="/checkout"
+                      href="/dashboard/checkout"
                       className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                     >
                       <Crown className="w-5 h-5" />
                       Upgrade ke Pro Sekarang
                     </Link>
                     <Link
-                      href="/pricing"
+                      href="/dashboard/pricing"
                       className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors"
                     >
                       Pelajari Lebih

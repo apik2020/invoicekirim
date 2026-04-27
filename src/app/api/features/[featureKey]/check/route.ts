@@ -47,7 +47,7 @@ export async function GET(
         allowed: false,
         reason: access.reason,
         message: getLockedMessage(featureKey, access.reason, access.limit, access.currentUsage),
-        upgradeUrl: access.upgradeUrl || '/checkout',
+        upgradeUrl: access.upgradeUrl || '/dashboard/checkout',
         planName: access.planName,
         limit: access.limit,
         currentUsage: access.currentUsage,
@@ -69,7 +69,7 @@ export async function GET(
         allowed: false,
         reason: 'error',
         message: 'Failed to check feature access',
-        upgradeUrl: '/checkout',
+        upgradeUrl: '/dashboard/checkout',
       },
       { status: 500 }
     )

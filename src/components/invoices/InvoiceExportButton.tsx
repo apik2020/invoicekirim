@@ -60,7 +60,7 @@ export function InvoiceExportButton({
         if (error.error === 'FEATURE_LOCKED') {
           setShowDropdown(false)
           // Redirect to checkout
-          window.location.href = error.upgradeUrl || '/checkout'
+          window.location.href = error.upgradeUrl || '/dashboard/checkout'
           return
         }
         throw new Error(error.error || 'Gagal mengekspor invoice')
@@ -127,7 +127,7 @@ export function InvoiceExportButton({
               Anda telah menggunakan <strong>{usage}</strong> dari <strong>{limit}</strong> ekspor bulanan.
             </p>
             <Link
-              href="/checkout"
+              href="/dashboard/checkout"
               className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-brand-500 hover:text-brand-600"
             >
               <Crown className="w-4 h-4" />

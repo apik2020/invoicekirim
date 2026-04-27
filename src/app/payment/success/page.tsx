@@ -349,7 +349,7 @@ export default function PaymentSuccessPage() {
 
             <div className="space-y-3">
               <Link
-                href="/checkout"
+                href="/dashboard/checkout"
                 className="flex items-center justify-center gap-2 w-full py-4 bg-brand-500 text-white font-bold rounded-xl hover:bg-brand-600 transition-colors"
               >
                 Coba Lagi
