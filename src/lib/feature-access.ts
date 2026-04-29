@@ -73,6 +73,7 @@ function isTrialActive(subscription: SubscriptionWithPlan): boolean {
 
 /**
  * Get feature config from plan's JSON features
+ * Normalizes the feature key before lookup (e.g. EMAIL_SEND → email_send)
  */
 function getPlanFeatureConfig(
   subscription: SubscriptionWithPlan,
@@ -81,7 +82,9 @@ function getPlanFeatureConfig(
   if (!subscription.pricing_plans) return null
 
   const features = parsePlanFeatures(subscription.pricing_plans.features_json)
-  const result = getFeatureValue(features, featureKey)
+  // Normalize key: map legacy keys to the JSON feature keys stored in DB
+  const normalizedKey = toNewKey(featureKey)
+  const result = getFeatureValue(features, normalizedKey)
 
   if (!result.included && result.limitValue === null) {
     return null
@@ -148,6 +151,8 @@ export async function checkFeatureAccess(
   featureKey: string
 ): Promise<FeatureAccessResult> {
   const subscription = await getUserSubscription(userId)
+  // Normalize the feature key once for the entire function
+  const normalizedKey = toNewKey(featureKey)
 
   // No subscription — check free plan features
   if (!subscription) {
@@ -165,7 +170,7 @@ export async function checkFeatureAccess(
     }
 
     const features = parsePlanFeatures(freePlan.features_json)
-    const { included, limitValue } = getFeatureValue(features, featureKey)
+    const { included, limitValue } = getFeatureValue(features, normalizedKey)
 
     if (!included) {
       return {
@@ -229,7 +234,7 @@ export async function checkFeatureAccess(
 
       if (proPlan) {
         const features = parsePlanFeatures(proPlan.features_json)
-        const { included, limitValue } = getFeatureValue(features, featureKey)
+        const { included, limitValue } = getFeatureValue(features, normalizedKey)
 
         if (included) {
           const currentUsage = await getFeatureUsage(userId, featureKey)
@@ -256,7 +261,7 @@ export async function checkFeatureAccess(
 
     if (freePlan) {
       const features = parsePlanFeatures(freePlan.features_json)
-      const { included, limitValue } = getFeatureValue(features, featureKey)
+      const { included, limitValue } = getFeatureValue(features, normalizedKey)
 
       if (included) {
         const currentUsage = await getFeatureUsage(userId, featureKey)
