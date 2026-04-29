@@ -8,7 +8,7 @@ import {
   Briefcase, Wrench, Armchair, Gem, Pencil, Monitor, Sprout,
   Scissors, Package, Gift, Smartphone, HeartPulse, Cog, Laptop,
   UtensilsCrossed, Apple, Truck, Cloud, AlertTriangle,
-  MessageCircle, XCircle, ChevronDown, Quote,
+  MessageCircle, XCircle, ChevronDown, Quote, PlayCircle,
 } from 'lucide-react'
 import { Logo } from '@/components/Logo'
 import PricingSection from '@/components/PricingSection'
@@ -85,6 +85,10 @@ export default function Home() {
               <Link href="#features" className="text-white/80 hover:text-white transition-colors font-medium">
                 {t.nav.features}
               </Link>
+              <Link href="/demo" className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-white/10 text-white font-semibold text-sm hover:bg-white/20 transition-colors">
+                <PlayCircle className="w-4 h-4" />
+                Demo
+              </Link>
               <Link href="#pricing" className="text-white/80 hover:text-white transition-colors font-medium">
                 {t.nav.pricing}
               </Link>
@@ -123,6 +127,9 @@ export default function Home() {
               <nav className="space-y-2">
                 <Link href="#features" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl text-text-primary hover:bg-brand-50 hover:text-brand-600 transition-colors font-medium">
                   <Zap className="w-5 h-5" /> {t.nav.features}
+                </Link>
+                <Link href="/demo" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl text-primary-500 bg-primary-50 hover:bg-primary-100 transition-colors font-bold">
+                  <PlayCircle className="w-5 h-5" /> Lihat DEMO
                 </Link>
                 <Link href="#pricing" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-4 py-3 rounded-xl text-text-primary hover:bg-brand-50 hover:text-brand-600 transition-colors font-medium">
                   <CreditCard className="w-5 h-5" /> {t.nav.pricing}
@@ -175,9 +182,9 @@ export default function Home() {
                 <Link href="/login" className="inline-flex items-center justify-center gap-2 px-8 py-4 btn-primary font-semibold text-lg">
                   {t.hero.cta1}
                 </Link>
-                <Link href="#features" className="inline-flex items-center justify-center gap-2 px-8 py-4 btn-secondary font-semibold">
+                <Link href="/demo" className="inline-flex items-center justify-center gap-2 px-8 py-4 btn-secondary font-semibold">
+                  <PlayCircle className="w-5 h-5" />
                   {t.hero.cta2}
-                  <ArrowRight className="w-5 h-5" />
                 </Link>
               </div>
 
