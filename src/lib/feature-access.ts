@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { parsePlanFeatures, getFeatureValue, toOldKey } from './pricing-features'
+import { parsePlanFeatures, getFeatureValue, toOldKey, toNewKey } from './pricing-features'
 
 // Feature keys as constants for type safety
 export const FEATURE_KEYS = {
