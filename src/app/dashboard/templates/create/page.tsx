@@ -4,13 +4,14 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAppSession } from '@/hooks/useAppSession'
-import { FileText, Save, Plus, Trash2, Loader2, Package, Upload, X } from 'lucide-react'
+import { FileText, Save, Plus, Trash2, Loader2, Package, Upload, X, Check } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { MessageBox } from '@/components/ui/MessageBox'
 import { useMessageBox } from '@/hooks/useMessageBox'
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch'
 import { FeatureGate } from '@/components/FeatureGate'
+import { LayoutPicker } from '@/components/ui/LayoutPicker'
 
 interface TemplateItem {
   id: string
@@ -26,6 +27,7 @@ interface TemplateSettings {
   showAdditionalDiscount: boolean
   showTax: boolean
   showSignature: boolean
+  layoutType?: 'professional' | 'modern' | 'minimalist'
 }
 
 export default function NewTemplatePage() {
@@ -60,6 +62,7 @@ export default function NewTemplatePage() {
     showAdditionalDiscount: false,
     showTax: true,
     showSignature: false,
+    layoutType: 'professional',
   })
 
   const [signatureUrl, setSignatureUrl] = useState<string>('')
@@ -113,7 +116,7 @@ export default function NewTemplatePage() {
       const res = await fetch('/api/clients')
       if (res.ok) {
         const data = await res.json()
-        setClients(data)
+        setClients(Array.isArray(data) ? data : data.clients || [])
       }
     } catch (error) {
       console.error('Failed to load clients:', error)
@@ -336,6 +339,13 @@ export default function NewTemplatePage() {
         }
       >
         <form onSubmit={handleSubmit} className="max-w-4xl mx-auto space-y-8">
+          {/* Layout Template */}
+          <div className="card p-6 sm:p-8 animate-fade-in-up">
+            <h2 className="text-lg font-bold text-text-primary mb-2">Pilih Template Layout</h2>
+            <p className="text-sm text-text-muted mb-5">Pilih tampilan invoice sesuai gaya bisnis Anda</p>
+            <LayoutPicker value={settings.layoutType} onChange={(v) => setSettings({ ...settings, layoutType: v })} />
+          </div>
+
           {/* Template Info */}
           <div className="card p-8">
             <h2 className="text-lg font-bold text-gray-900 mb-6">Informasi Template</h2>
@@ -422,7 +432,6 @@ export default function NewTemplatePage() {
               />
             </div>
           </div>
-
           {/* Discount Settings */}
           {settings.showDiscount && (
             <div className="card p-8">

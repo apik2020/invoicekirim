@@ -53,6 +53,14 @@ interface Invoice {
   signatureUrl?: string | null
   signatoryName?: string | null
   signatoryTitle?: string | null
+  settings?: {
+    showClientInfo?: boolean
+    showDiscount?: boolean
+    showAdditionalDiscount?: boolean
+    showTax?: boolean
+    showSignature?: boolean
+    layoutType?: 'professional' | 'modern' | 'minimalist'
+  } | null
 }
 
 export default function ClientInvoicePage({
@@ -767,10 +775,13 @@ Terima kasih!`
   const isPaid = invoice.status === 'PAID'
 
   // Get branding colors with fallback
+  const layoutType = invoice.settings?.layoutType || 'professional'
   const primaryColor = invoice.branding?.primaryColor || '#F97316'
   const accentColor = invoice.branding?.showColors !== false
     ? (invoice.branding?.accentColor || invoice.branding?.primaryColor || '#0F766E')
     : '#0F766E'
+  // Override accent for layout-specific designs
+  const layoutAccent = layoutType === 'modern' ? '#8B5CF6' : layoutType === 'minimalist' ? '#374151' : accentColor
   const showLogo = invoice.branding?.showLogo ?? true
   const logoUrl = invoice.branding?.logoUrl
 
@@ -886,7 +897,7 @@ Terima kasih!`
                         style={{
                           width: '40px',
                           height: '40px',
-                          backgroundColor: accentColor,
+                          backgroundColor: layoutAccent,
                         }}
                       >
                         <FileText className="w-5 h-5 text-white" />
@@ -900,7 +911,7 @@ Terima kasih!`
                       className="font-extrabold tracking-tight leading-none mb-1"
                       style={{
                         fontSize: '36px',
-                        color: accentColor,
+                        color: layoutAccent,
                       }}
                     >
                       INVOICE
@@ -940,7 +951,7 @@ Terima kasih!`
                   <div>
                     <h3
                       className="font-bold uppercase tracking-wider mb-2"
-                      style={{ color: accentColor, fontSize: '9px' }}
+                      style={{ color: layoutAccent, fontSize: '9px' }}
                     >
                       Dari:
                     </h3>
@@ -962,7 +973,7 @@ Terima kasih!`
                   <div style={{ textAlign: 'right' }}>
                     <h3
                       className="font-bold uppercase tracking-wider mb-2"
-                      style={{ color: accentColor, fontSize: '9px' }}
+                      style={{ color: layoutAccent, fontSize: '9px' }}
                     >
                       Kepada:
                     </h3>
@@ -985,28 +996,28 @@ Terima kasih!`
                 <div className="mb-4">
                   <table className="w-full" style={{ borderCollapse: 'collapse' }}>
                     <thead>
-                      <tr style={{ borderBottom: `2px solid ${accentColor}` }}>
+                      <tr style={{ borderBottom: `2px solid ${layoutAccent}` }}>
                         <th
                           className="text-left py-2 px-2 font-bold uppercase tracking-wider"
-                          style={{ color: accentColor, fontSize: '9px' }}
+                          style={{ color: layoutAccent, fontSize: '9px' }}
                         >
                           Deskripsi
                         </th>
                         <th
                           className="text-center py-2 px-2 font-bold uppercase tracking-wider"
-                          style={{ color: accentColor, fontSize: '9px' }}
+                          style={{ color: layoutAccent, fontSize: '9px' }}
                         >
                           Qty
                         </th>
                         <th
                           className="text-right py-2 px-2 font-bold uppercase tracking-wider"
-                          style={{ color: accentColor, fontSize: '9px' }}
+                          style={{ color: layoutAccent, fontSize: '9px' }}
                         >
                           Harga
                         </th>
                         <th
                           className="text-right py-2 px-2 font-bold uppercase tracking-wider"
-                          style={{ color: accentColor, fontSize: '9px' }}
+                          style={{ color: layoutAccent, fontSize: '9px' }}
                         >
                           Total
                         </th>
@@ -1047,7 +1058,7 @@ Terima kasih!`
                       <>
                         <h3
                           className="font-bold uppercase tracking-wider mb-1"
-                          style={{ color: accentColor, fontSize: '9px' }}
+                          style={{ color: layoutAccent, fontSize: '9px' }}
                         >
                           Catatan:
                         </h3>
@@ -1096,12 +1107,12 @@ Terima kasih!`
                       </div>
                       <div
                         className="flex justify-between py-2 mt-1"
-                        style={{ borderTop: `2px solid ${accentColor}` }}
+                        style={{ borderTop: `2px solid ${layoutAccent}` }}
                       >
-                        <span className="font-extrabold" style={{ color: accentColor, fontSize: '14px' }}>
+                        <span className="font-extrabold" style={{ color: layoutAccent, fontSize: '14px' }}>
                           TOTAL
                         </span>
-                        <span className="font-extrabold" style={{ color: accentColor, fontSize: '14px' }}>
+                        <span className="font-extrabold" style={{ color: layoutAccent, fontSize: '14px' }}>
                           {formatCurrency(invoice.total)}
                         </span>
                       </div>
@@ -1118,7 +1129,7 @@ Terima kasih!`
                         <>
                           <h3
                             className="font-bold uppercase tracking-wider mb-1"
-                            style={{ color: accentColor, fontSize: '9px' }}
+                            style={{ color: layoutAccent, fontSize: '9px' }}
                           >
                             Syarat & Ketentuan:
                           </h3>
@@ -1159,7 +1170,7 @@ Terima kasih!`
                 {!isPaid && (
                   <div className="p-4 rounded-lg border mb-4" style={{ borderColor: '#e2e8f0', backgroundColor: '#f8fafc' }}>
                     <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: accentColor }}>
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: layoutAccent }}>
                         <CreditCard className="w-4 h-4 text-white" />
                       </div>
                       <div className="flex-1">
@@ -1197,7 +1208,7 @@ Terima kasih!`
                 {/* Footer */}
                 <div style={{ marginTop: 'auto', paddingTop: '12px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                   <p style={{ fontSize: '9px', color: '#94a3b8', margin: 0 }}>
-                    Invoice ini dikirim oleh <strong style={{ color: accentColor }}>{invoice.companyName}</strong>
+                    Invoice ini dikirim oleh <strong style={{ color: layoutAccent }}>{invoice.companyName}</strong>
                   </p>
                   <p style={{ fontSize: '8px', color: '#cbd5e1', margin: 0 }}>
                     NotaBener

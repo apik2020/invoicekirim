@@ -9,6 +9,7 @@ import { DashboardLayout } from '@/components/DashboardLayout'
 import { MessageBox } from '@/components/ui/MessageBox'
 import { useMessageBox } from '@/hooks/useMessageBox'
 import { cn } from '@/lib/utils'
+import { LayoutPicker } from '@/components/ui/LayoutPicker'
 
 interface InvoiceItem {
   id: string
@@ -103,6 +104,8 @@ export default function EditInvoicePage() {
     { id: '1', description: '', quantity: 1, price: 0 }
   ])
 
+  const [layoutType, setLayoutType] = useState<'professional' | 'modern' | 'minimalist'>('professional')
+
   const [invoiceStatus, setInvoiceStatus] = useState<string | null>(null)
 
   useEffect(() => {
@@ -134,7 +137,7 @@ export default function EditInvoicePage() {
       const res = await fetch('/api/clients')
       if (res.ok) {
         const data = await res.json()
-        setClients(data || [])
+        setClients(Array.isArray(data) ? data : data.clients || [])
       }
     } catch (error) {
       console.error('Error fetching clients:', error)
@@ -205,6 +208,10 @@ export default function EditInvoicePage() {
           price: item.price,
         })))
       }
+
+      if (data.settings?.layoutType) {
+        setLayoutType(data.settings.layoutType)
+      }
     } catch (error) {
       console.error('Error fetching invoice:', error)
     } finally {
@@ -244,6 +251,7 @@ export default function EditInvoicePage() {
         body: JSON.stringify({
           ...formData,
           items,
+          settings: { layoutType },
         }),
       })
 
@@ -586,6 +594,13 @@ export default function EditInvoicePage() {
       backHref={`/dashboard/invoices/${id}`}
     >
       <form onSubmit={handleSubmit} className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
+          {/* Layout Template */}
+          <div className="card p-6 sm:p-8 animate-fade-in-up">
+            <h2 className="text-lg font-bold text-text-primary mb-2">Pilih Template Layout</h2>
+            <p className="text-sm text-text-muted mb-5">Pilih tampilan invoice sesuai gaya bisnis Anda</p>
+            <LayoutPicker value={layoutType} onChange={setLayoutType} />
+          </div>
+
           {/* Invoice Info */}
           <div className="card p-6 sm:p-8 animate-fade-in-up">
             <h2 className="text-lg font-bold text-text-primary mb-6">Informasi Invoice</h2>

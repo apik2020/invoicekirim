@@ -30,7 +30,8 @@ export async function GET(
     }
 
     // Generate PDF
-    const pdfBuffer = await renderToBuffer(<InvoicePDF invoice={invoice as any} />)
+    const layoutType = (invoice.settings as any)?.layoutType || 'professional'
+    const pdfBuffer = await renderToBuffer(<InvoicePDF invoice={invoice as any} layoutType={layoutType} />)
 
     // Return PDF with appropriate headers
     return new NextResponse(new Uint8Array(pdfBuffer), {
