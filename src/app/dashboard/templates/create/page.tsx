@@ -97,7 +97,8 @@ export default function NewTemplatePage() {
       loadCatalogItems()
       loadClients()
     }
-  }, [sessionResult, router])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionResult.status, router])
 
   const loadCatalogItems = async () => {
     try {

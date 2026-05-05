@@ -173,7 +173,8 @@ function NewInvoicePageContent() {
         })
       }
     }
-  }, [sessionResult, router, templateId, hasTemplateAccess, checkingTemplateAccess])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionResult.status, router, templateId, hasTemplateAccess, checkingTemplateAccess])
 
   const loadClients = async () => {
     try {

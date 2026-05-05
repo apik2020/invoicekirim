@@ -79,7 +79,8 @@ export default function EditTemplatePage() {
     } else if (sessionResult.status === 'authenticated' && id) {
       fetchTemplate()
     }
-  }, [sessionResult, id, router])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionResult.status, id, router])
 
   const fetchTemplate = async () => {
     try {

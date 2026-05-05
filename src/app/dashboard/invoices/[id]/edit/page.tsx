@@ -118,7 +118,8 @@ export default function EditInvoicePage() {
       fetchCatalogItems()
       fetchClients()
     }
-  }, [sessionResult, id, router])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionResult.status, id, router])
 
   const fetchCatalogItems = async () => {
     try {
