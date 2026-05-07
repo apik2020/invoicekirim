@@ -55,12 +55,12 @@ const nextConfig: NextConfig = {
   async headers() {
     const cspDirectives = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://static.cloudflareinsights.com https://app-sandbox.duitku.com https://app.duitku.com",
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://static.cloudflareinsights.com",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https: http:",
       "font-src 'self' data:",
-      "connect-src 'self' https://sandbox.duitku.com https://passport.duitku.com https://o1.ingest.sentry.io",
-      "frame-src 'self' https://app-sandbox.duitku.com https://app.duitku.com",
+      "connect-src 'self' https://sandbox.ipaymu.com https://my.ipaymu.com https://o1.ingest.sentry.io",
+      "frame-src 'self' https://sandbox.ipaymu.com https://my.ipaymu.com",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",

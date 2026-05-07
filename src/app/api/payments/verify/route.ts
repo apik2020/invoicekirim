@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getDuitkuPaymentStatus } from '@/lib/duitku'
+import { getPaymentGateway } from '@/lib/payment'
 
 /**
  * Verify payment status by reference or orderId
- * GET /api/payments/verify?reference=xxx&resultCode=00
+ * GET /api/payments/verify?reference=xxx
  */
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
-  const reference = searchParams.get('reference') || searchParams.get('merchantOrderId')
-  const resultCode = searchParams.get('resultCode')
+  const reference = searchParams.get('reference') || searchParams.get('reference_id')
 
   if (!reference) {
     return NextResponse.json(
@@ -18,9 +17,8 @@ export async function GET(req: NextRequest) {
     )
   }
 
-  console.log('[Payment Verify] Checking:', { reference, resultCode })
+  console.log('[Payment Verify] Checking:', { reference })
 
-  // Step 1: Find payment in database
   let payment = null
   let planName = 'PRO'
   try {
@@ -33,7 +31,6 @@ export async function GET(req: NextRequest) {
       }
     })
 
-    // Look up plan name separately (no direct relation on payments)
     if (payment?.pricingPlanId) {
       const plan = await prisma.pricing_plans.findUnique({
         where: { id: payment.pricingPlanId },
@@ -58,7 +55,7 @@ export async function GET(req: NextRequest) {
     )
   }
 
-  // Step 2: If already completed, return success
+  // If already completed, return success
   if (payment.status === 'COMPLETED') {
     let subscription = null
     try {
@@ -87,42 +84,29 @@ export async function GET(req: NextRequest) {
     })
   }
 
-  // Step 3: If Duitku redirect says resultCode=00, verify via API before completing
-  if (resultCode === '00') {
-    console.log('[Payment Verify] resultCode=00 from Duitku redirect, verifying via API')
-    try {
-      const duitkuStatus = await getDuitkuPaymentStatus(payment.dokuOrderId || '')
-      if (duitkuStatus.status === 'COMPLETED') {
-        return await completePayment(payment, planName, duitkuStatus.reference, duitkuStatus.paymentMethod)
-      }
-      console.log('[Payment Verify] Duitku API not confirmed but resultCode=00, completing')
-      return await completePayment(payment, planName)
-    } catch {
-      console.log('[Payment Verify] Duitku API error but resultCode=00, completing')
-      return await completePayment(payment, planName)
-    }
-  }
-
-  // Step 4: Check payment status from Duitku API
+  // Check payment status from iPaymu API
   try {
-    const duitkuStatus = await getDuitkuPaymentStatus(payment.dokuOrderId || '')
-    console.log('[Payment Verify] Duitku status:', duitkuStatus)
+    const gateway = getPaymentGateway()
+    const txStatus = await gateway.checkTransactionStatus(
+      payment.dokuTransactionId || payment.dokuOrderId || ''
+    )
+    console.log('[Payment Verify] Gateway status:', txStatus)
 
-    if (duitkuStatus.status === 'COMPLETED') {
-      return await completePayment(payment, planName, duitkuStatus.reference, duitkuStatus.paymentMethod)
+    if (txStatus.status === 'COMPLETED') {
+      return await completePayment(payment, planName, txStatus.transactionId, txStatus.paymentMethod)
     }
 
     return NextResponse.json({
       success: false,
-      status: duitkuStatus.status || 'PENDING',
+      status: txStatus.status || 'PENDING',
       payment: {
         orderId: payment.dokuOrderId,
         planName,
         amount: payment.amount,
       }
     })
-  } catch (duitkuError) {
-    console.error('[Payment Verify] Duitku API error:', duitkuError)
+  } catch (gatewayError) {
+    console.error('[Payment Verify] Gateway API error:', gatewayError)
     return NextResponse.json({
       success: false,
       status: payment.status || 'PENDING',
@@ -138,8 +122,8 @@ export async function GET(req: NextRequest) {
 async function completePayment(
   payment: any,
   planName: string,
-  duitkuReference?: string,
-  duitkuPaymentMethod?: string
+  gatewayReference?: string,
+  gatewayPaymentMethod?: string
 ): Promise<NextResponse> {
   try {
     const result = await prisma.$transaction(async (tx) => {
@@ -156,12 +140,11 @@ async function completePayment(
         where: { id: payment.id },
         data: {
           status: 'COMPLETED',
-          ...(duitkuReference && { dokuTransactionId: duitkuReference }),
-          ...(duitkuPaymentMethod && { paymentMethod: duitkuPaymentMethod }),
+          ...(gatewayReference && { dokuTransactionId: gatewayReference }),
+          ...(gatewayPaymentMethod && { paymentMethod: gatewayPaymentMethod }),
         }
       })
 
-      // Calculate period end based on billing cycle from metadata
       const billingCycle = (payment.metadata as Record<string, unknown>)?.billingCycle as string || 'monthly'
       const periodEndDate = new Date()
       if (billingCycle === 'yearly') {
@@ -228,7 +211,7 @@ async function completePayment(
         orderId: payment.dokuOrderId,
         planName,
         amount: payment.amount,
-        paymentMethod: duitkuPaymentMethod || payment.paymentMethod,
+        paymentMethod: gatewayPaymentMethod || payment.paymentMethod,
         activatedAt: new Date().toISOString(),
         expiresAt: result.periodEndDate,
       }

@@ -314,6 +314,7 @@ model payments {
   midtransTransactionId String?
   dokuOrderId           String?       @unique
   dokuTransactionId     String?
+  gatewaySessionId      String?
   paymentGateway        String?
   paymentMethod         String?
   paymentUrl            String?

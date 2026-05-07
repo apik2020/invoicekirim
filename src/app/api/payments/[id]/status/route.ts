@@ -1,7 +1,7 @@
 import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getDuitkuPaymentStatus } from '@/lib/duitku'
+import { getPaymentGateway } from '@/lib/payment'
 
 export async function GET(
   req: NextRequest,
@@ -23,28 +23,28 @@ export async function GET(
       return NextResponse.json({ error: 'Payment tidak ditemukan' }, { status: 404 })
     }
 
-    // Check ownership
     if (payment.userId !== session.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // If payment is pending, check status from Duitku
+    // If payment is pending, check status from gateway
     if (payment.status === 'PENDING' && payment.dokuOrderId) {
       try {
-        const duitkuStatus = await getDuitkuPaymentStatus(payment.dokuOrderId)
+        const gateway = getPaymentGateway()
+        const txStatus = await gateway.checkTransactionStatus(
+          payment.dokuTransactionId || payment.dokuOrderId
+        )
 
-        // Update status if changed to a final state (COMPLETED or FAILED)
-        if (duitkuStatus.status !== 'PENDING') {
+        if (txStatus.status !== 'PENDING') {
           await prisma.payments.update({
             where: { id },
             data: {
-              status: duitkuStatus.status,
-              paymentMethod: duitkuStatus.paymentMethod || payment.paymentMethod,
+              status: txStatus.status,
+              paymentMethod: txStatus.paymentMethod || payment.paymentMethod,
             },
           })
 
-          // If payment completed, update subscription
-          if (duitkuStatus.status === 'COMPLETED') {
+          if (txStatus.status === 'COMPLETED') {
             const existingSub = await prisma.subscriptions.findFirst({
               where: { userId: session.id },
             })
@@ -90,7 +90,6 @@ export async function GET(
               })
             }
 
-            // Log activity
             await prisma.activity_logs.create({
               data: {
                 id: crypto.randomUUID(),
@@ -99,7 +98,7 @@ export async function GET(
                 entityType: 'Subscription',
                 entityId: payment.id,
                 title: 'Pembayaran Berhasil - Langganan Pro Aktif',
-                description: `Pembayaran ${pricingPlan?.name} berhasil melalui Duitku`,
+                description: `Pembayaran ${pricingPlan?.name} berhasil melalui iPaymu`,
                 metadata: {
                   paymentId: payment.id,
                   orderId: payment.dokuOrderId,
@@ -111,13 +110,13 @@ export async function GET(
           }
 
           return NextResponse.json({
-            payment: { ...payment, status: duitkuStatus.status },
+            payment: { ...payment, status: txStatus.status },
             statusChanged: true,
-            duitkuStatus: duitkuStatus,
+            gatewayStatus: txStatus,
           })
         }
       } catch (error) {
-        console.error('Failed to check Duitku status:', error)
+        console.error('Failed to check gateway status:', error)
       }
     }
 

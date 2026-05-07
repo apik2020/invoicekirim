@@ -1,93 +1,84 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createReceipt } from '@/lib/receipt-generator'
-import { verifyDuitkuCallback } from '@/lib/duitku'
+import { getPaymentGateway } from '@/lib/payment'
 import crypto from 'crypto'
 
 /**
- * Duitku Webhook Handler
- * Handles payment callbacks from Duitku with idempotency protection
+ * iPaymu Webhook Handler
+ * Handles payment callbacks from iPaymu with idempotency protection
  */
 export async function POST(req: NextRequest) {
   try {
-    // Duitku sends callback as form-urlencoded, not JSON
-    const contentType = req.headers.get('content-type') || ''
-    let body: Record<string, string>
-
-    if (contentType.includes('application/x-www-form-urlencoded')) {
-      const formData = await req.formData()
-      body = {}
-      formData.forEach((value, key) => {
-        body[key] = value.toString()
-      })
-    } else {
-      body = await req.json()
-    }
+    const body = await req.json()
 
     const {
-      merchantCode,
-      amount,
-      merchantOrderId,
-      productDetails,
-      additionalParam,
-      paymentCode,
-      resultCode,
+      trx_id,
+      sid,
+      reference_id,
+      status,
+      status_code,
+      total,
+      sub_total,
+      fee,
+      via,
+      channel,
       signature,
     } = body
 
-    console.log('[Duitku Webhook] Received callback:', {
-      merchantCode,
-      merchantOrderId,
-      amount,
-      resultCode,
-      paymentCode,
-      contentType,
+    console.log('[iPaymu Webhook] Received callback:', {
+      trx_id,
+      reference_id,
+      status,
+      status_code,
+      via,
+      channel,
     })
 
-    // Find payment by order ID
+    if (!reference_id) {
+      console.error('[iPaymu Webhook] Missing reference_id')
+      return NextResponse.json({ error: 'Missing reference_id' }, { status: 400 })
+    }
+
+    // Find payment by order ID (stored in dokuOrderId)
     const payment = await prisma.payments.findFirst({
-      where: { dokuOrderId: merchantOrderId },
+      where: { dokuOrderId: reference_id },
     })
 
     if (!payment) {
-      console.error('[Duitku Webhook] Payment not found for order:', merchantOrderId)
+      console.error('[iPaymu Webhook] Payment not found for order:', reference_id)
       return NextResponse.json({ error: 'Payment not found' }, { status: 404 })
     }
 
     // === IDEMPOTENCY CHECK ===
-    // If payment is already COMPLETED, return success without reprocessing
     if (payment.status === 'COMPLETED') {
-      console.log('[Duitku Webhook] Payment already completed, skipping:', merchantOrderId)
+      console.log('[iPaymu Webhook] Payment already completed, skipping:', reference_id)
       return NextResponse.json({ status: 'success', message: 'Already processed' })
     }
 
-    // Verify signature
-    const isValidSignature = verifyDuitkuCallback(
-      merchantOrderId,
-      parseFloat(amount),
-      signature
-    )
+    // Verify callback signature
+    const gateway = getPaymentGateway()
+    const verification = gateway.verifyCallback(body)
 
-    if (!isValidSignature) {
-      console.error('[Duitku Webhook] Invalid signature')
+    if (!verification.isValid) {
+      console.error('[iPaymu Webhook] Invalid signature')
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
     }
 
-    // Handle payment result
-    if (resultCode === '00') {
+    // Handle based on status
+    if (verification.status === 'COMPLETED') {
       // === TRANSACTION: Payment update + subscription activation ===
       await prisma.$transaction(async (tx) => {
-        // Update payment status
         await tx.payments.update({
           where: { id: payment.id },
           data: {
             status: 'COMPLETED',
-            dokuTransactionId: paymentCode,
-            paymentMethod: mapDuitkuPaymentMethod(paymentCode, additionalParam),
+            dokuTransactionId: trx_id || verification.transactionId,
+            gatewaySessionId: sid || payment.gatewaySessionId,
+            paymentMethod: mapIpaymuPaymentMethod(via, channel),
           },
         })
 
-        // Get pricing plan info
         const pricingPlan = payment.pricingPlanId
           ? await tx.pricing_plans.findUnique({
               where: { id: payment.pricingPlanId },
@@ -100,10 +91,8 @@ export async function POST(req: NextRequest) {
             })
           : null
 
-        // Determine billing cycle from payment metadata
         const paymentBillingCycle = (payment.metadata as Record<string, unknown>)?.billingCycle as string || 'monthly'
 
-        // Calculate period end date
         const periodEndDate = new Date()
         if (paymentBillingCycle === 'yearly') {
           periodEndDate.setFullYear(periodEndDate.getFullYear() + 1)
@@ -111,7 +100,6 @@ export async function POST(req: NextRequest) {
           periodEndDate.setMonth(periodEndDate.getMonth() + 1)
         }
 
-        // Get existing subscription
         const existingSubscription = await tx.subscriptions.findFirst({
           where: { userId: payment.userId },
           select: {
@@ -154,7 +142,6 @@ export async function POST(req: NextRequest) {
           })
         }
 
-        // Log activity
         await tx.activity_logs.create({
           data: {
             id: crypto.randomUUID(),
@@ -163,12 +150,13 @@ export async function POST(req: NextRequest) {
             entityType: 'Subscription',
             entityId: payment.id,
             title: 'Pembayaran Berhasil - Langganan Pro Aktif',
-            description: `Pembayaran ${pricingPlan?.name} berhasil melalui Duitku`,
+            description: `Pembayaran ${pricingPlan?.name} berhasil melalui iPaymu`,
             metadata: {
-              paymentMethod: paymentCode,
-              transactionId: paymentCode,
+              paymentMethod: via,
+              channel,
+              transactionId: trx_id,
               pricingPlan: pricingPlan?.name,
-              amount: amount,
+              amount: total,
             },
           },
         })
@@ -178,28 +166,27 @@ export async function POST(req: NextRequest) {
       try {
         await createReceipt(payment.id)
       } catch (receiptError) {
-        console.error('[Duitku Webhook] Failed to generate receipt:', receiptError)
+        console.error('[iPaymu Webhook] Failed to generate receipt:', receiptError)
       }
 
-      console.log('[Duitku Webhook] Payment completed successfully:', merchantOrderId)
+      console.log('[iPaymu Webhook] Payment completed successfully:', reference_id)
       return NextResponse.json({ status: 'success' })
     }
 
-    // Payment pending
-    if (resultCode === '01') {
+    // Payment still pending
+    if (verification.status === 'PENDING') {
       return NextResponse.json({ status: 'pending' })
     }
 
-    // resultCode 02 or others = Failed/Expired
+    // EXPIRED or FAILED
     await prisma.payments.update({
       where: { id: payment.id },
       data: {
-        status: 'FAILED',
-        dokuTransactionId: paymentCode,
+        status: verification.status === 'EXPIRED' ? 'EXPIRED' : 'FAILED',
+        dokuTransactionId: trx_id,
       },
     })
 
-    // Log failed payment
     await prisma.activity_logs.create({
       data: {
         id: crypto.randomUUID(),
@@ -208,19 +195,20 @@ export async function POST(req: NextRequest) {
         entityType: 'Payment',
         entityId: payment.id,
         title: 'Pembayaran Gagal',
-        description: `Pembayaran melalui Duitku gagal (resultCode: ${resultCode})`,
+        description: `Pembayaran melalui iPaymu gagal (status_code: ${status_code})`,
         metadata: {
-          paymentMethod: paymentCode,
-          transactionId: paymentCode,
-          resultCode,
+          paymentMethod: via,
+          channel,
+          transactionId: trx_id,
+          statusCode: status_code,
         },
       },
     })
 
-    console.log('[Duitku Webhook] Payment failed:', merchantOrderId, resultCode)
+    console.log('[iPaymu Webhook] Payment failed:', reference_id, status_code)
     return NextResponse.json({ status: 'failed' })
   } catch (error) {
-    console.error('[Duitku Webhook] Error:', error)
+    console.error('[iPaymu Webhook] Error:', error)
     return NextResponse.json(
       { error: 'Webhook processing failed' },
       { status: 500 }
@@ -228,32 +216,26 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// Helper function to map Duitku payment methods
-function mapDuitkuPaymentMethod(paymentCode: string, additionalParam?: string): string {
+function mapIpaymuPaymentMethod(via?: string, channel?: string): string {
+  if (!via && !channel) return 'UNKNOWN'
+
+  const viaLower = (via || '').toLowerCase()
+  const channelLower = (channel || '').toLowerCase()
+
+  if (channelLower.includes('qris') || viaLower.includes('qris')) return 'QRIS'
+
   const vaMapping: Record<string, string> = {
-    'BC': 'VA_BCA',
-    'M1': 'VA_MANDIRI',
-    'B1': 'VA_BNI',
-    'BR': 'VA_BRI',
-    'C1': 'VA_CIMB',
-    'A1': 'VA_PERMATA',
-    'B2': 'VA_DANAMON',
-    'D1': 'VA_DIGIBANK',
+    'bca': 'VA_BCA',
+    'bni': 'VA_BNI',
+    'bri': 'VA_BRI',
+    'mandiri': 'VA_MANDIRI',
+    'permata': 'VA_PERMATA',
+    'cimb': 'VA_CIMB',
+    'bsi': 'VA_BSI',
   }
 
-  const ewalletMapping: Record<string, string> = {
-    'OV': 'E_WALLET_OVO',
-    'DA': 'E_WALLET_DANA',
-    'SP': 'E_WALLET_SHOPEEPAY',
-    'GQ': 'E_WALLET_GOPAY',
-  }
+  if (vaMapping[channelLower]) return vaMapping[channelLower]
+  if (vaMapping[viaLower]) return vaMapping[viaLower]
 
-  if (paymentCode === 'QP' || additionalParam?.includes('QRIS')) {
-    return 'QRIS'
-  }
-
-  if (vaMapping[paymentCode]) return vaMapping[paymentCode]
-  if (ewalletMapping[paymentCode]) return ewalletMapping[paymentCode]
-
-  return paymentCode
+  return via || channel || 'UNKNOWN'
 }

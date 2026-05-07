@@ -7,31 +7,18 @@ import Link from 'next/link'
 import {
   Check,
   Loader2,
-  CreditCard,
-  Building2,
-  QrCode,
   ArrowLeft,
-  Copy,
   CheckCircle,
-  Clock,
   AlertCircle,
   Shield,
   Sparkles,
   Zap,
   Crown,
+  CreditCard,
 } from 'lucide-react'
 import { DashboardLayout } from '@/components/DashboardLayout'
 
-const VA_BANKS = [
-  { code: 'BCA', name: 'BCA', description: 'Virtual Account BCA' },
-  { code: 'BNI', name: 'BNI', description: 'Virtual Account BNI' },
-  { code: 'BRI', name: 'BRI', description: 'Virtual Account BRI' },
-  { code: 'MANDIRI', name: 'Mandiri', description: 'Virtual Account Mandiri' },
-  { code: 'PERMATA', name: 'Permata', description: 'Virtual Account Permata' },
-  { code: 'CIMB', name: 'CIMB Niaga', description: 'Virtual Account CIMB Niaga' },
-]
-
-type Step = 'plan' | 'payment' | 'va' | 'qris' | 'processing' | 'success'
+type Step = 'plan' | 'redirecting' | 'success'
 
 interface PricingPlan {
   id: string
@@ -88,13 +75,9 @@ export default function CheckoutPage() {
 
   const [step, setStep] = useState<Step>('plan')
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly')
-  const [paymentMethod, setPaymentMethod] = useState<'VA' | 'QRIS'>('VA')
-  const [selectedBank, setSelectedBank] = useState<string>('BCA')
   const [loading, setLoading] = useState(false)
   const [paymentData, setPaymentData] = useState<any>(null)
-  const [copied, setCopied] = useState(false)
 
-  // Dynamic pricing data from API
   const [availablePlansData, setAvailablePlansData] = useState<AvailablePlansData | null>(null)
   const [plansLoading, setPlansLoading] = useState(true)
   const [selectedPlanSlug, setSelectedPlanSlug] = useState<string | null>(null)
@@ -107,14 +90,12 @@ export default function CheckoutPage() {
     }
   }, [status, router])
 
-  // Fetch available upgrade options
   useEffect(() => {
     if (status === 'authenticated' && session?.user) {
       fetchAvailablePlans()
     }
   }, [status, session?.authenticated, session?.user])
 
-  // Check if a specific plan was pre-selected from URL
   useEffect(() => {
     const planSlug = searchParams.get('plan')
     if (planSlug) {
@@ -130,7 +111,6 @@ export default function CheckoutPage() {
         const data = await res.json()
         setAvailablePlansData(data)
 
-        // Auto-select the first available upgrade plan if none selected
         const firstAvailablePlan = data.availableUpgrades.find((p: AvailableUpgradePlan) => p.canUpgrade)
         if (firstAvailablePlan && !selectedPlanSlug) {
           setSelectedPlanSlug(firstAvailablePlan.slug)
@@ -161,7 +141,6 @@ export default function CheckoutPage() {
     return null
   }
 
-  // Fetch plan details when selected plan changes
   useEffect(() => {
     if (selectedPlanSlug) {
       fetchPlanDetails(selectedPlanSlug).then(plan => {
@@ -194,7 +173,6 @@ export default function CheckoutPage() {
         throw new Error(data.error || 'Gagal memulai trial')
       }
 
-      // Show success state
       setPaymentData({ trialActivated: true })
       setStep('success')
     } catch (error) {
@@ -204,13 +182,12 @@ export default function CheckoutPage() {
     }
   }
 
-  const handleProceedToPayment = () => {
-    if (!selectedPlan) {
-      setError('Silakan pilih paket terlebih dahulu')
+  const handlePayNow = async () => {
+    if (!session || !selectedPlan) {
+      setError('Data tidak lengkap')
       return
     }
 
-    // Check if selected plan is a trial - skip payment and start trial directly
     const selectedUpgrade = availablePlansData?.availableUpgrades.find(
       plan => plan.slug === selectedPlanSlug
     )
@@ -220,25 +197,15 @@ export default function CheckoutPage() {
       return
     }
 
-    setStep('payment')
-  }
-
-  const handleCreatePayment = async () => {
-    if (!session || !selectedPlan) {
-      setError('Data tidak lengkap')
-      return
-    }
-
     setLoading(true)
     setError(null)
+    setStep('redirecting')
 
     try {
       const res = await fetch('/api/payments/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          paymentMethod,
-          bankCode: selectedBank,
           pricingPlanId: selectedPlan.id,
           planSlug: selectedPlan.slug,
           billingCycle,
@@ -248,27 +215,17 @@ export default function CheckoutPage() {
       const data = await res.json()
 
       if (!res.ok) {
+        setStep('plan')
         throw new Error(data.error || 'Gagal membuat transaksi')
       }
 
-      // Redirect to Duitku payment page
-      if (data.payment?.paymentUrl) {
-        window.location.href = data.payment.paymentUrl
-      } else {
-        throw new Error('URL pembayaran tidak tersedia')
-      }
+      // Redirect to iPaymu hosted payment page
+      window.location.href = data.payment.paymentUrl
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Gagal membuat transaksi')
+      setStep('plan')
     } finally {
       setLoading(false)
-    }
-  }
-
-  const handleCopyVA = () => {
-    if (paymentData?.vaNumber) {
-      navigator.clipboard.writeText(paymentData.vaNumber.replace(/\s/g, ''))
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
     }
   }
 
@@ -278,16 +235,6 @@ export default function CheckoutPage() {
       currency: 'IDR',
       minimumFractionDigits: 0,
     }).format(amount)
-  }
-
-  const formatDateTime = (date: Date | string) => {
-    return new Date(date).toLocaleString('id-ID', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
   }
 
   const getFeatureDisplayText = (featureItem: {
@@ -324,386 +271,244 @@ export default function CheckoutPage() {
   return (
     <DashboardLayout title="Checkout">
       {/* Progress Steps */}
-        <div className="flex items-center justify-center gap-2 sm:gap-4 mb-8 sm:mb-12">
-          {step === 'success' ? (
-            <div className="flex items-center">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-success-400 text-white shadow-lg shadow-success-400/30">
-                <Check className="w-5 h-5" />
-              </div>
+      <div className="flex items-center justify-center gap-2 sm:gap-4 mb-8 sm:mb-12">
+        {step === 'success' ? (
+          <div className="flex items-center">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center bg-success-400 text-white shadow-lg shadow-success-400/30">
+              <Check className="w-5 h-5" />
             </div>
-          ) : (
-            ['plan', 'payment', 'processing'].map((s, i) => (
-              <div key={s} className="flex items-center">
-                <div className="flex flex-col items-center">
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
-                      step === s || (step === 'va' && s === 'payment') || (step === 'qris' && s === 'payment')
-                        ? 'bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-lg shadow-primary-500/30 scale-110'
-                        : ['va', 'qris'].includes(step) && s === 'payment'
-                        ? 'bg-success-400 text-white'
-                        : 'bg-gray-200 text-gray-500'
-                    }`}
-                  >
-                    {['va', 'qris'].includes(step) && s === 'payment' ? (
-                      <Check className="w-5 h-5" />
-                    ) : (
-                      i + 1
-                    )}
-                  </div>
-                  <span className={`text-xs mt-2 font-medium hidden sm:block ${
-                    step === s ? 'text-primary-500' : 'text-gray-400'
-                  }`}>
-                    {s === 'plan' ? 'Pilih Paket' : s === 'payment' ? 'Pembayaran' : 'Proses'}
-                  </span>
-                </div>
-                {i < 2 && (
-                  <div className={`w-12 sm:w-20 h-1 mx-2 rounded-full transition-all duration-300 ${
-                    step === 'payment' || step === 'va' || step === 'qris'
-                      ? 'bg-success-400'
-                      : 'bg-gray-200'
-                  }`} />
-                )}
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* Step: Select Plan */}
-        {step === 'plan' && (
-          <div className="animate-fade-in">
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-100 text-brand-600 text-sm font-semibold mb-4">
-                <Sparkles className="w-4 h-4" />
-                Upgrade Paket
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-text-primary mb-3">
-                Pilih Paket Berlangganan
-              </h1>
-              <p className="text-text-secondary max-w-lg mx-auto">
-                Tingkatkan kemampuan NotaBener Anda dengan paket yang sesuai kebutuhan bisnis
-              </p>
-            </div>
-
-            {/* Current Plan Badge */}
-            {availablePlansData && availablePlansData.currentPlan.slug !== 'plan-free' && (
-              <div className="flex justify-center mb-6">
-                <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-brand-50 border border-brand-200 text-brand-600 text-sm font-semibold">
-                  <Crown className="w-4 h-4" />
-                  Paket saat ini: {availablePlansData.currentPlan.name}
-                </div>
-              </div>
-            )}
-
-            {/* Error Message */}
-            {error && (
-              <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3 animate-fade-in">
-                <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-                <p className="text-red-700">{error}</p>
-              </div>
-            )}
-
-            {/* Available Plans */}
-            {/* Billing Period Toggle */}
-            <div className="flex items-center justify-center mb-8">
-              <div className="inline-flex items-center bg-gray-200 rounded-full p-1">
-                <button
-                  onClick={() => {
-                    setBillingCycle('monthly')
-                  }}
-                  className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all ${
-                    billingCycle === 'monthly'
-                      ? 'bg-white text-brand-500 shadow-md'
-                      : 'text-text-secondary hover:text-text-primary'
+          </div>
+        ) : (
+          ['plan', 'payment'].map((s, i) => (
+            <div key={s} className="flex items-center">
+              <div className="flex flex-col items-center">
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
+                    (s === 'plan' && step === 'plan') || (s === 'payment' && step === 'redirecting')
+                      ? 'bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-lg shadow-primary-500/30 scale-110'
+                      : s === 'payment' && step === 'redirecting'
+                      ? 'bg-success-400 text-white'
+                      : step === 'redirecting' && s === 'plan'
+                      ? 'bg-success-400 text-white'
+                      : 'bg-gray-200 text-gray-500'
                   }`}
                 >
-                  Bulanan
-                </button>
-                <button
-                  onClick={() => {
-                    setBillingCycle('yearly')
-                  }}
-                  className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all flex items-center gap-2 ${
-                    billingCycle === 'yearly'
-                      ? 'bg-white text-brand-500 shadow-md'
-                      : 'text-text-secondary hover:text-text-primary'
-                  }`}
-                >
-                  Tahunan
-                  <span className="px-2 py-0.5 bg-success-100 text-success-700 text-xs font-bold rounded-full">
-                    Hemat!
-                  </span>
-                </button>
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-              {availablePlansData?.availableUpgrades
-                .filter(plan => plan.canUpgrade)
-                .map((plan) => (
-                  <div
-                    key={plan.id}
-                    onClick={() => handleSelectPlan(plan.slug)}
-                    className={`relative cursor-pointer rounded-2xl p-6 border-2 transition-all duration-300 hover:shadow-lg ${
-                      selectedPlanSlug === plan.slug
-                        ? 'border-primary-500 bg-primary-50 shadow-lg shadow-primary-500/10'
-                        : 'border-gray-200 bg-white hover:border-primary-300 hover:shadow-md'
-                    } ${plan.is_popular ? 'ring-2 ring-primary-200 ring-offset-2' : ''}`}
-                  >
-                    {plan.is_popular && (
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                        <span className="px-4 py-1.5 bg-gradient-to-r from-primary-500 to-highlight-500 text-white text-xs font-bold rounded-full shadow-lg flex items-center gap-1">
-                          <Zap className="w-3 h-3" />
-                          POPULER
-                        </span>
-                      </div>
-                    )}
-
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="text-xl font-bold text-text-primary">{plan.name}</h3>
-                        {plan.isTrial && (
-                          <p className="text-sm text-primary-500 font-medium flex items-center gap-1 mt-1">
-                            <Sparkles className="w-3.5 h-3.5" />
-                            Trial Gratis {plan.trialDays} Hari
-                          </p>
-                        )}
-                      </div>
-                      <div
-                        className={`w-7 h-7 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all duration-300 ${
-                          selectedPlanSlug === plan.slug
-                            ? 'border-primary-500 bg-primary-500 shadow-lg shadow-primary-500/30'
-                            : 'border-gray-300'
-                        }`}
-                      >
-                        {selectedPlanSlug === plan.slug && (
-                          <Check className="w-4 h-4 text-white" />
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="mb-4">
-                      <span className="text-3xl font-bold text-text-primary">
-                        {formatCurrency(plan.isTrial ? 0 : (billingCycle === 'yearly' ? plan.price_yearly : plan.price_monthly))}
-                      </span>
-                      {!plan.isTrial && (
-                        <span className="text-text-secondary">
-                          {billingCycle === 'yearly' ? ' /tahun' : ' /bulan'}
-                        </span>
-                      )}
-                    </div>
-
-                    {selectedPlanSlug === plan.slug && selectedPlan && (
-                      <ul className="space-y-2.5 mb-4 pt-4 border-t border-gray-100">
-                        {selectedPlan.features.slice(0, 5).map((featureItem) => (
-                          <li key={featureItem.key} className="flex items-center gap-3 text-sm">
-                            {featureItem.value !== false && featureItem.value !== null ? (
-                              <div className="w-5 h-5 rounded-full bg-success-400 flex items-center justify-center flex-shrink-0">
-                                <Check className="w-3 h-3 text-white" />
-                              </div>
-                            ) : (
-                              <span className="w-5 h-5" />
-                            )}
-                            <span className={featureItem.value !== false && featureItem.value !== null ? 'text-text-primary' : 'text-text-muted'}>
-                              {getFeatureDisplayText(featureItem)}
-                            </span>
-                          </li>
-                        ))}
-                        {selectedPlan.features.length > 5 && (
-                          <li className="text-sm text-text-muted pl-8">
-                            +{selectedPlan.features.length - 5} fitur lainnya
-                          </li>
-                        )}
-                      </ul>
-                    )}
-                  </div>
-                ))}
-
-              {/* No available plans message */}
-              {availablePlansData && availablePlansData.availableUpgrades.filter(p => p.canUpgrade).length === 0 && (
-                <div className="col-span-2 text-center py-12 bg-white rounded-2xl shadow-card">
-                  <AlertCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-xl font-bold text-text-primary mb-2">
-                    Tidak Ada Paket Tersedia
-                  </h3>
-                  <p className="text-text-secondary mb-6 max-w-md mx-auto">
-                    Anda sudah berada di paket tertinggi atau tidak ada upgrade yang tersedia saat ini.
-                  </p>
-                  <Link
-                    href="/dashboard/billing"
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-br from-primary-500 to-primary-600 text-white font-bold rounded-xl hover:from-primary-600 hover:to-primary-700 transition-all shadow-lg shadow-primary-500/30"
-                  >
-                    Kembali ke Billing
-                  </Link>
+                  {step === 'redirecting' && s === 'plan' ? (
+                    <Check className="w-5 h-5" />
+                  ) : (
+                    i + 1
+                  )}
                 </div>
+                <span className={`text-xs mt-2 font-medium hidden sm:block ${
+                  step === s || (step === 'redirecting' && s === 'payment') ? 'text-primary-500' : 'text-gray-400'
+                }`}>
+                  {s === 'plan' ? 'Pilih Paket' : 'Pembayaran'}
+                </span>
+              </div>
+              {i < 1 && (
+                <div className={`w-12 sm:w-20 h-1 mx-2 rounded-full transition-all duration-300 ${
+                  step === 'redirecting' ? 'bg-success-400' : 'bg-gray-200'
+                }`} />
               )}
             </div>
-
-            {/* Continue Button */}
-            {availablePlansData && availablePlansData.availableUpgrades.filter(p => p.canUpgrade).length > 0 && (
-              <div className="mt-10 flex justify-center">
-                <button
-                  onClick={handleProceedToPayment}
-                  disabled={!selectedPlan}
-                  className="px-10 sm:px-14 py-4 bg-gradient-to-br from-primary-500 to-primary-600 text-white font-bold text-lg rounded-xl hover:from-primary-600 hover:to-primary-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 hover:-translate-y-0.5 flex items-center gap-2"
-                >
-                  Lanjut ke Pembayaran
-                  <ArrowLeft className="w-5 h-5 rotate-180" />
-                </button>
-              </div>
-            )}
-          </div>
+          ))
         )}
+      </div>
 
-        {/* Step: Select Payment Method */}
-        {step === 'payment' && (
-          <div className="animate-fade-in max-w-3xl mx-auto">
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-secondary-100 text-secondary-600 text-sm font-semibold mb-4">
-                <Shield className="w-4 h-4" />
-                Pembayaran Aman
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-text-primary mb-3">
-                Pilih Metode Pembayaran
-              </h1>
-              <p className="text-text-secondary">
-                Pilih metode pembayaran yang paling nyaman untuk Anda
-              </p>
+      {/* Step: Select Plan */}
+      {step === 'plan' && (
+        <div className="animate-fade-in">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-100 text-brand-600 text-sm font-semibold mb-4">
+              <Sparkles className="w-4 h-4" />
+              Upgrade Paket
             </div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-text-primary mb-3">
+              Pilih Paket Berlangganan
+            </h1>
+            <p className="text-text-secondary max-w-lg mx-auto">
+              Tingkatkan kemampuan NotaBener Anda dengan paket yang sesuai kebutuhan bisnis
+            </p>
+          </div>
 
-            {/* Order Summary */}
-            <div className="bg-gradient-to-br from-brand-500 to-brand-600 rounded-2xl p-6 mb-8 text-white shadow-lg shadow-brand-500/30">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-white/80 text-sm mb-1">Paket yang dipilih</p>
-                  <p className="font-bold text-lg">
-                    {selectedPlan?.name}
-                    {billingCycle === 'yearly' && ' - Tahunan'}
-                    {billingCycle === 'monthly' && ' - Bulanan'}
-                  </p>
-                  <p className="text-white/70 text-sm mt-1">NotaBener Subscription</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-white/80 text-sm mb-1">Total</p>
-                  <p className="text-2xl font-bold">
-                    {formatCurrency(billingCycle === 'yearly' ? (selectedPlan?.price_yearly || 0) : (selectedPlan?.price_monthly || 0))}
-                  </p>
-                </div>
+          {availablePlansData && availablePlansData.currentPlan.slug !== 'plan-free' && (
+            <div className="flex justify-center mb-6">
+              <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-brand-50 border border-brand-200 text-brand-600 text-sm font-semibold">
+                <Crown className="w-4 h-4" />
+                Paket saat ini: {availablePlansData.currentPlan.name}
               </div>
             </div>
+          )}
 
-            {/* Error Message */}
-            {error && (
-              <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3 animate-fade-in">
-                <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-                <p className="text-red-700">{error}</p>
-              </div>
-            )}
+          {error && (
+            <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 flex items-start gap-3 animate-fade-in">
+              <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+              <p className="text-red-700">{error}</p>
+            </div>
+          )}
 
-            {/* Payment Methods */}
-            <div className="space-y-4 mb-8">
-              {/* Virtual Account */}
-              <div
-                onClick={() => setPaymentMethod('VA')}
-                className={`bg-white rounded-2xl border-2 cursor-pointer transition-all duration-300 overflow-hidden ${
-                  paymentMethod === 'VA'
-                    ? 'border-primary-500 shadow-lg shadow-primary-500/10'
-                    : 'border-gray-200 hover:border-primary-300 hover:shadow-md'
+          {/* Billing Period Toggle */}
+          <div className="flex items-center justify-center mb-8">
+            <div className="inline-flex items-center bg-gray-200 rounded-full p-1">
+              <button
+                onClick={() => setBillingCycle('monthly')}
+                className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all ${
+                  billingCycle === 'monthly'
+                    ? 'bg-white text-brand-500 shadow-md'
+                    : 'text-text-secondary hover:text-text-primary'
                 }`}
               >
-                <div className="p-5">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
-                      <Building2 className="w-7 h-7 text-white" />
+                Bulanan
+              </button>
+              <button
+                onClick={() => setBillingCycle('yearly')}
+                className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all flex items-center gap-2 ${
+                  billingCycle === 'yearly'
+                    ? 'bg-white text-brand-500 shadow-md'
+                    : 'text-text-secondary hover:text-text-primary'
+                }`}
+              >
+                Tahunan
+                <span className="px-2 py-0.5 bg-success-100 text-success-700 text-xs font-bold rounded-full">
+                  Hemat!
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+            {availablePlansData?.availableUpgrades
+              .filter(plan => plan.canUpgrade)
+              .map((plan) => (
+                <div
+                  key={plan.id}
+                  onClick={() => handleSelectPlan(plan.slug)}
+                  className={`relative cursor-pointer rounded-2xl p-6 border-2 transition-all duration-300 hover:shadow-lg ${
+                    selectedPlanSlug === plan.slug
+                      ? 'border-primary-500 bg-primary-50 shadow-lg shadow-primary-500/10'
+                      : 'border-gray-200 bg-white hover:border-primary-300 hover:shadow-md'
+                  } ${plan.is_popular ? 'ring-2 ring-primary-200 ring-offset-2' : ''}`}
+                >
+                  {plan.is_popular && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                      <span className="px-4 py-1.5 bg-gradient-to-r from-primary-500 to-highlight-500 text-white text-xs font-bold rounded-full shadow-lg flex items-center gap-1">
+                        <Zap className="w-3 h-3" />
+                        POPULER
+                      </span>
                     </div>
-                    <div className="flex-1">
-                      <p className="font-bold text-text-primary text-lg">Transfer Bank (Virtual Account)</p>
-                      <p className="text-sm text-text-secondary">BCA, BNI, BRI, Mandiri, Permata, CIMB Niaga</p>
+                  )}
+
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="text-xl font-bold text-text-primary">{plan.name}</h3>
+                      {plan.isTrial && (
+                        <p className="text-sm text-primary-500 font-medium flex items-center gap-1 mt-1">
+                          <Sparkles className="w-3.5 h-3.5" />
+                          Trial Gratis {plan.trialDays} Hari
+                        </p>
+                      )}
                     </div>
                     <div
-                      className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all ${
-                        paymentMethod === 'VA' ? 'border-primary-500 bg-primary-500' : 'border-gray-300'
+                      className={`w-7 h-7 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all duration-300 ${
+                        selectedPlanSlug === plan.slug
+                          ? 'border-primary-500 bg-primary-500 shadow-lg shadow-primary-500/30'
+                          : 'border-gray-300'
                       }`}
                     >
-                      {paymentMethod === 'VA' && (
+                      {selectedPlanSlug === plan.slug && (
                         <Check className="w-4 h-4 text-white" />
                       )}
                     </div>
                   </div>
-                </div>
 
-                {/* Bank Selection */}
-                {paymentMethod === 'VA' && (
-                  <div className="px-5 pb-5 pt-2 border-t border-gray-100 animate-fade-in">
-                    <p className="text-sm font-semibold text-text-primary mb-4">Pilih Bank:</p>
-                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-                      {VA_BANKS.map((bank) => (
-                        <button
-                          key={bank.code}
-                          onClick={() => setSelectedBank(bank.code)}
-                          className={`
-                            py-3 px-2 rounded-xl border-2 font-semibold text-sm transition-all duration-200
-                            ${selectedBank === bank.code
-                              ? 'border-primary-500 bg-primary-50 text-primary-600 shadow-sm'
-                              : 'border-gray-200 bg-white text-text-primary hover:border-gray-300 hover:bg-gray-50'
-                            }
-                          `}
-                        >
-                          {bank.name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* QRIS */}
-              <div
-                onClick={() => setPaymentMethod('QRIS')}
-                className={`bg-white rounded-2xl p-5 border-2 cursor-pointer transition-all duration-300 ${
-                  paymentMethod === 'QRIS'
-                    ? 'border-primary-500 shadow-lg shadow-primary-500/10'
-                    : 'border-gray-200 hover:border-primary-300 hover:shadow-md'
-                }`}
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/30">
-                    <QrCode className="w-7 h-7 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-bold text-text-primary text-lg">QRIS</p>
-                    <p className="text-sm text-text-secondary">Scan dengan aplikasi e-wallet atau m-banking</p>
-                  </div>
-                  <div
-                    className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all ${
-                      paymentMethod === 'QRIS' ? 'border-primary-500 bg-primary-500' : 'border-gray-300'
-                    }`}
-                  >
-                    {paymentMethod === 'QRIS' && (
-                      <Check className="w-4 h-4 text-white" />
+                  <div className="mb-4">
+                    <span className="text-3xl font-bold text-text-primary">
+                      {formatCurrency(plan.isTrial ? 0 : (billingCycle === 'yearly' ? plan.price_yearly : plan.price_monthly))}
+                    </span>
+                    {!plan.isTrial && (
+                      <span className="text-text-secondary">
+                        {billingCycle === 'yearly' ? ' /tahun' : ' /bulan'}
+                      </span>
                     )}
                   </div>
+
+                  {selectedPlanSlug === plan.slug && selectedPlan && (
+                    <ul className="space-y-2.5 mb-4 pt-4 border-t border-gray-100">
+                      {selectedPlan.features.slice(0, 5).map((featureItem) => (
+                        <li key={featureItem.key} className="flex items-center gap-3 text-sm">
+                          {featureItem.value !== false && featureItem.value !== null ? (
+                            <div className="w-5 h-5 rounded-full bg-success-400 flex items-center justify-center flex-shrink-0">
+                              <Check className="w-3 h-3 text-white" />
+                            </div>
+                          ) : (
+                            <span className="w-5 h-5" />
+                          )}
+                          <span className={featureItem.value !== false && featureItem.value !== null ? 'text-text-primary' : 'text-text-muted'}>
+                            {getFeatureDisplayText(featureItem)}
+                          </span>
+                        </li>
+                      ))}
+                      {selectedPlan.features.length > 5 && (
+                        <li className="text-sm text-text-muted pl-8">
+                          +{selectedPlan.features.length - 5} fitur lainnya
+                        </li>
+                      )}
+                    </ul>
+                  )}
+                </div>
+              ))}
+
+            {availablePlansData && availablePlansData.availableUpgrades.filter(p => p.canUpgrade).length === 0 && (
+              <div className="col-span-2 text-center py-12 bg-white rounded-2xl shadow-card">
+                <AlertCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-text-primary mb-2">
+                  Tidak Ada Paket Tersedia
+                </h3>
+                <p className="text-text-secondary mb-6 max-w-md mx-auto">
+                  Anda sudah berada di paket tertinggi atau tidak ada upgrade yang tersedia saat ini.
+                </p>
+                <Link
+                  href="/dashboard/billing"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-br from-primary-500 to-primary-600 text-white font-bold rounded-xl hover:from-primary-600 hover:to-primary-700 transition-all shadow-lg shadow-primary-500/30"
+                >
+                  Kembali ke Billing
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* Order Summary + Pay Button */}
+          {availablePlansData && availablePlansData.availableUpgrades.filter(p => p.canUpgrade).length > 0 && selectedPlan && (
+            <div className="mt-10 max-w-lg mx-auto">
+              <div className="bg-gradient-to-br from-brand-500 to-brand-600 rounded-2xl p-6 mb-6 text-white shadow-lg shadow-brand-500/30">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-white/80 text-sm mb-1">Paket yang dipilih</p>
+                    <p className="font-bold text-lg">
+                      {selectedPlan.name}
+                      {billingCycle === 'yearly' && ' - Tahunan'}
+                      {billingCycle === 'monthly' && ' - Bulanan'}
+                    </p>
+                    <p className="text-white/70 text-sm mt-1">NotaBener Subscription</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-white/80 text-sm mb-1">Total</p>
+                    <p className="text-2xl font-bold">
+                      {formatCurrency(billingCycle === 'yearly' ? selectedPlan.price_yearly : selectedPlan.price_monthly)}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Security Badge */}
-            <div className="flex items-center justify-center gap-2 text-text-muted text-sm mb-8">
-              <Shield className="w-4 h-4" />
-              <span>Pembayaran aman dan terenkripsi</span>
-            </div>
+              <div className="flex items-center justify-center gap-2 text-text-muted text-sm mb-6">
+                <Shield className="w-4 h-4" />
+                <span>Pembayaran aman melalui iPaymu — Virtual Account & QRIS</span>
+              </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-4">
               <button
-                onClick={() => setStep('plan')}
-                className="flex-1 py-4 bg-white border-2 border-gray-200 text-text-primary font-bold rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all"
-              >
-                Kembali
-              </button>
-              <button
-                onClick={handleCreatePayment}
-                disabled={loading || !selectedPlan}
-                className="flex-1 py-4 bg-gradient-to-br from-primary-500 to-primary-600 text-white font-bold rounded-xl hover:from-primary-600 hover:to-primary-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary-500/30 hover:shadow-xl flex items-center justify-center gap-2"
+                onClick={handlePayNow}
+                disabled={loading}
+                className="w-full py-4 bg-gradient-to-br from-primary-500 to-primary-600 text-white font-bold text-lg rounded-xl hover:from-primary-600 hover:to-primary-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary-500/30 hover:shadow-xl hover:shadow-primary-500/40 hover:-translate-y-0.5 flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
@@ -711,249 +516,120 @@ export default function CheckoutPage() {
                     Memproses...
                   </>
                 ) : (
-                  `Bayar ${formatCurrency(billingCycle === 'yearly' ? (selectedPlan?.price_yearly || 0) : (selectedPlan?.price_monthly || 0))}`
+                  <>
+                    <CreditCard className="w-5 h-5" />
+                    Bayar Sekarang
+                  </>
                 )}
               </button>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Step: VA Payment */}
-        {step === 'va' && paymentData && (
-          <div className="animate-fade-in max-w-lg mx-auto">
-            <div className="bg-white rounded-2xl shadow-card-hover p-6 sm:p-8">
-              <div className="text-center mb-6">
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/30">
-                  <Building2 className="w-10 h-10 text-white" />
-                </div>
-                <h1 className="text-2xl font-bold text-text-primary mb-2">
-                  Transfer ke Virtual Account
-                </h1>
-                <p className="text-text-secondary">
-                  Selesaikan pembayaran dalam 24 jam
-                </p>
-              </div>
+          {/* Continue Button (when no plan selected yet) */}
+          {availablePlansData && availablePlansData.availableUpgrades.filter(p => p.canUpgrade).length > 0 && !selectedPlan && (
+            <div className="mt-10 flex justify-center">
+              <button
+                disabled
+                className="px-10 sm:px-14 py-4 bg-gray-200 text-gray-400 font-bold text-lg rounded-xl cursor-not-allowed flex items-center gap-2"
+              >
+                Pilih paket terlebih dahulu
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
-              {/* Payment Details */}
-              <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 mb-6">
-                <div className="text-center mb-4">
-                  <p className="text-sm text-text-secondary mb-2">Bank {paymentData.bank}</p>
-                  <div className="flex items-center justify-center gap-3">
-                    <p className="text-2xl sm:text-3xl font-mono font-bold text-text-primary tracking-wider">
-                      {paymentData.vaNumber}
-                    </p>
-                    <button
-                      onClick={handleCopyVA}
-                      className={`p-3 rounded-xl transition-all ${
-                        copied
-                          ? 'bg-success-400 text-white'
-                          : 'bg-white border border-gray-200 hover:bg-gray-50 text-text-secondary hover:text-primary-500'
-                      }`}
-                    >
-                      {copied ? (
-                        <CheckCircle className="w-5 h-5" />
-                      ) : (
-                        <Copy className="w-5 h-5" />
-                      )}
-                    </button>
-                  </div>
-                  {copied && (
-                    <p className="text-sm text-success-600 mt-2 animate-fade-in">Nomor VA berhasil disalin!</p>
-                  )}
-                </div>
-
-                <div className="border-t border-gray-200 pt-4 space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-text-secondary">Jumlah</span>
-                    <span className="font-bold text-lg text-text-primary">
-                      {formatCurrency(paymentData.amount)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-text-secondary">Berlaku sampai</span>
-                    <span className="font-semibold text-text-primary">
-                      {formatDateTime(paymentData.expiredAt)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Instructions */}
-              <div className="bg-highlight-100/50 border border-highlight-200 rounded-xl p-5 mb-6">
-                <h3 className="font-bold text-highlight-700 mb-3 flex items-center gap-2">
-                  <AlertCircle className="w-5 h-5" />
-                  Cara Pembayaran:
-                </h3>
-                <ol className="text-sm text-highlight-600 space-y-2 list-decimal list-inside">
-                  <li>Buka aplikasi mobile banking atau ATM {paymentData.bank}</li>
-                  <li>Pilih menu Transfer ke Virtual Account</li>
-                  <li>Masukkan nomor VA di atas</li>
-                  <li>Konfirmasi dan selesaikan pembayaran</li>
-                </ol>
-              </div>
-
-              <div className="flex items-center justify-center gap-2 text-text-secondary text-sm bg-gray-50 rounded-xl p-4">
-                <Clock className="w-5 h-5 text-primary-500" />
-                <span>
-                  Pembayaran akan dikonfirmasi otomatis dalam beberapa menit
-                </span>
-              </div>
-
-              <div className="mt-6 text-center">
-                <Link
-                  href="/dashboard/billing"
-                  className="text-primary-500 font-semibold hover:text-primary-600 transition-colors"
-                >
-                  Kembali ke Billing
-                </Link>
-              </div>
+      {/* Step: Redirecting */}
+      {step === 'redirecting' && (
+        <div className="animate-fade-in max-w-lg mx-auto">
+          <div className="bg-white rounded-2xl shadow-card-hover p-8 sm:p-10 text-center">
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center mx-auto mb-6 shadow-lg shadow-primary-500/30">
+              <Loader2 className="w-10 h-10 text-white animate-spin" />
+            </div>
+            <h1 className="text-2xl font-bold text-text-primary mb-3">
+              Mengalihkan ke Halaman Pembayaran
+            </h1>
+            <p className="text-text-secondary mb-6">
+              Anda akan dialihkan ke halaman pembayaran iPaymu untuk memilih metode pembayaran (Virtual Account atau QRIS).
+            </p>
+            <div className="flex items-center justify-center gap-2 text-text-muted text-sm">
+              <Shield className="w-4 h-4" />
+              <span>Mohon tunggu sebentar...</span>
             </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Step: QRIS Payment */}
-        {step === 'qris' && paymentData && (
-          <div className="animate-fade-in max-w-lg mx-auto">
-            <div className="bg-white rounded-2xl shadow-card-hover p-6 sm:p-8">
-              <div className="text-center mb-6">
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-purple-500/30">
-                  <QrCode className="w-10 h-10 text-white" />
-                </div>
-                <h1 className="text-2xl font-bold text-text-primary mb-2">
-                  Scan QRIS untuk Bayar
-                </h1>
-                <p className="text-text-secondary">
-                  Scan dengan GoPay, OVO, DANA, ShopeePay, atau m-banking
-                </p>
-              </div>
+      {/* Step: Trial Activation Success */}
+      {step === 'success' && paymentData?.trialActivated && (
+        <div className="animate-fade-in max-w-lg mx-auto">
+          <div className="bg-white rounded-2xl shadow-card-hover p-6 sm:p-8 text-center">
+            <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-success-400 to-success-500 flex items-center justify-center mx-auto mb-6 shadow-lg shadow-success-400/30">
+              <CheckCircle className="w-12 h-12 text-white" />
+            </div>
+            <h1 className="text-3xl font-bold text-text-primary mb-3">
+              Trial PRO Dimulai!
+            </h1>
+            <p className="text-text-secondary mb-8 text-lg">
+              Selamat! Anda telah memulai masa trial PRO selama 7 hari. Nikmati semua fitur premium tanpa batas.
+            </p>
 
-              {/* QR Code */}
-              <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-6 mb-6 text-center">
-                {paymentData.qrImageUrl ? (
-                  <img
-                    src={paymentData.qrImageUrl}
-                    alt="QRIS Code"
-                    className="mx-auto w-56 h-56 sm:w-64 sm:h-64 rounded-xl bg-white p-4 shadow-card"
-                  />
-                ) : (
-                  <div className="w-56 h-56 sm:w-64 sm:h-64 bg-white rounded-xl mx-auto flex items-center justify-center shadow-card">
-                    <QrCode className="w-32 h-32 text-gray-300" />
+            <div className="bg-gradient-to-br from-brand-50 to-secondary-50 rounded-xl p-6 mb-8 text-left">
+              <h3 className="font-bold text-text-primary mb-4 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-primary-500" />
+                Fitur PRO Anda:
+              </h3>
+              <ul className="space-y-3">
+                <li className="flex items-start gap-3">
+                  <div className="w-5 h-5 rounded-full bg-success-400 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Check className="w-3 h-3 text-white" />
                   </div>
-                )}
+                  <span className="text-text-primary">Buat invoice tanpa batas</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-5 h-5 rounded-full bg-success-400 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Check className="w-3 h-3 text-white" />
+                  </div>
+                  <span className="text-text-primary">Template invoice kustom</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-5 h-5 rounded-full bg-success-400 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Check className="w-3 h-3 text-white" />
+                  </div>
+                  <span className="text-text-primary">Custom branding & logo</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-5 h-5 rounded-full bg-success-400 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Check className="w-3 h-3 text-white" />
+                  </div>
+                  <span className="text-text-primary">Kirim invoice via email</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <div className="w-5 h-5 rounded-full bg-success-400 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Check className="w-3 h-3 text-white" />
+                  </div>
+                  <span className="text-text-primary">Analitik & laporan lengkap</span>
+                </li>
+              </ul>
+            </div>
 
-                <div className="mt-5 pt-4 border-t border-gray-200">
-                  <p className="font-bold text-xl text-text-primary">
-                    {formatCurrency(paymentData.amount)}
-                  </p>
-                  <p className="text-sm text-text-secondary mt-1">
-                    Berlaku hingga {formatDateTime(paymentData.expiredAt)}
-                  </p>
-                </div>
-              </div>
-
-              {/* Instructions */}
-              <div className="bg-highlight-100/50 border border-highlight-200 rounded-xl p-5 mb-6">
-                <h3 className="font-bold text-highlight-700 mb-3 flex items-center gap-2">
-                  <AlertCircle className="w-5 h-5" />
-                  Cara Pembayaran:
-                </h3>
-                <ol className="text-sm text-highlight-600 space-y-2 list-decimal list-inside">
-                  <li>Buka aplikasi e-wallet atau m-banking</li>
-                  <li>Pilih menu Scan QR atau QRIS</li>
-                  <li>Scan QR code di atas</li>
-                  <li>Konfirmasi dan selesaikan pembayaran</li>
-                </ol>
-              </div>
-
-              <div className="flex items-center justify-center gap-2 text-text-secondary text-sm bg-gray-50 rounded-xl p-4">
-                <Clock className="w-5 h-5 text-purple-500" />
-                <span>
-                  QRIS berlaku 15 menit
-                </span>
-              </div>
-
-              <div className="mt-6 text-center">
-                <Link
-                  href="/dashboard/billing"
-                  className="text-primary-500 font-semibold hover:text-primary-600 transition-colors"
-                >
-                  Kembali ke Billing
-                </Link>
-              </div>
+            <div className="space-y-3">
+              <Link
+                href="/dashboard"
+                className="block w-full py-4 bg-gradient-to-br from-primary-500 to-primary-600 text-white font-bold rounded-xl hover:from-primary-600 hover:to-primary-700 transition-all shadow-lg shadow-primary-500/30 text-center"
+              >
+                Mulai Gunakan NotaBener
+              </Link>
+              <Link
+                href="/dashboard/billing"
+                className="block text-primary-500 font-semibold hover:text-primary-600 text-center"
+              >
+                Lihat Status Langganan
+              </Link>
             </div>
           </div>
-        )}
-
-        {/* Step: Trial Activation Success */}
-        {step === 'success' && paymentData?.trialActivated && (
-          <div className="animate-fade-in max-w-lg mx-auto">
-            <div className="bg-white rounded-2xl shadow-card-hover p-6 sm:p-8 text-center">
-              <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-success-400 to-success-500 flex items-center justify-center mx-auto mb-6 shadow-lg shadow-success-400/30">
-                <CheckCircle className="w-12 h-12 text-white" />
-              </div>
-              <h1 className="text-3xl font-bold text-text-primary mb-3">
-                Trial PRO Dimulai!
-              </h1>
-              <p className="text-text-secondary mb-8 text-lg">
-                Selamat! Anda telah memulai masa trial PRO selama 7 hari. Nikmati semua fitur premium tanpa batas.
-              </p>
-
-              <div className="bg-gradient-to-br from-brand-50 to-secondary-50 rounded-xl p-6 mb-8 text-left">
-                <h3 className="font-bold text-text-primary mb-4 flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-primary-500" />
-                  Fitur PRO Anda:
-                </h3>
-                <ul className="space-y-3">
-                  <li className="flex items-start gap-3">
-                    <div className="w-5 h-5 rounded-full bg-success-400 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Check className="w-3 h-3 text-white" />
-                    </div>
-                    <span className="text-text-primary">Buat invoice tanpa batas</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <div className="w-5 h-5 rounded-full bg-success-400 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Check className="w-3 h-3 text-white" />
-                    </div>
-                    <span className="text-text-primary">Template invoice kustom</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <div className="w-5 h-5 rounded-full bg-success-400 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Check className="w-3 h-3 text-white" />
-                    </div>
-                    <span className="text-text-primary">Custom branding & logo</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <div className="w-5 h-5 rounded-full bg-success-400 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Check className="w-3 h-3 text-white" />
-                    </div>
-                    <span className="text-text-primary">Kirim invoice via email</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <div className="w-5 h-5 rounded-full bg-success-400 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Check className="w-3 h-3 text-white" />
-                    </div>
-                    <span className="text-text-primary">Analitik & laporan lengkap</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="space-y-3">
-                <Link
-                  href="/dashboard"
-                  className="block w-full py-4 bg-gradient-to-br from-primary-500 to-primary-600 text-white font-bold rounded-xl hover:from-primary-600 hover:to-primary-700 transition-all shadow-lg shadow-primary-500/30 text-center"
-                >
-                  Mulai Gunakan NotaBener
-                </Link>
-                <Link
-                  href="/dashboard/billing"
-                  className="block text-primary-500 font-semibold hover:text-primary-600 text-center"
-                >
-                  Lihat Status Langganan
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
+        </div>
+      )}
     </DashboardLayout>
   )
 }

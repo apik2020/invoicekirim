@@ -77,7 +77,7 @@ export default function PrivacyPage() {
                   <li>Informasi rekening bank (untuk ditampilkan di invoice, misalnya: nama bank, nomor rekening, nama pemilik rekening)</li>
                   <li>Data transaksi langganan (riwayat pembayaran paket layanan)</li>
                 </ul>
-                <p className="mt-2 text-gray-500 text-xs">*NotaBener tidak menyimpan data kartu kredit/debit. Pembayaran diproses melalui payment gateway pihak ketiga (Duitku).</p>
+                <p className="mt-2 text-gray-500 text-xs">*NotaBener tidak menyimpan data kartu kredit/debit. Pembayaran diproses melalui payment gateway pihak ketiga (iPaymu).</p>
               </div>
 
               <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
@@ -150,7 +150,7 @@ export default function PrivacyPage() {
             <ul className="list-disc list-inside space-y-2">
               <li><strong>WhatsApp API:</strong> Untuk mengirimkan invoice melalui WhatsApp kepada klien Pengguna.</li>
               <li><strong>Email SMTP / Gateway:</strong> Untuk mengirimkan invoice melalui email kepada klien Pengguna.</li>
-              <li><strong>Payment Gateway (Duitku):</strong> Untuk memproses pembayaran langganan.</li>
+              <li><strong>Payment Gateway (iPaymu):</strong> Untuk memproses pembayaran langganan.</li>
               <li><strong>Cloud Hosting:</strong> Untuk penyimpanan data Platform.</li>
             </ul>
             <p className="mt-3">
