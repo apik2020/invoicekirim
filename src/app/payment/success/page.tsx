@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import {
@@ -12,6 +12,7 @@ import {
   Receipt,
   Calendar,
   CreditCard,
+  RefreshCw,
 } from 'lucide-react'
 import { Logo } from '@/components/Logo'
 
@@ -25,34 +26,37 @@ interface PaymentStatus {
   expiresAt?: string
 }
 
+const MAX_RETRIES = 12
+const POLL_INTERVAL = 5000 // 5 seconds
+
 export default function PaymentSuccessPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>({ status: 'LOADING' })
+  const [retryCount, setRetryCount] = useState(0)
+  const pollingRef = useRef<NodeJS.Timeout | null>(null)
 
-  // iPaymu redirect params:
-  // - reference_id: our order ID
-  // - trx_id: iPaymu transaction ID
   const referenceId = searchParams.get('reference_id')
   const trxId = searchParams.get('trx_id')
 
-  useEffect(() => {
-    const orderId = referenceId || trxId
-    if (orderId) {
-      verifyPayment(orderId)
-    } else {
-      setPaymentStatus({ status: 'FAILED' })
-    }
-  }, [referenceId, trxId])
-
-  const verifyPayment = async (ref: string) => {
-    setPaymentStatus({ status: 'LOADING' })
+  const verifyPayment = useCallback(async (ref: string) => {
+    setPaymentStatus(prev => prev.status === 'FAILED' ? { status: 'LOADING' } : prev)
 
     try {
-      const res = await fetch(`/api/payments/verify?reference=${ref}`)
+      let url = `/api/payments/verify?reference=${encodeURIComponent(ref)}`
+      if (trxId) {
+        url += `&trx_id=${encodeURIComponent(trxId)}`
+      }
+
+      const res = await fetch(url)
       const data = await res.json()
 
       if (res.ok && data.success) {
+        // Stop polling on success
+        if (pollingRef.current) {
+          clearInterval(pollingRef.current)
+          pollingRef.current = null
+        }
         setPaymentStatus({
           status: 'SUCCESS',
           planName: data.payment?.planName || 'PRO',
@@ -74,6 +78,57 @@ export default function PaymentSuccessPage() {
       console.error('Error verifying payment:', error)
       setPaymentStatus({ status: 'FAILED' })
     }
+  }, [trxId])
+
+  // Initial verification
+  useEffect(() => {
+    const orderId = referenceId || trxId
+    if (orderId) {
+      verifyPayment(orderId)
+    } else {
+      setPaymentStatus({ status: 'FAILED' })
+    }
+  }, [referenceId, trxId, verifyPayment])
+
+  // Polling: auto-retry while PENDING
+  useEffect(() => {
+    if (paymentStatus.status !== 'PENDING' && paymentStatus.status !== 'LOADING') {
+      return
+    }
+
+    pollingRef.current = setInterval(() => {
+      setRetryCount(prev => {
+        const next = prev + 1
+        if (next > MAX_RETRIES) {
+          if (pollingRef.current) {
+            clearInterval(pollingRef.current)
+            pollingRef.current = null
+          }
+          return next
+        }
+        const orderId = referenceId || trxId
+        if (orderId) {
+          verifyPayment(orderId)
+        }
+        return next
+      })
+    }, POLL_INTERVAL)
+
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current)
+        pollingRef.current = null
+      }
+    }
+  }, [paymentStatus.status, referenceId, trxId, verifyPayment])
+
+  const handleManualRetry = () => {
+    const orderId = referenceId || trxId
+    if (orderId) {
+      setRetryCount(0)
+      setPaymentStatus({ status: 'LOADING' })
+      verifyPayment(orderId)
+    }
   }
 
   const formatCurrency = (amount: number) => {
@@ -91,6 +146,8 @@ export default function PaymentSuccessPage() {
       year: 'numeric',
     })
   }
+
+  const isPolling = (paymentStatus.status === 'PENDING' || paymentStatus.status === 'LOADING') && retryCount <= MAX_RETRIES
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-50 via-white to-secondary-50">
@@ -264,20 +321,32 @@ export default function PaymentSuccessPage() {
               </p>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-card p-6 mb-8 text-center">
-              <p className="text-text-secondary">
-                Jika Anda sudah menyelesaikan pembayaran, mohon tunggu beberapa saat.
-                Status langganan akan diperbarui secara otomatis.
-              </p>
+            <div className="bg-white rounded-2xl shadow-card p-6 mb-6 text-center">
+              {isPolling ? (
+                <>
+                  <div className="flex items-center justify-center gap-2 text-brand-500 mb-3">
+                    <RefreshCw className="w-5 h-5 animate-spin" />
+                    <span className="font-medium">Memverifikasi otomatis... ({retryCount}/{MAX_RETRIES})</span>
+                  </div>
+                  <p className="text-text-secondary text-sm">
+                    Sistem kami sedang menunggu konfirmasi dari iPaymu. Halaman ini akan diperbarui otomatis.
+                  </p>
+                </>
+              ) : (
+                <p className="text-text-secondary">
+                  Verifikasi otomatis telah selesai. Jika Anda sudah menyelesaikan pembayaran,
+                  silakan cek status manual atau kembali lagi nanti.
+                </p>
+              )}
             </div>
 
             <div className="space-y-3">
               <button
-                onClick={() => (referenceId || trxId) && verifyPayment(referenceId || trxId || '')}
+                onClick={handleManualRetry}
                 className="flex items-center justify-center gap-2 w-full py-4 bg-brand-500 text-white font-bold rounded-xl hover:bg-brand-600 transition-colors"
               >
-                <Loader2 className="w-5 h-5" />
-                Cek Status Lagi
+                <RefreshCw className="w-5 h-5" />
+                Cek Status Pembayaran
               </button>
               <Link
                 href="/dashboard/billing"
@@ -304,9 +373,9 @@ export default function PaymentSuccessPage() {
               </p>
             </div>
 
-            <div className="bg-white rounded-2xl shadow-card p-6 mb-8 text-center">
+            <div className="bg-white rounded-2xl shadow-card p-6 mb-6 text-center">
               <p className="text-text-secondary mb-4">
-                Jika Anda yakin sudah melakukan pembayaran, silakan hubungi customer support kami.
+                Jika Anda yakin sudah melakukan pembayaran, silakan coba verifikasi ulang atau hubungi customer support kami.
               </p>
               {(referenceId || trxId) && (
                 <p className="text-sm text-text-muted">
@@ -316,11 +385,18 @@ export default function PaymentSuccessPage() {
             </div>
 
             <div className="space-y-3">
-              <Link
-                href="/dashboard/checkout"
+              <button
+                onClick={handleManualRetry}
                 className="flex items-center justify-center gap-2 w-full py-4 bg-brand-500 text-white font-bold rounded-xl hover:bg-brand-600 transition-colors"
               >
-                Coba Lagi
+                <RefreshCw className="w-5 h-5" />
+                Coba Verifikasi Ulang
+              </button>
+              <Link
+                href="/dashboard/checkout"
+                className="flex items-center justify-center gap-2 w-full py-4 bg-white border-2 border-gray-200 text-brand-500 font-bold rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                Coba Bayar Lagi
               </Link>
               <Link
                 href="/dashboard/billing"

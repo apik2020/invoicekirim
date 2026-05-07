@@ -424,7 +424,8 @@ export class IPaymuGateway implements PaymentGateway {
     }
 
     return withRetry(async () => {
-      const requestObj = {
+      // Try with transactionId first (iPaymu transaction ID or session ID)
+      const requestObj: Record<string, string> = {
         transactionId: orderId,
       }
       const bodyString = JSON.stringify(requestObj)
@@ -438,11 +439,18 @@ export class IPaymuGateway implements PaymentGateway {
 
       if (!response.ok) {
         const errorText = await response.text()
+        log('warn', 'Status check failed', { action: 'checkTransactionStatus', status: response.status, error: errorText })
         throw new Error(`iPaymu status check error: ${errorText}`)
       }
 
       const data = await response.json()
       log('info', 'Status check response', { action: 'checkTransactionStatus', data: JSON.stringify(data) })
+
+      // If iPaymu returns an error status, it may mean the transaction ID wasn't found
+      if (data.Status === -1 || data.status_code === undefined && data.Message) {
+        log('warn', 'Transaction not found', { action: 'checkTransactionStatus', message: data.Message })
+        throw new Error(`iPaymu transaction not found: ${data.Message || 'Unknown'}`)
+      }
 
       return {
         status: mapStatusCode(data.status_code ?? data.Status ?? 0),
@@ -452,7 +460,7 @@ export class IPaymuGateway implements PaymentGateway {
         paymentMethod: data.via || data.paymentMethod || '',
         paidAt: data.status_code === 1 ? new Date() : undefined,
       }
-    }, 3, 'checkTransactionStatus')
+    }, 2, 'checkTransactionStatus')
   }
 
   verifyCallback(payload: CallbackPayload): CallbackVerification {

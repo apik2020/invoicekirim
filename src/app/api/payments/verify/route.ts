@@ -4,11 +4,12 @@ import { getPaymentGateway } from '@/lib/payment'
 
 /**
  * Verify payment status by reference or orderId
- * GET /api/payments/verify?reference=xxx
+ * GET /api/payments/verify?reference=xxx&trx_id=yyy
  */
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const reference = searchParams.get('reference') || searchParams.get('reference_id')
+  const trxId = searchParams.get('trx_id')
 
   if (!reference) {
     return NextResponse.json(
@@ -17,7 +18,7 @@ export async function GET(req: NextRequest) {
     )
   }
 
-  console.log('[Payment Verify] Checking:', { reference })
+  console.log('[Payment Verify] Checking:', { reference, trxId })
 
   let payment = null
   let planName = 'PRO'
@@ -27,7 +28,11 @@ export async function GET(req: NextRequest) {
         OR: [
           { dokuOrderId: reference },
           { dokuTransactionId: reference },
-        ]
+          { dokuTransactionId: trxId || undefined },
+        ].filter(clause => {
+          // Filter out undefined values from OR clause
+          return Object.values(clause).every(v => v !== undefined)
+        })
       }
     })
 
@@ -84,16 +89,24 @@ export async function GET(req: NextRequest) {
     })
   }
 
-  // Check payment status from iPaymu API
+  // Try to check payment status from iPaymu API
+  // For redirect payments: prefer trx_id (from URL), then dokuTransactionId, then gatewaySessionId
+  const gatewayId = trxId || payment.dokuTransactionId || payment.gatewaySessionId || payment.dokuOrderId
+
   try {
     const gateway = getPaymentGateway()
-    const txStatus = await gateway.checkTransactionStatus(
-      payment.dokuTransactionId || payment.dokuOrderId || ''
-    )
+    const txStatus = await gateway.checkTransactionStatus(gatewayId)
     console.log('[Payment Verify] Gateway status:', txStatus)
 
     if (txStatus.status === 'COMPLETED') {
-      return await completePayment(payment, planName, txStatus.transactionId, txStatus.paymentMethod)
+      // Store trx_id if we got it from URL params and payment doesn't have it yet
+      if (trxId && !payment.dokuTransactionId) {
+        await prisma.payments.update({
+          where: { id: payment.id },
+          data: { dokuTransactionId: trxId },
+        })
+      }
+      return await completePayment(payment, planName, txStatus.transactionId || trxId, txStatus.paymentMethod)
     }
 
     return NextResponse.json({
@@ -107,6 +120,7 @@ export async function GET(req: NextRequest) {
     })
   } catch (gatewayError) {
     console.error('[Payment Verify] Gateway API error:', gatewayError)
+    // Don't fail — return PENDING so the success page keeps polling
     return NextResponse.json({
       success: false,
       status: payment.status || 'PENDING',
