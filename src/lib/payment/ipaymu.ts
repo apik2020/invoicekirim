@@ -335,7 +335,7 @@ export class IPaymuGateway implements PaymentGateway {
     }
 
     const notifyUrl = params.callbackUrl || `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/ipaymu`
-    const successUrl = `${process.env.NEXT_PUBLIC_APP_URL}/payment/success?reference_id=${params.orderId}`
+    const returnUrl = `${process.env.NEXT_PUBLIC_APP_URL}/payment/success?reference_id=${params.orderId}`
     const cancelUrl = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/checkout`
     const expired = params.expiryMinutes ? Math.ceil(params.expiryMinutes / 60) : 24
     const phone = params.customerPhone || '081000000000'
@@ -350,6 +350,8 @@ export class IPaymuGateway implements PaymentGateway {
       buyerPhone: phone,
       amount: Math.round(params.amount),
       notifyUrl,
+      returnUrl,
+      cancelUrl,
       referenceId: params.orderId,
       expired,
       expiredType: 'days',
@@ -361,8 +363,6 @@ export class IPaymuGateway implements PaymentGateway {
       length: [0],
       width: [0],
       height: [0],
-      successUrl,
-      cancelUrl,
     }
 
     return withRetry(async () => {

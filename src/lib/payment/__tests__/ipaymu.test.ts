@@ -267,7 +267,8 @@ describe('IPaymuGateway', () => {
       expect(sentBody.paymentMethod).toBeUndefined()
       expect(sentBody.paymentChannel).toBeUndefined()
       expect(sentBody.account).toBe('test_va_123')
-      expect(sentBody.successUrl).toContain('reference_id=INV-REDIRECT-001')
+      expect(sentBody.returnUrl).toContain('reference_id=INV-REDIRECT-001')
+      expect(sentBody.successUrl).toBeUndefined()
     })
 
     it('throws when no payment URL returned', async () => {
