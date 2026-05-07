@@ -51,6 +51,7 @@ export interface TransactionStatus {
   reference: string
   transactionId?: string
   paymentMethod?: string
+  paymentChannel?: string
   paidAt?: Date
 }
 

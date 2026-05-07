@@ -446,19 +446,26 @@ export class IPaymuGateway implements PaymentGateway {
       const data = await response.json()
       log('info', 'Status check response', { action: 'checkTransactionStatus', data: JSON.stringify(data) })
 
-      // If iPaymu returns an error status, it may mean the transaction ID wasn't found
-      if (data.Status === -1 || data.status_code === undefined && data.Message) {
+      // iPaymu v2 wraps transaction data inside { Status: 200, Success: true, Data: { ... } }
+      const txData = data.Data || data
+
+      // API-level error (not a valid response)
+      if (!data.Success && data.Status === -1) {
         log('warn', 'Transaction not found', { action: 'checkTransactionStatus', message: data.Message })
         throw new Error(`iPaymu transaction not found: ${data.Message || 'Unknown'}`)
       }
 
+      // Extract payment status from Data.Status (1=Berhasil, 0=Pending, -2=Expired)
+      const paymentStatus = txData.Status ?? data.status_code ?? 0
+
       return {
-        status: mapStatusCode(data.status_code ?? data.Status ?? 0),
-        amount: parseFloat(data.total || data.amount || '0'),
-        reference: data.trx_id || data.transactionId || '',
-        transactionId: data.TransactionId || data.trx_id,
-        paymentMethod: data.via || data.paymentMethod || '',
-        paidAt: data.status_code === 1 ? new Date() : undefined,
+        status: mapStatusCode(paymentStatus),
+        amount: parseFloat(txData.Amount || txData.SubTotal || data.total || data.amount || '0'),
+        reference: String(txData.ReferenceId || txData.TransactionId || data.trx_id || ''),
+        transactionId: String(txData.TransactionId || data.TransactionId || data.trx_id || ''),
+        paymentMethod: txData.PaymentMethod || data.via || data.paymentMethod || '',
+        paymentChannel: txData.PaymentChannel || data.channel || '',
+        paidAt: paymentStatus === 1 ? new Date() : undefined,
       }
     }, 2, 'checkTransactionStatus')
   }

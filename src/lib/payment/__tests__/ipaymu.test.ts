@@ -295,7 +295,40 @@ describe('IPaymuGateway', () => {
   })
 
   describe('checkTransactionStatus', () => {
-    it('returns COMPLETED for status_code 1', async () => {
+    it('returns COMPLETED for Data.Status 1 (production format)', async () => {
+      const mockResponse = {
+        ok: true,
+        json: () => Promise.resolve({
+          Status: 200,
+          Success: true,
+          Message: 'success',
+          Data: {
+            TransactionId: 207136,
+            SessionId: 'session-abc',
+            ReferenceId: 'INV-TEST-001',
+            SubTotal: 100000,
+            Amount: 100000,
+            Status: 1,
+            StatusDesc: 'Berhasil',
+            PaidStatus: 'paid',
+            PaymentMethod: 'va',
+            PaymentChannel: 'bsi',
+          },
+        }),
+      }
+
+      vi.spyOn(global, 'fetch').mockResolvedValueOnce(mockResponse as any)
+
+      const result = await gateway.checkTransactionStatus('207136')
+      expect(result.status).toBe('COMPLETED')
+      expect(result.amount).toBe(100000)
+      expect(result.reference).toBe('INV-TEST-001')
+      expect(result.transactionId).toBe('207136')
+      expect(result.paymentMethod).toBe('va')
+      expect(result.paymentChannel).toBe('bsi')
+    })
+
+    it('returns COMPLETED for flat status_code 1 (callback format)', async () => {
       const mockResponse = {
         ok: true,
         json: () => Promise.resolve({
