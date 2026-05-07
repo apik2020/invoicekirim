@@ -28,13 +28,16 @@ interface PaymentStatus {
 
 const MAX_RETRIES = 12
 const POLL_INTERVAL = 5000 // 5 seconds
+const REDIRECT_DELAY = 3000 // 3 seconds after success
 
 export default function PaymentSuccessPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>({ status: 'LOADING' })
   const [retryCount, setRetryCount] = useState(0)
+  const [countdown, setCountdown] = useState(3)
   const pollingRef = useRef<NodeJS.Timeout | null>(null)
+  const redirectTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   const referenceId = searchParams.get('reference_id')
   const trxId = searchParams.get('trx_id')
@@ -121,6 +124,27 @@ export default function PaymentSuccessPage() {
       }
     }
   }, [paymentStatus.status, referenceId, trxId, verifyPayment])
+
+  // Auto-redirect to dashboard after successful payment
+  useEffect(() => {
+    if (paymentStatus.status !== 'SUCCESS') return
+
+    setCountdown(3)
+    redirectTimerRef.current = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          if (redirectTimerRef.current) clearInterval(redirectTimerRef.current)
+          router.push('/dashboard')
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => {
+      if (redirectTimerRef.current) clearInterval(redirectTimerRef.current)
+    }
+  }, [paymentStatus.status, router])
 
   const handleManualRetry = () => {
     const orderId = referenceId || trxId
@@ -285,6 +309,13 @@ export default function PaymentSuccessPage() {
                   <span className="text-text-primary">Akses semua fitur premium</span>
                 </li>
               </ul>
+            </div>
+
+            {/* Auto-redirect notice */}
+            <div className="bg-brand-50 border border-brand-200 rounded-xl p-4 mb-6 text-center">
+              <p className="text-brand-600 font-medium">
+                Anda akan dialihkan ke Dashboard dalam {countdown} detik...
+              </p>
             </div>
 
             {/* Action Buttons */}
