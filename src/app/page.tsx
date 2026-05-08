@@ -561,8 +561,13 @@ export default function Home() {
               </ul>
             </div>
           </div>
-          <div className="pt-8 border-t border-white/20 text-center text-sm">
-            <p className="text-white/80">{t.footer.copyright}</p>
+          <div className="pt-8 border-t border-white/20">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm">
+              <p className="text-white/80">{t.footer.copyright}</p>
+              <p className="text-white/60 text-xs text-center md:text-right max-w-lg">
+                Kp. Rancabogo 002/004, Kel. Pataruman, Kec. Tarogong Kidul - Kab. Garut | Jawa Barat - Indonesia 44151
+              </p>
+            </div>
           </div>
         </div>
       </footer>

@@ -76,16 +76,21 @@ export default function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-8 border-t border-slate/10 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="font-body text-sm text-muted">
-            &copy; {currentYear} NotaBener. Dibuat dengan ❤️ untuk UMKM Indonesia.
-          </p>
-          <div className="flex items-center gap-6 font-body text-sm text-muted">
-            <span className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-grapefruit rounded-full" />
-              Data Tersimpan Lokal
-            </span>
+        <div className="pt-8 border-t border-slate/10 flex flex-col gap-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <p className="font-body text-sm text-muted">
+              &copy; {currentYear} NotaBener. Dibuat dengan ❤️ untuk UMKM Indonesia.
+            </p>
+            <div className="flex items-center gap-6 font-body text-sm text-muted">
+              <span className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-grapefruit rounded-full" />
+                Data Tersimpan Lokal
+              </span>
+            </div>
           </div>
+          <p className="font-body text-xs text-muted/60 text-center md:text-left">
+            Kp. Rancabogo 002/004, Kel. Pataruman, Kec. Tarogong Kidul - Kab. Garut | Jawa Barat - Indonesia 44151
+          </p>
         </div>
       </div>
     </footer>
