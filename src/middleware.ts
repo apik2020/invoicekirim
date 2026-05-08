@@ -125,7 +125,7 @@ export default async function middleware(req: NextRequest) {
 
   // CORS headers for API routes
   if (pathname.startsWith('/api/')) {
-    const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [process.env.NEXT_PUBLIC_APP_URL || '*']
+    const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [process.env.NEXT_PUBLIC_APP_URL || '']
     const requestOrigin = req.headers.get('origin')
 
     if (requestOrigin && (allowedOrigins.includes('*') || allowedOrigins.includes(requestOrigin))) {

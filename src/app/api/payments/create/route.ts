@@ -149,10 +149,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(
-      {
-        error: errorMessage,
-        details: process.env.NODE_ENV === 'development' ? JSON.stringify(error, null, 2) : undefined
-      },
+      { error: errorMessage },
       { status: 500 }
     )
   }

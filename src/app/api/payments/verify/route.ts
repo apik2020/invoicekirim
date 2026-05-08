@@ -1,12 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getPaymentGateway } from '@/lib/payment'
+import { getUserSession } from '@/lib/session'
 
 /**
  * Verify payment status by reference or orderId
  * GET /api/payments/verify?reference=xxx&trx_id=yyy
+ * Requires authenticated session
  */
 export async function GET(req: NextRequest) {
+  const session = await getUserSession()
+  if (!session?.id) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   const { searchParams } = new URL(req.url)
   const reference = searchParams.get('reference') || searchParams.get('reference_id')
   const trxId = searchParams.get('trx_id')
