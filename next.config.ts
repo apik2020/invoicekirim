@@ -250,8 +250,8 @@ const sentryConfig = {
   // Automatically tree-shake Sentry logger statements to reduce bundle size
   disableLogger: true,
 
-  // Enables automatic instrumentation of Vercel Cron Monitors
-  automaticVercelMonitors: true,
+  // Disable automatic Vercel Cron Monitors (not using Vercel)
+  automaticVercelMonitors: false,
 }
 
 // Export with Sentry wrapper if DSN is configured
