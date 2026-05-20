@@ -26,6 +26,8 @@ import {
   Star,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useMessageBox } from '@/hooks/useMessageBox'
+import { MessageBox } from '@/components/ui/MessageBox'
 
 interface NavItem {
   name: string
@@ -77,6 +79,7 @@ export function DashboardSidebar({
 }: DashboardSidebarProps) {
   const pathname = usePathname()
   const [isCollapsed, setIsCollapsed] = useState(collapsed)
+  const messageBox = useMessageBox()
 
   useEffect(() => {
     onCollapsedChange?.(isCollapsed)
@@ -87,8 +90,17 @@ export function DashboardSidebar({
     onMobileOpenChange?.(false)
   }, [pathname, onMobileOpenChange])
 
-  const handleLogout = async () => {
-    await signOut({ callbackUrl: '/login' })
+  const handleLogoutClick = () => {
+    messageBox.showConfirm({
+      title: 'Keluar dari Akun?',
+      message: 'Anda yakin ingin keluar dari akun Anda? Anda perlu login kembali untuk mengakses dashboard.',
+      variant: 'confirm',
+      confirmText: 'Ya, Keluar',
+      cancelText: 'Tetap Di Sini',
+      onConfirm: async () => {
+        await signOut({ callbackUrl: '/login' })
+      },
+    })
   }
 
   const isActive = (href: string) => {
@@ -239,7 +251,7 @@ export function DashboardSidebar({
         {/* Sidebar Footer */}
         <div className="px-3 py-3 border-t border-white/10 flex-shrink-0">
           <button
-            onClick={handleLogout}
+            onClick={handleLogoutClick}
             className={cn(
               'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 w-full',
               'text-white/70 hover:bg-primary-500/20 hover:text-white'
@@ -262,6 +274,20 @@ export function DashboardSidebar({
           )}
         </button>
       </aside>
+
+      <MessageBox
+        open={messageBox.state.open}
+        onClose={messageBox.close}
+        title={messageBox.state.title}
+        message={messageBox.state.message}
+        variant={messageBox.state.variant}
+        confirmText={messageBox.state.confirmText}
+        cancelText={messageBox.state.cancelText}
+        onConfirm={messageBox.state.onConfirm}
+        onCancel={messageBox.state.onCancel}
+        loading={messageBox.state.loading}
+        icon={messageBox.state.icon}
+      />
     </>
   )
 }
@@ -282,6 +308,21 @@ export function MobileMenuButton({ onClick }: { onClick: () => void }) {
 export function MobileBottomNav() {
   const pathname = usePathname()
   const [showMoreMenu, setShowMoreMenu] = useState(false)
+  const messageBox = useMessageBox()
+
+  const handleMobileLogout = () => {
+    setShowMoreMenu(false)
+    messageBox.showConfirm({
+      title: 'Keluar dari Akun?',
+      message: 'Anda yakin ingin keluar dari akun Anda? Anda perlu login kembali untuk mengakses dashboard.',
+      variant: 'confirm',
+      confirmText: 'Ya, Keluar',
+      cancelText: 'Tetap Di Sini',
+      onConfirm: async () => {
+        await signOut({ callbackUrl: '/login' })
+      },
+    })
+  }
 
   const isActive = (href: string) => {
     if (href === '/dashboard') {
@@ -366,10 +407,7 @@ export function MobileBottomNav() {
 
               {/* Logout */}
               <button
-                onClick={() => {
-                  setShowMoreMenu(false)
-                  signOut({ callbackUrl: '/login' })
-                }}
+                onClick={handleMobileLogout}
                 className="flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-red-50 transition-colors"
               >
                 <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center">
@@ -441,6 +479,20 @@ export function MobileBottomNav() {
           })}
         </div>
       </nav>
+
+      <MessageBox
+        open={messageBox.state.open}
+        onClose={messageBox.close}
+        title={messageBox.state.title}
+        message={messageBox.state.message}
+        variant={messageBox.state.variant}
+        confirmText={messageBox.state.confirmText}
+        cancelText={messageBox.state.cancelText}
+        onConfirm={messageBox.state.onConfirm}
+        onCancel={messageBox.state.onCancel}
+        loading={messageBox.state.loading}
+        icon={messageBox.state.icon}
+      />
     </>
   )
 }

@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { Crown, X, Check, AlertCircle, Loader2, Sparkles, Info } from 'lucide-react'
 import { formatDate } from '@/lib/utils'
 import { AlertBox } from '@/components/Toast'
+import { useMessageBox } from '@/hooks/useMessageBox'
+import { MessageBox } from '@/components/ui/MessageBox'
 
 interface Subscription {
   id: string
@@ -78,6 +80,7 @@ export function SubscriptionManager({
   const [availablePlansData, setAvailablePlansData] = useState<AvailablePlansData | null>(null)
   const [currentPlanFeatures, setCurrentPlanFeatures] = useState<PricingPlan | null>(null)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const messageBox = useMessageBox()
 
   const isPro = subscription?.planType === 'PRO'
   const isTrial = subscription?.isTrial || subscription?.status === 'TRIALING'
@@ -135,111 +138,121 @@ export function SubscriptionManager({
   const canUpgradeToPro = proPlanAvailable?.canUpgrade ?? false
 
   const handleStartTrial = async () => {
-    if (!confirm('Mulai trial PRO 7 hari gratis? Setelah trial berakhir, Anda dapat memilih untuk upgrade ke PRO atau kembali ke FREE.')) {
-      return
-    }
+    messageBox.showConfirm({
+      title: 'Mulai Trial PRO?',
+      message: 'Mulai trial PRO 7 hari gratis? Setelah trial berakhir, Anda dapat memilih untuk upgrade ke PRO atau kembali ke FREE.',
+      variant: 'confirm',
+      confirmText: 'Ya, Mulai Trial',
+      onConfirm: async () => {
+        try {
+          setStartingTrial(true)
+          const res = await fetch('/api/subscription/start-trial', {
+            method: 'POST',
+          })
 
-    try {
-      setStartingTrial(true)
-      const res = await fetch('/api/subscription/start-trial', {
-        method: 'POST',
-      })
+          const data = await res.json()
 
-      const data = await res.json()
-
-      if (res.ok) {
-        setMessage({
-          type: 'success',
-          text: 'Trial PRO 7 hari telah dimulai! Nikmati semua fitur premium.',
-        })
-        onSubscriptionChange?.()
-      } else {
-        setMessage({
-          type: 'error',
-          text: data.error || 'Gagal memulai trial',
-        })
-      }
-    } catch (error) {
-      console.error('Error starting trial:', error)
-      setMessage({
-        type: 'error',
-        text: 'Terjadi kesalahan saat memulai trial',
-      })
-    } finally {
-      setStartingTrial(false)
-    }
+          if (res.ok) {
+            setMessage({
+              type: 'success',
+              text: 'Trial PRO 7 hari telah dimulai! Nikmati semua fitur premium.',
+            })
+            onSubscriptionChange?.()
+          } else {
+            setMessage({
+              type: 'error',
+              text: data.error || 'Gagal memulai trial',
+            })
+          }
+        } catch (error) {
+          console.error('Error starting trial:', error)
+          setMessage({
+            type: 'error',
+            text: 'Terjadi kesalahan saat memulai trial',
+          })
+        } finally {
+          setStartingTrial(false)
+        }
+      },
+    })
   }
 
   const handleCancelSubscription = async () => {
-    if (!confirm('Apakah Anda yakin ingin membatalkan langganan? Akses PRO akan tetap aktif hingga akhir periode berlangganan.')) {
-      return
-    }
+    messageBox.showWarning({
+      title: 'Batalkan Langganan?',
+      message: 'Apakah Anda yakin ingin membatalkan langganan? Akses PRO akan tetap aktif hingga akhir periode berlangganan.',
+      confirmText: 'Ya, Batalkan',
+      onConfirm: async () => {
+        try {
+          setCanceling(true)
+          const res = await fetch('/api/subscription/cancel', {
+            method: 'POST',
+          })
 
-    try {
-      setCanceling(true)
-      const res = await fetch('/api/subscription/cancel', {
-        method: 'POST',
-      })
+          const data = await res.json()
 
-      const data = await res.json()
-
-      if (res.ok) {
-        setMessage({
-          type: 'success',
-          text: `Langganan akan dibatalkan pada ${formatDate(data.cancelAt)}`,
-        })
-        onSubscriptionChange?.()
-      } else {
-        setMessage({
-          type: 'error',
-          text: data.error || 'Gagal membatalkan langganan',
-        })
-      }
-    } catch (error) {
-      console.error('Error canceling subscription:', error)
-      setMessage({
-        type: 'error',
-        text: 'Terjadi kesalahan saat membatalkan langganan',
-      })
-    } finally {
-      setCanceling(false)
-    }
+          if (res.ok) {
+            setMessage({
+              type: 'success',
+              text: `Langganan akan dibatalkan pada ${formatDate(data.cancelAt)}`,
+            })
+            onSubscriptionChange?.()
+          } else {
+            setMessage({
+              type: 'error',
+              text: data.error || 'Gagal membatalkan langganan',
+            })
+          }
+        } catch (error) {
+          console.error('Error canceling subscription:', error)
+          setMessage({
+            type: 'error',
+            text: 'Terjadi kesalahan saat membatalkan langganan',
+          })
+        } finally {
+          setCanceling(false)
+        }
+      },
+    })
   }
 
   const handleDowngrade = async () => {
-    if (!confirm('Apakah Anda yakin ingin downgrade ke FREE? Akses PRO akan tetap aktif hingga akhir periode berlangganan.')) {
-      return
-    }
+    messageBox.showWarning({
+      title: 'Downgrade ke FREE?',
+      message: 'Apakah Anda yakin ingin downgrade ke FREE? Akses PRO akan tetap aktif hingga akhir periode berlangganan.',
+      confirmText: 'Ya, Downgrade',
+      onConfirm: async () => {
+        try {
+          setDowngrading(true)
+          const res = await fetch('/api/subscription/downgrade', {
+            method: 'POST',
+          })
 
-    try {
-      setDowngrading(true)
-      const res = await fetch('/api/subscription/downgrade', {
-        method: 'POST',
-      })
+          const data = await res.json()
 
-      const data = await res.json()
-
-      if (res.ok) {
-        setMessage({
-          type: 'success',
-          text: 'Langganan akan downgrade ke FREE pada akhir periode',
-        })
-        onSubscriptionChange?.()
-      } else {
-        setMessage({
-          type: 'error',
-          text: data.error || 'Gagal downgrade langganan',
-        })
-      }
-    } catch (error) {
-      console.error('Error downgrading subscription:', error)
-      setMessage({
-        type: 'error',
-        text: 'Terjadi kesalahan saat downgrade langganan',
-      })
-    } finally {
-      setDowngrading(false)
-    }
+          if (res.ok) {
+            setMessage({
+              type: 'success',
+              text: 'Langganan akan downgrade ke FREE pada akhir periode',
+            })
+            onSubscriptionChange?.()
+          } else {
+            setMessage({
+              type: 'error',
+              text: data.error || 'Gagal downgrade langganan',
+            })
+          }
+        } catch (error) {
+          console.error('Error downgrading subscription:', error)
+          setMessage({
+            type: 'error',
+            text: 'Terjadi kesalahan saat downgrade langganan',
+          })
+        } finally {
+          setDowngrading(false)
+        }
+      },
+    })
   }
 
   const handleUpgrade = async () => {
@@ -477,6 +490,19 @@ export function SubscriptionManager({
           {message.text}
         </AlertBox>
       )}
+
+      <MessageBox
+        open={messageBox.state.open}
+        onClose={messageBox.close}
+        title={messageBox.state.title}
+        message={messageBox.state.message}
+        variant={messageBox.state.variant}
+        confirmText={messageBox.state.confirmText}
+        cancelText={messageBox.state.cancelText}
+        onConfirm={messageBox.state.onConfirm}
+        onCancel={messageBox.state.onCancel}
+        loading={messageBox.state.loading}
+      />
     </div>
   )
 }

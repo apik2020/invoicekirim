@@ -15,6 +15,8 @@ import {
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { AdminLayout } from '@/components/admin/AdminLayout'
 import { cn } from '@/lib/utils'
+import { useMessageBox } from '@/hooks/useMessageBox'
+import { MessageBox } from '@/components/ui/MessageBox'
 
 interface Payment {
   id: string
@@ -391,38 +393,46 @@ function PaymentDetailModal({
   const [loading, setLoading] = useState(false)
   const [refundAmount, setRefundAmount] = useState('')
   const [refundReason, setRefundReason] = useState('')
+  const messageBox = useMessageBox()
 
   const handleRefund = async () => {
-    if (!confirm(`Are you sure you want to refund this payment?`)) {
-      return
-    }
+    messageBox.showWarning({
+      title: 'Refund Pembayaran?',
+      message: 'Apakah Anda yakin ingin melakukan refund pada pembayaran ini? Tindakan ini tidak dapat dibatalkan.',
+      confirmText: 'Ya, Refund',
+      onConfirm: async () => {
+        setLoading(true)
+        try {
+          const res = await fetch(`/api/admin/payments/${payment.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'refund',
+              refundAmount: refundAmount ? parseFloat(refundAmount) : undefined,
+              refundReason,
+            }),
+          })
 
-    setLoading(true)
-    try {
-      const res = await fetch(`/api/admin/payments/${payment.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'refund',
-          refundAmount: refundAmount ? parseFloat(refundAmount) : undefined,
-          refundReason,
-        }),
-      })
-
-      if (res.ok) {
-        alert('Payment refunded successfully')
-        onClose()
-        onRefresh()
-      } else {
-        const data = await res.json()
-        throw new Error(data.error || 'Failed to refund payment')
-      }
-    } catch (error) {
-      console.error('Error refunding payment:', error)
-      alert(error instanceof Error ? error.message : 'Failed to refund payment')
-    } finally {
-      setLoading(false)
-    }
+          if (res.ok) {
+            onClose()
+            onRefresh()
+          } else {
+            const data = await res.json()
+            throw new Error(data.error || 'Failed to refund payment')
+          }
+        } catch (error) {
+          console.error('Error refunding payment:', error)
+          messageBox.showWarning({
+            title: 'Gagal Refund',
+            message: error instanceof Error ? error.message : 'Terjadi kesalahan saat refund pembayaran.',
+            confirmText: 'Mengerti',
+            onConfirm: () => messageBox.close(),
+          })
+        } finally {
+          setLoading(false)
+        }
+      },
+    })
   }
 
   return (
@@ -528,6 +538,19 @@ function PaymentDetailModal({
           </div>
         </div>
       </div>
+
+      <MessageBox
+        open={messageBox.state.open}
+        onClose={messageBox.close}
+        title={messageBox.state.title}
+        message={messageBox.state.message}
+        variant={messageBox.state.variant}
+        confirmText={messageBox.state.confirmText}
+        cancelText={messageBox.state.cancelText}
+        onConfirm={messageBox.state.onConfirm}
+        onCancel={messageBox.state.onCancel}
+        loading={messageBox.state.loading}
+      />
     </div>
   )
 }

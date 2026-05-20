@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Mail, Save, Eye, Send, RotateCcw, Code, Plus, X, ImagePlus, Trash2, Loader2 } from 'lucide-react'
+import { useMessageBox } from '@/hooks/useMessageBox'
+import { MessageBox } from '@/components/ui/MessageBox'
 
 interface EmailTemplate {
   id: string
@@ -115,6 +117,7 @@ export function EmailTemplateEditor({ templateId, onClose, onSave }: EmailTempla
   const [saving, setSaving] = useState(false)
   const [subject, setSubject] = useState('')
   const [body, setBody] = useState('')
+  const messageBox = useMessageBox()
   const [isActive, setIsActive] = useState(true)
   const [showPreview, setShowPreview] = useState(false)
   const [selectedVariable, setSelectedVariable] = useState('')
@@ -248,10 +251,17 @@ export function EmailTemplateEditor({ templateId, onClose, onSave }: EmailTempla
     if (!template) return
 
     const defaultTemplate = DEFAULT_TEMPLATES[template.name]
-    if (defaultTemplate && confirm('Reset template ke default? Perubahan Anda akan hilang.')) {
-      setSubject(defaultTemplate.subject)
-      setBody(defaultTemplate.body)
-      setHeaderImageUrl(null)
+    if (defaultTemplate) {
+      messageBox.showWarning({
+        title: 'Reset Template?',
+        message: 'Reset template ke default? Perubahan Anda akan hilang.',
+        confirmText: 'Ya, Reset',
+        onConfirm: () => {
+          setSubject(defaultTemplate.subject)
+          setBody(defaultTemplate.body)
+          setHeaderImageUrl(null)
+        },
+      })
     }
   }
 
@@ -306,6 +316,7 @@ export function EmailTemplateEditor({ templateId, onClose, onSave }: EmailTempla
   }
 
   return (
+    <>
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -515,5 +526,19 @@ export function EmailTemplateEditor({ templateId, onClose, onSave }: EmailTempla
         </div>
       )}
     </div>
+
+      <MessageBox
+        open={messageBox.state.open}
+        onClose={messageBox.close}
+        title={messageBox.state.title}
+        message={messageBox.state.message}
+        variant={messageBox.state.variant}
+        confirmText={messageBox.state.confirmText}
+        cancelText={messageBox.state.cancelText}
+        onConfirm={messageBox.state.onConfirm}
+        onCancel={messageBox.state.onCancel}
+        loading={messageBox.state.loading}
+      />
+    </>
   )
 }

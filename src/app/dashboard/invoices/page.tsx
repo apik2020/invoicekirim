@@ -7,6 +7,8 @@ import { useAppSession } from '@/hooks/useAppSession'
 import { FileText, Plus, Search, Trash2, Eye, Loader2, Download, LayoutTemplate } from 'lucide-react'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { DashboardLayout } from '@/components/DashboardLayout'
+import { useMessageBox } from '@/hooks/useMessageBox'
+import { MessageBox } from '@/components/ui/MessageBox'
 
 interface InvoiceItem {
   id: string
@@ -79,6 +81,7 @@ export default function InvoicesPage() {
   const [statusFilter, setStatusFilter] = useState<string>('ALL')
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
+  const messageBox = useMessageBox()
   const [counts, setCounts] = useState({
     ALL: 0,
     DRAFT: 0,
@@ -164,25 +167,35 @@ export default function InvoicesPage() {
   }, [statusFilter, searchQuery, sessionStatus, fetchInvoices])
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus invoice ini?')) return
+    messageBox.showDelete({
+      title: 'Hapus Invoice?',
+      message: 'Apakah Anda yakin ingin menghapus invoice ini? Tindakan ini tidak dapat dibatalkan.',
+      confirmText: 'Ya, Hapus',
+      onConfirm: async () => {
+        setDeletingId(id)
+        try {
+          const res = await fetch(`/api/invoices/${id}`, {
+            method: 'DELETE',
+          })
 
-    setDeletingId(id)
-    try {
-      const res = await fetch(`/api/invoices/${id}`, {
-        method: 'DELETE',
-      })
+          if (!res.ok) {
+            const data = await res.json()
+            throw new Error(data.error || 'Gagal menghapus invoice')
+          }
 
-      if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Gagal menghapus invoice')
-      }
-
-      setInvoices(invoices.filter((inv) => inv.id !== id))
-    } catch (error: any) {
-      alert(error.message)
-    } finally {
-      setDeletingId(null)
-    }
+          setInvoices(invoices.filter((inv) => inv.id !== id))
+        } catch (error: any) {
+          messageBox.showWarning({
+            title: 'Gagal Menghapus',
+            message: error.message || 'Terjadi kesalahan saat menghapus invoice.',
+            confirmText: 'Mengerti',
+            onConfirm: () => messageBox.close(),
+          })
+        } finally {
+          setDeletingId(null)
+        }
+      },
+    })
   }
 
   const getStatusBadge = (invoice: Invoice) => {
@@ -402,6 +415,19 @@ export default function InvoicesPage() {
           </div>
         </div>
       )}
+
+      <MessageBox
+        open={messageBox.state.open}
+        onClose={messageBox.close}
+        title={messageBox.state.title}
+        message={messageBox.state.message}
+        variant={messageBox.state.variant}
+        confirmText={messageBox.state.confirmText}
+        cancelText={messageBox.state.cancelText}
+        onConfirm={messageBox.state.onConfirm}
+        onCancel={messageBox.state.onCancel}
+        loading={messageBox.state.loading}
+      />
     </DashboardLayout>
   )
 }

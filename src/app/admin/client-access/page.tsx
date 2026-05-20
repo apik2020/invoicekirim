@@ -19,6 +19,8 @@ import {
 } from 'lucide-react'
 import { AdminLayout } from '@/components/admin/AdminLayout'
 import { cn } from '@/lib/utils'
+import { useMessageBox } from '@/hooks/useMessageBox'
+import { MessageBox } from '@/components/ui/MessageBox'
 
 interface Subscription {
   id: string
@@ -64,6 +66,7 @@ export default function AdminClientAccessPage() {
   const [statusFilter, setStatusFilter] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const messageBox = useMessageBox()
 
   // Edit modal state
   const [editingUser, setEditingUser] = useState<User | null>(null)
@@ -155,23 +158,28 @@ export default function AdminClientAccessPage() {
   }
 
   const handleResetToFree = async (userId: string) => {
-    if (!confirm('Apakah Anda yakin ingin mereset subscription user ini ke paket Gratis?')) return
+    messageBox.showWarning({
+      title: 'Reset Subscription?',
+      message: 'Apakah Anda yakin ingin mereset subscription user ini ke paket Gratis? Tindakan ini tidak dapat dibatalkan.',
+      confirmText: 'Ya, Reset',
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/admin/user-subscriptions?userId=${userId}`, {
+            method: 'DELETE',
+          })
 
-    try {
-      const res = await fetch(`/api/admin/user-subscriptions?userId=${userId}`, {
-        method: 'DELETE',
-      })
+          const data = await res.json()
+          if (!res.ok) {
+            throw new Error(data.error || 'Gagal mereset subscription')
+          }
 
-      const data = await res.json()
-      if (!res.ok) {
-        throw new Error(data.error || 'Gagal mereset subscription')
-      }
-
-      setSuccess('Subscription berhasil direset ke Free!')
-      fetchUsers()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Terjadi kesalahan')
-    }
+          setSuccess('Subscription berhasil direset ke Free!')
+          fetchUsers()
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'Terjadi kesalahan')
+        }
+      },
+    })
   }
 
   const getStatusBadge = (status: string) => {
@@ -591,6 +599,19 @@ export default function AdminClientAccessPage() {
           </div>
         </div>
       )}
+
+      <MessageBox
+        open={messageBox.state.open}
+        onClose={messageBox.close}
+        title={messageBox.state.title}
+        message={messageBox.state.message}
+        variant={messageBox.state.variant}
+        confirmText={messageBox.state.confirmText}
+        cancelText={messageBox.state.cancelText}
+        onConfirm={messageBox.state.onConfirm}
+        onCancel={messageBox.state.onCancel}
+        loading={messageBox.state.loading}
+      />
     </AdminLayout>
   )
 }

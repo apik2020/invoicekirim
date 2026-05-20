@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useAppSession } from '@/hooks/useAppSession'
+import { useMessageBox } from '@/hooks/useMessageBox'
+import { MessageBox } from '@/components/ui/MessageBox'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { LogOut, User, Settings, ChevronDown, CreditCard, ChevronLeft } from 'lucide-react'
@@ -24,12 +26,21 @@ export default function DashboardHeader({
   const router = useRouter()
   const [showUserMenu, setShowUserMenu] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
+  const messageBox = useMessageBox()
 
-  const handleLogout = async () => {
+  const handleLogoutClick = () => {
     setShowUserMenu(false)
-    // Clear session cookie by calling logout API
-    await fetch('/api/logout', { method: 'POST' })
-    router.push('/login')
+    messageBox.showConfirm({
+      title: 'Keluar dari Akun?',
+      message: 'Anda yakin ingin keluar dari akun Anda? Anda perlu login kembali untuk mengakses dashboard.',
+      variant: 'confirm',
+      confirmText: 'Ya, Keluar',
+      cancelText: 'Tetap Di Sini',
+      onConfirm: async () => {
+        await fetch('/api/logout', { method: 'POST' })
+        router.push('/login')
+      },
+    })
   }
 
   // Close dropdown when clicking outside
@@ -109,7 +120,7 @@ export default function DashboardHeader({
                 </Link>
                 <hr className="my-2 border-gray-100" />
                 <button
-                  onClick={handleLogout}
+                  onClick={handleLogoutClick}
                   className="w-full flex items-center gap-3 px-4 py-2.5 text-primary-500 hover:bg-primary-50 transition-colors"
                 >
                   <LogOut className="w-4 h-4" />
@@ -120,6 +131,20 @@ export default function DashboardHeader({
           </div>
         </div>
       </div>
+
+      <MessageBox
+        open={messageBox.state.open}
+        onClose={messageBox.close}
+        title={messageBox.state.title}
+        message={messageBox.state.message}
+        variant={messageBox.state.variant}
+        confirmText={messageBox.state.confirmText}
+        cancelText={messageBox.state.cancelText}
+        onConfirm={messageBox.state.onConfirm}
+        onCancel={messageBox.state.onCancel}
+        loading={messageBox.state.loading}
+        icon={messageBox.state.icon}
+      />
     </header>
   )
 }

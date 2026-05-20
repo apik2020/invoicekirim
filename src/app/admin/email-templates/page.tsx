@@ -12,6 +12,8 @@ import {
 import { EmailTemplateEditor } from '@/components/admin/EmailTemplateEditor'
 import { AdminLayout } from '@/components/admin/AdminLayout'
 import { cn } from '@/lib/utils'
+import { useMessageBox } from '@/hooks/useMessageBox'
+import { MessageBox } from '@/components/ui/MessageBox'
 
 interface EmailTemplate {
   id: string
@@ -37,6 +39,7 @@ export default function AdminEmailTemplatesPage() {
   const [templates, setTemplates] = useState<EmailTemplate[]>([])
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState(false)
+  const messageBox = useMessageBox()
 
   useEffect(() => {
     fetchTemplates()
@@ -76,21 +79,31 @@ export default function AdminEmailTemplatesPage() {
   }
 
   const deleteTemplate = async (template: EmailTemplate) => {
-    if (!confirm(`Hapus template "${TEMPLATE_NAMES[template.name] || template.name}"?`)) {
-      return
-    }
+    messageBox.showDelete({
+      title: 'Hapus Template?',
+      message: (
+        <div className="space-y-2">
+          <p>
+            Anda akan menghapus template <span className="font-semibold text-gray-900">{TEMPLATE_NAMES[template.name] || template.name}</span>.
+          </p>
+          <p className="text-xs text-gray-500">Tindakan ini tidak dapat dibatalkan.</p>
+        </div>
+      ),
+      confirmText: 'Ya, Hapus',
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/admin/email-templates/${template.id}`, {
+            method: 'DELETE',
+          })
 
-    try {
-      const res = await fetch(`/api/admin/email-templates/${template.id}`, {
-        method: 'DELETE',
-      })
-
-      if (res.ok) {
-        fetchTemplates()
-      }
-    } catch (error) {
-      console.error('Error deleting template:', error)
-    }
+          if (res.ok) {
+            fetchTemplates()
+          }
+        } catch (error) {
+          console.error('Error deleting template:', error)
+        }
+      },
+    })
   }
 
   // Editor View
@@ -266,6 +279,19 @@ export default function AdminEmailTemplatesPage() {
           </div>
         )}
       </div>
+
+      <MessageBox
+        open={messageBox.state.open}
+        onClose={messageBox.close}
+        title={messageBox.state.title}
+        message={messageBox.state.message}
+        variant={messageBox.state.variant}
+        confirmText={messageBox.state.confirmText}
+        cancelText={messageBox.state.cancelText}
+        onConfirm={messageBox.state.onConfirm}
+        onCancel={messageBox.state.onCancel}
+        loading={messageBox.state.loading}
+      />
     </AdminLayout>
   )
 }

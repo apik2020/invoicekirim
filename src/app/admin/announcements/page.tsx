@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { AdminLayout } from '@/components/admin/AdminLayout'
 import { AnnouncementTable } from '@/components/admin/AnnouncementTable'
 import { AnnouncementModal } from '@/components/admin/AnnouncementModal'
+import { useMessageBox } from '@/hooks/useMessageBox'
+import { MessageBox } from '@/components/ui/MessageBox'
 
 interface Announcement {
   id: string
@@ -27,28 +29,48 @@ export default function AdminAnnouncementsPage() {
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
+  const messageBox = useMessageBox()
 
   const handleAnnouncementDelete = async (announcement: Announcement) => {
-    if (!confirm(`Apakah Anda yakin ingin menghapus pengumuman "${announcement.title}"? Tindakan ini tidak dapat dibatalkan.`)) {
-      return
-    }
+    messageBox.showDelete({
+      title: 'Hapus Pengumuman?',
+      message: (
+        <div className="space-y-2">
+          <p>
+            Anda akan menghapus pengumuman <span className="font-semibold text-gray-900">{announcement.title}</span>.
+          </p>
+          <p className="text-xs text-gray-500">Tindakan ini tidak dapat dibatalkan.</p>
+        </div>
+      ),
+      confirmText: 'Ya, Hapus',
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/admin/announcements/${announcement.id}`, {
+            method: 'DELETE',
+          })
 
-    try {
-      const res = await fetch(`/api/admin/announcements/${announcement.id}`, {
-        method: 'DELETE',
-      })
-
-      if (res.ok) {
-        alert('Pengumuman berhasil dihapus')
-        setRefreshKey((k) => k + 1)
-      } else {
-        const data = await res.json()
-        alert(`Gagal menghapus pengumuman: ${data.error}`)
-      }
-    } catch (error) {
-      console.error('Error deleting announcement:', error)
-      alert('Terjadi kesalahan saat menghapus pengumuman')
-    }
+          if (res.ok) {
+            setRefreshKey((k) => k + 1)
+          } else {
+            const data = await res.json()
+            messageBox.showWarning({
+              title: 'Gagal Menghapus',
+              message: data.error || 'Gagal menghapus pengumuman.',
+              confirmText: 'Mengerti',
+              onConfirm: () => messageBox.close(),
+            })
+          }
+        } catch (error) {
+          console.error('Error deleting announcement:', error)
+          messageBox.showWarning({
+            title: 'Kesalahan',
+            message: 'Terjadi kesalahan saat menghapus pengumuman.',
+            confirmText: 'Mengerti',
+            onConfirm: () => messageBox.close(),
+          })
+        }
+      },
+    })
   }
 
   const handleSave = () => {
@@ -120,6 +142,19 @@ export default function AdminAnnouncementsPage() {
           }}
         />
       )}
+
+      <MessageBox
+        open={messageBox.state.open}
+        onClose={messageBox.close}
+        title={messageBox.state.title}
+        message={messageBox.state.message}
+        variant={messageBox.state.variant}
+        confirmText={messageBox.state.confirmText}
+        cancelText={messageBox.state.cancelText}
+        onConfirm={messageBox.state.onConfirm}
+        onCancel={messageBox.state.onCancel}
+        loading={messageBox.state.loading}
+      />
     </AdminLayout>
   )
 }

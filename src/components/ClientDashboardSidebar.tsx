@@ -18,6 +18,8 @@ import {
   HelpCircle,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useMessageBox } from '@/hooks/useMessageBox'
+import { MessageBox } from '@/components/ui/MessageBox'
 
 interface NavItem {
   name: string
@@ -58,6 +60,7 @@ export function ClientDashboardSidebar({
   const pathname = usePathname()
   const router = useRouter()
   const [isCollapsed, setIsCollapsed] = useState(collapsed)
+  const messageBox = useMessageBox()
 
   useEffect(() => {
     onCollapsedChange?.(isCollapsed)
@@ -67,9 +70,18 @@ export function ClientDashboardSidebar({
     onMobileOpenChange?.(false)
   }, [pathname, onMobileOpenChange])
 
-  const handleLogout = async () => {
-    await fetch('/api/client/auth/logout', { method: 'POST' })
-    router.push('/client/auth/login')
+  const handleLogoutClick = () => {
+    messageBox.showConfirm({
+      title: 'Keluar dari Akun?',
+      message: 'Anda yakin ingin keluar? Anda perlu login kembali untuk mengakses portal klien.',
+      variant: 'confirm',
+      confirmText: 'Ya, Keluar',
+      cancelText: 'Tetap Di Sini',
+      onConfirm: async () => {
+        await fetch('/api/client/auth/logout', { method: 'POST' })
+        router.push('/client/auth/login')
+      },
+    })
   }
 
   const isActive = (href: string) => {
@@ -188,7 +200,7 @@ export function ClientDashboardSidebar({
 
         <div className="px-3 py-3 border-t border-white/10 flex-shrink-0">
           <button
-            onClick={handleLogout}
+            onClick={handleLogoutClick}
             className={cn(
               'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 w-full',
               'text-white/70 hover:bg-primary-500/20 hover:text-white'
@@ -210,6 +222,20 @@ export function ClientDashboardSidebar({
           )}
         </button>
       </aside>
+
+      <MessageBox
+        open={messageBox.state.open}
+        onClose={messageBox.close}
+        title={messageBox.state.title}
+        message={messageBox.state.message}
+        variant={messageBox.state.variant}
+        confirmText={messageBox.state.confirmText}
+        cancelText={messageBox.state.cancelText}
+        onConfirm={messageBox.state.onConfirm}
+        onCancel={messageBox.state.onCancel}
+        loading={messageBox.state.loading}
+        icon={messageBox.state.icon}
+      />
     </>
   )
 }

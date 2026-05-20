@@ -7,6 +7,8 @@ import {
 import { AdminLayout } from '@/components/admin/AdminLayout'
 import { cn } from '@/lib/utils'
 import { FEATURE_DEFINITIONS } from '@/lib/pricing-features'
+import { useMessageBox } from '@/hooks/useMessageBox'
+import { MessageBox } from '@/components/ui/MessageBox'
 
 interface Plan {
   id: string
@@ -65,6 +67,7 @@ export default function AdminPricingPage() {
   const [showForm, setShowForm] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const messageBox = useMessageBox()
 
   useEffect(() => { fetchData() }, [])
 
@@ -173,19 +176,24 @@ export default function AdminPricingPage() {
   }
 
   const handleDelete = async (planId: string) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus paket ini?')) return
-
-    try {
-      const res = await fetch(`/api/admin/pricing/${planId}`, { method: 'DELETE' })
-      if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Gagal menghapus paket')
-      }
-      setSuccess('Paket berhasil dihapus!')
-      fetchData()
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Terjadi kesalahan')
-    }
+    messageBox.showDelete({
+      title: 'Hapus Paket?',
+      message: 'Apakah Anda yakin ingin menghapus paket ini? Tindakan ini tidak dapat dibatalkan.',
+      confirmText: 'Ya, Hapus',
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/admin/pricing/${planId}`, { method: 'DELETE' })
+          if (!res.ok) {
+            const data = await res.json()
+            throw new Error(data.error || 'Gagal menghapus paket')
+          }
+          setSuccess('Paket berhasil dihapus!')
+          fetchData()
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'Terjadi kesalahan')
+        }
+      },
+    })
   }
 
   const formatPrice = (price: number) =>
@@ -445,6 +453,19 @@ export default function AdminPricingPage() {
           </div>
         )}
       </div>
+
+      <MessageBox
+        open={messageBox.state.open}
+        onClose={messageBox.close}
+        title={messageBox.state.title}
+        message={messageBox.state.message}
+        variant={messageBox.state.variant}
+        confirmText={messageBox.state.confirmText}
+        cancelText={messageBox.state.cancelText}
+        onConfirm={messageBox.state.onConfirm}
+        onCancel={messageBox.state.onCancel}
+        loading={messageBox.state.loading}
+      />
     </AdminLayout>
   )
 }
