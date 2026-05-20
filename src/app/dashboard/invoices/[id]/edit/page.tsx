@@ -9,7 +9,6 @@ import { DashboardLayout } from '@/components/DashboardLayout'
 import { MessageBox } from '@/components/ui/MessageBox'
 import { useMessageBox } from '@/hooks/useMessageBox'
 import { cn } from '@/lib/utils'
-import { LayoutPicker } from '@/components/ui/LayoutPicker'
 
 interface InvoiceItem {
   id: string
@@ -595,13 +594,6 @@ export default function EditInvoicePage() {
       backHref={`/dashboard/invoices/${id}`}
     >
       <form onSubmit={handleSubmit} className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
-          {/* Layout Template */}
-          <div className="card p-6 sm:p-8 animate-fade-in-up">
-            <h2 className="text-lg font-bold text-text-primary mb-2">Pilih Template Layout</h2>
-            <p className="text-sm text-text-muted mb-5">Pilih tampilan invoice sesuai gaya bisnis Anda</p>
-            <LayoutPicker value={layoutType} onChange={setLayoutType} />
-          </div>
-
           {/* Invoice Info */}
           <div className="card p-6 sm:p-8 animate-fade-in-up">
             <h2 className="text-lg font-bold text-text-primary mb-6">Informasi Invoice</h2>

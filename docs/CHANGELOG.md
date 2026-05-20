@@ -4,6 +4,33 @@ Semua perubahan penting pada NotaBener akan didokumentasikan di sini.
 
 ---
 
+## [v0.1.90] — 2026-05-20
+
+### Changed: Hapus Pilihan Desain Layout Invoice (Default Saja)
+
+Menghapus fitur pemilihan desain layout invoice (Professional/Modern/Minimalist) dari seluruh UI. Layout invoice sekarang menggunakan satu desain default (Professional) saja.
+
+#### Alasan
+Preview desain layout tidak menampilkan halaman preview yang sesuai — tombol "Preview" dan "Gunakan" langsung mengarah ke pembuatan invoice baru. Agar tidak mengecewakan pengguna, fitur pemilihan layout dihapus hingga preview yang benar dapat diimplementasikan.
+
+#### Perubahan UI
+
+| Halaman | Perubahan |
+|---------|-----------|
+| `dashboard/templates/page.tsx` | Hapus seluruh section "Desain Layout Invoice" (3 kartu) |
+| `demo/templates/page.tsx` | Ganti 3 kartu template demo dengan 1 kartu layout default |
+| `dashboard/invoices/create/page.tsx` | Hapus komponen LayoutPicker dari form |
+| `dashboard/invoices/[id]/edit/page.tsx` | Hapus komponen LayoutPicker dari form |
+| `dashboard/templates/create/page.tsx` | Hapus komponen LayoutPicker dari form |
+| `dashboard/templates/[id]/edit/page.tsx` | Hapus komponen LayoutPicker dari form |
+
+#### Catatan Teknis
+- `layoutType` tetap tersimpan di database dengan default `'professional'`
+- Backend rendering (`InvoicePrintView`, `InvoicePDF`) tetap mendukung 3 layout — hanya UI picker yang dihapus
+- Komponen `LayoutPicker.tsx` tetap ada di kode untuk penggunaan masa depan
+
+---
+
 ## [v0.1.89] — 2026-05-20
 
 ### Added: Confirmation Dialog pada Seluruh Aksi Destructive
