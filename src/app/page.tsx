@@ -96,7 +96,10 @@ export default function Home() {
                 {t.nav.faq}
               </Link>
               {mounted && <LocaleToggle locale={locale} setLocale={setLocale} />}
-              <Link href="/login" className="px-6 py-2.5 btn-primary">
+              <Link href="/login" className="px-5 py-2.5 bg-white/15 hover:bg-white/25 text-white font-semibold rounded-lg transition-colors">
+                Masuk
+              </Link>
+              <Link href="/register" className="px-6 py-2.5 btn-primary">
                 {t.nav.cta}
               </Link>
             </nav>
@@ -145,9 +148,9 @@ export default function Home() {
 
               <div className="mt-8 space-y-3">
                 <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="block w-full text-center px-6 py-3 border-2 border-brand-500 text-brand-500 font-bold rounded-xl hover:bg-brand-50 transition-colors">
-                  {t.nav.login}
+                  Masuk
                 </Link>
-                <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="block w-full text-center px-6 py-3 bg-gradient-to-br from-primary-500 to-primary-600 text-white font-bold rounded-xl shadow-lg shadow-primary-500/30">
+                <Link href="/register" onClick={() => setMobileMenuOpen(false)} className="block w-full text-center px-6 py-3 bg-gradient-to-br from-primary-500 to-primary-600 text-white font-bold rounded-xl shadow-lg shadow-primary-500/30">
                   {t.nav.cta}
                 </Link>
               </div>
@@ -179,7 +182,7 @@ export default function Home() {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start mb-8">
-                <Link href="/login" className="inline-flex items-center justify-center gap-2 px-8 py-4 btn-primary font-semibold text-lg">
+                <Link href="/register" className="inline-flex items-center justify-center gap-2 px-8 py-4 btn-primary font-semibold text-lg">
                   {t.hero.cta1}
                 </Link>
                 <Link href="/demo" className="inline-flex items-center justify-center gap-2 px-8 py-4 btn-secondary font-semibold">
@@ -522,7 +525,7 @@ export default function Home() {
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6">{t.cta.headline}</h2>
             <p className="text-lg text-white/90 mb-8 max-w-2xl mx-auto leading-relaxed">{t.cta.subheadline}</p>
             <Link
-              href="/login"
+              href="/register"
               className="inline-flex items-center justify-center gap-2 px-10 py-5 bg-[#EF3F0A] text-white rounded-xl font-bold text-lg hover:bg-[#d43608] shadow-lg transition-all"
             >
               {t.cta.button}
@@ -545,7 +548,7 @@ export default function Home() {
             <div>
               <h4 className="font-semibold mb-4 text-lg text-white">{t.footer.product}</h4>
               <ul className="space-y-2">
-                <li><Link href="/login" className="text-white/80 hover:text-white transition-colors">{t.footer.createInvoice}</Link></li>
+                <li><Link href="/register" className="text-white/80 hover:text-white transition-colors">{t.footer.createInvoice}</Link></li>
                 <li><a href="#features" className="text-white/80 hover:text-white transition-colors">{t.footer.features}</a></li>
                 <li><a href="#pricing" className="text-white/80 hover:text-white transition-colors">{t.footer.pricing}</a></li>
                 <li><a href="#faq" className="text-white/80 hover:text-white transition-colors">{t.footer.faq}</a></li>

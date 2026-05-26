@@ -1,6 +1,7 @@
-import { prisma } from '@/lib/prisma'
+import { prisma } from './prisma'
 import bcrypt from 'bcryptjs'
 import { cookies } from 'next/headers'
+import { SignJWT, jwtVerify } from 'jose'
 
 // Admin session cookie name
 const ADMIN_SESSION_COOKIE = 'admin_session'
@@ -10,6 +11,15 @@ export interface AdminSession {
   id: string
   email: string
   name: string
+}
+
+// Get JWT secret key
+function getSecretKey(): Uint8Array {
+  const secret = process.env.NEXTAUTH_SECRET
+  if (!secret) {
+    throw new Error('NEXTAUTH_SECRET environment variable is required')
+  }
+  return new TextEncoder().encode(secret)
 }
 
 /**
@@ -38,18 +48,23 @@ export async function verifyAdminCredentials(email: string, password: string) {
 }
 
 /**
- * Create admin session cookie
+ * Create admin session cookie — signed JWT instead of plain base64
  */
 export async function createAdminSession(admin: AdminSession) {
   const cookieStore = await cookies()
 
-  // Create session token (simple base64 encoded JSON)
-  const sessionToken = Buffer.from(JSON.stringify({
-    ...admin,
-    expiresAt: Date.now() + ADMIN_SESSION_MAX_AGE * 1000,
-  })).toString('base64')
+  // Create signed JWT
+  const token = await new SignJWT({
+    id: admin.id,
+    email: admin.email,
+    name: admin.name,
+  })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime(`${ADMIN_SESSION_MAX_AGE}s`)
+    .sign(getSecretKey())
 
-  cookieStore.set(ADMIN_SESSION_COOKIE, sessionToken, {
+  cookieStore.set(ADMIN_SESSION_COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
@@ -57,35 +72,52 @@ export async function createAdminSession(admin: AdminSession) {
     path: '/',
   })
 
-  return sessionToken
+  return token
 }
 
 /**
  * Get current admin session from cookies
+ * Supports both new JWT format and legacy base64 format for backward compatibility
  */
 export async function getAdminSession(): Promise<AdminSession | null> {
   const cookieStore = await cookies()
   const sessionToken = cookieStore.get(ADMIN_SESSION_COOKIE)
 
-  if (!sessionToken) {
+  if (!sessionToken?.value) {
     return null
   }
 
+  // Try new JWT format first
   try {
-    const sessionData = JSON.parse(Buffer.from(sessionToken.value, 'base64').toString())
-
-    // Check if session expired
-    if (sessionData.expiresAt < Date.now()) {
-      return null
-    }
+    const { payload } = await jwtVerify(sessionToken.value, getSecretKey(), {
+      algorithms: ['HS256'],
+    })
 
     return {
-      id: sessionData.id,
-      email: sessionData.email,
-      name: sessionData.name,
+      id: payload.id as string,
+      email: payload.email as string,
+      name: payload.name as string,
     }
   } catch {
-    return null
+    // JWT verification failed — try legacy base64 format for backward compatibility
+    try {
+      const sessionData = JSON.parse(
+        Buffer.from(sessionToken.value, 'base64').toString()
+      )
+
+      // Check if session expired (legacy format)
+      if (sessionData.expiresAt && sessionData.expiresAt < Date.now()) {
+        return null
+      }
+
+      return {
+        id: sessionData.id,
+        email: sessionData.email,
+        name: sessionData.name,
+      }
+    } catch {
+      return null
+    }
   }
 }
 

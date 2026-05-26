@@ -73,7 +73,12 @@ export const loginSchema = z.object({
 export const registerSchema = z.object({
   name: z.string().min(1, 'Nama harus diisi'),
   email: z.string().email('Email tidak valid'),
-  password: z.string().min(6, 'Password minimal 6 karakter'),
+  password: z
+    .string()
+    .min(8, 'Password minimal 8 karakter')
+    .regex(/[A-Z]/, 'Password harus mengandung huruf besar')
+    .regex(/[a-z]/, 'Password harus mengandung huruf kecil')
+    .regex(/[0-9]/, 'Password harus mengandung angka'),
   confirmPassword: z.string(),
   plan: z.enum(['free', 'trial']).optional().default('trial'),
 }).refine((data) => data.password === data.confirmPassword, {

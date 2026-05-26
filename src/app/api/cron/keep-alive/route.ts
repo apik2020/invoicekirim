@@ -1,12 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+function verifyCronSecret(req: NextRequest): boolean {
+  const authHeader = req.headers.get('authorization')
+  const secret = process.env.CRON_SECRET
+
+  // In production, CRON_SECRET is mandatory
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      console.error('[CRON] CRON_SECRET is not set in production — rejecting request')
+      return false
+    }
+    // Allow without secret only in development
+    console.warn('[CRON] No CRON_SECRET set — allowed in development only')
+    return true
+  }
+
+  return authHeader === `Bearer ${secret}`
+}
+
 // Ping Neon database to prevent cold start
 // Call this endpoint every 5 minutes from an external cron service (cron-job.org, EasyCron, GitHub Actions)
-export async function GET(req: NextRequest) {
-  const cronSecret = req.headers.get('x-cron-secret')
-
-  if (!cronSecret || cronSecret !== process.env.CRON_SECRET) {
+export async function POST(req: NextRequest) {
+  if (!verifyCronSecret(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

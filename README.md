@@ -58,7 +58,7 @@ Website: [https://notabener.com](https://notabener.com)
 
 - Node.js 18+
 - PostgreSQL database
-- Duitku account (untuk pembayaran Indonesia)
+- Ipaymu account (untuk pembayaran Indonesia)
 - Stripe account (untuk pembayaran internasional)
 - Resend account atau SMTP server (untuk email)
 

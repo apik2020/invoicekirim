@@ -82,7 +82,7 @@ export default function HowItWorks() {
         {/* CTA */}
         <div className="text-center mt-20">
           <a
-            href="/login"
+            href="/register"
             className="inline-flex items-center gap-2 px-10 py-5 text-snow font-display font-bold text-xl rounded-2xl neu-button-primary hover:-translate-y-1 transition-all duration-300 focus-ring"
           >
             Coba Sekarang - Gratis

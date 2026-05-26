@@ -151,11 +151,11 @@ export async function POST(req: NextRequest) {
     // Calculate totals with discount support
     const subtotal = items.reduce((sum, item) => sum + item.quantity * item.price, 0)
 
-    // Calculate discount amounts
+    // Calculate discount amounts — ensure values never go negative
     const discountAmount = calculateDiscount(subtotal, discountType, discountValue)
-    const afterFirstDiscount = subtotal - discountAmount
+    const afterFirstDiscount = Math.max(0, subtotal - discountAmount)
     const additionalDiscountAmount = calculateDiscount(afterFirstDiscount, additionalDiscountType, additionalDiscountValue)
-    const taxableAmount = afterFirstDiscount - additionalDiscountAmount
+    const taxableAmount = Math.max(0, afterFirstDiscount - additionalDiscountAmount)
     const taxAmount = taxableAmount * (data.taxRate / 100)
     const total = taxableAmount + taxAmount
 

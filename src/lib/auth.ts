@@ -4,8 +4,9 @@ import CredentialsProvider from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
 import { prisma } from './prisma'
 
-// Simple logger
-const log = (...args: any[]) => console.log('[AUTH]', ...args)
+// Simple logger — only in development
+const isDev = process.env.NODE_ENV !== 'production'
+const log = (...args: any[]) => { if (isDev) console.log('[AUTH]', ...args) }
 const logError = (...args: any[]) => console.error('[AUTH ERROR]', ...args)
 
 // Helper to check if user is admin

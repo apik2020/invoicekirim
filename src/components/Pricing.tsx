@@ -57,7 +57,7 @@ function PricingContent() {
 
   const handleSubscribe = async (priceId: string, planName: string) => {
     if (!session) {
-      window.location.href = `/login?redirect=/pricing`
+      window.location.href = `/register?redirect=/pricing`
       return
     }
 
@@ -239,7 +239,7 @@ function PricingContent() {
                 </button>
               ) : (
                 <a
-                  href={session ? '/dashboard/invoices/create' : '/login'}
+                  href={session ? '/dashboard/invoices/create' : '/register'}
                   className={`block w-full text-center py-4 font-display font-bold rounded-2xl transition-all duration-300 focus-ring ${
                     plan.is_popular
                       ? 'neu-button-primary hover:-translate-y-1'

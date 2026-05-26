@@ -6,9 +6,15 @@ function verifyCronSecret(req: NextRequest): boolean {
   const authHeader = req.headers.get('authorization')
   const secret = process.env.CRON_SECRET
 
+  // In production, CRON_SECRET is mandatory
   if (!secret) {
-    console.warn('[CRON] No CRON_SECRET set, skipping verification')
-    return true // Allow in development if no secret set
+    if (process.env.NODE_ENV === 'production') {
+      console.error('[CRON] CRON_SECRET is not set in production — rejecting request')
+      return false
+    }
+    // Allow without secret only in development
+    console.warn('[CRON] No CRON_SECRET set — allowed in development only')
+    return true
   }
 
   return authHeader === `Bearer ${secret}`
@@ -99,13 +105,8 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('[CRON] Payment expiration error:', error)
     return NextResponse.json(
-      { error: 'Cron job failed', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Cron job failed' },
       { status: 500 }
     )
   }
-}
-
-// Support GET for testing (with verification)
-export async function GET(req: NextRequest) {
-  return POST(req)
 }

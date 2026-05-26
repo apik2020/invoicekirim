@@ -42,13 +42,19 @@ export default function Header() {
             </Link>
           </div>
 
-          {/* Desktop CTA Button */}
-          <div className="hidden md:flex items-center gap-4">
+          {/* Desktop CTA Buttons */}
+          <div className="hidden md:flex items-center gap-3">
             <Link
               href="/login"
+              className="px-5 py-2.5 bg-white/15 hover:bg-white/25 text-white text-sm font-semibold rounded-lg transition-all duration-300"
+            >
+              Masuk
+            </Link>
+            <Link
+              href="/register"
               className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold tracking-wide rounded-xl transition-all duration-300"
             >
-              {pathname === '/login' ? 'Login' : 'Mulai Gratis'}
+              Mulai Gratis
             </Link>
           </div>
 
@@ -91,9 +97,16 @@ export default function Header() {
             <Link
               href="/login"
               onClick={() => setMobileMenuOpen(false)}
-              className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 text-sm font-bold tracking-wide rounded-xl transition-all duration-300 text-center mt-2"
+              className="text-gray-700 hover:text-[#0A637D] transition-all duration-300 font-semibold py-2 text-center border border-gray-200 rounded-xl"
             >
-              {pathname === '/login' ? 'Login' : 'Mulai Gratis'}
+              Masuk
+            </Link>
+            <Link
+              href="/register"
+              onClick={() => setMobileMenuOpen(false)}
+              className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 text-sm font-bold tracking-wide rounded-xl transition-all duration-300 text-center"
+            >
+              Mulai Gratis
             </Link>
           </div>
         </div>

@@ -88,7 +88,7 @@ export async function PUT(
   } catch (error) {
     console.error('Error updating member:', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to update member' },
+      { error: 'Gagal mengubah role member' },
       { status: 500 }
     )
   }
@@ -122,7 +122,7 @@ export async function DELETE(
   } catch (error) {
     console.error('Error removing member:', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to remove member' },
+      { error: 'Gagal menghapus member' },
       { status: 500 }
     )
   }

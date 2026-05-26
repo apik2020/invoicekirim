@@ -3,6 +3,11 @@ import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
 
 export async function POST(request: Request) {
+  // Block this endpoint in production
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+  }
+
   try {
     const body = await request.json()
     const { email, password } = body
@@ -53,7 +58,6 @@ export async function POST(request: Request) {
     console.error('[TEST-LOGIN] Error:', error)
     return NextResponse.json({
       error: 'Internal server error',
-      details: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
   }
 }

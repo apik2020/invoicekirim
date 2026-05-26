@@ -218,7 +218,7 @@ export default function LandingPricing({ t }: LandingPricingProps) {
                           </p>
                         )}
                         <Link
-                          href="/login"
+                          href="/register"
                           className={`inline-block mt-4 px-6 py-2.5 rounded-lg font-semibold text-sm ${
                             plan.isFeatured
                               ? 'bg-white text-primary-500 hover:bg-gray-100'
@@ -356,7 +356,7 @@ export default function LandingPricing({ t }: LandingPricingProps) {
 
               {/* CTA Button */}
               <Link
-                href="/login"
+                href="/register"
                 className={`block w-full px-6 py-3 text-center font-semibold ${
                   plan.isFeatured ? 'btn-primary' : 'btn-secondary'
                 }`}

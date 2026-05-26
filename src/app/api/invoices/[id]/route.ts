@@ -103,9 +103,9 @@ export async function PUT(
     let total = existingInvoice.total
 
     if (items && items.length > 0) {
-      subtotal = items.reduce((sum, item) => sum + item.quantity * item.price, 0)
+      subtotal = Math.max(0, items.reduce((sum, item) => sum + item.quantity * item.price, 0))
       taxAmount = subtotal * ((data.taxRate ?? existingInvoice.taxRate) / 100)
-      total = subtotal + taxAmount
+      total = Math.max(0, subtotal + taxAmount)
     }
 
     // Check if invoice number is unique

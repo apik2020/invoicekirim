@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { decryptSession } from '@/lib/session'
 
 // NextAuth cookie names that may need clearing on decryption failure
 const NEXTAUTH_COOKIES = [
@@ -73,7 +74,7 @@ export async function GET() {
       return NextResponse.json({ authenticated: false, user: null }, { status: 401 })
     }
 
-    const user = JSON.parse(userSessionCookie.value)
+    const user = await decryptSession(userSessionCookie.value)
 
     if (!user?.id) {
       return NextResponse.json({ authenticated: false, user: null }, { status: 401 })

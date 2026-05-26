@@ -30,7 +30,7 @@ export default function Footer() {
             <h4 className="font-display font-bold text-slate mb-6">Produk</h4>
             <ul className="space-y-3">
               <li>
-                <Link href="/login" className="font-body text-muted hover:text-arctic-blue transition-all duration-300">
+                <Link href="/register" className="font-body text-muted hover:text-arctic-blue transition-all duration-300">
                   Buat Invoice
                 </Link>
               </li>

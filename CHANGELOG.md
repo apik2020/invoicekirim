@@ -4,6 +4,88 @@ Semua perubahan penting di project NotaBener akan didokumentasikan di file ini.
 
 ## [Unreleased]
 
+## [0.1.91] - 2026-05-26 — Security Hardening Round 2 & UX Improvements
+
+### Security
+
+#### Critical
+- **Session cookie encryption (user + admin)**: User dan admin session cookie sebelumnya berisi JSON/base64 tanpa signature — attacker bisa memodifikasi cookie untuk menyamar sebagai user lain atau admin. Sekarang menggunakan JWT yang di-sign dengan `NEXTAUTH_SECRET` via `jose` library. Backward compatibility tetap ada — cookie lama masih bisa di-parse selama transisi.
+  - `src/lib/session.ts` — helper baru `encryptSession()`/`decryptSession()` menggunakan `jose.SignJWT`/`jwtVerify`
+  - `src/lib/admin-session.ts` — migrasi dari `Buffer.from(JSON.stringify(...)).toString('base64')` ke JWT signed
+  - `src/app/api/login/route.ts` — cookie menggunakan `encryptSession()`
+  - `src/app/api/session/route.ts` — cookie diverifikasi via `decryptSession()`
+- **Test login endpoint blocked in production**: `/api/test-login` sekarang return 404 di production (`NODE_ENV === 'production'`). Sebelumnya bisa diakses siapa saja tanpa rate limiting.
+- **CSRF bypass fixed**: Middleware CSRF check sebelumnya bisa di-bypass dengan mengirim `Content-Type: application/json`. Sekarang validasi hanya berdasarkan Origin/Referer header — Content-Type tidak lagi dijadikan bypass.
+
+#### High
+- **User enumeration prevention**: `/api/auth/forgot-password` sebelumnya memberikan pesan berbeda untuk email terdaftar vs tidak ("Email tidak terdaftar"). Sekarang selalu mengembalikan pesan yang sama: "Jika email terdaftar, link reset password telah dikirim ke email Anda."
+- **Password policy strengthened**: Register dan change-password sekarang membutuhkan minimal 8 karakter + huruf besar + huruf kecil + angka. Sebelumnya hanya 6 karakter tanpa complexity requirement. Konsisten dengan reset-password policy.
+- **CRON_SECRET mandatory in production**: Semua cron endpoints (`expire-payments`, `keep-alive`, `payment-reminders`, `subscription-expiration`, `trial-expiration`) sekarang menolak request di production jika `CRON_SECRET` tidak diset. GET handler juga dihapus dari semua cron endpoints.
+- **Hardcoded fallback secret removed**: `src/lib/client-auth.ts` sebelumnya menggunakan fallback secret `'client-session-fallback-secret-change-me'`. Sekarang throw error di production jika `NEXTAUTH_SECRET` kosong.
+- **iPaymu webhook timing-safe comparison**: Signature verification sekarang menggunakan `crypto.timingSafeEqual()` menggantikan `===` comparison yang rentan terhadap timing attacks. Signature values juga dihapus dari error log.
+- **Verbose auth logging disabled in production**: `src/lib/auth.ts` dan `src/app/api/login/route.ts` sebelumnya mencetak "password valid: true/false" dan email ke console. Sekarang semua verbose log hanya aktif di development.
+- **Error detail exposure removed**: API responses di login, test-login, cron endpoints, dan team management tidak lagi mengandung `error.message` atau stack trace. Hanya pesan generik yang dikembalikan ke client.
+
+#### Medium
+- **Discount negative value fix**: Invoice discount calculation sekarang menggunakan `Math.max(0, ...)` pada setiap tahap untuk mencegah invoice dengan nilai negatif.
+
+### UX / UI
+
+- **CTA redirect change**: Semua CTA "Mulai Gratis", "Mulai Sekarang", "Coba Sekarang" di landing page, header, hero, CTA section, how-it-works, pricing, dan footer sekarang mengarah ke `/register` (sebelumnya `/login`).
+- **New "Masuk" button**: Tombol "Masuk" baru ditambahkan di desktop navbar dan mobile menu yang mengarah langsung ke `/login`, dengan styling `bg-white/15` agar terbaca jelas di atas header gelap.
+
+### Files Changed (29 files, +339 / -127)
+
+```
+src/app/api/auth/forgot-password/route.ts         | 21 ++----
+src/app/api/cron/expire-payments/route.ts         | 17 ++---
+src/app/api/cron/keep-alive/route.ts              | 26 +++++--
+src/app/api/cron/payment-reminders/route.ts       | 24 +++++--
+src/app/api/cron/subscription-expiration/route.ts | 14 ++--
+src/app/api/cron/trial-expiration/route.ts        | 25 +++++--
+src/app/api/invoices/[id]/route.ts                |  4 +-
+src/app/api/invoices/route.ts                     |  6 +-
+src/app/api/login/route.ts                        | 33 +++++----
+src/app/api/session/route.ts                      |  3 +-
+src/app/api/teams/[id]/members/route.ts           |  4 +-
+src/app/api/test-login/route.ts                   |  6 +-
+src/app/api/user/change-password/route.ts         | 25 ++++++-
+src/app/page.tsx                                  | 15 ++--
+src/components/CTA.tsx                            |  2 +-
+src/components/Footer.tsx                         |  2 +-
+src/components/Header.tsx                         | 23 ++++--
+src/components/Hero.tsx                           |  2 +-
+src/components/HowItWorks.tsx                     |  2 +-
+src/components/LandingPricing.tsx                 |  4 +-
+src/components/Pricing.tsx                        |  4 +-
+src/lib/admin-session.ts                          | 72 +++++++++++++------
+src/lib/auth.ts                                   |  5 +-
+src/lib/client-auth.ts                            |  8 ++-
+src/lib/payment/ipaymu.ts                         | 17 +++--
+src/lib/session.ts                                | 87 ++++++++++++++++++++---
+src/lib/validations/invoice.ts                    |  7 +-
+src/middleware.ts                                 |  6 +-
+README.md                                        |  2 +-
+```
+
+### Deployment Checklist
+
+1. Pastikan `NEXTAUTH_SECRET` sudah diset di environment — sekarang wajib (tidak ada fallback)
+2. Pastikan `CRON_SECRET` sudah diset di production — cron jobs akan gagal tanpa ini
+3. Update cron job callers untuk menggunakan `POST` method (bukan `GET`) dengan header `Authorization: Bearer <CRON_SECRET>`
+4. User yang sedang login akan tetap bisa menggunakan session lama (backward compatibility) — cookie baru (JWT) ditulis saat login berikutnya
+5. Admin yang sedang login akan diminta login ulang jika cookie sudah expired
+
+### Regression Watch
+
+- Login flow: user harus bisa login seperti biasa, cookie sekarang berformat JWT
+- Admin login: session admin sekarang menggunakan JWT (bukan base64)
+- Forgot password: response selalu sama, tidak membedakan email terdaftar atau tidak
+- Register: password harus minimal 8 karakter + uppercase + lowercase + digit
+- CSRF: API request dari browser harus menyertakan Origin/Referer yang valid
+- Cron jobs: harus menggunakan POST + Bearer token
+- iPaymu webhook: signature verification tetap berfungsi normal
+
 ## [0.1.72] - 2026-04-14 — WhatsApp Integration (OpenWA)
 
 ### Added

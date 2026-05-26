@@ -43,12 +43,12 @@ export async function POST(req: NextRequest) {
     // Find user by email
     const user = await findUserByEmail(email)
 
-    // Return error if email not registered
+    // Always return same message to prevent user enumeration
+    const successMessage = 'Jika email terdaftar, link reset password telah dikirim ke email Anda.'
+
     if (!user) {
-      return NextResponse.json(
-        { error: 'Email tidak terdaftar dalam sistem kami' },
-        { status: 400 }
-      )
+      // Return same response to prevent email enumeration
+      return NextResponse.json({ message: successMessage })
     }
 
     // Generate reset token
@@ -69,17 +69,10 @@ export async function POST(req: NextRequest) {
     // Check if email was sent successfully
     if (!emailResult || !emailResult.success) {
       console.error('[ForgotPassword] Failed to send email:', emailResult?.error)
-      return NextResponse.json(
-        { error: 'Gagal mengirim email reset password. Silakan hubungi admin atau coba lagi nanti.' },
-        { status: 500 }
-      )
+      // Still return generic message to prevent enumeration
     }
 
-    console.log('[ForgotPassword] Email sent successfully to:', email)
-
-    return NextResponse.json({
-      message: 'Link reset password telah dikirim ke email Anda',
-    })
+    return NextResponse.json({ message: successMessage })
   } catch (error) {
     console.error('Forgot password error:', error)
     return NextResponse.json(

@@ -26,7 +26,7 @@ export default function CTA() {
 
             {/* CTA Button */}
             <Link
-              href="/login"
+              href="/register"
               className="inline-flex items-center gap-3 px-12 py-6 text-snow font-display font-bold text-xl rounded-2xl neu-button-primary hover:-translate-y-1 transition-all duration-300 group focus-ring"
             >
               Mulai Gratis - Sekarang

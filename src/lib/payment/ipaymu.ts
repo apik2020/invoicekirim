@@ -13,7 +13,7 @@
  * - IPAYMU_MODE: 'SANDBOX' or 'PRODUCTION'
  */
 
-import { createHash, createHmac } from 'crypto'
+import { createHash, createHmac, timingSafeEqual } from 'crypto'
 import type {
   PaymentGateway,
   PaymentParams,
@@ -496,13 +496,22 @@ export class IPaymuGateway implements PaymentGateway {
       .update(jsonPayload)
       .digest('hex')
 
-    const isValid = receivedSignature.toLowerCase() === expectedSignature.toLowerCase()
+    // Timing-safe comparison to prevent timing attacks
+    let isValid = false
+    try {
+      const receivedBuf = Buffer.from(receivedSignature.toLowerCase(), 'hex')
+      const expectedBuf = Buffer.from(expectedSignature.toLowerCase(), 'hex')
+      if (receivedBuf.length === expectedBuf.length) {
+        isValid = timingSafeEqual(receivedBuf, expectedBuf)
+      }
+    } catch {
+      isValid = false
+    }
 
     if (!isValid) {
       log('error', 'Callback signature verification failed', {
         action: 'verifyCallback',
-        expected: expectedSignature,
-        received: receivedSignature,
+        referenceId: payload.reference_id,
       })
       return {
         isValid: false,

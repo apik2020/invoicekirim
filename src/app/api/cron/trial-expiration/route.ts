@@ -10,13 +10,28 @@ import {
 // Cron job to handle trial expiration
 // Should be called daily by Vercel Cron or external scheduler
 
-export async function GET(req: NextRequest) {
+function verifyCronSecret(req: NextRequest): boolean {
+  const authHeader = req.headers.get('authorization')
+  const secret = process.env.CRON_SECRET
+
+  // In production, CRON_SECRET is mandatory
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      console.error('[CRON] CRON_SECRET is not set in production — rejecting request')
+      return false
+    }
+    // Allow without secret only in development
+    console.warn('[CRON] No CRON_SECRET set — allowed in development only')
+    return true
+  }
+
+  return authHeader === `Bearer ${secret}`
+}
+
+export async function POST(req: NextRequest) {
   try {
     // Verify cron secret for security
-    const authHeader = req.headers.get('authorization')
-    const cronSecret = process.env.CRON_SECRET
-
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    if (!verifyCronSecret(req)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

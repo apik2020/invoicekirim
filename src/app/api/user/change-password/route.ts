@@ -24,9 +24,30 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    if (newPassword.length < 6) {
+    if (newPassword.length < 8) {
       return NextResponse.json(
-        { error: 'New password must be at least 6 characters' },
+        { error: 'Password baru minimal 8 karakter' },
+        { status: 400 }
+      )
+    }
+
+    if (!/[A-Z]/.test(newPassword)) {
+      return NextResponse.json(
+        { error: 'Password baru harus mengandung huruf besar' },
+        { status: 400 }
+      )
+    }
+
+    if (!/[a-z]/.test(newPassword)) {
+      return NextResponse.json(
+        { error: 'Password baru harus mengandung huruf kecil' },
+        { status: 400 }
+      )
+    }
+
+    if (!/[0-9]/.test(newPassword)) {
+      return NextResponse.json(
+        { error: 'Password baru harus mengandung angka' },
         { status: 400 }
       )
     }

@@ -9,7 +9,13 @@ export interface ClientSession {
   phone: string | null
 }
 
-const SESSION_SECRET = process.env.NEXTAUTH_SECRET || 'client-session-fallback-secret-change-me'
+const SESSION_SECRET = (() => {
+  const secret = process.env.NEXTAUTH_SECRET
+  if (!secret && process.env.NODE_ENV === 'production') {
+    throw new Error('NEXTAUTH_SECRET environment variable is required in production')
+  }
+  return secret || 'dev-only-insecure-secret'
+})()
 
 /**
  * Create a signed session token with HMAC

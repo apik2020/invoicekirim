@@ -162,9 +162,9 @@ export default async function middleware(req: NextRequest) {
       const isValidOrigin = allowedOrigins.some(allowed => origin === allowed)
       const isValidReferer = allowedOrigins.some(allowed => referer.startsWith(allowed))
 
-      // Allow if origin or referer is valid, or if it's a JSON/multipart API request from same origin
-      const isValidContentType = contentType.includes('application/json') || contentType.includes('multipart/form-data')
-      if (!isValidOrigin && !isValidReferer && !isValidContentType) {
+      // CSRF is validated based on Origin/Referer only.
+      // Content-Type alone must NOT bypass this check — an attacker can set any Content-Type.
+      if (!isValidOrigin && !isValidReferer) {
         return new NextResponse(
           JSON.stringify({ error: 'CSRF validation failed' }),
           { status: 403, headers: { 'Content-Type': 'application/json' } }
