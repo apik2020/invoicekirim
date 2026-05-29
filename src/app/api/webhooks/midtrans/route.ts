@@ -1,3 +1,16 @@
+/**
+ * WEBHOOK HANDLER - LEGACY/INACTIVE
+ *
+ * This webhook handles Midtrans payment notifications.
+ * Currently INACTIVE for new payments - new payments use iPaymu gateway only.
+ * This handler exists to support legacy/existing Midtrans payments in the system.
+ *
+ * Active Payment Gateway: iPaymu (/api/webhooks/ipaymu)
+ * Last Updated: 2026-05-29
+ *
+ * See: /docs/PAYMENT_GATEWAYS.md for current payment gateway strategy
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyNotificationSignature } from '@/lib/midtrans'

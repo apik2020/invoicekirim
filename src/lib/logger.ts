@@ -124,6 +124,11 @@ class Logger {
     this.info(`Payment: ${event}`, context)
   }
 
+  // Helper for API route errors (migration helper)
+  apiError(endpoint: string, error: unknown, userId?: string): void {
+    this.error(`API Error: ${endpoint}`, error, { userId, endpoint })
+  }
+
   // Legacy compatibility methods
   legacyLog(...args: unknown[]): void {
     if (isDev && !isTest) {
