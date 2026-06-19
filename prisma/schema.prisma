@@ -277,7 +277,7 @@ model items {
   userId      String
   name        String
   description String?
-  sku         String?  @unique
+  sku         String?
   unit        String   @default("pcs")
   price       Float
   taxRate     Float    @default(11)
@@ -288,6 +288,7 @@ model items {
   teams       teams?   @relation(fields: [teamId], references: [id], onDelete: Cascade)
   users       users    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, sku])
   @@index([sku])
   @@index([teamId])
   @@index([userId])

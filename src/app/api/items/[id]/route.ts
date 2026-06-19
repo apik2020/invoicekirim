@@ -31,7 +31,12 @@ export async function PUT(
     }
 
     const body = await req.json()
-    const { name, description, sku, unit, price, taxRate, category } = body
+    let { name, description, sku, unit, price, taxRate, category } = body
+
+    // Normalize empty SKU to null (avoid duplicate empty strings)
+    if (!sku || sku.trim() === '') {
+      sku = null
+    }
 
     // Check if SKU is being changed and if it conflicts with another item
     if (sku && sku !== item.sku) {
@@ -61,12 +66,22 @@ export async function PUT(
         price,
         taxRate,
         category,
+        updatedAt: new Date(),
       },
     })
 
     return NextResponse.json(updatedItem)
-  } catch (error) {
+  } catch (error: any) {
     console.error('Update item error:', error)
+
+    // Handle unique constraint violation
+    if (error?.code === 'P2002' && error?.meta?.target?.includes('sku')) {
+      return NextResponse.json(
+        { error: 'SKU sudah digunakan' },
+        { status: 400 }
+      )
+    }
+
     return NextResponse.json(
       { error: 'Failed to update item' },
       { status: 500 }

@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { name, description, sku, unit, price, taxRate, category } = body
+    let { name, description, sku, unit, price, taxRate, category } = body
 
     // Validation
     if (!name || !price) {
@@ -56,6 +56,11 @@ export async function POST(req: NextRequest) {
         { error: 'Nama dan harga wajib diisi' },
         { status: 400 }
       )
+    }
+
+    // Normalize empty SKU to null (avoid duplicate empty strings)
+    if (!sku || sku.trim() === '') {
+      sku = null
     }
 
     // Check if SKU already exists for this user
@@ -91,8 +96,17 @@ export async function POST(req: NextRequest) {
     })
 
     return NextResponse.json(item, { status: 201 })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Create item error:', error)
+
+    // Handle unique constraint violation
+    if (error?.code === 'P2002' && error?.meta?.target?.includes('sku')) {
+      return NextResponse.json(
+        { error: 'SKU sudah digunakan' },
+        { status: 400 }
+      )
+    }
+
     return NextResponse.json(
       { error: 'Failed to create item' },
       { status: 500 }
