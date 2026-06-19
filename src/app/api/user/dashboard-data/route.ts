@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 import { prisma } from '@/lib/prisma'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
+import { getUserSession } from '@/lib/session'
 
 // Retry helper for database queries
 async function withRetry<T>(
@@ -26,82 +24,29 @@ async function withRetry<T>(
   throw lastError
 }
 
-// Helper to get authenticated user from either NextAuth or custom session
-async function getAuthenticatedUser() {
-  try {
-    // First, try NextAuth session (for Google OAuth users)
-    const nextAuthSession = await getServerSession(authOptions)
-
-    if (nextAuthSession?.user?.id) {
-      // Check if user is admin
-      if (nextAuthSession.user.isAdmin) {
-        console.log('Admin user detected via NextAuth, redirecting to admin dashboard')
-        return null // Admin should use admin dashboard
-      }
-
-      // Get fresh user data from database
-      const dbUser = await prisma.users.findUnique({
-        where: { id: nextAuthSession.user.id },
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          image: true,
-        }
-      })
-
-      if (dbUser) {
-        return {
-          id: dbUser.id,
-          email: dbUser.email,
-          name: dbUser.name,
-          image: dbUser.image,
-          isAdmin: false // Regular user from NextAuth
-        }
-      }
-    }
-
-    // Fallback: Check custom user_session cookie (for credentials login)
-    const cookieStore = await cookies()
-    const userSessionCookie = cookieStore.get('user_session')
-
-    if (userSessionCookie?.value) {
-      try {
-        const session = JSON.parse(userSessionCookie.value)
-
-        if (session?.id) {
-          // Check if user is admin
-          if (session.isAdmin) {
-            console.log('Admin user detected via custom session, redirecting to admin dashboard')
-            return null // Admin should use admin dashboard
-          }
-
-          return session
-        }
-      } catch (jsonError) {
-        console.error('Failed to parse user_session cookie:', jsonError)
-      }
-    }
-
-    return null
-  } catch (error) {
-    console.error('Error in getAuthenticatedUser:', error)
-    return null
-  }
-}
+// This function is no longer needed - removed in favor of getUserSession() from @/lib/session
 
 export async function GET(_req: NextRequest) {
   try {
-    // Get authenticated user from either session type
-    const session = await getAuthenticatedUser()
+    // Get authenticated user session (supports both NextAuth and custom JWT sessions)
+    const session = await getUserSession()
 
     if (!session?.id) {
-      console.log('No valid session found')
+      console.log('[Dashboard API] No valid session found')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // Check if user is admin - redirect to admin dashboard
+    if (session.isAdmin) {
+      console.log('[Dashboard API] Admin user detected, should use admin dashboard')
+      return NextResponse.json(
+        { error: 'Admin users should use /admin dashboard' },
+        { status: 403 }
+      )
+    }
+
     const userId = session.id
-    console.log('Fetching dashboard data for user:', userId)
+    console.log('[Dashboard API] Fetching dashboard data for user:', userId)
 
     const [invoices, subscription, activityLogs, dueInvoices] = await Promise.all([
       withRetry(() => prisma.invoices.findMany({
