@@ -6,6 +6,7 @@ import { generateInvoiceNumber } from '@/lib/utils'
 import { checkRateLimit, apiRateLimit } from '@/lib/rate-limit'
 import { logInvoiceCreated } from '@/lib/activity-log'
 import { checkFeatureAccess, FEATURE_KEYS } from '@/lib/feature-access'
+import { logger } from '@/lib/logger'
 
 // Helper function to calculate discount
 function calculateDiscount(
@@ -21,8 +22,9 @@ function calculateDiscount(
 }
 
 export async function GET(req: NextRequest) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -70,7 +72,7 @@ export async function GET(req: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Get invoices error:', error)
+    logger.apiError('/api/invoices GET', error, session?.id)
     return NextResponse.json(
       { error: 'Gagal mengambil invoice' },
       { status: 500 }
@@ -79,8 +81,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -229,7 +232,7 @@ export async function POST(req: NextRequest) {
       }
     )
   } catch (error) {
-    console.error('Create invoice error:', error)
+    logger.apiError('/api/invoices POST', error, session?.id)
     return NextResponse.json(
       { error: 'Gagal membuat invoice' },
       { status: 500 }

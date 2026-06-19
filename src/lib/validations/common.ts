@@ -90,7 +90,7 @@ export const updateTeamSchema = createTeamSchema.partial()
 export const inviteTeamMemberSchema = z.object({
   email: emailSchema,
   role: z.enum(['OWNER', 'ADMIN', 'MEMBER', 'VIEWER'], {
-    errorMap: () => ({ message: 'Role tidak valid' })
+    error: () => 'Role tidak valid'
   }),
 })
 
@@ -102,7 +102,7 @@ export const createPaymentSchema = z.object({
   invoiceId: z.string().min(1, 'Invoice ID wajib diisi'),
   amount: z.number().min(0, 'Jumlah tidak boleh negatif'),
   method: z.enum(['va', 'qris', 'ewallet', 'bank_transfer', 'cash', 'other'], {
-    errorMap: () => ({ message: 'Metode pembayaran tidak valid' })
+    error: () => 'Metode pembayaran tidak valid'
   }).optional(),
   notes: z.string().max(500, 'Catatan terlalu panjang').optional(),
 })
@@ -124,7 +124,7 @@ export const createCheckoutSchema = z.object({
 // ============================================================================
 
 export const invoiceStatusSchema = z.enum(['DRAFT', 'SENT', 'PAID', 'OVERDUE', 'CANCELED'], {
-  errorMap: () => ({ message: 'Status invoice tidak valid' })
+  error: () => 'Status invoice tidak valid'
 })
 
 export const invoiceFilterSchema = z.object({

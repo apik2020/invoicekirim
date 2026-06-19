@@ -1,6 +1,7 @@
 import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -10,8 +11,9 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     const { id } = await params
 
     if (!session?.id) {
@@ -72,7 +74,7 @@ export async function PUT(
 
     return NextResponse.json(updatedItem)
   } catch (error: any) {
-    console.error('Update item error:', error)
+    logger.apiError('/api/items/[id] PUT', error, session?.id)
 
     // Handle unique constraint violation
     if (error?.code === 'P2002' && error?.meta?.target?.includes('sku')) {
@@ -94,8 +96,9 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     const { id } = await params
 
     if (!session?.id) {
@@ -120,7 +123,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true, message: 'Item deleted successfully' })
   } catch (error) {
-    console.error('Delete item error:', error)
+    logger.apiError('/api/items/[id] DELETE', error, session?.id)
     return NextResponse.json(
       { error: 'Failed to delete item' },
       { status: 500 }

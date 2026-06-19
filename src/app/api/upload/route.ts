@@ -1,17 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserSession } from '@/lib/session'
 import { uploadFile, generateFilename } from '@/lib/storage'
+import { logger } from '@/lib/logger'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
+  let session
   try {
-    console.log('[UPLOAD] Request received, content-type:', req.headers.get('content-type'))
+    logger.dev('UPLOAD', 'Request received, content-type:', req.headers.get('content-type'))
 
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session) {
-      console.log('[UPLOAD] No session found')
+      logger.dev('UPLOAD', 'No session found')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
@@ -19,7 +21,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const file = formData.get('file') as File | null
     const type = formData.get('type') as string || 'logo'
 
-    console.log('[UPLOAD] File:', file?.name, 'Type:', file?.type, 'Size:', file?.size) // 'logo' | 'branding' | 'document'
+    logger.dev('UPLOAD', 'File:', file?.name, 'Type:', file?.type, 'Size:', file?.size) // 'logo' | 'branding' | 'document'
 
     if (!file) {
       return NextResponse.json(
@@ -69,7 +71,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       file.type
     )
 
-    console.log('[UPLOAD] File uploaded:', result.url)
+    logger.dev('UPLOAD', 'File uploaded:', result.url)
 
     return NextResponse.json({
       url: result.url,
@@ -77,8 +79,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       fileName: fileName,
     })
   } catch (error) {
-    console.error('[UPLOAD] Error:', error)
-    console.error('[UPLOAD] Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2))
+    logger.apiError('/api/upload POST', error, session?.id)
     return NextResponse.json(
       { error: 'Gagal mengupload file' },
       { status: 500 }

@@ -3,13 +3,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { invoiceUpdateSchema } from '@/lib/validations/invoice'
 import { logInvoiceUpdated, logInvoiceDeleted } from '@/lib/activity-log'
+import { logger } from '@/lib/logger'
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -36,7 +38,7 @@ export async function GET(
       items: invoice_items,
     })
   } catch (error) {
-    console.error('Get invoice error:', error)
+    logger.apiError('/api/invoices/[id] GET', error, session?.id)
     return NextResponse.json(
       { error: 'Gagal mengambil invoice' },
       { status: 500 }
@@ -48,8 +50,9 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -165,7 +168,7 @@ export async function PUT(
 
     return NextResponse.json(invoice)
   } catch (error) {
-    console.error('Update invoice error:', error)
+    logger.apiError('/api/invoices/[id] PUT', error, session?.id)
     return NextResponse.json(
       { error: 'Gagal mengubah invoice' },
       { status: 500 }
@@ -177,8 +180,9 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -221,7 +225,7 @@ export async function DELETE(
 
     return NextResponse.json({ message: 'Invoice berhasil dihapus' })
   } catch (error) {
-    console.error('Delete invoice error:', error)
+    logger.apiError('/api/invoices/[id] DELETE', error, session?.id)
     return NextResponse.json(
       { error: 'Gagal menghapus invoice' },
       { status: 500 }

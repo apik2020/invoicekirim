@@ -2,11 +2,13 @@ import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createReceipt } from '@/lib/receipt-generator'
+import { logger } from '@/lib/logger'
 
 // GET - List all payments for the authenticated user
 export async function GET(req: NextRequest) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -52,7 +54,7 @@ export async function GET(req: NextRequest) {
       offset,
     })
   } catch (error) {
-    console.error('Error fetching payments:', error)
+    logger.apiError('/api/payments GET', error, session?.id)
     return NextResponse.json(
       { error: 'Gagal mengambil data pembayaran' },
       { status: 500 }
@@ -62,8 +64,9 @@ export async function GET(req: NextRequest) {
 
 // POST - Create a new payment
 export async function POST(req: NextRequest) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -120,7 +123,7 @@ export async function POST(req: NextRequest) {
       try {
         await createReceipt(payment.id)
       } catch (receiptError) {
-        console.error('Failed to generate receipt:', receiptError)
+        logger.error('Failed to generate receipt', receiptError, { userId: session.id, paymentId: payment.id })
         // Don't fail the payment creation if receipt generation fails
       }
     }
@@ -130,7 +133,7 @@ export async function POST(req: NextRequest) {
       payment,
     }, { status: 201 })
   } catch (error) {
-    console.error('Error creating payment:', error)
+    logger.apiError('/api/payments POST', error, session?.id)
     return NextResponse.json(
       { error: 'Gagal membuat pembayaran' },
       { status: 500 }

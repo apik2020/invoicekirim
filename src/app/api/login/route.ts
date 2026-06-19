@@ -2,16 +2,15 @@ import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
 import { encryptSession } from '@/lib/session'
+import { logger } from '@/lib/logger'
 
 // Simple login endpoint that bypasses NextAuth
-const isDev = process.env.NODE_ENV !== 'production'
-
 export async function POST(request: Request) {
   try {
     const body = await request.json()
     const { email, password } = body
 
-    if (isDev) console.log('[LOGIN] Attempt:', email)
+    logger.dev('LOGIN', 'Attempt:', email)
     if (!email || !password) {
       return NextResponse.json({ error: 'Email dan password harus diisi' }, { status: 400 })
     }
@@ -25,7 +24,7 @@ export async function POST(request: Request) {
     if (admin && admin.password) {
       const isValid = await bcrypt.compare(password, admin.password)
       if (isValid) {
-        if (isDev) console.log('[LOGIN] Admin login successful')
+        logger.dev('LOGIN', 'Admin login successful')
         const response = NextResponse.json({
           success: true,
           user: { id: admin.id, email: admin.email, name: admin.name, isAdmin: true }
@@ -64,7 +63,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email atau password salah' }, { status: 401 })
     }
 
-    if (isDev) console.log('[LOGIN] User login successful')
+    logger.dev('LOGIN', 'User login successful')
 
     // Check if admin
     const isAdmin = await prisma.admins.findUnique({
@@ -101,7 +100,7 @@ export async function POST(request: Request) {
 
     return response
   } catch (error) {
-    console.error('[LOGIN] Error:', error)
+    logger.error('[LOGIN] Error', error)
     return NextResponse.json({
       error: 'Terjadi kesalahan saat login. Silakan coba lagi.',
     }, { status: 500 })
