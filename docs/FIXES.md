@@ -1,5 +1,72 @@
 # Bug Fixes Log
 
+## 2026-06-19: Fix Dashboard 401 Unauthorized Error
+
+### Problem
+After successful login, users could access the dashboard page but got error:
+```
+Unauthorized
+```
+
+The dashboard would not load data, showing "Gagal mengambil data dashboard" error.
+
+### Root Cause
+**Session Format Mismatch** between frontend and API:
+
+After security hardening (v0.1.91), session cookies were encrypted as **JWT tokens** for security. However, the dashboard API endpoint still tried to parse cookies as **plain JSON**:
+
+```typescript
+// Old code in dashboard API (WRONG)
+const session = JSON.parse(userSessionCookie.value) // ❌ JWT can't be parsed as JSON
+```
+
+This caused:
+1. ✅ User login works → JWT session cookie set
+2. ✅ Dashboard page loads → Uses `getUserSession()` which decrypts JWT
+3. ❌ Dashboard API fails → Uses plain `JSON.parse()` which can't decrypt JWT
+4. ❌ Result: 401 Unauthorized error
+
+### Solution
+**Use centralized `getUserSession()` function** that properly handles:
+- ✅ JWT encrypted sessions (new secure format)
+- ✅ Plain JSON sessions (legacy backward compatibility)
+- ✅ NextAuth sessions (OAuth login with Google, etc)
+
+**Before:**
+```typescript
+// Custom function with plain JSON parse
+const session = JSON.parse(userSessionCookie.value)
+```
+
+**After:**
+```typescript
+// Centralized function with JWT decryption
+import { getUserSession } from '@/lib/session'
+const session = await getUserSession()
+```
+
+### Files Changed
+- [src/app/api/user/dashboard-data/route.ts](../src/app/api/user/dashboard-data/route.ts) - Use getUserSession()
+
+### Code Cleanup
+- Removed duplicate `getAuthenticatedUser()` function (70 lines)
+- Simplified imports (removed unused dependencies)
+- Added admin user detection with 403 response
+- Enhanced logging with [Dashboard API] prefix
+
+### Testing
+- ✅ Login with email/password → Dashboard loads
+- ✅ Login with Google OAuth → Dashboard loads
+- ✅ Admin users get 403 redirect to /admin
+- ✅ Legacy plain JSON sessions still work (backward compatible)
+
+### Impact
+- **Breaking change**: None (backward compatible)
+- **User experience**: Dashboard now works after login
+- **Security**: Maintains JWT encryption for sessions
+
+---
+
 ## 2026-06-19: Improve Dashboard Error Handling and Logging
 
 ### Problem
