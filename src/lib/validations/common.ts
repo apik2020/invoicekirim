@@ -55,6 +55,7 @@ export const createItemSchema = z.object({
   name: z.string().min(1, 'Nama item wajib diisi').max(200, 'Nama terlalu panjang'),
   description: z.string().max(1000, 'Deskripsi terlalu panjang').optional(),
   price: z.number().min(0, 'Harga tidak boleh negatif').max(1000000000000, 'Harga terlalu besar'),
+  taxRate: z.number().min(0, 'Pajak tidak boleh negatif').max(100, 'Pajak tidak boleh lebih dari 100%').optional(),
   unit: z.string().max(20, 'Unit terlalu panjang').optional().default('pcs'),
   category: z.string().max(100, 'Kategori terlalu panjang').optional(),
   sku: z.string().max(100, 'SKU terlalu panjang').optional(),
@@ -68,12 +69,11 @@ export const updateItemSchema = createItemSchema.partial()
 
 export const updateProfileSchema = z.object({
   name: z.string().min(1, 'Nama wajib diisi').max(200, 'Nama terlalu panjang').optional(),
-  email: emailSchema.optional(),
-  phone: phoneSchema,
   companyName: z.string().max(200, 'Nama perusahaan terlalu panjang').optional(),
-  address: z.string().max(500, 'Alamat terlalu panjang').optional(),
-  taxNumber: z.string().max(50, 'Nomor pajak terlalu panjang').optional(),
-  website: urlSchema,
+  // companyEmail may be submitted as an empty string to clear the field
+  companyEmail: z.string().email('Email perusahaan tidak valid').max(200).optional().or(z.literal('')),
+  companyPhone: z.string().max(30, 'Nomor telepon terlalu panjang').optional(),
+  companyAddress: z.string().max(500, 'Alamat terlalu panjang').optional(),
 })
 
 // ============================================================================
@@ -105,6 +105,18 @@ export const createPaymentSchema = z.object({
     errorMap: () => ({ message: 'Metode pembayaran tidak valid' })
   }).optional(),
   notes: z.string().max(500, 'Catatan terlalu panjang').optional(),
+})
+
+/**
+ * Subscription checkout schema (POST /api/payments/create)
+ * Initiates a subscription upgrade payment via the active gateway.
+ */
+export const createCheckoutSchema = z.object({
+  pricingPlanId: z.string().min(1, 'Paket tidak valid'),
+  planSlug: z.string().min(1, 'Paket tidak valid'),
+  billingCycle: z.enum(['monthly', 'yearly'], {
+    error: () => 'Siklus penagihan tidak valid'
+  }).optional().default('monthly'),
 })
 
 // ============================================================================
@@ -165,7 +177,7 @@ export function validateBody<T>(
   if (!validation.success) {
     return {
       success: false,
-      error: validation.error.errors[0]?.message || 'Data tidak valid',
+      error: validation.error.issues[0]?.message || 'Data tidak valid',
       details: validation.error.flatten().fieldErrors as Record<string, string[]>
     }
   }
@@ -189,7 +201,7 @@ export function validateQuery<T>(
   if (!validation.success) {
     return {
       success: false,
-      error: validation.error.errors[0]?.message || 'Query parameters tidak valid'
+      error: validation.error.issues[0]?.message || 'Query parameters tidak valid'
     }
   }
 

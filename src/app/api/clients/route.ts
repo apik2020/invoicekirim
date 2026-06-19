@@ -22,8 +22,9 @@ export const dynamic = 'force-dynamic'
  * @throws {500} Internal Server Error
  */
 export async function GET(req: NextRequest) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
 
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -74,8 +75,9 @@ export async function GET(req: NextRequest) {
  * @throws {500} Internal Server Error
  */
 export async function POST(req: NextRequest) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
 
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -87,7 +89,7 @@ export async function POST(req: NextRequest) {
     const validation = createClientSchema.safeParse(body)
 
     if (!validation.success) {
-      const firstError = validation.error.errors[0]
+      const firstError = validation.error.issues[0]
       return NextResponse.json(
         {
           error: firstError?.message || 'Data tidak valid',

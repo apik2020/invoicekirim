@@ -4,6 +4,7 @@ import { getBranding, updateBranding } from '@/lib/branding'
 import { getUserTeams, createTeam } from '@/lib/teams'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 const updateBrandingSchema = z.object({
   logoUrl: z.any().optional().transform(val => {
@@ -79,8 +80,9 @@ async function getOrCreatePersonalTeam(userId: string): Promise<string> {
 
 // GET /api/branding - Get branding settings
 export async function GET(req: NextRequest) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -97,7 +99,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ branding })
   } catch (error) {
-    console.error('Error fetching branding:', error)
+    logger.apiError('/api/branding GET', error, session?.id)
     return NextResponse.json(
       { error: 'Failed to fetch branding' },
       { status: 500 }
@@ -107,8 +109,9 @@ export async function GET(req: NextRequest) {
 
 // PUT /api/branding - Update branding settings
 export async function PUT(req: NextRequest) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -122,12 +125,12 @@ export async function PUT(req: NextRequest) {
     }
 
     const body = await req.json()
-    console.log('[Branding PUT] Received body:', JSON.stringify(body, null, 2))
+    logger.dev('Branding PUT', 'Received body:', body)
 
     const validated = updateBrandingSchema.safeParse(body)
 
     if (!validated.success) {
-      console.log('[Branding PUT] Validation failed:', validated.error.flatten())
+      logger.dev('Branding PUT', 'Validation failed:', validated.error.flatten())
       return NextResponse.json(
         { error: 'Invalid input', details: validated.error.flatten() },
         { status: 400 }
@@ -138,7 +141,7 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json({ branding, success: true })
   } catch (error: any) {
-    console.error('[Branding PUT] Error:', error)
+    logger.apiError('/api/branding PUT', error, session?.id)
     return NextResponse.json(
       { error: error?.message || 'Failed to update branding' },
       { status: 500 }

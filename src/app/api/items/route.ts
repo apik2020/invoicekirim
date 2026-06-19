@@ -1,14 +1,27 @@
 import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
+import { createItemSchema } from '@/lib/validations/common'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
 
-// GET - Get all items for current user
+/**
+ * GET /api/items
+ *
+ * Retrieves all items for the authenticated user, optionally filtered by category.
+ *
+ * @query category - Optional category filter
+ *
+ * @returns {Item[]} List of items ordered by creation date (newest first)
+ * @throws {401} Unauthorized - User not logged in
+ * @throws {500} Internal Server Error
+ */
 export async function GET(req: NextRequest) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
 
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -30,7 +43,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(items)
   } catch (error) {
-    console.error('Get items error:', error)
+    logger.apiError('/api/items GET', error, session?.id)
     return NextResponse.json(
       { error: 'Failed to fetch items' },
       { status: 500 }
@@ -38,27 +51,48 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST - Create new item
+/**
+ * POST /api/items
+ *
+ * Creates a new item in the authenticated user's catalog.
+ *
+ * @body {CreateItemSchema} Item data (name, price, optional: description, sku, unit, taxRate, category)
+ *
+ * @returns {Item} Created item object
+ * @throws {401} Unauthorized - User not logged in
+ * @throws {422} Validation Error - Invalid item data
+ * @throws {400} Bad Request - SKU already used by this user
+ * @throws {500} Internal Server Error
+ */
 export async function POST(req: NextRequest) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
 
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const body = await req.json()
-    let { name, description, sku, unit, price, taxRate, category } = body
 
-    // Validation
-    if (!name || !price) {
+    // Validate with Zod schema
+    const validation = createItemSchema.safeParse(body)
+
+    if (!validation.success) {
+      const firstError = validation.error.issues[0]
       return NextResponse.json(
-        { error: 'Nama dan harga wajib diisi' },
-        { status: 400 }
+        {
+          error: firstError?.message || 'Data tidak valid',
+          details: validation.error.flatten().fieldErrors,
+        },
+        { status: 422 }
       )
     }
 
+    const { name, description, unit, price, taxRate, category } = validation.data
+
     // Normalize empty SKU to null (avoid duplicate empty strings)
+    let sku = validation.data.sku ?? null
     if (!sku || sku.trim() === '') {
       sku = null
     }
@@ -95,9 +129,11 @@ export async function POST(req: NextRequest) {
       },
     })
 
+    logger.info('Item created', { userId: session.id, itemId: item.id, itemName: name })
+
     return NextResponse.json(item, { status: 201 })
   } catch (error: any) {
-    console.error('Create item error:', error)
+    logger.apiError('/api/items POST', error, session?.id)
 
     // Handle unique constraint violation
     if (error?.code === 'P2002' && error?.meta?.target?.includes('sku')) {

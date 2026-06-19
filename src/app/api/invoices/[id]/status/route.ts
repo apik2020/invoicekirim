@@ -3,13 +3,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendInvoiceSent, sendInvoicePaid, sendInvoiceOverdue } from '@/lib/email'
 import { formatCurrency, formatDate } from '@/lib/utils'
+import { logger } from '@/lib/logger'
 
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -70,7 +72,7 @@ export async function PATCH(
         invoiceUrl,
         teamId: invoice.teamId ?? undefined,
       }).catch((error) => {
-        console.error('Failed to send invoice email:', error)
+        logger.error('Failed to send invoice email', error, { invoiceId: id })
       })
     }
 
@@ -86,7 +88,7 @@ export async function PATCH(
         userId: session.id,
         teamId: invoice.teamId ?? undefined,
       }).catch((error) => {
-        console.error('Failed to send payment confirmation email:', error)
+        logger.error('Failed to send payment confirmation email', error, { invoiceId: id })
       })
     }
 
@@ -108,13 +110,13 @@ export async function PATCH(
         userId: session.id,
         teamId: invoice.teamId ?? undefined,
       }).catch((error) => {
-        console.error('Failed to send overdue email:', error)
+        logger.error('Failed to send overdue email', error, { invoiceId: id })
       })
     }
 
     return NextResponse.json(updatedInvoice)
   } catch (error) {
-    console.error('Update invoice status error:', error)
+    logger.apiError('/api/invoices/[id]/status PATCH', error, session?.id)
     return NextResponse.json(
       { error: 'Gagal mengubah status invoice' },
       { status: 500 }

@@ -3,25 +3,47 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getPaymentGateway, generateOrderId } from '@/lib/payment'
 import { validateUpgradeRequest } from '@/lib/subscription-upgrade'
+import { logger } from '@/lib/logger'
+import { createCheckoutSchema } from '@/lib/validations/common'
 
+/**
+ * POST /api/payments/create
+ *
+ * Initiates a subscription upgrade payment for the authenticated user via the
+ * active payment gateway (iPaymu) and returns a redirect payment URL.
+ *
+ * @body {CreateCheckoutSchema} Checkout data (pricingPlanId, planSlug, optional billingCycle)
+ *
+ * @returns {{ success: boolean, payment: { id, orderId, amount, paymentUrl, expiredAt } }}
+ * @throws {401} Unauthorized - User not logged in
+ * @throws {422} Validation Error - Invalid checkout data
+ * @throws {404} Not Found - Pricing plan or user not found
+ * @throws {400} Bad Request - Plan mismatch or upgrade not allowed
+ * @throws {500} Internal Server Error
+ */
 export async function POST(req: NextRequest) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const body = await req.json()
-    const { pricingPlanId, planSlug } = body
+    const parsed = createCheckoutSchema.safeParse(body)
 
-    if (!pricingPlanId || !planSlug) {
+    if (!parsed.success) {
+      const firstError = parsed.error.issues[0]
       return NextResponse.json(
-        { error: 'Paket tidak valid' },
-        { status: 400 }
+        {
+          error: firstError?.message || 'Paket tidak valid',
+          details: parsed.error.flatten().fieldErrors,
+        },
+        { status: 422 }
       )
     }
 
-    const { billingCycle = 'monthly' } = body
+    const { pricingPlanId, planSlug, billingCycle } = parsed.data
 
     const pricingPlan = await prisma.pricing_plans.findUnique({
       where: { id: pricingPlanId },
@@ -131,11 +153,11 @@ export async function POST(req: NextRequest) {
         },
       })
     } catch (gatewayError) {
-      console.error('[Payment] Gateway error:', gatewayError)
+      logger.apiError('/api/payments/create gateway', gatewayError, session?.id)
       throw gatewayError
     }
   } catch (error) {
-    console.error('Payment creation error:', error)
+    logger.apiError('/api/payments/create POST', error, session?.id)
 
     let errorMessage = 'Gagal membuat transaksi pembayaran'
     if (error) {

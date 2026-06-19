@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getPaymentGateway } from '@/lib/payment'
 import { getUserSession } from '@/lib/session'
+import { logger } from '@/lib/logger'
 
 /**
  * Verify payment status by reference or orderId
@@ -25,7 +26,7 @@ export async function GET(req: NextRequest) {
     )
   }
 
-  console.log('[Payment Verify] Checking:', { reference, trxId })
+  logger.dev('Payment Verify', 'Checking:', { reference, trxId })
 
   let payment = null
   let planName = 'PRO'
@@ -51,7 +52,7 @@ export async function GET(req: NextRequest) {
       planName = plan?.name || 'PRO'
     }
   } catch (dbError) {
-    console.error('[Payment Verify] Database error:', dbError)
+    logger.apiError('/api/payments/verify db', dbError, session.id)
     return NextResponse.json({
       success: false,
       status: 'ERROR',
@@ -60,7 +61,7 @@ export async function GET(req: NextRequest) {
   }
 
   if (!payment) {
-    console.error('[Payment Verify] Payment not found:', reference)
+    logger.warn('[Payment Verify] Payment not found', { reference, userId: session.id })
     return NextResponse.json(
       { error: 'Payment not found', success: false, status: 'NOT_FOUND' },
       { status: 404 }
@@ -79,7 +80,7 @@ export async function GET(req: NextRequest) {
         }
       })
     } catch (e) {
-      console.error('[Payment Verify] Subscription lookup error:', e)
+      logger.error('[Payment Verify] Subscription lookup error', e, { userId: payment.userId })
     }
 
     return NextResponse.json({
@@ -103,7 +104,7 @@ export async function GET(req: NextRequest) {
   try {
     const gateway = getPaymentGateway()
     const txStatus = await gateway.checkTransactionStatus(gatewayId)
-    console.log('[Payment Verify] Gateway status:', txStatus)
+    logger.dev('Payment Verify', 'Gateway status:', txStatus)
 
     if (txStatus.status === 'COMPLETED') {
       // Store trx_id if we got it from URL params and payment doesn't have it yet
@@ -126,7 +127,7 @@ export async function GET(req: NextRequest) {
       }
     })
   } catch (gatewayError) {
-    console.error('[Payment Verify] Gateway API error:', gatewayError)
+    logger.error('[Payment Verify] Gateway API error', gatewayError, { userId: session.id })
     // Don't fail — return PENDING so the success page keeps polling
     return NextResponse.json({
       success: false,
@@ -238,7 +239,7 @@ async function completePayment(
       }
     })
   } catch (error) {
-    console.error('[Payment Verify] completePayment error:', error)
+    logger.error('[Payment Verify] completePayment error', error, { userId: payment.userId })
     return NextResponse.json(
       { error: 'Failed to update payment', success: false },
       { status: 500 }
