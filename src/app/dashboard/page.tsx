@@ -62,42 +62,111 @@ export default function DashboardPage() {
   const fetchDashboardData = useCallback(async () => {
     try {
       setError(null)
-      const response = await fetch('/api/user/dashboard-data', {
-        credentials: 'include',
+      console.log('[Dashboard] Fetching dashboard data...')
+      console.log('[Dashboard] Current URL:', window.location.href)
+
+      let response
+      try {
+        response = await fetch('/api/user/dashboard-data', {
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+      } catch (fetchError) {
+        console.error('[Dashboard] Fetch failed (network error):', fetchError)
+        throw new Error(`Network error: ${fetchError instanceof Error ? fetchError.message : 'Unknown error'}`)
+      }
+
+      console.log('[Dashboard] Response received:', {
+        ok: response.ok,
+        status: response.status,
+        statusText: response.statusText,
+        headers: {
+          contentType: response.headers.get('content-type'),
+          contentLength: response.headers.get('content-length'),
+        }
       })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Gagal mengambil data dashboard' }))
+        // Try to get response body as text first
+        let responseText = ''
+        try {
+          responseText = await response.text()
+          console.error('[Dashboard] Error response body:', responseText)
+        } catch (textError) {
+          console.error('[Dashboard] Failed to read response text:', textError)
+        }
 
-        console.error('Dashboard API error:', {
+        let errorData
+        try {
+          // Try to parse as JSON
+          errorData = responseText ? JSON.parse(responseText) : { error: 'Empty error response' }
+        } catch (e) {
+          console.error('[Dashboard] Failed to parse error response as JSON:', e)
+          errorData = {
+            error: 'Response is not valid JSON',
+            body: responseText.substring(0, 500), // First 500 chars
+            parseError: e instanceof Error ? e.message : String(e)
+          }
+        }
+
+        console.error('[Dashboard] Parsed error data:', {
           status: response.status,
           statusText: response.statusText,
-          error: errorData
+          errorData
         })
 
+        // Handle specific status codes
         if (response.status === 401) {
-          // Unauthorized - redirect to login
+          console.log('[Dashboard] 401 Unauthorized - redirecting to login')
           router.push('/login')
           return
         }
 
-        if (response.status === 403 && errorData.error?.includes('Admin')) {
-          router.push('/admin')
-          return
+        if (response.status === 403) {
+          if (errorData.error?.includes('Admin')) {
+            console.log('[Dashboard] Admin user detected - redirecting to admin dashboard')
+            router.push('/admin')
+            return
+          }
+          throw new Error(errorData.error || 'Access denied')
         }
 
-        // Show more detailed error message
+        if (response.status === 503) {
+          throw new Error('Server is temporarily unavailable. Please try again in a few moments.')
+        }
+
+        // Show detailed error message
         const errorMessage = errorData.details
           ? `${errorData.error}\n\nDetail: ${errorData.details}`
-          : errorData.error || 'Gagal mengambil data dashboard'
+          : errorData.error || `HTTP ${response.status}: ${response.statusText}`
 
         throw new Error(errorMessage)
       }
 
-      const dashboardData = await response.json()
+      // Parse success response
+      let dashboardData
+      try {
+        const responseText = await response.text()
+        console.log('[Dashboard] Success response length:', responseText.length)
+        dashboardData = JSON.parse(responseText)
+        console.log('[Dashboard] Dashboard data loaded successfully')
+      } catch (parseError) {
+        console.error('[Dashboard] Failed to parse success response:', parseError)
+        throw new Error('Failed to parse dashboard data. The server response is invalid.')
+      }
+
       setData(dashboardData)
     } catch (error) {
-      console.error('Error fetching dashboard data:', error)
+      console.error('[Dashboard] Error in fetchDashboardData:', error)
+
+      // Network errors
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        setError('Network error: Unable to connect to server. Please check your internet connection.')
+        return
+      }
+
       setError(error instanceof Error ? error.message : 'Terjadi kesalahan saat mengambil data')
     } finally {
       setLoading(false)
