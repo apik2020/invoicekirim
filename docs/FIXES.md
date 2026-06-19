@@ -1,5 +1,73 @@
 # Bug Fixes Log
 
+## 2026-06-19: Improve Dashboard Error Handling and Logging
+
+### Problem
+Users encountered generic error message when dashboard fails to load:
+```
+Gagal mengambil data dashboard. Silakan coba lagi.
+```
+
+With no detailed information about what went wrong, making it difficult to diagnose:
+- Database connection issues
+- Session/authentication problems
+- Missing data or schema mismatches
+- Slow query performance
+
+### Root Cause
+The dashboard API had minimal error handling and logging:
+- Caught all errors with generic message
+- No specific handling for different Prisma error codes
+- No development vs production error separation
+- Session parsing errors were silent
+- No logging to help debug production issues
+
+### Solution
+
+#### 1. Enhanced API Error Handling
+Added specific handling for Prisma error codes:
+- **P1001**: Database connection failed → 503 error with clear message
+- **P2002**: Unique constraint violation
+- **P2025**: Record not found → 404 error
+
+Added development mode error details in responses while keeping production secure.
+
+#### 2. Improved Session Handling
+Added try-catch blocks in `getAuthenticatedUser()`:
+- Graceful JSON parsing for session cookies
+- Logging when admin users are detected
+- Error logging without breaking the flow
+
+#### 3. Better Frontend Error Handling
+- Automatic redirect to `/login` on 401 errors
+- Display detailed error messages in development
+- Console logging with status codes and error data
+
+#### 4. Comprehensive Logging
+Added logging at key points:
+- User ID when fetching dashboard data
+- Session validation failures
+- Prisma error details (code and message)
+- Full error stack in development mode
+
+### Files Changed
+- [src/app/api/user/dashboard-data/route.ts](../src/app/api/user/dashboard-data/route.ts) - Enhanced error handling
+- [src/app/dashboard/page.tsx](../src/app/dashboard/page.tsx) - Better error display
+- [docs/TROUBLESHOOTING.md](../docs/TROUBLESHOOTING.md) - New troubleshooting guide
+
+### Debugging Features
+- Development mode shows full error details in API responses
+- Console logs track request flow
+- Specific error messages for different failure modes
+- Troubleshooting guide with common solutions
+
+### Impact
+- **Breaking change**: None
+- **User experience**: Better error messages, faster diagnosis
+- **Developer experience**: Much easier to debug production issues
+
+---
+
 ## 2026-06-19: Fix Template Loading Error - `.find()` is not a function
 
 ### Problem
