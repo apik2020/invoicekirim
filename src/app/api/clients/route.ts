@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { name, email, phone, address, companyName, taxNumber, website, notes } = validation.data
+    const { name, email, phone, address, companyName, taxNumber, website } = validation.data
 
     // Check if client with same email already exists for this user (case-insensitive)
     const existingClient = await prisma.clients.findFirst({
@@ -127,7 +127,6 @@ export async function POST(req: NextRequest) {
         company: companyName,
         taxId: taxNumber,
         website,
-        notes,
         updatedAt: new Date(),
       },
     })

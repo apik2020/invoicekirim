@@ -34,7 +34,7 @@ export async function POST(request: Request) {
         const token = await encryptSession({
           id: admin.id,
           email: admin.email,
-          name: admin.name,
+          name: admin.name ?? admin.email,
           isAdmin: true
         })
         response.cookies.set('user_session', token, {
@@ -86,7 +86,7 @@ export async function POST(request: Request) {
     const token = await encryptSession({
       id: user.id,
       email: user.email,
-      name: user.name,
+      name: user.name ?? user.email,
       image: user.image,
       isAdmin
     })

@@ -812,10 +812,9 @@ export default function InvoiceDetailPage({
 
         if (res.ok && data.success) {
           setSendingWhatsApp(false)
-          showMessageBox({
+          messageBox.showSuccess({
             title: 'Berhasil!',
             message: `Invoice berhasil dikirim via WhatsApp ke ${invoice.clientPhone}`,
-            type: 'success',
           })
           return
         }

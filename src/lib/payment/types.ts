@@ -74,6 +74,7 @@ export interface PaymentGateway {
   readonly name: string
 
   createTransaction(params: PaymentParams): Promise<PaymentResult>
+  createRedirectTransaction(params: PaymentParams): Promise<PaymentResult>
   checkTransactionStatus(orderId: string): Promise<TransactionStatus>
   verifyCallback(payload: CallbackPayload): CallbackVerification
   getAvailablePaymentMethods(): PaymentMethod[]

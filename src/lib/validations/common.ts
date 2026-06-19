@@ -42,7 +42,6 @@ export const createClientSchema = z.object({
   companyName: z.string().max(200, 'Nama perusahaan terlalu panjang').optional(),
   taxNumber: z.string().max(50, 'Nomor pajak terlalu panjang').optional(),
   website: urlSchema,
-  notes: z.string().max(1000, 'Catatan terlalu panjang').optional(),
 })
 
 export const updateClientSchema = createClientSchema.partial()
