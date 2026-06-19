@@ -189,7 +189,8 @@ function NewInvoicePageContent() {
 
       if (res.ok) {
         const data = await res.json()
-        setClients(Array.isArray(data) ? data : data.clients || [])
+        // Handle both paginated response (data.data) and legacy array response
+        setClients(Array.isArray(data) ? data : (data.data || data.clients || []))
       } else {
         console.warn('Clients API returned status:', res.status)
       }
@@ -531,8 +532,12 @@ function NewInvoicePageContent() {
       if (template.defaultClientId) {
         const clientRes = await fetch(`/api/clients`)
         if (clientRes.ok) {
-          const clients = await clientRes.json()
-          const defaultClient = clients.find((c: any) => c.id === template.defaultClientId)
+          const response = await clientRes.json()
+          // API returns paginated response: { data: [...], pagination: {...} }
+          const clients = response.data || response
+          const defaultClient = Array.isArray(clients)
+            ? clients.find((c: any) => c.id === template.defaultClientId)
+            : null
           if (defaultClient) {
             setSelectedClientId(defaultClient.id)
             setFormData(prev => ({

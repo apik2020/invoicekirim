@@ -137,7 +137,8 @@ export default function EditInvoicePage() {
       const res = await fetch('/api/clients')
       if (res.ok) {
         const data = await res.json()
-        setClients(Array.isArray(data) ? data : data.clients || [])
+        // Handle both paginated response (data.data) and legacy array response
+        setClients(Array.isArray(data) ? data : (data.data || data.clients || []))
       }
     } catch (error) {
       console.error('Error fetching clients:', error)

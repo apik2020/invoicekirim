@@ -1,5 +1,58 @@
 # Bug Fixes Log
 
+## 2026-06-19: Fix Template Loading Error - `.find()` is not a function
+
+### Problem
+Users encountered JavaScript error when clicking "Gunakan" button on invoice templates:
+```
+Error loading template: TypeError: (intermediate value).find is not a function
+```
+
+### Root Cause
+The `/api/clients` endpoint returns a **paginated response** with structure:
+```json
+{
+  "data": [...],
+  "pagination": {...}
+}
+```
+
+But frontend code was treating the response as a plain array and calling `.find()` directly on it, which failed because the response object doesn't have a `.find()` method.
+
+### Solution
+Updated all pages that fetch `/api/clients` to properly handle the paginated response structure:
+
+**Before:**
+```typescript
+const clients = await res.json()
+const client = clients.find(...) // ❌ Error: clients is an object, not array
+```
+
+**After:**
+```typescript
+const data = await res.json()
+const clients = Array.isArray(data) ? data : (data.data || data.clients || [])
+const client = clients.find(...) // ✅ Works correctly
+```
+
+### Files Changed
+- [src/app/dashboard/invoices/create/page.tsx](../src/app/dashboard/invoices/create/page.tsx) - Fixed `loadClients()` and template loading
+- [src/app/dashboard/invoices/[id]/edit/page.tsx](../src/app/dashboard/invoices/[id]/edit/page.tsx) - Fixed `fetchClients()`
+- [src/app/dashboard/templates/create/page.tsx](../src/app/dashboard/templates/create/page.tsx) - Fixed `loadClients()`
+- [src/app/dashboard/clients/page.tsx](../src/app/dashboard/clients/page.tsx) - Fixed `fetchClients()`
+
+### Testing
+- ✅ Can click "Gunakan" button on templates
+- ✅ Template loads correctly with all fields
+- ✅ Client dropdown works in invoice create/edit pages
+- ✅ No console errors when loading clients
+
+### Impact
+- **Breaking change**: None
+- **User experience**: Templates now work correctly
+
+---
+
 ## 2026-06-19: Fix SKU Unique Constraint Error (P2002)
 
 ### Problem

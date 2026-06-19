@@ -74,7 +74,10 @@ export default function ClientsPage() {
 
       const data = await res.json()
 
-      if (Array.isArray(data.clients)) {
+      // Handle both paginated response (data.data) and legacy array/object response
+      if (Array.isArray(data.data)) {
+        setClients(data.data)
+      } else if (Array.isArray(data.clients)) {
         setClients(data.clients)
       } else if (Array.isArray(data)) {
         setClients(data)

@@ -116,7 +116,8 @@ export default function NewTemplatePage() {
       const res = await fetch('/api/clients')
       if (res.ok) {
         const data = await res.json()
-        setClients(Array.isArray(data) ? data : data.clients || [])
+        // Handle both paginated response (data.data) and legacy array response
+        setClients(Array.isArray(data) ? data : (data.data || data.clients || []))
       }
     } catch (error) {
       console.error('Failed to load clients:', error)
