@@ -69,12 +69,29 @@ export default function DashboardPage() {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Gagal mengambil data dashboard' }))
 
+        console.error('Dashboard API error:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData
+        })
+
+        if (response.status === 401) {
+          // Unauthorized - redirect to login
+          router.push('/login')
+          return
+        }
+
         if (response.status === 403 && errorData.error?.includes('Admin')) {
           router.push('/admin')
           return
         }
 
-        throw new Error(errorData.error || 'Gagal mengambil data dashboard')
+        // Show more detailed error message
+        const errorMessage = errorData.details
+          ? `${errorData.error}\n\nDetail: ${errorData.details}`
+          : errorData.error || 'Gagal mengambil data dashboard'
+
+        throw new Error(errorMessage)
       }
 
       const dashboardData = await response.json()

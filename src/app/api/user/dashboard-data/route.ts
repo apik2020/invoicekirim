@@ -28,55 +28,66 @@ async function withRetry<T>(
 
 // Helper to get authenticated user from either NextAuth or custom session
 async function getAuthenticatedUser() {
-  // First, try NextAuth session (for Google OAuth users)
-  const nextAuthSession = await getServerSession(authOptions)
+  try {
+    // First, try NextAuth session (for Google OAuth users)
+    const nextAuthSession = await getServerSession(authOptions)
 
-  if (nextAuthSession?.user?.id) {
-    // Check if user is admin
-    if (nextAuthSession.user.isAdmin) {
-      return null // Admin should use admin dashboard
-    }
-
-    // Get fresh user data from database
-    const dbUser = await prisma.users.findUnique({
-      where: { id: nextAuthSession.user.id },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        image: true,
-      }
-    })
-
-    if (dbUser) {
-      return {
-        id: dbUser.id,
-        email: dbUser.email,
-        name: dbUser.name,
-        image: dbUser.image,
-        isAdmin: false // Regular user from NextAuth
-      }
-    }
-  }
-
-  // Fallback: Check custom user_session cookie (for credentials login)
-  const cookieStore = await cookies()
-  const userSessionCookie = cookieStore.get('user_session')
-
-  if (userSessionCookie?.value) {
-    const session = JSON.parse(userSessionCookie.value)
-
-    if (session?.id) {
+    if (nextAuthSession?.user?.id) {
       // Check if user is admin
-      if (session.isAdmin) {
+      if (nextAuthSession.user.isAdmin) {
+        console.log('Admin user detected via NextAuth, redirecting to admin dashboard')
         return null // Admin should use admin dashboard
       }
 
-      return session
-    }
-  }
+      // Get fresh user data from database
+      const dbUser = await prisma.users.findUnique({
+        where: { id: nextAuthSession.user.id },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          image: true,
+        }
+      })
 
-  return null
+      if (dbUser) {
+        return {
+          id: dbUser.id,
+          email: dbUser.email,
+          name: dbUser.name,
+          image: dbUser.image,
+          isAdmin: false // Regular user from NextAuth
+        }
+      }
+    }
+
+    // Fallback: Check custom user_session cookie (for credentials login)
+    const cookieStore = await cookies()
+    const userSessionCookie = cookieStore.get('user_session')
+
+    if (userSessionCookie?.value) {
+      try {
+        const session = JSON.parse(userSessionCookie.value)
+
+        if (session?.id) {
+          // Check if user is admin
+          if (session.isAdmin) {
+            console.log('Admin user detected via custom session, redirecting to admin dashboard')
+            return null // Admin should use admin dashboard
+          }
+
+          return session
+        }
+      } catch (jsonError) {
+        console.error('Failed to parse user_session cookie:', jsonError)
+      }
+    }
+
+    return null
+  } catch (error) {
+    console.error('Error in getAuthenticatedUser:', error)
+    return null
+  }
 }
 
 export async function GET(_req: NextRequest) {
@@ -85,10 +96,12 @@ export async function GET(_req: NextRequest) {
     const session = await getAuthenticatedUser()
 
     if (!session?.id) {
+      console.log('No valid session found')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const userId = session.id
+    console.log('Fetching dashboard data for user:', userId)
 
     const [invoices, subscription, activityLogs, dueInvoices] = await Promise.all([
       withRetry(() => prisma.invoices.findMany({
@@ -292,16 +305,48 @@ export async function GET(_req: NextRequest) {
     // Check for specific Prisma errors
     if (error && typeof error === 'object' && 'code' in error) {
       const prismaError = error as { code: string; message?: string }
+
+      // Log detailed error for debugging
+      console.error('Prisma error details:', {
+        code: prismaError.code,
+        message: prismaError.message,
+      })
+
       if (prismaError.code === 'P1001') {
         return NextResponse.json(
           { error: 'Tidak dapat terhubung ke database. Silakan coba lagi.' },
           { status: 503 }
         )
       }
+
+      // Handle other Prisma errors with more details
+      if (prismaError.code === 'P2002') {
+        return NextResponse.json(
+          { error: 'Terjadi kesalahan constraint database.' },
+          { status: 500 }
+        )
+      }
+
+      if (prismaError.code === 'P2025') {
+        return NextResponse.json(
+          { error: 'Data tidak ditemukan.' },
+          { status: 404 }
+        )
+      }
+    }
+
+    // Log the full error for debugging (in development)
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Full error stack:', error)
     }
 
     return NextResponse.json(
-      { error: 'Gagal mengambil data dashboard. Silakan coba lagi.' },
+      {
+        error: 'Gagal mengambil data dashboard. Silakan coba lagi.',
+        ...(process.env.NODE_ENV === 'development' && {
+          details: error instanceof Error ? error.message : String(error)
+        })
+      },
       { status: 500 }
     )
   }
