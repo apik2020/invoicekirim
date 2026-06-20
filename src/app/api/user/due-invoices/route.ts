@@ -1,6 +1,7 @@
 import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 export async function GET(req: NextRequest) {
   try {
@@ -78,7 +79,7 @@ export async function GET(req: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Error fetching due invoices:', error)
+    logger.apiError('/api/user/due-invoices GET', error)
     return NextResponse.json(
       { error: 'Gagal mengambil data jatuh tempo' },
       { status: 500 }

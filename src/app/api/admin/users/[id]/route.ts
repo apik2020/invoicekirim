@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminAuth } from '@/lib/admin-session'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -61,7 +62,7 @@ export async function GET(
       activityLogs,
     })
   } catch (error) {
-    console.error('Error fetching user:', error)
+    logger.apiError('/api/admin/users/[id] GET', error)
     return NextResponse.json(
       { error: 'Failed to fetch user' },
       { status: 500 }
@@ -102,7 +103,7 @@ export async function PATCH(
 
     return NextResponse.json(user)
   } catch (error) {
-    console.error('Error updating user:', error)
+    logger.apiError('/api/admin/users/[id] PATCH', error)
     return NextResponse.json(
       { error: 'Failed to update user' },
       { status: 500 }
@@ -129,7 +130,7 @@ export async function DELETE(
 
     return NextResponse.json({ message: 'User deleted successfully' })
   } catch (error) {
-    console.error('Error deleting user:', error)
+    logger.apiError('/api/admin/users/[id] DELETE', error)
     return NextResponse.json(
       { error: 'Failed to delete user' },
       { status: 500 }

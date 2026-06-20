@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createSignedSessionToken } from '@/lib/client-auth'
+import { logger } from '@/lib/logger'
 
 // Verify magic link token
 export async function GET(request: NextRequest) {
@@ -64,7 +65,7 @@ export async function GET(request: NextRequest) {
 
     return response
   } catch (error) {
-    console.error('Client verify error:', error)
+    logger.apiError('/api/client/auth/verify GET', error)
     return NextResponse.json(
       { error: 'Failed to verify token' },
       { status: 500 }

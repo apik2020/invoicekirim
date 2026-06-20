@@ -1,5 +1,6 @@
 import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
+import { logger } from '@/lib/logger'
 import {
   checkFeatureAccess,
   getUserFeatures,
@@ -13,8 +14,9 @@ import {
  * - feature: Feature key to check (optional, if not provided returns all features)
  */
 export async function GET(req: NextRequest) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -32,7 +34,7 @@ export async function GET(req: NextRequest) {
     const features = await getUserFeatures(session.id)
     return NextResponse.json({ features })
   } catch (error) {
-    console.error('Feature access check error:', error)
+    logger.apiError('/api/feature-access GET', error, session?.id)
     return NextResponse.json(
       { error: 'Gagal memeriksa akses fitur' },
       { status: 500 }

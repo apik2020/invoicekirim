@@ -4,6 +4,7 @@ import { stripe } from '@/lib/stripe'
 import { prisma } from '@/lib/prisma'
 import { checkRateLimit, getClientIp, webhookRateLimit } from '@/lib/rate-limit'
 import { createReceipt } from '@/lib/receipt-generator'
+import { logger } from '@/lib/logger'
 
 export async function POST(req: NextRequest) {
   try {
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
         process.env.STRIPE_WEBHOOK_SECRET!
       )
     } catch (err: any) {
-      console.error('Webhook signature verification failed:', err.message)
+      logger.error('Webhook signature verification failed:', err.message)
       return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
     }
 
@@ -174,7 +175,7 @@ export async function POST(req: NextRequest) {
 
           // Generate receipt asynchronously (don't block webhook response)
           createReceipt(payment.id).catch((error) => {
-            console.error('Failed to generate receipt:', error)
+            logger.error('Failed to generate receipt:', error)
           })
         }
         break
@@ -198,7 +199,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ received: true })
   } catch (error) {
-    console.error('Webhook error:', error)
+    logger.apiError('/api/stripe/webhook POST', error)
     return NextResponse.json(
       { error: 'Webhook handler failed' },
       { status: 500 }

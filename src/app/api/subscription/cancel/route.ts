@@ -2,6 +2,7 @@ import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { stripe } from '@/lib/stripe'
+import { logger } from '@/lib/logger'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -47,7 +48,7 @@ export async function POST(_req: NextRequest) {
       cancelAt: new Date((stripeSubscription as any).current_period_end * 1000),
     })
   } catch (error) {
-    console.error('Error canceling subscription:', error)
+    logger.apiError('/api/subscription/cancel POST', error)
     return NextResponse.json(
       { error: 'Failed to cancel subscription' },
       { status: 500 }

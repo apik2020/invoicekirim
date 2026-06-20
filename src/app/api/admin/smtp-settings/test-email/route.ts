@@ -3,6 +3,7 @@ import { requireAdminAuth } from '@/lib/admin-session'
 import { prisma } from '@/lib/prisma'
 import { decrypt } from '@/lib/encryption'
 import nodemailer from 'nodemailer'
+import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
@@ -110,7 +111,7 @@ p { color: #64748b; line-height: 1.6; margin: 10px 0; }
 
     return NextResponse.json({ success: true, message: 'Email test berhasil dikirim!' })
   } catch (error: any) {
-    console.error('Send test email error:', error)
+    logger.apiError('/api/admin/smtp-settings/test-email POST', error)
 
     // Update status to failed
     try {

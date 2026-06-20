@@ -3,6 +3,7 @@ import { requireAdminAuth } from '@/lib/admin-session'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { encrypt } from '@/lib/encryption'
+import { logger } from '@/lib/logger'
 
 const PROVIDER_PRESETS: Record<string, { host: string; port: string; secure: boolean }> = {
   gmail: { host: 'smtp.gmail.com', port: '587', secure: false },
@@ -73,7 +74,7 @@ export async function GET(req: NextRequest) {
       lastTestedAt: adminData?.emailLastTestedAt,
     })
   } catch (error) {
-    console.error('Get SMTP settings error:', error)
+    logger.apiError('/api/admin/smtp-settings GET', error)
     return NextResponse.json({ error: 'Terjadi kesalahan saat mengambil pengaturan SMTP' }, { status: 500 })
   }
 }
@@ -165,7 +166,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, message: 'Pengaturan SMTP berhasil disimpan' })
   } catch (error) {
-    console.error('Save SMTP settings error:', error)
+    logger.apiError('/api/admin/smtp-settings POST', error)
     return NextResponse.json({ error: 'Terjadi kesalahan saat menyimpan pengaturan SMTP' }, { status: 500 })
   }
 }

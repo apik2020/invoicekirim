@@ -6,6 +6,7 @@ import {
   API_SCOPES,
 } from '@/lib/api-keys'
 import { z } from 'zod'
+import { logger } from '@/lib/logger'
 
 const createApiKeySchema = z.object({
   name: z.string().min(1).max(100),
@@ -16,8 +17,9 @@ const createApiKeySchema = z.object({
 
 // GET /api/api-keys - List API keys
 export async function GET(req: NextRequest) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -32,7 +34,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ keys, scopes: API_SCOPES })
   } catch (error) {
-    console.error('Error fetching API keys:', error)
+    logger.apiError('/api/api-keys GET', error, session?.id)
     return NextResponse.json(
       { error: 'Failed to fetch API keys' },
       { status: 500 }
@@ -42,8 +44,9 @@ export async function GET(req: NextRequest) {
 
 // POST /api/api-keys - Create a new API key
 export async function POST(req: NextRequest) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -69,7 +72,7 @@ export async function POST(req: NextRequest) {
     // Only return the full key once
     return NextResponse.json({ apiKey }, { status: 201 })
   } catch (error) {
-    console.error('Error creating API key:', error)
+    logger.apiError('/api/api-keys POST', error, session?.id)
     return NextResponse.json(
       { error: 'Failed to create API key' },
       { status: 500 }

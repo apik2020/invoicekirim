@@ -1,14 +1,16 @@
 import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { disableTwoFactor, verifyTwoFactor } from '@/lib/two-factor'
+import { logger } from '@/lib/logger'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
 
 // POST /api/user/2fa/disable - Disable 2FA
 export async function POST(req: NextRequest) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -59,7 +61,7 @@ export async function POST(req: NextRequest) {
       message: '2FA berhasil dinonaktifkan',
     })
   } catch (error) {
-    console.error('2FA disable error:', error)
+    logger.apiError('/api/user/2fa/disable POST', error, session?.id)
     return NextResponse.json(
       { error: 'Gagal menonaktifkan 2FA' },
       { status: 500 }

@@ -1,6 +1,7 @@
 import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 import { checkFeatureAccess, trackEmailSend } from '@/lib/feature-access'
 import { logInvoiceSent } from '@/lib/activity-log'
 import { sendInvoiceSent } from '@/lib/email'
@@ -13,8 +14,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     const { id } = await params
 
     if (!session?.id) {
@@ -93,7 +95,7 @@ export async function POST(
       })
       emailSent = true
     } catch (err) {
-      console.error('Send invoice email error:', err)
+      logger.error('Send invoice email error:', err)
       emailError = err instanceof Error ? err.message : 'Email gagal terkirim'
     }
 
@@ -128,7 +130,7 @@ export async function POST(
       )
     }
   } catch (error) {
-    console.error('Send invoice error:', error)
+    logger.apiError('/api/invoices/[id]/send POST', error, session?.id)
     return NextResponse.json(
       { error: 'Failed to send invoice' },
       { status: 500 }

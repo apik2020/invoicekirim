@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminAuth } from '@/lib/admin-session'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,7 +45,7 @@ export async function GET(
 
     return NextResponse.json(announcement)
   } catch (error) {
-    console.error('Error fetching announcement:', error)
+    logger.apiError('/api/admin/announcements/[id] GET', error)
     return NextResponse.json({ error: 'Failed to fetch announcement' }, { status: 500 })
   }
 }
@@ -92,7 +93,7 @@ export async function PATCH(
 
     return NextResponse.json(announcement)
   } catch (error) {
-    console.error('Error updating announcement:', error)
+    logger.apiError('/api/admin/announcements/[id] PATCH', error)
     return NextResponse.json({ error: 'Failed to update announcement' }, { status: 500 })
   }
 }
@@ -129,7 +130,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error deleting announcement:', error)
+    logger.apiError('/api/admin/announcements/[id] DELETE', error)
     return NextResponse.json({ error: 'Failed to delete announcement' }, { status: 500 })
   }
 }

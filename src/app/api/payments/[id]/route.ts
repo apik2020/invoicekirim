@@ -1,6 +1,7 @@
 import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 // GET - Get a single payment by ID
 export async function GET(
@@ -47,7 +48,7 @@ export async function GET(
 
     return NextResponse.json({ payment })
   } catch (error) {
-    console.error('Error fetching payment:', error)
+    logger.apiError('/api/payments/[id] GET', error)
     return NextResponse.json(
       { error: 'Gagal mengambil data pembayaran' },
       { status: 500 }
@@ -117,7 +118,7 @@ export async function PATCH(
       payment: updatedPayment,
     })
   } catch (error) {
-    console.error('Error updating payment:', error)
+    logger.apiError('/api/payments/[id] PATCH', error)
     return NextResponse.json(
       { error: 'Gagal mengupdate pembayaran' },
       { status: 500 }
@@ -166,7 +167,7 @@ export async function DELETE(
       message: 'Pembayaran berhasil dihapus',
     })
   } catch (error) {
-    console.error('Error deleting payment:', error)
+    logger.apiError('/api/payments/[id] DELETE', error)
     return NextResponse.json(
       { error: 'Gagal menghapus pembayaran' },
       { status: 500 }

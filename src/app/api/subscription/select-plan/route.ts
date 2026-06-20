@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 export async function POST(req: NextRequest) {
   try {
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
       plan: pricingPlan,
     })
   } catch (error) {
-    console.error('Error selecting plan:', error)
+    logger.apiError('/api/subscription/select-plan POST', error)
     return NextResponse.json(
       { error: 'Gagal memilih paket' },
       { status: 500 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { clearAdminSession } from '@/lib/admin-session'
+import { logger } from '@/lib/logger'
 
 export async function POST(_req: NextRequest) {
   try {
@@ -10,7 +11,7 @@ export async function POST(_req: NextRequest) {
       message: 'Logout berhasil',
     })
   } catch (error) {
-    console.error('Admin logout error:', error)
+    logger.apiError('/api/admin/logout POST', error)
     return NextResponse.json(
       { error: 'Terjadi kesalahan saat logout' },
       { status: 500 }

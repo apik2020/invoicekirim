@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { logger } from '@/lib/logger'
 
 export async function POST(request: Request) {
   // Block this endpoint in production
@@ -12,7 +13,7 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { email, password } = body
 
-    console.log('[TEST-LOGIN] Attempt:', email)
+    logger.dev('TEST-LOGIN', 'Attempt:', email)
 
     if (!email || !password) {
       return NextResponse.json({ error: 'Missing email or password' }, { status: 400 })
@@ -24,11 +25,11 @@ export async function POST(request: Request) {
       select: { id: true, email: true, name: true, password: true }
     })
 
-    console.log('[TEST-LOGIN] Admin found:', !!admin)
+    logger.dev('TEST-LOGIN', 'Admin found:', !!admin)
 
     if (admin && admin.password) {
       const isValid = await bcrypt.compare(password, admin.password)
-      console.log('[TEST-LOGIN] Admin password valid:', isValid)
+      logger.dev('TEST-LOGIN', 'Admin password valid:', isValid)
       if (isValid) {
         return NextResponse.json({ success: true, user: { id: admin.id, email: admin.email, name: admin.name, type: 'admin' } })
       }
@@ -40,14 +41,14 @@ export async function POST(request: Request) {
       select: { id: true, email: true, name: true, password: true }
     })
 
-    console.log('[TEST-LOGIN] User found:', !!user)
+    logger.dev('TEST-LOGIN', 'User found:', !!user)
 
     if (!user || !user.password) {
       return NextResponse.json({ error: 'User not found' }, { status: 401 })
     }
 
     const isValid = await bcrypt.compare(password, user.password)
-    console.log('[TEST-LOGIN] User password valid:', isValid)
+    logger.dev('TEST-LOGIN', 'User password valid:', isValid)
 
     if (!isValid) {
       return NextResponse.json({ error: 'Invalid password' }, { status: 401 })
@@ -55,7 +56,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, user: { id: user.id, email: user.email, name: user.name, type: 'user' } })
   } catch (error) {
-    console.error('[TEST-LOGIN] Error:', error)
+    logger.apiError('/api/test-login POST', error)
     return NextResponse.json({
       error: 'Internal server error',
     }, { status: 500 })

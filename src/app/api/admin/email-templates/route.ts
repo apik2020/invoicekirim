@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminAuth } from '@/lib/admin-session'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -20,7 +21,7 @@ export async function GET(_req: NextRequest) {
 
     return NextResponse.json({ templates })
   } catch (error) {
-    console.error('Error fetching email templates:', error)
+    logger.apiError('/api/admin/email-templates GET', error)
     return NextResponse.json(
       { error: 'Failed to fetch email templates' },
       { status: 500 }
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(template, { status: 201 })
   } catch (error) {
-    console.error('Error creating email template:', error)
+    logger.apiError('/api/admin/email-templates POST', error)
     return NextResponse.json(
       { error: 'Failed to create email template' },
       { status: 500 }

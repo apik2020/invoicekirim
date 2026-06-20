@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { getUserTeamRole, inviteToTeam } from '@/lib/teams'
 import { TeamRole } from '@/lib/permissions'
 import { sendTeamInvitationEmail } from '@/lib/email'
+import { logger } from '@/lib/logger'
 import { z } from 'zod'
 
 const inviteSchema = z.object({
@@ -16,8 +17,9 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -40,7 +42,7 @@ export async function GET(
 
     return NextResponse.json({ invitations })
   } catch (error) {
-    console.error('Error fetching invitations:', error)
+    logger.apiError('/api/teams/[id]/invitations GET', error, session?.id)
     return NextResponse.json(
       { error: 'Failed to fetch invitations' },
       { status: 500 }
@@ -53,8 +55,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -110,14 +113,14 @@ export async function POST(
           expiresIn: '7 hari',
         })
       } catch (emailError) {
-        console.error('Failed to send invitation email:', emailError)
+        logger.error('Failed to send invitation email:', emailError)
         // Don't fail the request if email fails
       }
     }
 
     return NextResponse.json({ invitation }, { status: 201 })
   } catch (error) {
-    console.error('Error creating invitation:', error)
+    logger.apiError('/api/teams/[id]/invitations POST', error, session?.id)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to create invitation' },
       { status: 500 }

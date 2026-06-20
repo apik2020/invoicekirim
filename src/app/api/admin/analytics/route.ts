@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminAuth } from '@/lib/admin-session'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic'
@@ -12,11 +13,11 @@ export async function GET(req: NextRequest) {
     // Verify admin session (separate from user session)
     const result = await requireAdminAuth()
     if (result.error) {
-      console.log('[Admin Analytics] Auth failed:', result.error)
+      logger.dev('Admin Analytics', 'Auth failed:', result.error)
       return NextResponse.json({ error: result.error }, { status: 401 })
     }
 
-    console.log('[Admin Analytics] Fetching data for period...')
+    logger.dev('Admin Analytics', 'Fetching data for period...')
 
     const url = new URL(req.url)
     const period = parseInt(url.searchParams.get('period') || '30')
@@ -251,7 +252,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(analyticsData)
   } catch (error) {
-    console.error('[Admin Analytics] Error:', error)
+    logger.apiError('/api/admin/analytics GET', error)
 
     // Check if it's a database connection error
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'

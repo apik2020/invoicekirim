@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getUserSession } from '@/lib/session'
+import { logger } from '@/lib/logger'
 
 // Retry helper for database queries
 async function withRetry<T>(
@@ -32,13 +33,13 @@ export async function GET(_req: NextRequest) {
     const session = await getUserSession()
 
     if (!session?.id) {
-      console.log('[Dashboard API] No valid session found')
+      logger.dev('Dashboard API', 'No valid session found')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Check if user is admin - redirect to admin dashboard
     if (session.isAdmin) {
-      console.log('[Dashboard API] Admin user detected, should use admin dashboard')
+      logger.dev('Dashboard API', 'Admin user detected, should use admin dashboard')
       return NextResponse.json(
         { error: 'Admin users should use /admin dashboard' },
         { status: 403 }
@@ -46,7 +47,7 @@ export async function GET(_req: NextRequest) {
     }
 
     const userId = session.id
-    console.log('[Dashboard API] Fetching dashboard data for user:', userId)
+    logger.dev('Dashboard API', 'Fetching dashboard data for user:', userId)
 
     const [invoices, subscription, activityLogs, dueInvoices] = await Promise.all([
       withRetry(() => prisma.invoices.findMany({
@@ -245,14 +246,14 @@ export async function GET(_req: NextRequest) {
       analytics,
     })
   } catch (error) {
-    console.error('Error fetching dashboard data:', error)
+    logger.apiError('/api/user/dashboard-data GET', error)
 
     // Check for specific Prisma errors
     if (error && typeof error === 'object' && 'code' in error) {
       const prismaError = error as { code: string; message?: string }
 
       // Log detailed error for debugging
-      console.error('Prisma error details:', {
+      logger.error('Prisma error details:', {
         code: prismaError.code,
         message: prismaError.message,
       })
@@ -282,7 +283,7 @@ export async function GET(_req: NextRequest) {
 
     // Log the full error for debugging (in development)
     if (process.env.NODE_ENV === 'development') {
-      console.error('Full error stack:', error)
+      logger.error('Full error stack:', error)
     }
 
     return NextResponse.json(

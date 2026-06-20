@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminAuth } from '@/lib/admin-session'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
@@ -81,7 +82,7 @@ export async function GET(req: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Error fetching support tickets:', error)
+    logger.apiError('/api/admin/support GET', error)
     return NextResponse.json({ error: 'Failed to fetch support tickets' }, { status: 500 })
   }
 }
@@ -116,7 +117,7 @@ export async function PATCH(req: NextRequest) {
 
     return NextResponse.json(ticket)
   } catch (error) {
-    console.error('Error updating support ticket:', error)
+    logger.apiError('/api/admin/support PATCH', error)
     return NextResponse.json({ error: 'Failed to update support ticket' }, { status: 500 })
   }
 }

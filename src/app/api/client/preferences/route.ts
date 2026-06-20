@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getClientSession } from '@/lib/client-auth'
+import { logger } from '@/lib/logger'
 
 // GET - Get client notification preferences
 export async function GET() {
+  let client
   try {
-    const client = await getClientSession()
+    client = await getClientSession()
 
     if (!client) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -24,15 +26,16 @@ export async function GET() {
 
     return NextResponse.json(preferences)
   } catch (error) {
-    console.error('Get client preferences error:', error)
+    logger.apiError('/api/client/preferences GET', error, client?.id)
     return NextResponse.json({ error: 'Failed to fetch preferences' }, { status: 500 })
   }
 }
 
 // PUT - Update client notification preferences
 export async function PUT(request: NextRequest) {
+  let client
   try {
-    const client = await getClientSession()
+    client = await getClientSession()
 
     if (!client) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -72,7 +75,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json(preferences)
   } catch (error) {
-    console.error('Update client preferences error:', error)
+    logger.apiError('/api/client/preferences PUT', error, client?.id)
     return NextResponse.json({ error: 'Failed to update preferences' }, { status: 500 })
   }
 }

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getUserTeamRole, removeMember, updateMemberRole } from '@/lib/teams'
 import { TeamRole } from '@/lib/permissions'
+import { logger } from '@/lib/logger'
 import { z } from 'zod'
 
 const updateMemberSchema = z.object({
@@ -15,8 +16,9 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -40,7 +42,7 @@ export async function GET(
 
     return NextResponse.json({ members, userRole: role })
   } catch (error) {
-    console.error('Error fetching members:', error)
+    logger.apiError('/api/teams/[id]/members GET', error, session?.id)
     return NextResponse.json(
       { error: 'Failed to fetch members' },
       { status: 500 }
@@ -53,8 +55,9 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -86,7 +89,7 @@ export async function PUT(
 
     return NextResponse.json({ membership })
   } catch (error) {
-    console.error('Error updating member:', error)
+    logger.apiError('/api/teams/[id]/members PUT', error, session?.id)
     return NextResponse.json(
       { error: 'Gagal mengubah role member' },
       { status: 500 }
@@ -99,8 +102,9 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -120,7 +124,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error removing member:', error)
+    logger.apiError('/api/teams/[id]/members DELETE', error, session?.id)
     return NextResponse.json(
       { error: 'Gagal menghapus member' },
       { status: 500 }

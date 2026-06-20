@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserSession } from '@/lib/session'
 import { sendWhatsAppMessage } from '@/lib/whatsapp'
+import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,7 +42,7 @@ export async function POST(req: NextRequest) {
       messageId: result.messageId,
     })
   } catch (error) {
-    console.error('[WA SEND] Error:', error)
+    logger.apiError('/api/whatsapp/send POST', error)
     return NextResponse.json(
       { error: 'Gagal mengirim pesan WhatsApp' },
       { status: 500 }

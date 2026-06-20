@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminAuth } from '@/lib/admin-session'
 import { prisma } from '@/lib/prisma'
 import { getCacheHeaders } from '@/lib/cache'
+import { logger } from '@/lib/logger'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -81,7 +82,7 @@ export async function GET(req: NextRequest) {
       headers: getCacheHeaders('api-dynamic'),
     })
   } catch (error) {
-    console.error('Error fetching users:', error)
+    logger.apiError('/api/admin/users GET', error)
     return NextResponse.json(
       { error: 'Failed to fetch users' },
       { status: 500 }
@@ -145,7 +146,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(user, { status: 201 })
   } catch (error) {
-    console.error('Error creating user:', error)
+    logger.apiError('/api/admin/users POST', error)
     return NextResponse.json(
       { error: 'Failed to create user' },
       { status: 500 }

@@ -1,6 +1,7 @@
 import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 import { generateReceiptPDF } from '@/lib/receipt-pdf'
 
 // Force dynamic rendering
@@ -11,8 +12,9 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
 
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -71,7 +73,7 @@ export async function GET(
       },
     })
   } catch (error) {
-    console.error('Error downloading receipt:', error)
+    logger.apiError('/api/payments/[id]/receipt/download GET', error, session?.id)
     return NextResponse.json(
       { error: 'Failed to download receipt' },
       { status: 500 }

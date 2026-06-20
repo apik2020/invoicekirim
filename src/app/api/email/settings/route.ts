@@ -1,6 +1,7 @@
 import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 import { encrypt, isEncrypted } from '@/lib/encryption'
 
 export const dynamic = 'force-dynamic'
@@ -61,7 +62,7 @@ export async function GET() {
       },
     })
   } catch (error) {
-    console.error('Error fetching email settings:', error)
+    logger.apiError('/api/email/settings GET', error)
     return NextResponse.json({ error: 'Failed to fetch settings' }, { status: 500 })
   }
 }
@@ -152,7 +153,7 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json({ success: true, message: 'Pengaturan email berhasil disimpan' })
   } catch (error) {
-    console.error('Error saving email settings:', error)
+    logger.apiError('/api/email/settings PUT', error)
     return NextResponse.json({ error: 'Failed to save settings' }, { status: 500 })
   }
 }

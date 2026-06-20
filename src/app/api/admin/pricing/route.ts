@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { requireAdminAuth } from '@/lib/admin-session'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 const planSchema = z.object({
   name: z.string().min(1, 'Nama paket harus diisi'),
@@ -35,7 +36,7 @@ export async function GET() {
 
     return NextResponse.json({ plans })
   } catch (error: any) {
-    console.error('Error fetching pricing:', error)
+    logger.apiError('/api/admin/pricing GET', error)
     return NextResponse.json(
       { error: error?.message || 'Gagal memuat data pricing' },
       { status: 500 }
@@ -101,7 +102,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ plan })
   } catch (error: any) {
-    console.error('Error creating plan:', error)
+    logger.apiError('/api/admin/pricing POST', error)
     return NextResponse.json(
       { error: error?.message || 'Gagal membuat paket' },
       { status: 500 }

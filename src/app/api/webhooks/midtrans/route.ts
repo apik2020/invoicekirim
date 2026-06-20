@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     )
 
     if (!isValidSignature) {
-      console.error('Invalid signature for order:', order_id)
+      logger.error('Invalid signature for order:', order_id)
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
     }
 
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
     })
 
     if (!payment) {
-      console.error('Payment not found for order:', order_id)
+      logger.error('Payment not found for order:', order_id)
       return NextResponse.json({ error: 'Payment not found' }, { status: 404 })
     }
 
@@ -180,7 +180,7 @@ export async function POST(req: NextRequest) {
         try {
           await createReceipt(payment.id)
         } catch (receiptError) {
-          console.error('Failed to generate receipt:', receiptError)
+          logger.error('Failed to generate receipt:', receiptError)
         }
 
         logger.dev('Midtrans', 'Payment successful for order:', order_id)

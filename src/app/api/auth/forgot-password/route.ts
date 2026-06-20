@@ -7,6 +7,7 @@ import {
 } from '@/lib/password-reset'
 import { sendPasswordResetEmail } from '@/lib/email'
 import { checkRateLimit, getClientIp, authRateLimit } from '@/lib/rate-limit'
+import { logger } from '@/lib/logger'
 
 const forgotPasswordSchema = z.object({
   email: z.string().email('Email tidak valid'),
@@ -68,13 +69,13 @@ export async function POST(req: NextRequest) {
 
     // Check if email was sent successfully
     if (!emailResult || !emailResult.success) {
-      console.error('[ForgotPassword] Failed to send email:', emailResult?.error)
+      logger.error('Failed to send email', emailResult?.error)
       // Still return generic message to prevent enumeration
     }
 
     return NextResponse.json({ message: successMessage })
   } catch (error) {
-    console.error('Forgot password error:', error)
+    logger.apiError('/api/auth/forgot-password POST', error)
     return NextResponse.json(
       { error: 'Terjadi kesalahan. Silakan coba lagi.' },
       { status: 500 }

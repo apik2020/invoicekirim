@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 import { sendPaymentReminder, sendInvoiceOverdue } from '@/lib/email'
 import { differenceInDays, addDays } from 'date-fns'
 
@@ -27,11 +28,11 @@ function verifyCronSecret(req: NextRequest): boolean {
   // In production, CRON_SECRET is mandatory
   if (!secret) {
     if (process.env.NODE_ENV === 'production') {
-      console.error('[CRON] CRON_SECRET is not set in production — rejecting request')
+      logger.error('[CRON] CRON_SECRET is not set in production — rejecting request')
       return false
     }
     // Allow without secret only in development
-    console.warn('[CRON] No CRON_SECRET set — allowed in development only')
+    logger.warn('[CRON] No CRON_SECRET set — allowed in development only')
     return true
   }
 
@@ -152,7 +153,7 @@ export async function POST(req: NextRequest) {
 
         results.remindersSent++
       } catch (error) {
-        console.error(`Error sending reminder for invoice ${invoice.invoiceNumber}:`, error)
+        logger.error(`Error sending reminder for invoice ${invoice.invoiceNumber}:`, error)
         results.errors.push({
           invoice: invoice.invoiceNumber,
           error: error instanceof Error ? error.message : 'Unknown error',
@@ -221,7 +222,7 @@ export async function POST(req: NextRequest) {
 
         results.overdueNoticesSent++
       } catch (error) {
-        console.error(`Error sending overdue notice for invoice ${invoice.invoiceNumber}:`, error)
+        logger.error(`Error sending overdue notice for invoice ${invoice.invoiceNumber}:`, error)
         results.errors.push({
           invoice: invoice.invoiceNumber,
           error: error instanceof Error ? error.message : 'Unknown error',
@@ -235,7 +236,7 @@ export async function POST(req: NextRequest) {
       data: results,
     })
   } catch (error) {
-    console.error('Error processing payment reminders:', error)
+    logger.apiError('/api/cron/payment-reminders POST', error)
     return NextResponse.json(
       {
         error: 'Failed to process payment reminders',

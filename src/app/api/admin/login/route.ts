@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdminCredentials, createAdminSession } from '@/lib/admin-session'
+import { logger } from '@/lib/logger'
 
 export async function POST(req: NextRequest) {
   try {
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Admin login error:', error)
+    logger.apiError('/api/admin/login POST', error)
     return NextResponse.json(
       { error: 'Terjadi kesalahan saat login' },
       { status: 500 }

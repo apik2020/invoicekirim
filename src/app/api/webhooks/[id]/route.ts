@@ -1,6 +1,7 @@
 import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { updateWebhook, deleteWebhook, rotateWebhookSecret } from '@/lib/webhooks'
+import { logger } from '@/lib/logger'
 import { z } from 'zod'
 
 const updateWebhookSchema = z.object({
@@ -41,7 +42,7 @@ export async function GET(
 
     return NextResponse.json({ webhook })
   } catch (error) {
-    console.error('Error fetching webhook:', error)
+    logger.apiError('/api/webhooks/[id] GET', error)
     return NextResponse.json(
       { error: 'Failed to fetch webhook' },
       { status: 500 }
@@ -96,7 +97,7 @@ export async function PUT(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error updating webhook:', error)
+    logger.apiError('/api/webhooks/[id] PUT', error)
     return NextResponse.json(
       { error: 'Failed to update webhook' },
       { status: 500 }
@@ -131,7 +132,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error deleting webhook:', error)
+    logger.apiError('/api/webhooks/[id] DELETE', error)
     return NextResponse.json(
       { error: 'Failed to delete webhook' },
       { status: 500 }

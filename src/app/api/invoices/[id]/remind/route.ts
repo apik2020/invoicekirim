@@ -1,6 +1,7 @@
 import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 import { sendPaymentReminder, sendInvoiceOverdue } from '@/lib/email'
 import { formatCurrency, formatDate } from '@/lib/utils'
 
@@ -8,8 +9,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -104,7 +106,7 @@ export async function POST(
       to: invoice.clientEmail,
     })
   } catch (error) {
-    console.error('Send payment reminder error:', error)
+    logger.apiError('/api/invoices/[id]/remind POST', error, session?.id)
     return NextResponse.json(
       { error: 'Gagal mengirim payment reminder' },
       { status: 500 }

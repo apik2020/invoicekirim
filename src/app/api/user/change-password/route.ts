@@ -2,13 +2,15 @@ import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'
+import { logger } from '@/lib/logger'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
 
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -86,7 +88,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, message: 'Password updated successfully' })
   } catch (error) {
-    console.error('Change password error:', error)
+    logger.apiError('/api/user/change-password POST', error, session?.id)
     return NextResponse.json(
       { error: 'Failed to change password' },
       { status: 500 }

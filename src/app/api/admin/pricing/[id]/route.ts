@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { requireAdminAuth } from '@/lib/admin-session'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 const planUpdateSchema = z.object({
   name: z.string().min(1, 'Nama paket harus diisi').optional(),
@@ -44,7 +45,7 @@ export async function GET(
 
     return NextResponse.json({ plan })
   } catch (error) {
-    console.error('Error fetching plan:', error)
+    logger.apiError('/api/admin/pricing/[id] GET', error)
     return NextResponse.json(
       { error: 'Gagal memuat data paket' },
       { status: 500 }
@@ -128,7 +129,7 @@ export async function PUT(
 
     return NextResponse.json({ plan })
   } catch (error) {
-    console.error('Error updating plan:', error)
+    logger.apiError('/api/admin/pricing/[id] PUT', error)
     return NextResponse.json(
       { error: 'Gagal mengupdate paket' },
       { status: 500 }
@@ -165,7 +166,7 @@ export async function DELETE(
 
     return NextResponse.json({ message: 'Paket berhasil dihapus' })
   } catch (error) {
-    console.error('Error deleting plan:', error)
+    logger.apiError('/api/admin/pricing/[id] DELETE', error)
     return NextResponse.json(
       { error: 'Gagal menghapus paket' },
       { status: 500 }

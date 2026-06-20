@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getClientSession } from '@/lib/client-auth'
+import { logger } from '@/lib/logger'
 
 // GET - List client notifications
 export async function GET(request: NextRequest) {
+  let client
   try {
-    const client = await getClientSession()
+    client = await getClientSession()
 
     if (!client) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -51,15 +53,16 @@ export async function GET(request: NextRequest) {
       unreadCount,
     })
   } catch (error) {
-    console.error('Get client notifications error:', error)
+    logger.apiError('/api/client/notifications GET', error, client?.id)
     return NextResponse.json({ error: 'Failed to fetch notifications' }, { status: 500 })
   }
 }
 
 // POST - Mark notification(s) as read
 export async function POST(request: NextRequest) {
+  let client
   try {
-    const client = await getClientSession()
+    client = await getClientSession()
 
     if (!client) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -87,15 +90,16 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Mark notification read error:', error)
+    logger.apiError('/api/client/notifications POST', error, client?.id)
     return NextResponse.json({ error: 'Failed to mark notification as read' }, { status: 500 })
   }
 }
 
 // DELETE - Delete a notification
 export async function DELETE(request: NextRequest) {
+  let client
   try {
-    const client = await getClientSession()
+    client = await getClientSession()
 
     if (!client) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -114,7 +118,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Delete notification error:', error)
+    logger.apiError('/api/client/notifications DELETE', error, client?.id)
     return NextResponse.json({ error: 'Failed to delete notification' }, { status: 500 })
   }
 }

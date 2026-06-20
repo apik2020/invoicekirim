@@ -1,10 +1,12 @@
 import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 export async function GET(req: NextRequest) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -33,7 +35,7 @@ export async function GET(req: NextRequest) {
       hasMore: offset + limit < total,
     })
   } catch (error) {
-    console.error('Error fetching activity logs:', error)
+    logger.apiError('/api/user/activity-logs GET', error, session?.id)
     return NextResponse.json(
       { error: 'Gagal mengambil activity logs' },
       { status: 500 }

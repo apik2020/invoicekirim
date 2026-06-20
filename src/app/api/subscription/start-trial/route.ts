@@ -2,6 +2,7 @@ import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { checkRateLimit, apiRateLimit } from '@/lib/rate-limit'
+import { logger } from '@/lib/logger'
 
 export async function POST(_req: NextRequest) {
   try {
@@ -169,7 +170,7 @@ export async function POST(_req: NextRequest) {
       message: 'Trial PRO 7 hari telah dimulai',
     })
   } catch (error) {
-    console.error('Start trial error:', error)
+    logger.apiError('/api/subscription/start-trial POST', error)
     return NextResponse.json(
       { error: 'Gagal memulai trial' },
       { status: 500 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,8 +13,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -74,7 +76,7 @@ export async function POST(
 
     return NextResponse.json({ success: true, readRecord })
   } catch (error) {
-    console.error('Error marking announcement as read:', error)
+    logger.apiError('/api/announcements/[id]/read POST', error, session?.id)
     return NextResponse.json(
       { error: 'Gagal menandai pengumuman' },
       { status: 500 }

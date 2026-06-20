@@ -1,6 +1,7 @@
 import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import nodemailer from 'nodemailer'
+import { logger } from '@/lib/logger'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -105,7 +106,7 @@ export async function POST(req: NextRequest) {
       message: 'Email test berhasil dikirim!'
     })
   } catch (error: any) {
-    console.error('Test email error:', error)
+    logger.apiError('/api/user/test-email POST', error)
 
     // Provide helpful error messages
     let errorMessage = 'Gagal mengirim email test'

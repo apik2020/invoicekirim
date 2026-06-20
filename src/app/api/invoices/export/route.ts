@@ -1,6 +1,7 @@
 import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 import { checkFeatureAccess } from '@/lib/feature-access'
 import { trackPdfExport } from '@/lib/feature-access'
 import { generateInvoicesCSV, generateInvoicesExcel, InvoiceExportData } from '@/lib/export-invoices'
@@ -10,8 +11,9 @@ export const dynamic = 'force-dynamic'
 
 // GET /api/invoices/export - Export invoices to CSV or Excel
 export async function GET(req: NextRequest) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -152,7 +154,7 @@ export async function GET(req: NextRequest) {
       })
     }
   } catch (error) {
-    console.error('Export invoices error:', error)
+    logger.apiError('/api/invoices/export GET', error, session?.id)
     return NextResponse.json(
       { error: 'Gagal mengekspor invoice' },
       { status: 500 }

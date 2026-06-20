@@ -2,10 +2,12 @@ import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { templateSchema } from '@/lib/validations/invoice'
+import { logger } from '@/lib/logger'
 
 export async function GET(_req: NextRequest) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -24,7 +26,7 @@ export async function GET(_req: NextRequest) {
 
     return NextResponse.json(transformedTemplates)
   } catch (error) {
-    console.error('Get templates error:', error)
+    logger.apiError('/api/templates GET', error, session?.id)
     return NextResponse.json(
       { error: 'Gagal mengambil template' },
       { status: 500 }
@@ -33,8 +35,9 @@ export async function GET(_req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -106,7 +109,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(transformedTemplate, { status: 201 })
   } catch (error) {
-    console.error('Create template error:', error)
+    logger.apiError('/api/templates POST', error, session?.id)
     return NextResponse.json(
       { error: 'Gagal membuat template' },
       { status: 500 }

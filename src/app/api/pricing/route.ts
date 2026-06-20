@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { FEATURE_DEFINITIONS, parsePlanFeatures } from '@/lib/pricing-features'
+import { logger } from '@/lib/logger'
 
 export async function GET() {
   try {
@@ -8,7 +9,7 @@ export async function GET() {
       where: { isActive: true },
       orderBy: { sortOrder: 'asc' },
     }).catch((err) => {
-      console.error('Prisma query error:', err)
+      logger.error('Prisma query error:', err)
       return []
     })
 
@@ -40,7 +41,7 @@ export async function GET() {
 
     return NextResponse.json({ plans: transformedPlans })
   } catch (error) {
-    console.error('Error fetching public pricing:', error)
+    logger.apiError('/api/pricing GET', error)
     return NextResponse.json(
       { error: 'Gagal memuat data pricing' },
       { status: 500 }

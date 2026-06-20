@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserSession } from '@/lib/session'
+import { logger } from '@/lib/logger'
 import { checkFeatureAccess } from '@/lib/feature-access'
 
 /**
@@ -21,9 +22,10 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ featureKey: string }> }
 ) {
+  let session
   try {
     const { featureKey } = await params
-    const session = await getUserSession()
+    session = await getUserSession()
 
     // No session = not authenticated
     if (!session?.id) {
@@ -63,7 +65,7 @@ export async function GET(
       currentUsage: access.currentUsage,
     })
   } catch (error) {
-    console.error('[Feature check] Error:', error)
+    logger.apiError('/api/features/[featureKey]/check GET', error, session?.id)
     return NextResponse.json(
       {
         allowed: false,

@@ -1,6 +1,7 @@
 import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -48,7 +49,7 @@ export async function GET(_req: NextRequest) {
       subscription,
     })
   } catch (error) {
-    console.error('Error fetching user:', error)
+    logger.apiError('/api/user GET', error)
     return NextResponse.json(
       { error: 'Failed to fetch user', user: null, subscription: null },
       { status: 200 }

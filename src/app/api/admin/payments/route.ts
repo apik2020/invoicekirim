@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminAuth } from '@/lib/admin-session'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -106,7 +107,7 @@ export async function GET(req: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Error fetching payments:', error)
+    logger.apiError('/api/admin/payments GET', error)
     return NextResponse.json(
       { error: 'Failed to fetch payments' },
       { status: 500 }
@@ -192,7 +193,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(payment, { status: 201 })
   } catch (error) {
-    console.error('Error creating payment:', error)
+    logger.apiError('/api/admin/payments POST', error)
     return NextResponse.json(
       { error: 'Failed to create payment' },
       { status: 500 }

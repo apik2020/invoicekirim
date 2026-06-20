@@ -4,6 +4,7 @@ import { stripe, getStripeCustomerId } from '@/lib/stripe'
 import { checkRateLimit, apiRateLimit } from '@/lib/rate-limit'
 import { validateUpgradeRequest } from '@/lib/subscription-upgrade'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 export async function POST(req: NextRequest) {
   try {
@@ -114,7 +115,7 @@ export async function POST(req: NextRequest) {
       }
     )
   } catch (error) {
-    console.error('Checkout error:', error)
+    logger.apiError('/api/stripe/checkout POST', error)
     return NextResponse.json(
       { error: 'Gagal membuat checkout session' },
       { status: 500 }

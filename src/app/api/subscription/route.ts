@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getUserSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
 import { getUserSubscriptionLimits } from '@/lib/subscription-limits'
+import { logger } from '@/lib/logger'
 
 export async function GET(_req: NextRequest) {
   try {
@@ -113,7 +114,7 @@ export async function GET(_req: NextRequest) {
       pricingPlanId: subscription.pricingPlanId,
     })
   } catch (error) {
-    console.error('Get subscription error:', error)
+    logger.apiError('/api/subscription GET', error)
     return NextResponse.json(
       { error: 'Gagal mengambil subscription' },
       { status: 500 }

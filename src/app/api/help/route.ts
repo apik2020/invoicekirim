@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { logger } from '@/lib/logger'
 import {
   getHelpCategories,
   getHelpArticlesByCategory,
@@ -25,7 +26,7 @@ export async function GET(req: NextRequest) {
     const categories = getHelpCategories()
     return NextResponse.json({ categories })
   } catch (error) {
-    console.error('Error fetching help content:', error)
+    logger.apiError('/api/help GET', error)
     return NextResponse.json(
       { error: 'Failed to fetch help content' },
       { status: 500 }

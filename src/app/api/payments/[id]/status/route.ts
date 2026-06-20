@@ -2,6 +2,7 @@ import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getPaymentGateway } from '@/lib/payment'
+import { logger } from '@/lib/logger'
 
 export async function GET(
   req: NextRequest,
@@ -116,13 +117,13 @@ export async function GET(
           })
         }
       } catch (error) {
-        console.error('Failed to check gateway status:', error)
+        logger.error('Failed to check gateway status:', error)
       }
     }
 
     return NextResponse.json({ payment, statusChanged: false })
   } catch (error) {
-    console.error('Payment status check error:', error)
+    logger.apiError('/api/payments/[id]/status GET', error)
     return NextResponse.json(
       { error: 'Gagal mengecek status pembayaran' },
       { status: 500 }

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getUserTeamRole, deleteTeam } from '@/lib/teams'
 import { TeamRole } from '@/lib/permissions'
+import { logger } from '@/lib/logger'
 import { z } from 'zod'
 
 const updateTeamSchema = z.object({
@@ -16,8 +17,9 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -58,7 +60,7 @@ export async function GET(
 
     return NextResponse.json({ team, role })
   } catch (error) {
-    console.error('Error fetching team:', error)
+    logger.apiError('/api/teams/[id] GET', error, session?.id)
     return NextResponse.json(
       { error: 'Failed to fetch team' },
       { status: 500 }
@@ -71,8 +73,9 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -105,7 +108,7 @@ export async function PUT(
 
     return NextResponse.json({ team })
   } catch (error) {
-    console.error('Error updating team:', error)
+    logger.apiError('/api/teams/[id] PUT', error, session?.id)
     return NextResponse.json(
       { error: 'Failed to update team' },
       { status: 500 }
@@ -118,8 +121,9 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -130,7 +134,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error deleting team:', error)
+    logger.apiError('/api/teams/[id] DELETE', error, session?.id)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to delete team' },
       { status: 500 }

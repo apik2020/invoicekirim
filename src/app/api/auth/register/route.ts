@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
 import { registerSchema } from '@/lib/validations/invoice'
 import { checkRateLimit, getClientIp, authRateLimit } from '@/lib/rate-limit'
+import { logger } from '@/lib/logger'
 
 export async function POST(req: NextRequest) {
   try {
@@ -86,7 +87,7 @@ export async function POST(req: NextRequest) {
       }
     )
   } catch (error) {
-    console.error('Register error:', error)
+    logger.apiError('/api/auth/register POST', error)
     return NextResponse.json(
       { error: 'Terjadi kesalahan saat registrasi' },
       { status: 500 }

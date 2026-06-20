@@ -1,6 +1,7 @@
 import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 import { decrypt } from '@/lib/encryption'
 import nodemailer from 'nodemailer'
 
@@ -104,7 +105,7 @@ p { color: #64748b; line-height: 1.6; margin: 10px 0; }
       message: `Test email berhasil dikirim ke ${targetEmail}`,
     })
   } catch (error: any) {
-    console.error('Test email error:', error)
+    logger.apiError('/api/email/test POST', error)
 
     // Update status to failed
     try {

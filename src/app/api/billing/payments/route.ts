@@ -1,13 +1,15 @@
 import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: NextRequest) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
 
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -57,7 +59,7 @@ export async function GET(req: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Error fetching payments:', error)
+    logger.apiError('/api/billing/payments GET', error, session?.id)
     return NextResponse.json(
       { error: 'Failed to fetch payments' },
       { status: 500 }

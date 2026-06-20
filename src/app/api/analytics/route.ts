@@ -1,5 +1,6 @@
 import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
+import { logger } from '@/lib/logger'
 import {
   getAnalytics,
   getRevenueByMonth,
@@ -9,8 +10,9 @@ import {
 
 // GET /api/analytics - Get comprehensive analytics
 export async function GET(req: NextRequest) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -45,7 +47,7 @@ export async function GET(req: NextRequest) {
       invoiceBreakdown,
     })
   } catch (error) {
-    console.error('Error fetching analytics:', error)
+    logger.apiError('/api/analytics GET', error, session?.id)
     return NextResponse.json(
       { error: 'Failed to fetch analytics' },
       { status: 500 }

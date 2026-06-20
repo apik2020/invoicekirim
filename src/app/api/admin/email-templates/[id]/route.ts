@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminAuth } from '@/lib/admin-session'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -28,7 +29,7 @@ export async function GET(
 
     return NextResponse.json(template)
   } catch (error) {
-    console.error('Error fetching email template:', error)
+    logger.apiError('/api/admin/email-templates/[id] GET', error)
     return NextResponse.json(
       { error: 'Failed to fetch email template' },
       { status: 500 }
@@ -65,7 +66,7 @@ export async function PATCH(
 
     return NextResponse.json(template)
   } catch (error) {
-    console.error('Error updating email template:', error)
+    logger.apiError('/api/admin/email-templates/[id] PATCH', error)
     return NextResponse.json(
       { error: 'Failed to update email template' },
       { status: 500 }
@@ -92,7 +93,7 @@ export async function DELETE(
 
     return NextResponse.json({ message: 'Template deleted successfully' })
   } catch (error) {
-    console.error('Error deleting email template:', error)
+    logger.apiError('/api/admin/email-templates/[id] DELETE', error)
     return NextResponse.json(
       { error: 'Failed to delete email template' },
       { status: 500 }

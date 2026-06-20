@@ -2,6 +2,7 @@ import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createReceipt } from '@/lib/receipt-generator'
+import { logger } from '@/lib/logger'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -46,7 +47,7 @@ export async function GET(
       downloadUrl: `/api/payments/${id}/receipt/download`,
     })
   } catch (error) {
-    console.error('Error fetching receipt:', error)
+    logger.apiError('/api/payments/[id]/receipt GET', error)
     return NextResponse.json(
       { error: 'Failed to fetch receipt' },
       { status: 500 }
@@ -87,7 +88,7 @@ export async function POST(
       receiptUrl: updatedPayment.receiptUrl,
     })
   } catch (error) {
-    console.error('Error generating receipt:', error)
+    logger.apiError('/api/payments/[id]/receipt POST', error)
     return NextResponse.json(
       { error: 'Failed to generate receipt' },
       { status: 500 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { randomBytes } from 'crypto'
 import { sendSystemEmail } from '@/lib/email'
+import { logger } from '@/lib/logger'
 
 // Request magic link for client login
 export async function POST(request: NextRequest) {
@@ -160,7 +161,7 @@ export async function POST(request: NextRequest) {
       message: 'Magic link has been sent to your email',
     })
   } catch (error) {
-    console.error('Client login error:', error)
+    logger.apiError('/api/client/auth/login POST', error)
     return NextResponse.json(
       { error: 'Failed to send magic link' },
       { status: 500 }

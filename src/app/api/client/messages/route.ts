@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getClientSession } from '@/lib/client-auth'
+import { logger } from '@/lib/logger'
 
 // Get messages for an invoice
 export async function GET(request: NextRequest) {
+  let client
   try {
-    const client = await getClientSession()
+    client = await getClientSession()
 
     if (!client) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -48,15 +50,16 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ messages })
   } catch (error) {
-    console.error('Get client messages error:', error)
+    logger.apiError('/api/client/messages GET', error, client?.id)
     return NextResponse.json({ error: 'Failed to fetch messages' }, { status: 500 })
   }
 }
 
 // POST - Send a new message
 export async function POST(request: NextRequest) {
+  let client
   try {
-    const client = await getClientSession()
+    client = await getClientSession()
 
     if (!client) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -132,15 +135,16 @@ export async function POST(request: NextRequest) {
       message: newMessage,
     })
   } catch (error) {
-    console.error('Send client message error:', error)
+    logger.apiError('/api/client/messages POST', error, client?.id)
     return NextResponse.json({ error: 'Failed to send message' }, { status: 500 })
   }
 }
 
 // DELETE - Delete a message
 export async function DELETE(request: NextRequest) {
+  let client
   try {
-    const client = await getClientSession()
+    client = await getClientSession()
 
     if (!client) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -173,7 +177,7 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Delete client message error:', error)
+    logger.apiError('/api/client/messages DELETE', error, client?.id)
     return NextResponse.json({ error: 'Failed to delete message' }, { status: 500 })
   }
 }

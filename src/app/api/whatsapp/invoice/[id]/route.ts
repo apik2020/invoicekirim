@@ -3,6 +3,7 @@ import { getUserSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
 import { sendWhatsAppMessage, buildInvoiceMessage, buildReminderMessage } from '@/lib/whatsapp'
 import { formatCurrency, formatDate } from '@/lib/utils'
+import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
@@ -119,7 +120,7 @@ export async function POST(
       to: invoice.clientPhone,
     })
   } catch (error) {
-    console.error('[WA INVOICE] Error:', error)
+    logger.apiError('/api/whatsapp/invoice/[id] POST', error)
     return NextResponse.json(
       { error: 'Gagal mengirim invoice via WhatsApp' },
       { status: 500 }

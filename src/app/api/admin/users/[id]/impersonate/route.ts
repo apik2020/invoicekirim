@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminAuth } from '@/lib/admin-session'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 import { SignJWT } from 'jose'
 
 export const dynamic = 'force-dynamic'
@@ -97,7 +98,7 @@ export async function POST(
       redirectUrl: `/dashboard?impersonating=true`,
     })
   } catch (error) {
-    console.error('Error creating impersonation session:', error)
+    logger.apiError('/api/admin/users/[id]/impersonate POST', error)
     return NextResponse.json({ error: 'Failed to create impersonation session' }, { status: 500 })
   }
 }
@@ -160,7 +161,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error ending impersonation session:', error)
+    logger.apiError('/api/admin/users/[id]/impersonate DELETE', error)
     return NextResponse.json({ error: 'Failed to end impersonation session' }, { status: 500 })
   }
 }

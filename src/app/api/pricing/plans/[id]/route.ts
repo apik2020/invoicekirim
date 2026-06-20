@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { FEATURE_DEFINITIONS, parsePlanFeatures } from '@/lib/pricing-features'
+import { logger } from '@/lib/logger'
 
 export async function GET(
   req: NextRequest,
@@ -43,7 +44,7 @@ export async function GET(
 
     return NextResponse.json(transformedPlan)
   } catch (error) {
-    console.error('[pricing-plan] Error:', error)
+    logger.apiError('/api/pricing/plans/[id] GET', error)
     return NextResponse.json(
       { error: 'Gagal mengambil data plan' },
       { status: 500 }

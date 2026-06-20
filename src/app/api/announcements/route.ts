@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
@@ -9,8 +10,9 @@ export const dynamic = 'force-dynamic'
  * Fetch active announcements for the current user
  */
 export async function GET(req: NextRequest) {
+  let session: Awaited<ReturnType<typeof getUserSession>> = null
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -110,7 +112,7 @@ export async function GET(req: NextRequest) {
           const targetUsers = Array.isArray(announcement.targetUsers)
             ? announcement.targetUsers
             : JSON.parse(announcement.targetUsers as string)
-          return targetUsers.includes(session.id)
+          return targetUsers.includes(session!.id)
 
         default:
           return true
@@ -150,7 +152,7 @@ export async function GET(req: NextRequest) {
       announcements: announcementsWithStatus,
     })
   } catch (error) {
-    console.error('Error fetching announcements:', error)
+    logger.apiError('/api/announcements GET', error, session?.id)
     return NextResponse.json(
       { error: 'Gagal mengambil pengumuman' },
       { status: 500 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminAuth } from '@/lib/admin-session'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 import { SubscriptionStatus, PlanType } from '@prisma/client'
 
@@ -121,7 +122,7 @@ export async function GET(req: NextRequest) {
       },
     })
   } catch (error: any) {
-    console.error('Error fetching user subscriptions:', error)
+    logger.apiError('/api/admin/user-subscriptions GET', error)
     return NextResponse.json(
       { error: error?.message || 'Gagal memuat data subscription' },
       { status: 500 }
@@ -229,7 +230,7 @@ export async function PUT(req: NextRequest) {
       message: 'Subscription berhasil diupdate'
     })
   } catch (error: any) {
-    console.error('Error updating subscription:', error)
+    logger.apiError('/api/admin/user-subscriptions PUT', error)
     return NextResponse.json(
       { error: error?.message || 'Gagal mengupdate subscription' },
       { status: 500 }
@@ -278,7 +279,7 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ message: 'Subscription berhasil direset ke free' })
   } catch (error: any) {
-    console.error('Error resetting subscription:', error)
+    logger.apiError('/api/admin/user-subscriptions DELETE', error)
     return NextResponse.json(
       { error: error?.message || 'Gagal mereset subscription' },
       { status: 500 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createReceipt } from '@/lib/receipt-generator'
 import { getPaymentGateway } from '@/lib/payment'
+import { logger } from '@/lib/logger'
 import crypto from 'crypto'
 
 /**
@@ -26,7 +27,7 @@ export async function POST(req: NextRequest) {
       signature,
     } = body
 
-    console.log('[iPaymu Webhook] Received callback:', {
+    logger.dev('iPaymu Webhook', 'Received callback:', {
       trx_id,
       reference_id,
       status,
@@ -36,7 +37,7 @@ export async function POST(req: NextRequest) {
     })
 
     if (!reference_id) {
-      console.error('[iPaymu Webhook] Missing reference_id')
+      logger.error('[iPaymu Webhook] Missing reference_id')
       return NextResponse.json({ error: 'Missing reference_id' }, { status: 400 })
     }
 
@@ -46,13 +47,13 @@ export async function POST(req: NextRequest) {
     })
 
     if (!payment) {
-      console.error('[iPaymu Webhook] Payment not found for order:', reference_id)
+      logger.error('[iPaymu Webhook] Payment not found for order:', reference_id)
       return NextResponse.json({ error: 'Payment not found' }, { status: 404 })
     }
 
     // === IDEMPOTENCY CHECK ===
     if (payment.status === 'COMPLETED') {
-      console.log('[iPaymu Webhook] Payment already completed, skipping:', reference_id)
+      logger.dev('iPaymu Webhook', 'Payment already completed, skipping:', reference_id)
       return NextResponse.json({ status: 'success', message: 'Already processed' })
     }
 
@@ -61,7 +62,7 @@ export async function POST(req: NextRequest) {
     const verification = gateway.verifyCallback(body)
 
     if (!verification.isValid) {
-      console.error('[iPaymu Webhook] Invalid signature')
+      logger.error('[iPaymu Webhook] Invalid signature')
       return NextResponse.json({ error: 'Invalid signature' }, { status: 401 })
     }
 
@@ -166,10 +167,10 @@ export async function POST(req: NextRequest) {
       try {
         await createReceipt(payment.id)
       } catch (receiptError) {
-        console.error('[iPaymu Webhook] Failed to generate receipt:', receiptError)
+        logger.error('[iPaymu Webhook] Failed to generate receipt:', receiptError)
       }
 
-      console.log('[iPaymu Webhook] Payment completed successfully:', reference_id)
+      logger.dev('iPaymu Webhook', 'Payment completed successfully:', reference_id)
       return NextResponse.json({ status: 'success' })
     }
 
@@ -205,10 +206,10 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    console.log('[iPaymu Webhook] Payment failed:', reference_id, status_code)
+    logger.dev('iPaymu Webhook', 'Payment failed:', reference_id, status_code)
     return NextResponse.json({ status: 'failed' })
   } catch (error) {
-    console.error('[iPaymu Webhook] Error:', error)
+    logger.apiError('/api/webhooks/ipaymu POST', error)
     return NextResponse.json(
       { error: 'Webhook processing failed' },
       { status: 500 }

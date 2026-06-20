@@ -1,5 +1,6 @@
 import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
+import { logger } from '@/lib/logger'
 import { checkMultipleFeatures, type FeatureKey } from '@/lib/feature-access'
 
 /**
@@ -8,8 +9,9 @@ import { checkMultipleFeatures, type FeatureKey } from '@/lib/feature-access'
  * Body: { features: string[] }
  */
 export async function POST(req: NextRequest) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -39,7 +41,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ results })
   } catch (error) {
-    console.error('Batch feature access check error:', error)
+    logger.apiError('/api/feature-access/batch POST', error, session?.id)
     return NextResponse.json(
       { error: 'Gagal memeriksa akses fitur' },
       { status: 500 }

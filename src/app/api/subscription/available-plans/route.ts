@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserSession } from '@/lib/session'
 import { getAvailableUpgrades } from '@/lib/subscription-upgrade'
+import { logger } from '@/lib/logger'
 
 export async function GET(req: NextRequest) {
   try {
@@ -13,9 +14,9 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(result)
   } catch (error) {
-    console.error('[available-plans] Error:', error)
-    console.error('[available-plans] Error details:', error instanceof Error ? error.message : String(error))
-    console.error('[available-plans] Stack trace:', error instanceof Error ? error.stack : 'No stack trace')
+    logger.apiError('/api/subscription/available-plans GET', error)
+    logger.error('[available-plans] Error details:', error instanceof Error ? error.message : String(error))
+    logger.error('[available-plans] Stack trace:', error instanceof Error ? error.stack : 'No stack trace')
 
     return NextResponse.json(
       {

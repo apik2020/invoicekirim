@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 import { Resend } from 'resend'
 
 const resend = process.env.RESEND_API_KEY
@@ -14,11 +15,11 @@ function verifyCronSecret(req: NextRequest): boolean {
   // In production, CRON_SECRET is mandatory
   if (!secret) {
     if (process.env.NODE_ENV === 'production') {
-      console.error('[CRON] CRON_SECRET is not set in production — rejecting request')
+      logger.error('[CRON] CRON_SECRET is not set in production — rejecting request')
       return false
     }
     // Allow without secret only in development
-    console.warn('[CRON] No CRON_SECRET set — allowed in development only')
+    logger.warn('[CRON] No CRON_SECRET set — allowed in development only')
     return true
   }
 
@@ -67,7 +68,7 @@ export async function POST(req: NextRequest) {
     let processedCount = 0
     let errorCount = 0
 
-    console.log(`[CRON] Starting subscription expiration check at ${now.toISOString()}`)
+    logger.dev('CRON', `Starting subscription expiration check at ${now.toISOString()}`)
 
     // Find expired Pro subscriptions
     const expiredSubscriptions = await prisma.subscriptions.findMany({
@@ -88,7 +89,7 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    console.log(`[CRON] Found ${expiredSubscriptions.length} expired PRO subscriptions`)
+    logger.dev('CRON', `Found ${expiredSubscriptions.length} expired PRO subscriptions`)
 
     for (const subscription of expiredSubscriptions) {
       try {
@@ -152,19 +153,19 @@ export async function POST(req: NextRequest) {
               `,
             })
           } catch (emailError) {
-            console.error(`[CRON] Failed to send expiration email to ${subscription.users.email}:`, emailError)
+            logger.error(`[CRON] Failed to send expiration email to ${subscription.users.email}:`, emailError)
           }
         }
 
         processedCount++
-        console.log(`[CRON] Downgraded subscription ${subscription.id} for user ${subscription.userId}`)
+        logger.dev('CRON', `Downgraded subscription ${subscription.id} for user ${subscription.userId}`)
       } catch (error) {
         errorCount++
-        console.error(`[CRON] Failed to process subscription ${subscription.id}:`, error)
+        logger.error(`[CRON] Failed to process subscription ${subscription.id}:`, error)
       }
     }
 
-    console.log(`[CRON] Completed: ${processedCount} processed, ${errorCount} errors`)
+    logger.dev('CRON', `Completed: ${processedCount} processed, ${errorCount} errors`)
 
     return NextResponse.json({
       success: true,
@@ -173,7 +174,7 @@ export async function POST(req: NextRequest) {
       timestamp: now.toISOString(),
     })
   } catch (error) {
-    console.error('[CRON] Subscription expiration error:', error)
+    logger.apiError('/api/cron/subscription-expiration POST', error)
     return NextResponse.json(
       { error: 'Cron job failed', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

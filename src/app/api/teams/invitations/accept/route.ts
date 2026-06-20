@@ -1,6 +1,7 @@
 import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { acceptInvitation } from '@/lib/teams'
+import { logger } from '@/lib/logger'
 
 // GET /api/teams/invitations/accept - Accept a team invitation
 export async function GET(req: NextRequest) {
@@ -37,7 +38,7 @@ export async function GET(req: NextRequest) {
 
       return NextResponse.redirect(redirectUrl.toString())
     } catch (acceptError) {
-      console.error('Error accepting invitation:', acceptError)
+      logger.error('Error accepting invitation:', acceptError)
 
       const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
       const redirectUrl = new URL('/dashboard/teams', baseUrl)
@@ -46,7 +47,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(redirectUrl.toString())
     }
   } catch (error) {
-    console.error('Invitation accept error:', error)
+    logger.apiError('/api/teams/invitations/accept GET', error)
 
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
     return NextResponse.redirect(

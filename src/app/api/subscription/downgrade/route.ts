@@ -2,6 +2,7 @@ import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { stripe } from '@/lib/stripe'
+import { logger } from '@/lib/logger'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -45,7 +46,7 @@ export async function POST(_req: NextRequest) {
       planType: 'FREE',
     })
   } catch (error) {
-    console.error('Error downgrading subscription:', error)
+    logger.apiError('/api/subscription/downgrade POST', error)
     return NextResponse.json(
       { error: 'Failed to downgrade subscription' },
       { status: 500 }

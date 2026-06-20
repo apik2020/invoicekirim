@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getBranding } from '@/lib/branding'
+import { logger } from '@/lib/logger'
 
 export async function GET(
   req: NextRequest,
@@ -41,7 +42,7 @@ export async function GET(
 
     return NextResponse.json({ ...invoice, branding })
   } catch (error) {
-    console.error('Get invoice by token error:', error)
+    logger.apiError('/api/client/invoices/[token] GET', error)
     return NextResponse.json(
       { error: 'Gagal mengambil invoice' },
       { status: 500 }

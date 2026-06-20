@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminAuth } from '@/lib/admin-session'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -71,7 +72,7 @@ export async function GET(req: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Error fetching activity logs:', error)
+    logger.apiError('/api/admin/activity-logs GET', error)
     return NextResponse.json(
       { error: 'Failed to fetch activity logs' },
       { status: 500 }

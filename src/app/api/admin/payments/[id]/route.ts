@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAdminAuth } from '@/lib/admin-session'
 import { prisma } from '@/lib/prisma'
 import { stripe } from '@/lib/stripe'
+import { logger } from '@/lib/logger'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -53,7 +54,7 @@ export async function GET(
       activityLogs,
     })
   } catch (error) {
-    console.error('Error fetching payment details:', error)
+    logger.apiError('/api/admin/payments/[id] GET', error)
     return NextResponse.json(
       { error: 'Failed to fetch payment details' },
       { status: 500 }
@@ -156,7 +157,7 @@ export async function PATCH(
           refund,
         })
       } catch (stripeError: any) {
-        console.error('Stripe refund error:', stripeError)
+        logger.error('Stripe refund error:', stripeError)
         return NextResponse.json(
           { error: stripeError.message || 'Failed to process refund' },
           { status: 500 }
@@ -189,7 +190,7 @@ export async function PATCH(
 
     return NextResponse.json(payment)
   } catch (error) {
-    console.error('Error updating payment:', error)
+    logger.apiError('/api/admin/payments/[id] PATCH', error)
     return NextResponse.json(
       { error: 'Failed to update payment' },
       { status: 500 }
@@ -247,7 +248,7 @@ export async function DELETE(
 
     return NextResponse.json({ message: 'Payment deleted successfully' })
   } catch (error) {
-    console.error('Error deleting payment:', error)
+    logger.apiError('/api/admin/payments/[id] DELETE', error)
     return NextResponse.json(
       { error: 'Failed to delete payment' },
       { status: 500 }

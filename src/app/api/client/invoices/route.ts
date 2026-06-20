@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getClientSession } from '@/lib/client-auth'
+import { logger } from '@/lib/logger'
 
 // Get all invoices for the logged-in client
 export async function GET(request: NextRequest) {
+  let client
   try {
-    const client = await getClientSession()
+    client = await getClientSession()
 
     if (!client) {
       return NextResponse.json(
@@ -87,7 +89,7 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Get client invoices error:', error)
+    logger.apiError('/api/client/invoices GET', error, client?.id)
     return NextResponse.json(
       { error: 'Failed to fetch invoices' },
       { status: 500 }

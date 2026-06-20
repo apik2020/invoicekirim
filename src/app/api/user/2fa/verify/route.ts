@@ -1,14 +1,16 @@
 import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { verifyTwoFactorCode, enableTwoFactor } from '@/lib/two-factor'
+import { logger } from '@/lib/logger'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
 
 // POST /api/user/2fa/verify - Verify 2FA code and enable 2FA
 export async function POST(req: NextRequest) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -39,7 +41,7 @@ export async function POST(req: NextRequest) {
       message: '2FA berhasil diaktifkan',
     })
   } catch (error) {
-    console.error('2FA verify error:', error)
+    logger.apiError('/api/user/2fa/verify POST', error, session?.id)
     return NextResponse.json(
       { error: 'Gagal memverifikasi 2FA' },
       { status: 500 }

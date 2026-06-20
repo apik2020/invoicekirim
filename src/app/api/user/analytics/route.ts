@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getUserSession } from '@/lib/session'
 import { prisma } from '@/lib/prisma'
 import { checkFeatureAccess } from '@/lib/feature-access'
+import { logger } from '@/lib/logger'
 
 export async function GET(req: NextRequest) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -127,7 +129,7 @@ export async function GET(req: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Error fetching analytics:', error)
+    logger.apiError('/api/user/analytics GET', error, session?.id)
     return NextResponse.json(
       { error: 'Gagal mengambil analytics' },
       { status: 500 }

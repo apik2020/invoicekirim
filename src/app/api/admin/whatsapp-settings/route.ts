@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
+import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
@@ -30,7 +31,7 @@ export async function GET() {
       configured: !!(process.env.OPENWA_BASE_URL && apiKey),
     })
   } catch (error) {
-    console.error('[WA ADMIN SETTINGS] Error:', error)
+    logger.apiError('/api/admin/whatsapp-settings GET', error)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
 }

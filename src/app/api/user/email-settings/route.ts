@@ -1,6 +1,7 @@
 import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -53,7 +54,7 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json(updatedUser)
   } catch (error) {
-    console.error('Update email settings error:', error)
+    logger.apiError('/api/user/email-settings PUT', error)
     return NextResponse.json(
       { error: 'Failed to update email settings' },
       { status: 500 }

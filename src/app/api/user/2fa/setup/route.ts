@@ -5,14 +5,16 @@ import {
   generateQRCode,
   generateBackupCodes,
 } from '@/lib/two-factor'
+import { logger } from '@/lib/logger'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
 
 // POST /api/user/2fa/setup - Generate 2FA secret and QR code
 export async function POST() {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session?.id || !session?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -33,7 +35,7 @@ export async function POST() {
       uri, // Include URI for manual entry
     })
   } catch (error) {
-    console.error('2FA setup error:', error)
+    logger.apiError('/api/user/2fa/setup POST', error, session?.id)
     return NextResponse.json(
       { error: 'Gagal menyiapkan 2FA' },
       { status: 500 }

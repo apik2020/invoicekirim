@@ -1,6 +1,7 @@
 import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { createWebhook, listWebhooks, WEBHOOK_EVENTS } from '@/lib/webhooks'
+import { logger } from '@/lib/logger'
 import { z } from 'zod'
 
 const createWebhookSchema = z.object({
@@ -29,7 +30,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ webhooks, events: WEBHOOK_EVENTS })
   } catch (error) {
-    console.error('Error fetching webhooks:', error)
+    logger.apiError('/api/webhooks GET', error)
     return NextResponse.json(
       { error: 'Failed to fetch webhooks' },
       { status: 500 }
@@ -75,7 +76,7 @@ export async function POST(req: NextRequest) {
     // Only return the secret once
     return NextResponse.json({ webhook }, { status: 201 })
   } catch (error) {
-    console.error('Error creating webhook:', error)
+    logger.apiError('/api/webhooks POST', error)
     return NextResponse.json(
       { error: 'Failed to create webhook' },
       { status: 500 }

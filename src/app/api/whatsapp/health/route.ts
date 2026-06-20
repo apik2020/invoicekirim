@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { checkWhatsAppHealth } from '@/lib/whatsapp'
+import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,7 +25,7 @@ export async function GET() {
       error: result.error || 'OpenWA tidak terhubung',
     }, { status: 503 })
   } catch (error) {
-    console.error('[WA HEALTH] Error:', error)
+    logger.apiError('/api/whatsapp/health GET', error)
     return NextResponse.json({
       connected: false,
       error: 'Gagal mengecek status WhatsApp',

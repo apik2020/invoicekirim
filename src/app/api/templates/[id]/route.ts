@@ -2,13 +2,15 @@ import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { templateSchema } from '@/lib/validations/invoice'
+import { logger } from '@/lib/logger'
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -34,7 +36,7 @@ export async function GET(
 
     return NextResponse.json(transformedTemplate)
   } catch (error) {
-    console.error('Get template error:', error)
+    logger.apiError('/api/templates/[id] GET', error, session?.id)
     return NextResponse.json(
       { error: 'Gagal mengambil template' },
       { status: 500 }
@@ -46,8 +48,9 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -137,7 +140,7 @@ export async function PUT(
 
     return NextResponse.json(transformedTemplate)
   } catch (error) {
-    console.error('Update template error:', error)
+    logger.apiError('/api/templates/[id] PUT', error, session?.id)
     return NextResponse.json(
       { error: 'Gagal mengubah template' },
       { status: 500 }
@@ -149,8 +152,9 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -175,7 +179,7 @@ export async function DELETE(
 
     return NextResponse.json({ message: 'Template berhasil dihapus' })
   } catch (error) {
-    console.error('Delete template error:', error)
+    logger.apiError('/api/templates/[id] DELETE', error, session?.id)
     return NextResponse.json(
       { error: 'Gagal menghapus template' },
       { status: 500 }

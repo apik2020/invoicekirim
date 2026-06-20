@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/logger'
 
 // Verify cron secret to prevent unauthorized access
 function verifyCronSecret(req: NextRequest): boolean {
@@ -9,11 +10,11 @@ function verifyCronSecret(req: NextRequest): boolean {
   // In production, CRON_SECRET is mandatory
   if (!secret) {
     if (process.env.NODE_ENV === 'production') {
-      console.error('[CRON] CRON_SECRET is not set in production — rejecting request')
+      logger.error('[CRON] CRON_SECRET is not set in production — rejecting request')
       return false
     }
     // Allow without secret only in development
-    console.warn('[CRON] No CRON_SECRET set — allowed in development only')
+    logger.warn('[CRON] No CRON_SECRET set — allowed in development only')
     return true
   }
 
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
     let processedCount = 0
     let errorCount = 0
 
-    console.log(`[CRON] Starting payment expiration check at ${now.toISOString()}`)
+    logger.dev('CRON', `Starting payment expiration check at ${now.toISOString()}`)
 
     // Find expired pending payments
     const expiredPayments = await prisma.payments.findMany({
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    console.log(`[CRON] Found ${expiredPayments.length} expired pending payments`)
+    logger.dev('CRON', `Found ${expiredPayments.length} expired pending payments`)
 
     for (const payment of expiredPayments) {
       try {
@@ -87,14 +88,14 @@ export async function POST(req: NextRequest) {
         })
 
         processedCount++
-        console.log(`[CRON] Expired payment ${payment.id} for user ${payment.userId}`)
+        logger.dev('CRON', `Expired payment ${payment.id} for user ${payment.userId}`)
       } catch (error) {
         errorCount++
-        console.error(`[CRON] Failed to expire payment ${payment.id}:`, error)
+        logger.error(`[CRON] Failed to expire payment ${payment.id}:`, error)
       }
     }
 
-    console.log(`[CRON] Completed: ${processedCount} expired, ${errorCount} errors`)
+    logger.dev('CRON', `Completed: ${processedCount} expired, ${errorCount} errors`)
 
     return NextResponse.json({
       success: true,
@@ -103,7 +104,7 @@ export async function POST(req: NextRequest) {
       timestamp: now.toISOString(),
     })
   } catch (error) {
-    console.error('[CRON] Payment expiration error:', error)
+    logger.apiError('/api/cron/expire-payments POST', error)
     return NextResponse.json(
       { error: 'Cron job failed' },
       { status: 500 }

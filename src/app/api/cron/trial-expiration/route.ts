@@ -17,11 +17,11 @@ function verifyCronSecret(req: NextRequest): boolean {
   // In production, CRON_SECRET is mandatory
   if (!secret) {
     if (process.env.NODE_ENV === 'production') {
-      console.error('[CRON] CRON_SECRET is not set in production — rejecting request')
+      logger.error('[CRON] CRON_SECRET is not set in production — rejecting request')
       return false
     }
     // Allow without secret only in development
-    console.warn('[CRON] No CRON_SECRET set — allowed in development only')
+    logger.warn('[CRON] No CRON_SECRET set — allowed in development only')
     return true
   }
 

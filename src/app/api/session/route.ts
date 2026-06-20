@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { decryptSession } from '@/lib/session'
+import { logger } from '@/lib/logger'
 
 // NextAuth cookie names that may need clearing on decryption failure
 const NEXTAUTH_COOKIES = [
@@ -29,7 +30,7 @@ export async function GET() {
       // JWT decryption failed — stale cookie from old NEXTAUTH_SECRET
       // Clear all NextAuth cookies so user can re-login cleanly
       if (err?.message?.includes('decryption') || err?.code === 'ERR_JWE_DECRYPTION_FAILED') {
-        console.warn('[SESSION] Stale session cookie detected, clearing all NextAuth cookies')
+        logger.warn('[SESSION] Stale session cookie detected, clearing all NextAuth cookies')
         const response = NextResponse.json({ authenticated: false, user: null }, { status: 401 })
         for (const name of NEXTAUTH_COOKIES) {
           if (cookieStore.get(name)) {
@@ -91,7 +92,7 @@ export async function GET() {
       }
     })
   } catch (error) {
-    console.error('[SESSION] Error:', error)
+    logger.apiError('/api/session GET', error)
     return NextResponse.json({ authenticated: false, user: null }, { status: 401 })
   }
 }

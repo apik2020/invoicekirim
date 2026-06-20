@@ -1,14 +1,16 @@
 import { getUserSession } from '@/lib/session'
 import { NextRequest, NextResponse } from 'next/server'
 import { revokeApiKey, deleteApiKey } from '@/lib/api-keys'
+import { logger } from '@/lib/logger'
 
 // PUT /api/api-keys/[id] - Revoke/regenerate API key
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -28,7 +30,7 @@ export async function PUT(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error revoking API key:', error)
+    logger.apiError('/api/api-keys/[id] PUT', error, session?.id)
     return NextResponse.json(
       { error: 'Failed to revoke API key' },
       { status: 500 }
@@ -41,8 +43,9 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let session
   try {
-    const session = await getUserSession()
+    session = await getUserSession()
     if (!session?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -62,7 +65,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error deleting API key:', error)
+    logger.apiError('/api/api-keys/[id] DELETE', error, session?.id)
     return NextResponse.json(
       { error: 'Failed to delete API key' },
       { status: 500 }

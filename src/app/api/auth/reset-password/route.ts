@@ -7,6 +7,7 @@ import {
   updateUserPassword,
 } from '@/lib/password-reset'
 import { checkRateLimit, getClientIp, authRateLimit } from '@/lib/rate-limit'
+import { logger } from '@/lib/logger'
 
 const resetPasswordSchema = z.object({
   token: z.string().min(1, 'Token tidak valid'),
@@ -74,7 +75,7 @@ export async function POST(req: NextRequest) {
       message: 'Password berhasil diubah. Silakan login dengan password baru.',
     })
   } catch (error) {
-    console.error('Reset password error:', error)
+    logger.apiError('/api/auth/reset-password POST', error)
     return NextResponse.json(
       { error: 'Terjadi kesalahan. Silakan coba lagi.' },
       { status: 500 }
