@@ -48,7 +48,7 @@ Website: [https://notabener.com](https://notabener.com)
 | **Backend** | Next.js API Routes, Prisma ORM |
 | **Database** | PostgreSQL (Neon) |
 | **Authentication** | NextAuth.js, 2FA Support |
-| **Payment - ID** | Duitku (VA, QRIS, E-Wallet) |
+| **Payment - ID** | Ipaymu (VA, QRIS, E-Wallet) |
 | **Payment - International** | Stripe |
 | **Email** | Resend / Custom SMTP |
 | **PDF Generation** | @react-pdf/renderer |
