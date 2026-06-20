@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { useAppSession } from '@/hooks/useAppSession'
-import { FileText, Save, Plus, Trash2, Loader2, Upload, X, Check } from 'lucide-react'
+import { FileText, Save, Plus, Trash2, Loader2, Upload, X, Check, Package } from 'lucide-react'
 import { formatCurrency } from '@/lib/utils'
 import { DashboardLayout } from '@/components/DashboardLayout'
 import { MessageBox } from '@/components/ui/MessageBox'
@@ -38,7 +38,15 @@ export default function EditTemplatePage() {
   const [notFound, setNotFound] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [uploadingSignature, setUploadingSignature] = useState(false)
+  const [catalogItems, setCatalogItems] = useState<any[]>([])
+  const [showItemCatalog, setShowItemCatalog] = useState(false)
   const messageBox = useMessageBox()
+
+  // Raw string state for numeric inputs so the field can be cleared freely
+  // (and accept decimals) without getting stuck on "0" or breaking on NaN.
+  const [taxRateInput, setTaxRateInput] = useState('11')
+  const [discountValueInput, setDiscountValueInput] = useState('')
+  const [additionalDiscountValueInput, setAdditionalDiscountValueInput] = useState('')
 
   const [formData, setFormData] = useState({
     name: '',
@@ -77,9 +85,23 @@ export default function EditTemplatePage() {
       router.push('/login')
     } else if (sessionResult.status === 'authenticated' && id) {
       fetchTemplate()
+      loadCatalogItems()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionResult.status, id, router])
+
+  const loadCatalogItems = async () => {
+    try {
+      const res = await fetch('/api/items')
+      if (res.ok) {
+        const data = await res.json()
+        // Handle both paginated response (data.data) and legacy array response
+        setCatalogItems(Array.isArray(data) ? data : (data.data || data.items || []))
+      }
+    } catch (error) {
+      console.error('Failed to load catalog items:', error)
+    }
+  }
 
   const fetchTemplate = async () => {
     try {
@@ -112,6 +134,11 @@ export default function EditTemplatePage() {
         additionalDiscountType: data.additionalDiscountType || 'percentage',
         additionalDiscountValue: data.additionalDiscountValue || 0,
       })
+
+      // Initialize raw input strings (empty when 0 so the placeholder shows)
+      setTaxRateInput(String(data.taxRate ?? 11))
+      setDiscountValueInput(data.discountValue ? String(data.discountValue) : '')
+      setAdditionalDiscountValueInput(data.additionalDiscountValue ? String(data.additionalDiscountValue) : '')
 
       // Populate settings
       if (data.settings) {
@@ -257,6 +284,72 @@ export default function EditTemplatePage() {
     ))
   }
 
+  const handleAddFromCatalog = (catalogItem: any) => {
+    // Fill the first empty item; otherwise append a new one
+    const emptyItemIndex = items.findIndex(item => !item.description || item.description.trim() === '')
+
+    if (emptyItemIndex !== -1) {
+      const updatedItems = [...items]
+      updatedItems[emptyItemIndex] = {
+        ...updatedItems[emptyItemIndex],
+        description: catalogItem.name,
+        quantity: 1,
+        price: catalogItem.price,
+      }
+      setItems(updatedItems)
+    } else {
+      setItems([
+        ...items,
+        { id: Date.now().toString(), description: catalogItem.name, quantity: 1, price: catalogItem.price },
+      ])
+    }
+    setShowItemCatalog(false)
+  }
+
+  // Tax: allow empty (treated as 0); clamp to 0-100
+  const handleTaxChange = (raw: string) => {
+    setTaxRateInput(raw)
+    const n = parseFloat(raw)
+    setFormData((prev) => ({ ...prev, taxRate: isNaN(n) ? 0 : Math.min(100, Math.max(0, n)) }))
+  }
+
+  // Discount value: percentage is capped at 100, nominal has no upper cap
+  const handleDiscountValueChange = (raw: string) => {
+    const isPct = formData.discountType === 'percentage'
+    const n = parseFloat(raw)
+    if (!isNaN(n) && isPct && n > 100) {
+      setDiscountValueInput('100')
+      setFormData((prev) => ({ ...prev, discountValue: 100 }))
+      return
+    }
+    setDiscountValueInput(raw)
+    setFormData((prev) => ({ ...prev, discountValue: isNaN(n) ? 0 : Math.max(0, n) }))
+  }
+
+  const handleAdditionalDiscountValueChange = (raw: string) => {
+    const isPct = formData.additionalDiscountType === 'percentage'
+    const n = parseFloat(raw)
+    if (!isNaN(n) && isPct && n > 100) {
+      setAdditionalDiscountValueInput('100')
+      setFormData((prev) => ({ ...prev, additionalDiscountValue: 100 }))
+      return
+    }
+    setAdditionalDiscountValueInput(raw)
+    setFormData((prev) => ({ ...prev, additionalDiscountValue: isNaN(n) ? 0 : Math.max(0, n) }))
+  }
+
+  // Switching type resets the value so a percentage (e.g. 10%) is never
+  // mistaken for a nominal amount (Rp 10) and vice versa
+  const handleDiscountTypeChange = (type: 'percentage' | 'fixed') => {
+    setFormData((prev) => ({ ...prev, discountType: type, discountValue: 0 }))
+    setDiscountValueInput('')
+  }
+
+  const handleAdditionalDiscountTypeChange = (type: 'percentage' | 'fixed') => {
+    setFormData((prev) => ({ ...prev, additionalDiscountType: type, additionalDiscountValue: 0 }))
+    setAdditionalDiscountValueInput('')
+  }
+
   const subtotal = items.reduce((sum, item) => sum + item.quantity * item.price, 0)
   const discountAmount = settings.showDiscount && formData.discountValue > 0
     ? (formData.discountType === 'percentage'
@@ -391,13 +484,13 @@ export default function EditTemplatePage() {
               </label>
               <input
                 type="number"
-                value={formData.taxRate}
-                onChange={(e) => setFormData({ ...formData, taxRate: parseFloat(e.target.value) })}
+                value={taxRateInput}
+                onChange={(e) => handleTaxChange(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
                 min="0"
                 max="100"
                 step="0.01"
-                required
+                placeholder="11"
               />
             </div>
           </div>
@@ -454,7 +547,7 @@ export default function EditTemplatePage() {
                 </label>
                 <select
                   value={formData.discountType}
-                  onChange={(e) => setFormData({ ...formData, discountType: e.target.value as 'percentage' | 'fixed' })}
+                  onChange={(e) => handleDiscountTypeChange(e.target.value as 'percentage' | 'fixed')}
                   className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 focus:border-orange-500 focus:outline-none transition-colors"
                 >
                   <option value="percentage">Persentase (%)</option>
@@ -463,15 +556,16 @@ export default function EditTemplatePage() {
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-2">
-                  Nilai Diskon {formData.discountType === 'percentage' ? '(%)' : '(Rp)'}
+                  Nilai Diskon {formData.discountType === 'percentage' ? '(%, maks 100)' : '(Rp)'}
                 </label>
                 <input
                   type="number"
-                  value={formData.discountValue}
-                  onChange={(e) => setFormData({ ...formData, discountValue: parseFloat(e.target.value) || 0 })}
+                  value={discountValueInput}
+                  onChange={(e) => handleDiscountValueChange(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 focus:border-orange-500 focus:outline-none transition-colors"
                   min="0"
-                  step={formData.discountType === 'percentage' ? '0.01' : '1'}
+                  max={formData.discountType === 'percentage' ? 100 : undefined}
+                  step={formData.discountType === 'percentage' ? '0.01' : '1000'}
                   placeholder={formData.discountType === 'percentage' ? '10' : '100000'}
                 />
               </div>
@@ -491,7 +585,7 @@ export default function EditTemplatePage() {
                 </label>
                 <select
                   value={formData.additionalDiscountType}
-                  onChange={(e) => setFormData({ ...formData, additionalDiscountType: e.target.value as 'percentage' | 'fixed' })}
+                  onChange={(e) => handleAdditionalDiscountTypeChange(e.target.value as 'percentage' | 'fixed')}
                   className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 focus:border-orange-500 focus:outline-none transition-colors"
                 >
                   <option value="percentage">Persentase (%)</option>
@@ -500,15 +594,16 @@ export default function EditTemplatePage() {
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-2">
-                  Nilai Diskon Tambahan {formData.additionalDiscountType === 'percentage' ? '(%)' : '(Rp)'}
+                  Nilai Diskon Tambahan {formData.additionalDiscountType === 'percentage' ? '(%, maks 100)' : '(Rp)'}
                 </label>
                 <input
                   type="number"
-                  value={formData.additionalDiscountValue}
-                  onChange={(e) => setFormData({ ...formData, additionalDiscountValue: parseFloat(e.target.value) || 0 })}
+                  value={additionalDiscountValueInput}
+                  onChange={(e) => handleAdditionalDiscountValueChange(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 focus:border-orange-500 focus:outline-none transition-colors"
                   min="0"
-                  step={formData.additionalDiscountType === 'percentage' ? '0.01' : '1'}
+                  max={formData.additionalDiscountType === 'percentage' ? 100 : undefined}
+                  step={formData.additionalDiscountType === 'percentage' ? '0.01' : '1000'}
                   placeholder={formData.additionalDiscountType === 'percentage' ? '5' : '50000'}
                 />
               </div>
@@ -604,15 +699,57 @@ export default function EditTemplatePage() {
         <div className="card p-8">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-lg font-bold text-gray-900">Item Template</h2>
-            <button
-              type="button"
-              onClick={addItem}
-              className="flex items-center gap-2 px-4 py-2 text-white font-bold text-sm rounded-xl btn-primary"
-            >
-              <Plus size={16} />
-              Tambah Item
-            </button>
+            <div className="flex gap-2">
+              {catalogItems.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowItemCatalog(!showItemCatalog)}
+                  className="flex items-center gap-2 px-4 py-2 text-gray-700 font-bold text-sm rounded-xl border border-orange-200 bg-orange-50 hover:bg-orange-100 transition-colors"
+                >
+                  <Package size={16} />
+                  Pilih dari Katalog
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={addItem}
+                className="flex items-center gap-2 px-4 py-2 text-white font-bold text-sm rounded-xl btn-primary"
+              >
+                <Plus size={16} />
+                Tambah Item
+              </button>
+            </div>
           </div>
+
+          {/* Item Catalog Selector */}
+          {showItemCatalog && (
+            <div className="mb-6 p-6 bg-orange-50 border border-orange-300 rounded-xl">
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Pilih dari Katalog</h3>
+              {catalogItems.length === 0 ? (
+                <p className="text-gray-600">Belum ada item di katalog.</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {catalogItems.map((catalogItem) => (
+                    <button
+                      key={catalogItem.id}
+                      type="button"
+                      onClick={() => handleAddFromCatalog(catalogItem)}
+                      className="p-4 bg-white rounded-xl border border-orange-200 hover:border-orange-500 hover:shadow-md transition-all text-left"
+                    >
+                      <p className="font-bold text-gray-900 mb-1">{catalogItem.name}</p>
+                      {catalogItem.description && (
+                        <p className="text-sm text-gray-500 mb-2 line-clamp-2">{catalogItem.description}</p>
+                      )}
+                      <div className="flex justify-between items-center">
+                        <span className="text-orange-600 font-bold">{formatCurrency(catalogItem.price)}</span>
+                        <span className="text-sm text-gray-500">/{catalogItem.unit}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="space-y-4">
             {items.map((item, index) => (
