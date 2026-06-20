@@ -124,7 +124,7 @@ export default function EditTemplatePage() {
         name: data.name || '',
         description: data.description || '',
         notes: data.notes || '',
-        taxRate: data.taxRate || 11,
+        taxRate: data.taxRate ?? 11,
         defaultClientId: data.defaultClientId || '',
         termsAndConditions: data.termsAndConditions || '',
         signatoryName: data.signatoryName || '',

@@ -197,7 +197,7 @@ export default function EditInvoicePage() {
         clientPhone: data.clientPhone || '',
         clientAddress: data.clientAddress || '',
         notes: data.notes || '',
-        taxRate: data.taxRate || 11,
+        taxRate: data.taxRate ?? 11,
       })
 
       // Populate items
@@ -634,8 +634,8 @@ export default function EditInvoicePage() {
                 <label className="input-label">Tarif Pajak (%)</label>
                 <input
                   type="number"
-                  value={formData.taxRate}
-                  onChange={(e) => setFormData({ ...formData, taxRate: parseFloat(e.target.value) })}
+                  value={formData.taxRate ?? 0}
+                  onChange={(e) => setFormData({ ...formData, taxRate: e.target.value === '' ? 0 : parseFloat(e.target.value) || 0 })}
                   className="input"
                   min="0"
                   max="100"

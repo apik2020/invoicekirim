@@ -490,7 +490,7 @@ function NewInvoicePageContent() {
       // Load template data into form
       setFormData(prev => ({
         ...prev,
-        taxRate: template.taxRate || 11,
+        taxRate: template.taxRate ?? 11,
         notes: template.notes || '',
         termsAndConditions: template.termsAndConditions || '',
         signatoryName: template.signatoryName || '',
