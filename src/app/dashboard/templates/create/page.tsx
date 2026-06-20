@@ -40,6 +40,12 @@ export default function NewTemplatePage() {
   const [uploadingSignature, setUploadingSignature] = useState(false)
   const messageBox = useMessageBox()
 
+  // Raw string state for numeric inputs so the field can be cleared freely
+  // (and accept decimals) without getting stuck on "0" or breaking on NaN.
+  const [taxRateInput, setTaxRateInput] = useState('11')
+  const [discountValueInput, setDiscountValueInput] = useState('')
+  const [additionalDiscountValueInput, setAdditionalDiscountValueInput] = useState('')
+
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -285,6 +291,50 @@ export default function NewTemplatePage() {
     }))
   }
 
+  // Tax: allow empty (treated as 0); clamp to 0-100
+  const handleTaxChange = (raw: string) => {
+    setTaxRateInput(raw)
+    const n = parseFloat(raw)
+    setFormData((prev) => ({ ...prev, taxRate: isNaN(n) ? 0 : Math.min(100, Math.max(0, n)) }))
+  }
+
+  // Discount value: percentage is capped at 100, nominal has no upper cap
+  const handleDiscountValueChange = (raw: string) => {
+    const isPct = formData.discountType === 'percentage'
+    const n = parseFloat(raw)
+    if (!isNaN(n) && isPct && n > 100) {
+      setDiscountValueInput('100')
+      setFormData((prev) => ({ ...prev, discountValue: 100 }))
+      return
+    }
+    setDiscountValueInput(raw)
+    setFormData((prev) => ({ ...prev, discountValue: isNaN(n) ? 0 : Math.max(0, n) }))
+  }
+
+  const handleAdditionalDiscountValueChange = (raw: string) => {
+    const isPct = formData.additionalDiscountType === 'percentage'
+    const n = parseFloat(raw)
+    if (!isNaN(n) && isPct && n > 100) {
+      setAdditionalDiscountValueInput('100')
+      setFormData((prev) => ({ ...prev, additionalDiscountValue: 100 }))
+      return
+    }
+    setAdditionalDiscountValueInput(raw)
+    setFormData((prev) => ({ ...prev, additionalDiscountValue: isNaN(n) ? 0 : Math.max(0, n) }))
+  }
+
+  // Switching type resets the value so a percentage (e.g. 10%) is never
+  // mistaken for a nominal amount (Rp 10) and vice versa
+  const handleDiscountTypeChange = (type: 'percentage' | 'fixed') => {
+    setFormData((prev) => ({ ...prev, discountType: type, discountValue: 0 }))
+    setDiscountValueInput('')
+  }
+
+  const handleAdditionalDiscountTypeChange = (type: 'percentage' | 'fixed') => {
+    setFormData((prev) => ({ ...prev, additionalDiscountType: type, additionalDiscountValue: 0 }))
+    setAdditionalDiscountValueInput('')
+  }
+
   const subtotal = items.reduce((sum, item) => sum + item.quantity * item.price, 0)
   const discountAmount = settings.showDiscount && formData.discountValue > 0
     ? (formData.discountType === 'percentage'
@@ -376,13 +426,13 @@ export default function NewTemplatePage() {
                 </label>
                 <input
                   type="number"
-                  value={formData.taxRate}
-                  onChange={(e) => setFormData({ ...formData, taxRate: parseFloat(e.target.value) })}
+                  value={taxRateInput}
+                  onChange={(e) => handleTaxChange(e.target.value)}
                   className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 placeholder:text-gray-500 focus:border-orange-500 focus:outline-none transition-colors"
                   min="0"
                   max="100"
                   step="0.01"
-                  required
+                  placeholder="11"
                 />
               </div>
             </div>
@@ -438,7 +488,7 @@ export default function NewTemplatePage() {
                   </label>
                   <select
                     value={formData.discountType}
-                    onChange={(e) => setFormData({ ...formData, discountType: e.target.value as 'percentage' | 'fixed' })}
+                    onChange={(e) => handleDiscountTypeChange(e.target.value as 'percentage' | 'fixed')}
                     className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 focus:border-orange-500 focus:outline-none transition-colors"
                   >
                     <option value="percentage">Persentase (%)</option>
@@ -447,15 +497,16 @@ export default function NewTemplatePage() {
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-gray-900 mb-2">
-                    Nilai Diskon {formData.discountType === 'percentage' ? '(%)' : '(Rp)'}
+                    Nilai Diskon {formData.discountType === 'percentage' ? '(%, maks 100)' : '(Rp)'}
                   </label>
                   <input
                     type="number"
-                    value={formData.discountValue}
-                    onChange={(e) => setFormData({ ...formData, discountValue: parseFloat(e.target.value) || 0 })}
+                    value={discountValueInput}
+                    onChange={(e) => handleDiscountValueChange(e.target.value)}
                     className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 focus:border-orange-500 focus:outline-none transition-colors"
                     min="0"
-                    step={formData.discountType === 'percentage' ? '0.01' : '1'}
+                    max={formData.discountType === 'percentage' ? 100 : undefined}
+                    step={formData.discountType === 'percentage' ? '0.01' : '1000'}
                     placeholder={formData.discountType === 'percentage' ? '10' : '100000'}
                   />
                 </div>
@@ -475,7 +526,7 @@ export default function NewTemplatePage() {
                   </label>
                   <select
                     value={formData.additionalDiscountType}
-                    onChange={(e) => setFormData({ ...formData, additionalDiscountType: e.target.value as 'percentage' | 'fixed' })}
+                    onChange={(e) => handleAdditionalDiscountTypeChange(e.target.value as 'percentage' | 'fixed')}
                     className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 focus:border-orange-500 focus:outline-none transition-colors"
                   >
                     <option value="percentage">Persentase (%)</option>
@@ -484,15 +535,16 @@ export default function NewTemplatePage() {
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-gray-900 mb-2">
-                    Nilai Diskon Tambahan {formData.additionalDiscountType === 'percentage' ? '(%)' : '(Rp)'}
+                    Nilai Diskon Tambahan {formData.additionalDiscountType === 'percentage' ? '(%, maks 100)' : '(Rp)'}
                   </label>
                   <input
                     type="number"
-                    value={formData.additionalDiscountValue}
-                    onChange={(e) => setFormData({ ...formData, additionalDiscountValue: parseFloat(e.target.value) || 0 })}
+                    value={additionalDiscountValueInput}
+                    onChange={(e) => handleAdditionalDiscountValueChange(e.target.value)}
                     className="w-full px-4 py-3 rounded-xl bg-white border border-orange-200 text-gray-900 focus:border-orange-500 focus:outline-none transition-colors"
                     min="0"
-                    step={formData.additionalDiscountType === 'percentage' ? '0.01' : '1'}
+                    max={formData.additionalDiscountType === 'percentage' ? 100 : undefined}
+                    step={formData.additionalDiscountType === 'percentage' ? '0.01' : '1000'}
                     placeholder={formData.additionalDiscountType === 'percentage' ? '5' : '50000'}
                   />
                 </div>
