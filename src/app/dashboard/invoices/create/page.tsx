@@ -58,6 +58,7 @@ function NewInvoicePageContent() {
   const [selectedClientId, setSelectedClientId] = useState('')
   const [catalogItems, setCatalogItems] = useState<any[]>([])
   const [showItemCatalog, setShowItemCatalog] = useState(false)
+  const [selectedCatalogIds, setSelectedCatalogIds] = useState<string[]>([])
   const messageBox = useMessageBox()
 
   // Check feature access for templates and branding
@@ -225,32 +226,50 @@ function NewInvoicePageContent() {
     }
   }
 
-  const handleAddFromCatalog = (catalogItem: any) => {
-    // Cek apakah ada item yang kosong (description belum diisi)
-    const emptyItemIndex = items.findIndex(item => !item.description || item.description.trim() === '')
+  // Toggle a catalog item in/out of the multi-select set
+  const toggleCatalogSelection = (id: string) => {
+    setSelectedCatalogIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    )
+  }
 
-    if (emptyItemIndex !== -1) {
-      // Isi item yang kosong
-      const updatedItems = [...items]
-      updatedItems[emptyItemIndex] = {
-        ...updatedItems[emptyItemIndex],
-        description: catalogItem.name,
-        quantity: 1,
-        price: catalogItem.price,
-        priceFormatted: formatCurrencyInput(catalogItem.price.toString()),
+  // Add all currently-selected catalog items at once: fill empty rows first,
+  // then append the rest. Lets users pick many items in one go.
+  const handleAddSelectedFromCatalog = () => {
+    const chosen = selectedCatalogIds
+      .map((id) => catalogItems.find((c) => c.id === id))
+      .filter(Boolean) as any[]
+    if (chosen.length === 0) return
+
+    const queue = chosen.map((c, i) => ({
+      id: `${Date.now()}-${i}`,
+      description: c.name,
+      quantity: 1,
+      price: c.price,
+      priceFormatted: formatCurrencyInput(c.price.toString()),
+    }))
+
+    setItems((prev) => {
+      const result = [...prev]
+      let q = 0
+      // Fill empty (description-less) rows first
+      for (let i = 0; i < result.length && q < queue.length; i++) {
+        if (!result[i].description || result[i].description.trim() === '') {
+          const next = queue[q++]
+          result[i] = {
+            ...result[i],
+            description: next.description,
+            quantity: 1,
+            price: next.price,
+            priceFormatted: next.priceFormatted,
+          }
+        }
       }
-      setItems(updatedItems)
-    } else {
-      // Tambah item baru jika semua item sudah terisi
-      const newItem = {
-        id: Date.now().toString(),
-        description: catalogItem.name,
-        quantity: 1,
-        price: catalogItem.price,
-        priceFormatted: formatCurrencyInput(catalogItem.price.toString()),
-      }
-      setItems([...items, newItem])
-    }
+      // Append whatever is left
+      return [...result, ...queue.slice(q)]
+    })
+
+    setSelectedCatalogIds([])
     setShowItemCatalog(false)
   }
 
@@ -956,7 +975,7 @@ function NewInvoicePageContent() {
                   {catalogItems.length > 0 && (
                     <button
                       type="button"
-                      onClick={() => setShowItemCatalog(!showItemCatalog)}
+                      onClick={() => { setShowItemCatalog(!showItemCatalog); setSelectedCatalogIds([]) }}
                       className="flex items-center gap-2 px-4 py-2 text-text-secondary font-bold text-sm rounded-xl border border-gray-200 bg-surface-light hover:bg-gray-100 transition-colors"
                     >
                       <Package size={16} />
@@ -983,32 +1002,85 @@ function NewInvoicePageContent() {
               </div>
             </div>
 
-            {/* Item Catalog Selector */}
+            {/* Item Catalog Selector (multi-select) */}
             {showItemCatalog && (
               <div className="p-4 sm:p-6 bg-brand-50 border-b border-brand-200">
-                <h3 className="text-lg font-bold text-text-primary mb-4">Pilih dari Katalog</h3>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                  <div>
+                    <h3 className="text-lg font-bold text-text-primary">Pilih dari Katalog</h3>
+                    <p className="text-sm text-text-muted">Pilih satu atau beberapa item, lalu tambahkan sekaligus</p>
+                  </div>
+                  {catalogItems.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedCatalogIds(
+                        selectedCatalogIds.length === catalogItems.length ? [] : catalogItems.map((c) => c.id)
+                      )}
+                      className="self-start px-3 py-1.5 text-sm font-semibold text-text-secondary rounded-lg border border-gray-200 bg-white hover:bg-gray-100 transition-colors"
+                    >
+                      {selectedCatalogIds.length === catalogItems.length ? 'Bersihkan Pilihan' : 'Pilih Semua'}
+                    </button>
+                  )}
+                </div>
+
                 {catalogItems.length === 0 ? (
                   <p className="text-text-secondary">Belum ada item di katalog.</p>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {catalogItems.map((catalogItem) => (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {catalogItems.map((catalogItem) => {
+                        const selected = selectedCatalogIds.includes(catalogItem.id)
+                        return (
+                          <button
+                            key={catalogItem.id}
+                            type="button"
+                            onClick={() => toggleCatalogSelection(catalogItem.id)}
+                            aria-pressed={selected}
+                            className={`relative p-4 bg-white rounded-xl border text-left transition-all ${
+                              selected
+                                ? 'border-brand-500 ring-2 ring-brand-200 shadow-md'
+                                : 'border-gray-200 hover:border-brand-500 hover:shadow-md'
+                            }`}
+                          >
+                            <span
+                              className={`absolute top-3 right-3 w-5 h-5 rounded-md flex items-center justify-center border ${
+                                selected ? 'bg-brand-500 border-brand-500 text-white' : 'border-gray-300 text-transparent'
+                              }`}
+                            >
+                              <Check size={14} />
+                            </span>
+                            <p className="font-bold text-text-primary mb-1 pr-7">{catalogItem.name}</p>
+                            {catalogItem.description && (
+                              <p className="text-sm text-text-muted mb-2 line-clamp-2">{catalogItem.description}</p>
+                            )}
+                            <div className="flex justify-between items-center">
+                              <span className="text-brand-600 font-bold">{formatCurrency(catalogItem.price)}</span>
+                              <span className="text-sm text-text-muted">/{catalogItem.unit}</span>
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-center justify-end gap-3 mt-4 pt-4 border-t border-brand-200">
                       <button
-                        key={catalogItem.id}
                         type="button"
-                        onClick={() => handleAddFromCatalog(catalogItem)}
-                        className="p-4 bg-white rounded-xl border border-gray-200 hover:border-brand-500 hover:shadow-md transition-all text-left"
+                        onClick={() => { setShowItemCatalog(false); setSelectedCatalogIds([]) }}
+                        className="w-full sm:w-auto px-4 py-2 text-sm font-bold text-text-secondary rounded-xl border border-gray-200 bg-white hover:bg-gray-100 transition-colors"
                       >
-                        <p className="font-bold text-text-primary mb-1">{catalogItem.name}</p>
-                        {catalogItem.description && (
-                          <p className="text-sm text-text-muted mb-2 line-clamp-2">{catalogItem.description}</p>
-                        )}
-                        <div className="flex justify-between items-center">
-                          <span className="text-brand-600 font-bold">{formatCurrency(catalogItem.price)}</span>
-                          <span className="text-sm text-text-muted">/{catalogItem.unit}</span>
-                        </div>
+                        Batal
                       </button>
-                    ))}
-                  </div>
+                      <button
+                        type="button"
+                        onClick={handleAddSelectedFromCatalog}
+                        disabled={selectedCatalogIds.length === 0}
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2 text-sm font-bold text-white rounded-xl btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Plus size={16} />
+                        Tambah {selectedCatalogIds.length > 0 ? `${selectedCatalogIds.length} ` : ''}Item Terpilih
+                      </button>
+                    </div>
+                  </>
                 )}
               </div>
             )}
