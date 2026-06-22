@@ -40,6 +40,7 @@ export default function EditTemplatePage() {
   const [uploadingSignature, setUploadingSignature] = useState(false)
   const [catalogItems, setCatalogItems] = useState<any[]>([])
   const [showItemCatalog, setShowItemCatalog] = useState(false)
+  const [selectedCatalogIds, setSelectedCatalogIds] = useState<string[]>([])
   const messageBox = useMessageBox()
 
   // Raw string state for numeric inputs so the field can be cleared freely
@@ -284,25 +285,40 @@ export default function EditTemplatePage() {
     ))
   }
 
-  const handleAddFromCatalog = (catalogItem: any) => {
-    // Fill the first empty item; otherwise append a new one
-    const emptyItemIndex = items.findIndex(item => !item.description || item.description.trim() === '')
+  // Toggle a catalog item in/out of the multi-select set
+  const toggleCatalogSelection = (id: string) => {
+    setSelectedCatalogIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    )
+  }
 
-    if (emptyItemIndex !== -1) {
-      const updatedItems = [...items]
-      updatedItems[emptyItemIndex] = {
-        ...updatedItems[emptyItemIndex],
-        description: catalogItem.name,
-        quantity: 1,
-        price: catalogItem.price,
+  // Add all selected catalog items at once: fill empty rows first, then append
+  const handleAddSelectedFromCatalog = () => {
+    const chosen = selectedCatalogIds
+      .map((id) => catalogItems.find((c) => c.id === id))
+      .filter(Boolean) as any[]
+    if (chosen.length === 0) return
+
+    const queue = chosen.map((c, i) => ({
+      id: `${Date.now()}-${i}`,
+      description: c.name,
+      quantity: 1,
+      price: c.price,
+    }))
+
+    setItems((prev) => {
+      const result = [...prev]
+      let q = 0
+      for (let i = 0; i < result.length && q < queue.length; i++) {
+        if (!result[i].description || result[i].description.trim() === '') {
+          const next = queue[q++]
+          result[i] = { ...result[i], description: next.description, quantity: 1, price: next.price }
+        }
       }
-      setItems(updatedItems)
-    } else {
-      setItems([
-        ...items,
-        { id: Date.now().toString(), description: catalogItem.name, quantity: 1, price: catalogItem.price },
-      ])
-    }
+      return [...result, ...queue.slice(q)]
+    })
+
+    setSelectedCatalogIds([])
     setShowItemCatalog(false)
   }
 
@@ -703,7 +719,7 @@ export default function EditTemplatePage() {
               {catalogItems.length > 0 && (
                 <button
                   type="button"
-                  onClick={() => setShowItemCatalog(!showItemCatalog)}
+                  onClick={() => { setShowItemCatalog(!showItemCatalog); setSelectedCatalogIds([]) }}
                   className="flex items-center gap-2 px-4 py-2 text-gray-700 font-bold text-sm rounded-xl border border-orange-200 bg-orange-50 hover:bg-orange-100 transition-colors"
                 >
                   <Package size={16} />
@@ -721,32 +737,85 @@ export default function EditTemplatePage() {
             </div>
           </div>
 
-          {/* Item Catalog Selector */}
+          {/* Item Catalog Selector (multi-select) */}
           {showItemCatalog && (
             <div className="mb-6 p-6 bg-orange-50 border border-orange-300 rounded-xl">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Pilih dari Katalog</h3>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">Pilih dari Katalog</h3>
+                  <p className="text-sm text-gray-500">Pilih satu atau beberapa item, lalu tambahkan sekaligus</p>
+                </div>
+                {catalogItems.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCatalogIds(
+                      selectedCatalogIds.length === catalogItems.length ? [] : catalogItems.map((c) => c.id)
+                    )}
+                    className="self-start px-3 py-1.5 text-sm font-semibold text-gray-700 rounded-lg border border-orange-200 bg-white hover:bg-orange-100 transition-colors"
+                  >
+                    {selectedCatalogIds.length === catalogItems.length ? 'Bersihkan Pilihan' : 'Pilih Semua'}
+                  </button>
+                )}
+              </div>
+
               {catalogItems.length === 0 ? (
                 <p className="text-gray-600">Belum ada item di katalog.</p>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {catalogItems.map((catalogItem) => (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {catalogItems.map((catalogItem) => {
+                      const selected = selectedCatalogIds.includes(catalogItem.id)
+                      return (
+                        <button
+                          key={catalogItem.id}
+                          type="button"
+                          onClick={() => toggleCatalogSelection(catalogItem.id)}
+                          aria-pressed={selected}
+                          className={`relative p-4 bg-white rounded-xl border text-left transition-all ${
+                            selected
+                              ? 'border-orange-500 ring-2 ring-orange-200 shadow-md'
+                              : 'border-orange-200 hover:border-orange-500 hover:shadow-md'
+                          }`}
+                        >
+                          <span
+                            className={`absolute top-3 right-3 w-5 h-5 rounded-md flex items-center justify-center border ${
+                              selected ? 'bg-orange-500 border-orange-500 text-white' : 'border-gray-300 text-transparent'
+                            }`}
+                          >
+                            <Check size={14} />
+                          </span>
+                          <p className="font-bold text-gray-900 mb-1 pr-7">{catalogItem.name}</p>
+                          {catalogItem.description && (
+                            <p className="text-sm text-gray-500 mb-2 line-clamp-2">{catalogItem.description}</p>
+                          )}
+                          <div className="flex justify-between items-center">
+                            <span className="text-orange-600 font-bold">{formatCurrency(catalogItem.price)}</span>
+                            <span className="text-sm text-gray-500">/{catalogItem.unit}</span>
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-center justify-end gap-3 mt-4 pt-4 border-t border-orange-200">
                     <button
-                      key={catalogItem.id}
                       type="button"
-                      onClick={() => handleAddFromCatalog(catalogItem)}
-                      className="p-4 bg-white rounded-xl border border-orange-200 hover:border-orange-500 hover:shadow-md transition-all text-left"
+                      onClick={() => { setShowItemCatalog(false); setSelectedCatalogIds([]) }}
+                      className="w-full sm:w-auto px-4 py-2 text-sm font-bold text-gray-700 rounded-xl border border-orange-200 bg-white hover:bg-orange-100 transition-colors"
                     >
-                      <p className="font-bold text-gray-900 mb-1">{catalogItem.name}</p>
-                      {catalogItem.description && (
-                        <p className="text-sm text-gray-500 mb-2 line-clamp-2">{catalogItem.description}</p>
-                      )}
-                      <div className="flex justify-between items-center">
-                        <span className="text-orange-600 font-bold">{formatCurrency(catalogItem.price)}</span>
-                        <span className="text-sm text-gray-500">/{catalogItem.unit}</span>
-                      </div>
+                      Batal
                     </button>
-                  ))}
-                </div>
+                    <button
+                      type="button"
+                      onClick={handleAddSelectedFromCatalog}
+                      disabled={selectedCatalogIds.length === 0}
+                      className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2 text-sm font-bold text-white rounded-xl btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Plus size={16} />
+                      Tambah {selectedCatalogIds.length > 0 ? `${selectedCatalogIds.length} ` : ''}Item Terpilih
+                    </button>
+                  </div>
+                </>
               )}
             </div>
           )}
