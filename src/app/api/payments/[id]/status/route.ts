@@ -29,11 +29,11 @@ export async function GET(
     }
 
     // If payment is pending, check status from gateway
-    if (payment.status === 'PENDING' && payment.dokuOrderId) {
+    if (payment.status === 'PENDING' && payment.gatewayOrderId) {
       try {
         const gateway = getPaymentGateway()
         const txStatus = await gateway.checkTransactionStatus(
-          payment.dokuTransactionId || payment.dokuOrderId
+          payment.gatewayTransactionId || payment.gatewayOrderId
         )
 
         if (txStatus.status !== 'PENDING') {
@@ -102,7 +102,7 @@ export async function GET(
                 description: `Pembayaran ${pricingPlan?.name} berhasil melalui iPaymu`,
                 metadata: {
                   paymentId: payment.id,
-                  orderId: payment.dokuOrderId,
+                  orderId: payment.gatewayOrderId,
                   pricingPlan: pricingPlan?.name,
                   amount: payment.amount.toString(),
                 },

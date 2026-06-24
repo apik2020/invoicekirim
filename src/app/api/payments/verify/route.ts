@@ -34,9 +34,9 @@ export async function GET(req: NextRequest) {
     payment = await prisma.payments.findFirst({
       where: {
         OR: [
-          { dokuOrderId: reference },
-          { dokuTransactionId: reference },
-          { dokuTransactionId: trxId || undefined },
+          { gatewayOrderId: reference },
+          { gatewayTransactionId: reference },
+          { gatewayTransactionId: trxId || undefined },
         ].filter(clause => {
           // Filter out undefined values from OR clause
           return Object.values(clause).every(v => v !== undefined)
@@ -87,7 +87,7 @@ export async function GET(req: NextRequest) {
       success: true,
       status: 'COMPLETED',
       payment: {
-        orderId: payment.dokuOrderId,
+        orderId: payment.gatewayOrderId,
         planName,
         amount: payment.amount,
         paymentMethod: payment.paymentMethod,
@@ -98,8 +98,8 @@ export async function GET(req: NextRequest) {
   }
 
   // Try to check payment status from iPaymu API
-  // For redirect payments: prefer trx_id (from URL), then dokuTransactionId, then gatewaySessionId
-  const gatewayId = trxId || payment.dokuTransactionId || payment.gatewaySessionId || payment.dokuOrderId
+  // For redirect payments: prefer trx_id (from URL), then gatewayTransactionId, then gatewaySessionId
+  const gatewayId = trxId || payment.gatewayTransactionId || payment.gatewaySessionId || payment.gatewayOrderId
 
   try {
     const gateway = getPaymentGateway()
@@ -108,10 +108,10 @@ export async function GET(req: NextRequest) {
 
     if (txStatus.status === 'COMPLETED') {
       // Store trx_id if we got it from URL params and payment doesn't have it yet
-      if (trxId && !payment.dokuTransactionId) {
+      if (trxId && !payment.gatewayTransactionId) {
         await prisma.payments.update({
           where: { id: payment.id },
-          data: { dokuTransactionId: trxId },
+          data: { gatewayTransactionId: trxId },
         })
       }
       return await completePayment(payment, planName, txStatus.transactionId || trxId, txStatus.paymentMethod)
@@ -121,7 +121,7 @@ export async function GET(req: NextRequest) {
       success: false,
       status: txStatus.status || 'PENDING',
       payment: {
-        orderId: payment.dokuOrderId,
+        orderId: payment.gatewayOrderId,
         planName,
         amount: payment.amount,
       }
@@ -133,7 +133,7 @@ export async function GET(req: NextRequest) {
       success: false,
       status: payment.status || 'PENDING',
       payment: {
-        orderId: payment.dokuOrderId,
+        orderId: payment.gatewayOrderId,
         planName,
         amount: payment.amount,
       }
@@ -162,7 +162,7 @@ async function completePayment(
         where: { id: payment.id },
         data: {
           status: 'COMPLETED',
-          ...(gatewayReference && { dokuTransactionId: gatewayReference }),
+          ...(gatewayReference && { gatewayTransactionId: gatewayReference }),
           ...(gatewayPaymentMethod && { paymentMethod: gatewayPaymentMethod }),
         }
       })
@@ -219,7 +219,7 @@ async function completePayment(
         success: true,
         status: 'COMPLETED',
         payment: {
-          orderId: payment.dokuOrderId,
+          orderId: payment.gatewayOrderId,
           planName,
           amount: payment.amount,
         }
@@ -230,7 +230,7 @@ async function completePayment(
       success: true,
       status: 'COMPLETED',
       payment: {
-        orderId: payment.dokuOrderId,
+        orderId: payment.gatewayOrderId,
         planName,
         amount: payment.amount,
         paymentMethod: gatewayPaymentMethod || payment.paymentMethod,

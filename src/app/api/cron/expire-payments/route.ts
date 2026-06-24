@@ -74,10 +74,10 @@ export async function POST(req: NextRequest) {
             entityType: 'Payment',
             entityId: payment.id,
             title: 'Pembayaran Kedaluwarsa',
-            description: `Pembayaran ${payment.dokuOrderId || payment.id} telah kedaluwarsa`,
+            description: `Pembayaran ${payment.gatewayOrderId || payment.id} telah kedaluwarsa`,
             metadata: {
               paymentId: payment.id,
-              dokuOrderId: payment.dokuOrderId,
+              gatewayOrderId: payment.gatewayOrderId,
               amount: payment.amount,
               currency: payment.currency,
               paymentMethod: payment.paymentMethod,

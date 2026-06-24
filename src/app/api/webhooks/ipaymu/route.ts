@@ -41,9 +41,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing reference_id' }, { status: 400 })
     }
 
-    // Find payment by order ID (stored in dokuOrderId)
+    // Find payment by order ID (stored in gatewayOrderId)
     const payment = await prisma.payments.findFirst({
-      where: { dokuOrderId: reference_id },
+      where: { gatewayOrderId: reference_id },
     })
 
     if (!payment) {
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
           where: { id: payment.id },
           data: {
             status: 'COMPLETED',
-            dokuTransactionId: trx_id || verification.transactionId,
+            gatewayTransactionId: trx_id || verification.transactionId,
             gatewaySessionId: sid || payment.gatewaySessionId,
             paymentMethod: mapIpaymuPaymentMethod(via, channel),
           },
@@ -184,7 +184,7 @@ export async function POST(req: NextRequest) {
       where: { id: payment.id },
       data: {
         status: verification.status === 'EXPIRED' ? 'EXPIRED' : 'FAILED',
-        dokuTransactionId: trx_id,
+        gatewayTransactionId: trx_id,
       },
     })
 

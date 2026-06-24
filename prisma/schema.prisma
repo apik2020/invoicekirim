@@ -313,8 +313,8 @@ model payments {
   expiredAt             DateTime?
   midtransOrderId       String?       @unique
   midtransTransactionId String?
-  dokuOrderId           String?       @unique
-  dokuTransactionId     String?
+  gatewayOrderId        String?       @unique
+  gatewayTransactionId  String?
   gatewaySessionId      String?
   paymentGateway        String?
   paymentMethod         String?
@@ -331,7 +331,7 @@ model payments {
 
   @@index([invoiceId])
   @@index([midtransOrderId])
-  @@index([dokuOrderId])
+  @@index([gatewayOrderId])
   @@index([status])
   @@index([stripePaymentIntentId])
   @@index([userId])

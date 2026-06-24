@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
       data: {
         id: crypto.randomUUID(),
         userId: session.id,
-        dokuOrderId: orderId,
+        gatewayOrderId: orderId,
         amount,
         currency: pricingPlan.currency,
         description: `NotaBener ${pricingPlan.name}`,
@@ -134,8 +134,8 @@ export async function POST(req: NextRequest) {
       await prisma.payments.update({
         where: { id: payment.id },
         data: {
-          dokuOrderId: orderId,
-          dokuTransactionId: result.transactionId,
+          gatewayOrderId: orderId,
+          gatewayTransactionId: result.transactionId,
           gatewaySessionId: result.sessionId,
           paymentUrl: result.paymentUrl,
           expiredAt: result.expiredAt,
